@@ -3,7 +3,7 @@ import { Container } from "@/components/common/container";
 import { PageHero } from "@/components/common/page-hero";
 import { FeaturedEvent } from "@/components/events/featured-event";
 import { EventsClient } from "@/components/events/events-client";
-import { getPublishedEvents, getFeaturedEvent } from "@/lib/services/events";
+import { getPublicEvents, getPublicFeaturedEvent } from "@/lib/services/public-data";
 import { siteConfig } from "@/lib/content/site";
 
 export const metadata: Metadata = {
@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function EventsPage() {
-  const events = getPublishedEvents();
-  const featured = getFeaturedEvent();
+export default async function EventsPage() {
+  const events = await getPublicEvents();
+  const featured = await getPublicFeaturedEvent();
 
   return (
     <>

@@ -74,6 +74,57 @@ export type Database = {
         }
         Relationships: []
       }
+      consultation_submissions: {
+        Row: {
+          assigned_rep: string | null
+          challenge: string | null
+          consent: boolean
+          created_at: string
+          email: string
+          full_name: string
+          goal: string | null
+          id: string
+          member_notes: string | null
+          scheduled_at: string | null
+          startup: string | null
+          status: Database["public"]["Enums"]["consultation_status"]
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          assigned_rep?: string | null
+          challenge?: string | null
+          consent?: boolean
+          created_at?: string
+          email: string
+          full_name: string
+          goal?: string | null
+          id?: string
+          member_notes?: string | null
+          scheduled_at?: string | null
+          startup?: string | null
+          status?: Database["public"]["Enums"]["consultation_status"]
+          updated_at?: string
+          whatsapp: string
+        }
+        Update: {
+          assigned_rep?: string | null
+          challenge?: string | null
+          consent?: boolean
+          created_at?: string
+          email?: string
+          full_name?: string
+          goal?: string | null
+          id?: string
+          member_notes?: string | null
+          scheduled_at?: string | null
+          startup?: string | null
+          status?: Database["public"]["Enums"]["consultation_status"]
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       consultations: {
         Row: {
           assigned_rep: string | null
@@ -549,6 +600,59 @@ export type Database = {
           },
         ]
       }
+      rsvp_submissions: {
+        Row: {
+          consent: boolean
+          created_at: string
+          email: string
+          event_id: string | null
+          event_label: string | null
+          full_name: string
+          goal: string | null
+          id: string
+          startup: string | null
+          status: string
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          consent?: boolean
+          created_at?: string
+          email: string
+          event_id?: string | null
+          event_label?: string | null
+          full_name: string
+          goal?: string | null
+          id?: string
+          startup?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp: string
+        }
+        Update: {
+          consent?: boolean
+          created_at?: string
+          email?: string
+          event_id?: string | null
+          event_label?: string | null
+          full_name?: string
+          goal?: string | null
+          id?: string
+          startup?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvp_submissions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       public_testimonials: {
@@ -567,6 +671,28 @@ export type Database = {
     Functions: {
       is_admin: { Args: never; Returns: boolean }
       next_member_number: { Args: never; Returns: string }
+      submit_consultation: {
+        Args: {
+          p_challenge: string
+          p_email: string
+          p_full_name: string
+          p_startup: string
+          p_whatsapp: string
+        }
+        Returns: string
+      }
+      submit_rsvp: {
+        Args: {
+          p_email: string
+          p_event_id: string
+          p_event_label: string
+          p_full_name: string
+          p_goal: string
+          p_startup: string
+          p_whatsapp: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       attendance_status: "not_attended" | "checked_in" | "no_show"

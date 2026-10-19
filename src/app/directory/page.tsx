@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/common/container";
 import { PageHero } from "@/components/common/page-hero";
 import { DirectoryClient } from "@/components/directory/directory-client";
-import { getPublishedStartups } from "@/lib/services/directory";
+import { getPublicStartups } from "@/lib/services/public-data";
 import { siteConfig } from "@/lib/content/site";
 
 export const metadata: Metadata = {
@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function DirectoryPage() {
-  const startups = getPublishedStartups();
+export default async function DirectoryPage() {
+  const startups = await getPublicStartups();
   return (
     <>
       <PageHero

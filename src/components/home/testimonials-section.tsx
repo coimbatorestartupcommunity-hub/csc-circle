@@ -1,10 +1,10 @@
 import * as React from "react";
 import { Section, SectionHeading } from "@/components/common/section";
 import { CommunityTestimonials } from "@/components/testimonials";
-import { getPublishedTestimonials } from "@/lib/services/testimonials";
+import { getPublicTestimonials } from "@/lib/services/public-data";
 
-export function TestimonialsSection() {
-  const testimonials = getPublishedTestimonials();
+export async function TestimonialsSection() {
+  const testimonials = await getPublicTestimonials();
   return (
     <Section id="testimonials" className="bg-brand-white">
       <SectionHeading

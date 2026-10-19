@@ -5,11 +5,11 @@ import { EventCard } from "@/components/events/event-card";
 import { CtaLink } from "@/components/common/cta-link";
 import { EmptyState } from "@/components/common/empty-state";
 import { StaggerContainer, StaggerItem } from "@/components/motion";
-import { getUpcomingEvents } from "@/lib/services/events";
+import { getPublicUpcomingEvents } from "@/lib/services/public-data";
 import { upcomingEventsSection } from "@/lib/content/home";
 
-export function UpcomingEvents() {
-  const events = getUpcomingEvents(3);
+export async function UpcomingEvents() {
+  const events = await getPublicUpcomingEvents(3);
   return (
     <Section className="bg-brand-white">
       <SectionHeading

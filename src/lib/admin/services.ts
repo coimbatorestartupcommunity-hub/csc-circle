@@ -72,11 +72,45 @@ async function guard<T>(
 export const adminServices = {
   getDashboard(): Promise<ServiceResult<AdminDashboardData>> {
     return guard("members.read", demoDashboard, async () => {
-      // Live aggregation is assembled by the backend in Phase 1; for now return
-      // an empty-but-valid shape so the UI shows honest zero/empty states.
-      const empty: AdminDashboardData = {
-        ...demoDashboard,
-        metrics: demoDashboard.metrics.map((m) => ({ ...m, value: 0 })),
+      const sb = await createClient();
+      const head = { count: "exact" as const, head: true };
+      const n = (p: { count: number | null }) => p.count ?? 0;
+
+      const [
+        accounts,
+        active,
+        claims,
+        events,
+        rsvps,
+        confirmed,
+        consults,
+        reviews,
+      ] = await Promise.all([
+        sb.from("profiles").select("*", head),
+        sb.from("memberships").select("*", head).eq("status", "active"),
+        sb.from("membership_claims").select("*", head).in("status", ["claim_submitted", "pending_verification"]),
+        sb.from("events").select("*", head).eq("status", "published"),
+        sb.from("rsvp_submissions").select("*", head).eq("status", "pending"),
+        sb.from("rsvp_submissions").select("*", head).eq("status", "confirmed"),
+        sb.from("consultation_submissions").select("*", head).in("status", ["submitted", "under_review"]),
+        sb.from("reviews").select("*", head).eq("moderation", "approved"),
+      ]);
+
+      const metrics = [
+        { key: "accounts", label: "Website accounts", value: n(accounts), href: "/admin/members" },
+        { key: "active", label: "Active memberships", value: n(active), href: "/admin/members" },
+        { key: "claims", label: "Pending claims", value: n(claims), href: "/admin/membership-claims" },
+        { key: "events", label: "Published events", value: n(events), href: "/admin/events" },
+        { key: "rsvps", label: "Pending RSVPs", value: n(rsvps), href: "/admin/registrations" },
+        { key: "confirmed", label: "Confirmed registrations", value: n(confirmed), href: "/admin/registrations" },
+        { key: "consults", label: "Pending consultations", value: n(consults), href: "/admin/consultations" },
+        { key: "payments", label: "Payments to verify", value: 0, href: "/admin/payments" },
+        { key: "reviews", label: "Approved reviews", value: n(reviews), href: "/admin/reviews" },
+        { key: "attendance", label: "Total check-ins", value: 0, href: "/admin/attendance" },
+      ];
+
+      return ok<AdminDashboardData>({
+        metrics,
         recentClaims: [],
         upcomingEvents: [],
         pendingRegistrations: [],
@@ -85,8 +119,7 @@ export const adminServices = {
         recentAudit: [],
         ratingDistribution: demoDashboard.ratingDistribution.map((r) => ({ ...r, count: 0 })),
         registrationsByEvent: [],
-      };
-      return ok(empty);
+      });
     });
   },
 
@@ -228,27 +261,26 @@ export const adminServices = {
 
   listRegistrations(): Promise<ServiceResult<EventRegistration[]>> {
     return guard("registrations.read", demoRegistrations, async () => {
+      // Public website RSVPs land in rsvp_submissions (the admin review queue).
       const sb = await createClient();
       const { data } = await sb
-        .from("event_registrations")
-        .select("*, events(title, starts_at, ends_at, venue, location)")
+        .from("rsvp_submissions")
+        .select("*")
         .order("created_at", { ascending: false });
       const rows: EventRegistration[] = (data ?? []).map((v) => {
         const r = v as Row;
-        const ev = (r.events as Row) ?? {};
         return {
           id: String(r.id),
-          eventId: String(r.event_id),
-          eventTitle: (ev.title as string) ?? "Event",
-          startsAt: (ev.starts_at as string) ?? "",
-          endsAt: (ev.ends_at as string) ?? "",
-          venue: (ev.venue as string) ?? undefined,
-          location: (ev.location as string) ?? "",
-          reference: (r.reference as string) ?? "",
+          eventId: (r.event_id as string) ?? "",
+          eventTitle: (r.event_label as string) ?? "Event",
+          startsAt: "",
+          endsAt: "",
+          location: "",
+          reference: `RSVP-${String(r.id).slice(0, 8).toUpperCase()}`,
           status: (r.status as EventRegistration["status"]) ?? "pending",
-          payment: (r.payment as EventRegistration["payment"]) ?? "not_required",
-          attendance: (r.attendance as EventRegistration["attendance"]) ?? "not_attended",
-          memberName: "",
+          payment: "not_required",
+          attendance: "not_attended",
+          memberName: (r.full_name as string) ?? "",
           createdAt: (r.created_at as string) ?? "",
         };
       });
@@ -258,15 +290,22 @@ export const adminServices = {
 
   listConsultations(): Promise<ServiceResult<AdminConsultationRow[]>> {
     return guard("consultations.manage", demoConsultations, async () => {
+      // Public website consultation enquiries land in consultation_submissions.
       const sb = await createClient();
-      const { data } = await sb.from("consultations").select("*").order("created_at", { ascending: false });
+      const { data } = await sb
+        .from("consultation_submissions")
+        .select("*")
+        .order("created_at", { ascending: false });
       const rows: AdminConsultationRow[] = (data ?? []).map((c) => {
         const r = c as Row;
         return {
           id: String(r.id),
-          reference: `CON-${String(r.id).slice(0, 8)}`,
-          fullName: (r.title as string) ?? "—",
-          requested: (r.goal as string) ?? "",
+          reference: `CON-${String(r.id).slice(0, 8).toUpperCase()}`,
+          fullName: (r.full_name as string) ?? "—",
+          startup: (r.startup as string) ?? undefined,
+          whatsapp: (r.whatsapp as string) ?? undefined,
+          email: (r.email as string) ?? undefined,
+          requested: (r.goal as string) ?? (r.challenge as string)?.slice(0, 40) ?? "",
           submittedAt: (r.created_at as string) ?? "",
           assignedTo: (r.assigned_rep as string) ?? undefined,
           status: (r.status as AdminConsultationRow["status"]) ?? "submitted",

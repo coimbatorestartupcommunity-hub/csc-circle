@@ -64,6 +64,30 @@ export const reviewSchema = z.object({
 
 export type ReviewFormValues = z.infer<typeof reviewSchema>;
 
+/** Public (anonymous) RSVP submission accepted by /api/rsvp. */
+export const publicRsvpSchema = z.object({
+  fullName: z.string().trim().min(2).max(80),
+  startup: z.string().trim().min(2).max(120),
+  whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
+  email: z.string().trim().email("Enter a valid email address."),
+  eventId: z.string().uuid().optional(),
+  eventLabel: z.string().trim().max(160).optional(),
+  goal: z.enum(rsvpGoals),
+  consent: z.literal(true),
+});
+export type PublicRsvpValues = z.infer<typeof publicRsvpSchema>;
+
+/** Public (anonymous) consultation submission accepted by /api/consultations. */
+export const publicConsultationSchema = z.object({
+  fullName: z.string().trim().min(2).max(80),
+  startup: z.string().trim().min(2).max(120),
+  whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
+  email: z.string().trim().email("Enter a valid email address."),
+  challenge: z.string().trim().min(20).max(1200),
+  consent: z.literal(true),
+});
+export type PublicConsultationValues = z.infer<typeof publicConsultationSchema>;
+
 export const rsvpDefaultValues: Partial<RsvpFormValues> = {
   fullName: "",
   startup: "",

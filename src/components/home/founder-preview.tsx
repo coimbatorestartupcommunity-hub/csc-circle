@@ -5,11 +5,11 @@ import { StartupCard } from "@/components/directory/startup-card";
 import { CtaLink } from "@/components/common/cta-link";
 import { EmptyState } from "@/components/common/empty-state";
 import { StaggerContainer, StaggerItem } from "@/components/motion";
-import { getFeaturedStartups } from "@/lib/services/directory";
+import { getPublicFeaturedStartups } from "@/lib/services/public-data";
 import { founderPreview } from "@/lib/content/home";
 
-export function FounderPreview() {
-  const startups = getFeaturedStartups(3);
+export async function FounderPreview() {
+  const startups = await getPublicFeaturedStartups(3);
   return (
     <Section className="bg-brand-cloud">
       <SectionHeading

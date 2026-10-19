@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Info, Lock } from "lucide-react";
+import { Info, Loader2, CheckCircle2, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -31,17 +31,22 @@ import {
 } from "@/lib/validations/forms";
 import type { EventRecord } from "@/types";
 
-function UnavailableBanner() {
+function InfoBanner() {
   return (
     <div className="flex items-start gap-3 rounded-2xl bg-brand-blue/70 p-4 text-sm text-brand-ink ring-1 ring-brand-border">
       <Info className="mt-0.5 size-4 shrink-0 text-brand-accent" aria-hidden />
       <p>
-        Registration isn&apos;t live yet. This form previews the experience and
-        validates your details, but nothing is stored or confirmed until secure
-        submissions open in a later phase.
+        Your request is sent to the CSC team for review — submitting does not
+        confirm a booking. We&apos;ll contact you to confirm your spot. Your
+        details are used only to organise this and to keep you informed.
       </p>
     </div>
   );
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(v: string): boolean {
+  return UUID_RE.test(v);
 }
 
 const goalOptions = rsvpGoals.map((g) => ({ value: g, label: g }));
@@ -65,7 +70,7 @@ export function RsvpForm({
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitSuccessful },
+    formState: { errors, isSubmitting },
   } = useForm<RsvpFormValues>({
     resolver: zodResolver(rsvpSchema),
     defaultValues: {
@@ -77,15 +82,34 @@ export function RsvpForm({
       consent: false as unknown as true,
     },
   });
+  const [reference, setReference] = React.useState<string | null>(null);
 
-  const onSubmit = (values: RsvpFormValues) => {
-    // No backend yet: acknowledge validation without faking a confirmed booking.
-    toast.info("Your details look good — registration opens soon.", {
-      description:
-        "We validated your RSVP, but submissions aren't stored yet. No booking has been created.",
-    });
-    if (process.env.NODE_ENV === "development") {
-      console.debug("[dev] RSVP preview payload", values);
+  const onSubmit = async (values: RsvpFormValues) => {
+    const ev = events.find((e) => e.id === values.eventId);
+    try {
+      const res = await fetch("/api/rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: values.fullName,
+          startup: values.startup,
+          whatsapp: values.whatsapp,
+          email: values.email,
+          goal: values.goal,
+          consent: values.consent,
+          eventId: isUuid(values.eventId) ? values.eventId : undefined,
+          eventLabel: ev?.title,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        toast.error(json.error ?? "Could not submit your RSVP.");
+        return;
+      }
+      setReference(json.reference);
+      toast.success("RSVP received — the CSC team will confirm your spot.");
+    } catch {
+      toast.error("Network error. Please try again.");
     }
   };
 
@@ -95,7 +119,7 @@ export function RsvpForm({
       className="flex flex-col gap-5"
       noValidate
     >
-      <UnavailableBanner />
+      <InfoBanner />
 
       <Field>
         <FieldLabel htmlFor="rsvp-event">Select event</FieldLabel>
@@ -202,7 +226,7 @@ export function RsvpForm({
       />
       {errors.consent ? <FieldError>{errors.consent.message}</FieldError> : null}
 
-      <SubmitArea success={isSubmitSuccessful} />
+      <SubmitArea label="Submit RSVP" submitting={isSubmitting} reference={reference} />
     </form>
   );
 }
@@ -216,7 +240,7 @@ export function ConsultationForm() {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitSuccessful },
+    formState: { errors, isSubmitting },
   } = useForm<ConsultationFormValues>({
     resolver: zodResolver(consultationSchema),
     defaultValues: {
@@ -228,20 +252,37 @@ export function ConsultationForm() {
       consent: false as unknown as true,
     },
   });
+  const [reference, setReference] = React.useState<string | null>(null);
 
-  const onSubmit = (values: ConsultationFormValues) => {
-    toast.info("Thanks — your consultation request looks complete.", {
-      description:
-        "We validated your request, but it isn't stored yet. Secure submissions open in a later phase.",
-    });
-    if (process.env.NODE_ENV === "development") {
-      console.debug("[dev] Consultation preview payload", values);
+  const onSubmit = async (values: ConsultationFormValues) => {
+    try {
+      const res = await fetch("/api/consultations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: values.fullName,
+          startup: values.startup,
+          whatsapp: values.whatsapp,
+          email: values.email,
+          challenge: values.challenge,
+          consent: values.consent,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        toast.error(json.error ?? "Could not submit your request.");
+        return;
+      }
+      setReference(json.reference);
+      toast.success("Request received — the CSC team will be in touch.");
+    } catch {
+      toast.error("Network error. Please try again.");
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>
-      <UnavailableBanner />
+      <InfoBanner />
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field>
@@ -302,31 +343,44 @@ export function ConsultationForm() {
       />
       {errors.consent ? <FieldError>{errors.consent.message}</FieldError> : null}
 
-      <SubmitArea success={isSubmitSuccessful} />
+      <SubmitArea label="Submit request" submitting={isSubmitting} reference={reference} />
     </form>
   );
 }
 
-function SubmitArea({ success }: { success: boolean }) {
+function SubmitArea({
+  label,
+  submitting,
+  reference,
+}: {
+  label: string;
+  submitting: boolean;
+  reference: string | null;
+}) {
+  if (reference) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-2xl bg-green-50 p-4 text-center" role="status">
+        <CheckCircle2 className="size-6 text-green-700" />
+        <p className="text-sm font-medium text-green-800">
+          Received — reference{" "}
+          <span className="font-mono">{reference}</span>
+        </p>
+        <p className="text-xs text-green-700">
+          The CSC team will review your submission and contact you.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-2">
-      <Button type="submit" size="lg" className="h-11 w-full gap-2">
-        <Lock className="size-4" />
-        Validate &amp; preview (submission opens later)
+      <Button type="submit" size="lg" disabled={submitting} className="h-11 w-full gap-2">
+        {submitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+        {label}
       </Button>
-      {success ? (
-        <p
-          className="text-center text-sm font-medium text-green-700"
-          role="status"
-        >
-          Validated — no booking was created. We&apos;ll be in touch when
-          registration opens.
-        </p>
-      ) : (
-        <FieldDescription className="text-center">
-          Your details are validated locally and never submitted yet.
-        </FieldDescription>
-      )}
+      <FieldDescription className="text-center">
+        Submitting sends your details to the CSC team for review; it isn&apos;t a
+        confirmed booking.
+      </FieldDescription>
     </div>
   );
 }
