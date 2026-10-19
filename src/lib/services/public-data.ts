@@ -85,6 +85,7 @@ export async function getLivePublishedEvents(): Promise<EventRecord[]> {
   cacheLife("minutes");
   cacheTag("events");
   const sb = createAnonClient();
+  if (!sb) return [];
   const { data } = await sb
     .from("events")
     .select("*")
@@ -98,6 +99,7 @@ export async function getLivePublishedStartups(): Promise<Startup[]> {
   cacheLife("minutes");
   cacheTag("directory");
   const sb = createAnonClient();
+  if (!sb) return [];
   const { data } = await sb
     .from("directory_startups")
     .select("*")
@@ -111,6 +113,7 @@ export async function getLivePublishedTestimonials(): Promise<Testimonial[]> {
   cacheLife("minutes");
   cacheTag("reviews");
   const sb = createAnonClient();
+  if (!sb) return [];
   const { data } = await sb
     .from("public_testimonials")
     .select("*")

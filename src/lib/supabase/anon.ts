@@ -9,9 +9,12 @@ import type { Database } from "@/lib/supabase/database.types";
  * restricts it to published/approved content and insert-only queue access.
  */
 export function createAnonClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
   return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    url,
+    key,
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 }
