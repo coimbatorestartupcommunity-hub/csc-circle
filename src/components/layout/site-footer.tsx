@@ -134,15 +134,15 @@ export function SiteFooter() {
           <nav
             aria-label="Legal and security"
             data-testid="footer-legal"
-            className="col-span-2 order-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-t border-brand-border pt-4 text-[10px] sm:gap-x-5 sm:gap-y-2 sm:pt-5 sm:text-sm lg:col-span-3"
+            className="col-span-2 order-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-brand-border pt-4 text-xs sm:gap-x-6 sm:gap-y-2.5 sm:pt-5 sm:text-sm lg:col-span-3"
           >
-            <Link href="/privacy" className="font-medium text-brand-secondary underline-offset-4 hover:text-brand-ink hover:underline">
+            <Link href="/privacy" className="font-semibold text-brand-ink underline decoration-brand-border decoration-1 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent">
               Privacy Policy
             </Link>
-            <Link href="/security" className="inline-flex items-center gap-1 font-medium text-brand-secondary underline-offset-4 hover:text-brand-ink hover:underline">
-              <ShieldCheck aria-hidden="true" className="size-3 sm:size-4" /> Security
+            <Link href="/security" className="inline-flex items-center gap-1 font-semibold text-brand-ink underline decoration-brand-border decoration-1 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent">
+              <ShieldCheck aria-hidden="true" className="size-3.5 sm:size-4" /> Security
             </Link>
-            <Link href="/terms" className="font-medium text-brand-secondary underline-offset-4 hover:text-brand-ink hover:underline">
+            <Link href="/terms" className="font-semibold text-brand-ink underline decoration-brand-border decoration-1 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent">
               Terms and Conditions
             </Link>
           </nav>
