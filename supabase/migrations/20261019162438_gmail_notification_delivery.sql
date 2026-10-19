@@ -96,7 +96,8 @@ create function private.event_change_email() returns trigger language plpgsql se
 declare r public.event_registrations; template text; version text;
 begin
  if new.starts_at=old.starts_at and new.ends_at=old.ends_at and new.venue is not distinct from old.venue and new.status=old.status then return new;end if;
- template=case when new.status='archived' then 'EventCancelled' else 'EventUpdated' end;
+ -- Archiving alone does not prove cancellation. Preserve accurate wording.
+ template='EventUpdated';
  version=md5(jsonb_build_array(new.starts_at,new.ends_at,new.venue,new.status)::text);
  for r in select * from public.event_registrations where event_id=new.id and status in ('confirmed','waitlisted','pending_review','pending_payment') loop
  perform private.enqueue_email(template,'event',new.id,r.user_id,null,jsonb_build_object('reference',r.reference,'eventTitle',new.title,'startsAt',new.starts_at,'previousStartsAt',old.starts_at,'venue',new.venue,'status',new.status),false,version);

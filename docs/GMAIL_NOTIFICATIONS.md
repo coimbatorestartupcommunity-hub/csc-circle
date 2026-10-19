@@ -20,7 +20,7 @@ Daily Hobby cron is a safety net, not a high-throughput worker or precise remind
 | memberships / claims status | MembershipApproved, MembershipRejected, MembershipMoreInformation, MembershipStatusChanged | Existing private review queue |
 | rsvp_submissions / event_registrations insert | EventRSVPReceived | EventRSVPAdminAlert |
 | event_registrations status | EventConfirmed, EventWaitlisted, PaymentPendingVerification, EventCancelled | Existing registrations queue |
-| published event schedule / venue / archive change | EventUpdated, EventCancelled | Existing event audit |
+| published event schedule / venue / archive change | EventUpdated | Existing event audit |
 | confirmed upcoming registration | EventReminder | Existing attendance workspace |
 | consultation_submissions insert / status | ConsultationReceived, ConsultationApproved, ConsultationMoreInformation, ConsultationScheduled, ConsultationCancelled | ConsultationAdminAlert |
 | payments status | PaymentPendingVerification, PaymentVerified, PaymentRejected, PaymentRefunded | Existing finance queue |
@@ -54,3 +54,5 @@ The application cannot be called fully activated until an authorized preview is 
 CI root cause found and repaired: Linux npm 11.19 rejected the previous lockfile because @emnapi/core and @emnapi/runtime 1.11.3 were missing. Regenerated the lock in an isolated directory using that npm version, preserved application versions, and verified a clean npm 11.19 install locally. Remote CI must still be checked on the new commit.
 
 Vercel documents that Hobby teams cannot deploy private GitHub organization repositories: https://vercel.com/docs/git. Keeping the current private organization repository therefore requires a supported plan/team setup as well as legitimate contributor access.
+
+The existing event publication enum has no explicit cancelled state. Archiving generates an EventUpdated message, not an unsupported cancellation claim. EventCancelled currently covers actual registration cancellation; full event-cancellation workflow remains a separate prerequisite.
