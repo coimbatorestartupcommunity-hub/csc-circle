@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Dropped source assets (optimized copies live in public/)
+CSC community.jpg
+Vikash's approved portrait.heic
+Vikash's approved biography.heic
+
+# Supabase CLI local state
+/supabase/.temp/
+
+/playwright-report/
+/test-results/
