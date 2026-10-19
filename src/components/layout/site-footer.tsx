@@ -23,12 +23,12 @@ function FooterLinkGroup({
     <nav
       aria-label={heading}
       data-testid={isRight ? "footer-community" : "footer-get-involved"}
-      className={isRight ? "text-right" : "text-left"}
+      className={isRight ? "text-center lg:text-right" : "text-center lg:text-left"}
     >
       <h2 className="text-[10px] font-semibold tracking-[0.12em] text-brand-ink uppercase sm:text-xs">
         {heading}
       </h2>
-      <ul className={`mt-2.5 flex flex-col gap-1.5 sm:mt-4 sm:gap-2.5 ${isRight ? "items-end" : "items-start"}`}>
+      <ul className={`mt-2.5 flex flex-col items-center gap-1.5 sm:mt-4 sm:gap-2.5 ${isRight ? "lg:items-end" : "lg:items-start"}`}>
         {links.map((link) => (
           <li key={`${heading}-${link.href}-${link.label}`}>
             <Link

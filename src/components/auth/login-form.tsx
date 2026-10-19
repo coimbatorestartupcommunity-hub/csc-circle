@@ -23,8 +23,15 @@ export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
+  const authCause = params.get("cause");
   const [formError, setFormError] = React.useState<string | null>(
-    params.get("error") ? "Sign-in didn't complete. Please try again." : null,
+    params.get("error")
+      ? authCause === "provider"
+        ? "Google could not complete authorization for this sign-in. Please try again or use email and password."
+        : authCause === "exchange"
+          ? "CSC could not complete the secure Google sign-in exchange. Please try again; if it repeats, contact support."
+          : "Sign-in didn't complete. Please try again."
+      : null,
   );
   const [needsConfirm, setNeedsConfirm] = React.useState<string | null>(null);
 

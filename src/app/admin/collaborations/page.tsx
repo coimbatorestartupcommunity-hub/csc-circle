@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
+import { CtaLink } from "@/components/common/cta-link";
 import { getAdminContext, can } from "@/lib/admin/gate";
 import { createClient } from "@/lib/supabase/server";
 
@@ -10,6 +11,7 @@ export const metadata = { title: "Collaborations" };
 
 interface CollabRow {
   id: string;
+  slug: string;
   title: string;
   partners: string;
   category: string;
@@ -52,7 +54,7 @@ export default async function AdminCollaborationsPage() {
       const sb = await createClient();
       const { data } = await sb
         .from("collaborations")
-        .select("id, title, category, status, publication_status, created_at, collaboration_partners(collaboration_organizations(name))")
+        .select("id, slug, title, category, status, publication_status, created_at, collaboration_partners(collaboration_organizations(name))")
         .order("created_at", { ascending: false });
       rows = (data ?? []).map((r) => {
         const row = r as Record<string, unknown>;
@@ -62,6 +64,7 @@ export default async function AdminCollaborationsPage() {
           .join(" × ");
         return {
           id: String(row.id),
+          slug: String(row.slug ?? ""),
           title: (row.title as string) ?? "—",
           partners: partners || "—",
           category: (row.category as string) ?? "",
@@ -78,6 +81,7 @@ export default async function AdminCollaborationsPage() {
     rows = [
       {
         id: "demo-csc-outlier",
+        slug: "csc-outlier",
         title: "CSC × Outlier",
         partners: "Coimbatore Startup Community × Outlier",
         category: "Community Meetup & Networking",
@@ -94,6 +98,7 @@ export default async function AdminCollaborationsPage() {
         title="Collaborations"
         description="Community partnerships and joint events shown on the public site. New collaborations appear here and on /collaborations automatically once published."
         isDemo={ctx.mode === "preview"}
+        action={<CtaLink href="/admin/collaborations/new" size="md">New collaboration</CtaLink>}
       />
       <DataTable
         rows={rows}
@@ -102,14 +107,17 @@ export default async function AdminCollaborationsPage() {
         searchKeys={["title", "partners", "category"]}
         emptyMessage="No collaborations yet."
       />
-      <p className="mt-4 text-sm text-brand-muted">
-        The first collaboration (CSC × Outlier) is seeded.{" "}
-        <Link href="/collaborations/csc-outlier" className="inline-flex items-center gap-1 text-brand-accent hover:underline" target="_blank">
-          View public page <ExternalLink className="size-3.5" />
-        </Link>
-        . A full create/edit editor (partners, gallery upload, publish workflow)
-        is the next step for this module.
-      </p>
+      <div className="mt-4 space-y-2">
+        {rows.map((row) => (
+          <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-border bg-white px-4 py-3 text-sm">
+            <span className="font-medium text-brand-ink">{row.title}</span>
+            <div className="flex items-center gap-4">
+              <Link href={`/admin/collaborations/${row.id}/edit`} className="font-medium text-brand-accent hover:underline">Edit</Link>
+              {row.publicationStatus === "published" ? <Link href={`/collaborations/${row.slug}`} target="_blank" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">View public <ExternalLink className="size-3.5" /></Link> : null}
+            </div>
+          </div>
+        ))}
+      </div>
     </>
   );
 }
