@@ -11,7 +11,7 @@ import { FinalCta } from "@/components/home/final-cta";
 
 export default function HomePage() {
   return (
-    <>
+    <div className="min-w-0 overflow-x-clip">
       <CommunityAnnouncement />
       <HeroSection />
       <CommunityIntroduction />
@@ -23,6 +23,6 @@ export default function HomePage() {
       <MemberExperience />
       <TestimonialsSection />
       <FinalCta />
-    </>
+    </div>
   );
 }

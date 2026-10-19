@@ -35,3 +35,12 @@ test("production-mode pages never display demo private records", async ({ page }
     await expect(page.getByText("DEMO admin preview", { exact: false })).toHaveCount(0);
   }
 });
+
+for (const width of [320,430]) {
+ test(`home keeps animated decorations within the ${width}px viewport`,async({page})=>{
+  await page.setViewportSize({width,height:812});await page.goto("/");
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.evaluate(()=>document.fonts.ready);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ });
+}
