@@ -754,14 +754,142 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ==========================================================================
+   CSC Circle brand layer
+   Added for Phase 2 (public website). Builds on the shadcn Nova ejection above
+   without replacing it: fonts are wired to Poppins/Lora/JetBrains Mono, the
+   neutral tokens are retuned to the approved CSC palette, and the approved
+   pastel surface colours are exposed as Tailwind utilities (bg-brand-*, etc.).
+   ========================================================================== */
+
+:root {
+  /* Font stacks (the --font-* variables are provided by next/font in layout.tsx) */
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: var(--font-lora), ui-serif, Georgia, "Times New Roman", serif;
+
+  /* Approved CSC palette (exact hex) */
+  --brand-white: #ffffff;
+  --brand-cloud: #f7f9fc;
+  --brand-purple: #f1ecff;
+  --brand-lilac: #ede7f6;
+  --brand-pink: #fceaf3;
+  --brand-blue: #e7f3ff;
+  --brand-red: #fde9e7;
+  --brand-gold: #fff4d9;
+  --brand-ink: #121826;
+  --brand-secondary: #334155;
+  --brand-muted: #52677c;
+  --brand-border: #dfe7ef;
+  /* A restrained violet accent that harmonises with the light-purple family.
+     Used only in small controlled areas (links, focus, small highlights). */
+  --brand-accent: #6d4aff;
+  --brand-accent-foreground: #ffffff;
+
+  /* Retune the design tokens to the CSC palette. White stays dominant and
+     dark ink carries text + selected buttons. */
+  --radius: 0.75rem;
+  --background: var(--brand-white);
+  --foreground: var(--brand-ink);
+  --card: var(--brand-white);
+  --card-foreground: var(--brand-ink);
+  --popover: var(--brand-white);
+  --popover-foreground: var(--brand-ink);
+  --primary: var(--brand-ink);
+  --primary-foreground: var(--brand-white);
+  --secondary: var(--brand-cloud);
+  --secondary-foreground: var(--brand-secondary);
+  --muted: var(--brand-cloud);
+  --muted-foreground: var(--brand-muted);
+  --accent: var(--brand-purple);
+  --accent-foreground: var(--brand-ink);
+  --border: var(--brand-border);
+  --input: var(--brand-border);
+  --ring: var(--brand-accent);
+}
+
+@theme inline {
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+
+  --color-brand-white: var(--brand-white);
+  --color-brand-cloud: var(--brand-cloud);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-lilac: var(--brand-lilac);
+  --color-brand-pink: var(--brand-pink);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-red: var(--brand-red);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-border: var(--brand-border);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-foreground: var(--brand-accent-foreground);
+
+  /* Fluid type scale tokens used by headings */
+  --text-hero: clamp(2.125rem, 1.2rem + 4.6vw, 4.5rem); /* 34 -> 72px */
+  --text-section: clamp(1.6875rem, 1.1rem + 2.6vw, 3rem); /* 27 -> 48px */
+
+  --container-site: 80rem; /* ~1280px */
+
+  /* Ambient decorative motion */
+  --animate-brand-float: brand-float 16s ease-in-out infinite;
+  @keyframes brand-float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    33% {
+      transform: translate3d(2%, -4%, 0) scale(1.05);
+    }
+    66% {
+      transform: translate3d(-3%, 3%, 0) scale(0.97);
+    }
+  }
+}
+
+@utility brand-container {
+  width: 100%;
+  max-width: var(--container-site);
+  margin-inline: auto;
+  padding-inline: 1rem;
+  @variant sm {
+    padding-inline: 1.5rem;
+  }
+  @variant lg {
+    padding-inline: 2rem;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+  }
+  ::selection {
+    background-color: var(--brand-purple);
+    color: var(--brand-ink);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
   }
 }
