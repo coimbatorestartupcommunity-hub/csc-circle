@@ -1,7 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Mail } from "lucide-react";
+import { Mail, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/common/container";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { CtaLink } from "@/components/common/cta-link";
@@ -131,6 +131,20 @@ export function SiteFooter() {
             .
           </p>
         </div>
+        <nav
+          aria-label="Legal and security"
+          className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-brand-border pt-5 text-sm"
+        >
+          <Link href="/privacy" className="font-medium text-brand-secondary underline-offset-4 hover:text-brand-ink hover:underline">
+            Privacy Policy
+          </Link>
+          <Link href="/security" className="inline-flex items-center gap-1.5 font-medium text-brand-secondary underline-offset-4 hover:text-brand-ink hover:underline">
+            <ShieldCheck aria-hidden="true" className="size-4" /> Security
+          </Link>
+          <Link href="/terms" className="font-medium text-brand-secondary underline-offset-4 hover:text-brand-ink hover:underline">
+            Terms and Conditions
+          </Link>
+        </nav>
       </Container>
     </footer>
   );

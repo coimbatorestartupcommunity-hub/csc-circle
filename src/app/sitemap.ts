@@ -12,6 +12,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/directory`, lastModified, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/events`, lastModified, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/collaborations`, lastModified, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/privacy`, lastModified, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${base}/security`, lastModified, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${base}/terms`, lastModified, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   // Published collaboration detail pages (never drafts / admin routes).

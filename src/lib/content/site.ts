@@ -15,7 +15,7 @@ export const siteConfig = {
   /** Public base URL, used for canonical + OpenGraph. */
   url:
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "https://csc-circle-lake.vercel.app",
+    "https://csc.logicintelligencetechnologies.in",
   locale: "en_IN",
   city: "Coimbatore",
   region: "Tamil Nadu",

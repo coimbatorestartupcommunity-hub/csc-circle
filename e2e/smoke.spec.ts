@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-for (const route of ["/", "/about", "/directory", "/events", "/login", "/signup", "/forgot-password", "/reset-password"]) {
+for (const route of ["/", "/about", "/directory", "/events", "/login", "/signup", "/forgot-password", "/reset-password", "/privacy", "/security", "/terms"]) {
   test(`${route} renders CSC branding and stays within a mobile viewport`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     const response = await page.goto(route);
@@ -9,6 +9,14 @@ for (const route of ["/", "/about", "/directory", "/events", "/login", "/signup"
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   });
 }
+test("legal and security pages are linked visibly from the site footer", async ({ page }) => {
+  for (const [route, label] of [["/privacy", "Privacy Policy"], ["/security", "Security"], ["/terms", "Terms and Conditions"]]) {
+    await page.goto(route);
+    const link = page.locator("footer nav[aria-label='Legal and security']").getByRole("link", { name: label });
+    await expect(link).toBeVisible();
+    await expect(page.locator("main")).toBeVisible();
+  }
+});
 test("password visibility and signup validation", async ({ page }) => {
   await page.goto("/signup");
   await page.getByLabel("Full name", { exact: true }).fill("Test Member");
