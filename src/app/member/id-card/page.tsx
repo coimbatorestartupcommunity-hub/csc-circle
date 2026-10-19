@@ -13,19 +13,20 @@ export default async function IdCardPage() {
   const cardRes = await memberServices.getCard();
 
   if (!cardRes.ok) {
+    const needsPortrait = cardRes.error.message.toLowerCase().includes("portrait");
     return (
       <>
         <MemberPageHeader title="Digital membership ID" />
         <EmptyState
           icon={IdCard}
-          title="Your digital ID unlocks when your membership is active."
+          title={needsPortrait ? "Add your 4:5 portrait to complete your digital ID." : "Your digital ID unlocks when your membership is active."}
           description={cardRes.error.message}
         >
           <Link
-            href="/member/claim"
+            href={needsPortrait ? "/member/profile#profile-portrait" : "/member/claim"}
             className="inline-flex items-center gap-2 rounded-lg bg-brand-ink px-4 py-2 text-sm font-medium text-brand-white hover:bg-brand-ink/90"
           >
-            Claim your membership
+            {needsPortrait ? "Upload a 4:5 portrait" : "Claim your membership"}
           </Link>
         </EmptyState>
       </>

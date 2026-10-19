@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { AccountAvatar } from "@/components/layout/account-avatar";
 import type { Permission } from "@/lib/admin/permissions";
 
 interface NavItem {
@@ -147,6 +148,14 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const crumbs = pathname.split("/").filter(Boolean);
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    let alive = true;
+    void fetch("/api/member/header", { cache: "no-store" }).then((response) => response.json()).then((account) => {
+      if (alive && account.authenticated) setAvatarUrl(account.avatarUrl ?? null);
+    }).catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-brand-cloud">
@@ -190,6 +199,10 @@ export function AdminShell({
               <p className="text-sm font-semibold text-brand-ink">{displayName}</p>
               <p className="text-xs text-brand-muted">{roleLabel}</p>
             </div>
+            <AccountAvatar name={displayName} src={avatarUrl} className="size-8" />
+            <Link href="/admin" aria-current={pathname === "/admin" ? "page" : undefined} className="inline-flex min-h-9 items-center justify-center rounded-lg bg-brand-ink px-3 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4 sm:text-sm">
+              Admin Dashboard
+            </Link>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"

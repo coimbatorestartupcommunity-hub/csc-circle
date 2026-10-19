@@ -47,13 +47,13 @@ export const membershipStatusMeta: Record<
   MembershipStatus,
   { label: string; tone: string }
 > = {
-  not_started: { label: "Not started", tone: "bg-brand-cloud text-brand-muted" },
+  not_started: { label: "Membership not claimed", tone: "bg-brand-cloud text-brand-muted" },
   profile_incomplete: {
     label: "Profile incomplete",
     tone: "bg-brand-gold text-brand-ink",
   },
   claim_submitted: {
-    label: "Claim submitted",
+    label: "Claim pending",
     tone: "bg-brand-blue text-brand-ink",
   },
   pending_verification: {

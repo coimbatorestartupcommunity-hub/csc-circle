@@ -17,9 +17,10 @@ import { Button } from "@/components/ui/button";
 import { CtaLink } from "@/components/common/cta-link";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { primaryNav, routes } from "@/lib/content/site";
+import { AccountAvatar } from "@/components/layout/account-avatar";
 
 /** Mobile navigation drawer. Keeps the Join CTA visible (not hidden). */
-export function MobileNavigation() {
+export function MobileNavigation({ account }: { account: { authenticated: boolean; loading: boolean; name?: string; avatarUrl?: string | null; accountHref?: string; accountLabel?: string } }) {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
 
@@ -31,7 +32,7 @@ export function MobileNavigation() {
             variant="outline"
             size="icon"
             aria-label="Open menu"
-            className="lg:hidden"
+            className="xl:hidden"
           />
         }
       >
@@ -70,18 +71,27 @@ export function MobileNavigation() {
           })}
         </nav>
         <div className="mt-auto flex flex-col gap-3 border-t border-brand-border p-4">
-          <CtaLink href={routes.join} className="w-full" onClick={() => setOpen(false)}>
-            Join the Community
-          </CtaLink>
-          <CtaLink
-            href={routes.login}
-            variant="outline"
-            arrow={false}
-            className="w-full"
-            onClick={() => setOpen(false)}
-          >
-            Member Login
-          </CtaLink>
+          {account.loading ? (
+            <p className="text-center text-sm text-brand-muted" aria-live="polite">Checking your account…</p>
+          ) : account.authenticated ? (
+            <>
+              <div className="flex items-center gap-3 px-1">
+                <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-9" />
+                <span className="min-w-0 truncate text-sm font-medium text-brand-ink">{account.name}</span>
+              </div>
+              <CtaLink href={account.accountHref ?? "/member/profile"} className="w-full" onClick={() => setOpen(false)} arrow={false}>
+                {account.accountLabel ?? "Profile"}
+              </CtaLink>
+              <form action="/auth/signout" method="post">
+                <button type="submit" className="w-full rounded-lg border border-brand-border px-4 py-2.5 text-sm font-medium text-brand-ink">Sign out</button>
+              </form>
+            </>
+          ) : (
+            <>
+              <CtaLink href={routes.join} className="w-full" onClick={() => setOpen(false)}>Join the Community</CtaLink>
+              <CtaLink href={routes.login} variant="outline" arrow={false} className="w-full" onClick={() => setOpen(false)}>Log In</CtaLink>
+            </>
+          )}
         </div>
       </SheetContent>
     </Sheet>

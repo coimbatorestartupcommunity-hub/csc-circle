@@ -1,5 +1,4 @@
 import { Star } from "lucide-react";
-import { MemberPageHeader } from "@/components/member/member-page-header";
 import { MemberReviewForm } from "@/components/member/member-review-form";
 import { StatusBadge } from "@/components/member/status-badge";
 import { RatingStars } from "@/components/testimonials/rating-stars";
@@ -18,14 +17,14 @@ export default async function MemberReviewsPage() {
 
   return (
     <>
-      <MemberPageHeader
-        title="My ratings & reviews"
-        description="Share and manage your CSC community review."
-      />
+      <header className="mb-6 flex flex-col items-center gap-2 text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-brand-ink">My ratings &amp; reviews</h1>
+        <p className="text-sm text-brand-muted">Share and manage your CSC community review.</p>
+      </header>
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <section className="flex flex-col gap-4">
-          <h2 className="text-sm font-semibold tracking-wide text-brand-muted uppercase">
+          <h2 className="text-center text-sm font-semibold tracking-wide text-brand-muted uppercase">
             Your reviews
           </h2>
           {reviews.length > 0 ? (

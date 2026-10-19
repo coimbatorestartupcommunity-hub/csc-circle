@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/api/member/resume/pdf": ["./node_modules/dejavu-fonts-ttf/ttf/DejaVuSans*.ttf"],
+  },
   async headers() {
     return [
       { source: "/:path*", headers: [

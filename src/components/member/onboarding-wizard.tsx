@@ -174,7 +174,7 @@ export function OnboardingWizard({ isDemo }: { isDemo: boolean }) {
       const result = await memberRequest("onboarding", data);
       if (result.error) { toast.error(result.error); return; }
       toast.success("Welcome! Your profile is set up.");
-      router.push("/member/claim");
+      router.push("/member/profile#profile-portrait");
     } finally {
       setSaving(false);
     }
@@ -207,6 +207,7 @@ export function OnboardingWizard({ isDemo }: { isDemo: boolean }) {
         {step === 0 ? (
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-semibold text-brand-ink">Personal information</h2>
+            <p className="rounded-xl bg-brand-blue/60 p-3 text-sm text-brand-secondary">After creating your profile, add a clear 4:5 portrait on the Profile page. It stays private by default and is needed for your official CSC digital ID once membership is active.</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="o-full">Full name</FieldLabel>

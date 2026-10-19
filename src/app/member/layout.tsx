@@ -5,6 +5,7 @@ import { MemberShell } from "@/components/member/member-shell";
 import { MemberUnavailable } from "@/components/member/member-unavailable";
 import { DemoBanner } from "@/components/member/demo-banner";
 import { membershipStatusMeta } from "@/lib/content/member-taxonomy";
+import { getAdminContext } from "@/lib/admin/gate";
 
 export const metadata: Metadata = {
   title: { default: "Member", template: "%s · CSC Circle Member" },
@@ -28,6 +29,8 @@ export default async function MemberLayout({
 
   const profileRes = await memberServices.getProfile();
   const profile = profileRes.ok ? profileRes.data : null;
+  const adminContext = ctx.mode === "live" ? await getAdminContext() : null;
+  const isAdmin = adminContext?.mode === "live";
   const status = profile?.membership.status ?? "not_started";
   const meta = membershipStatusMeta[status];
 
@@ -36,9 +39,11 @@ export default async function MemberLayout({
       {ctx.mode === "preview" ? <DemoBanner /> : null}
       <MemberShell
         memberName={profile?.displayName || profile?.fullName || "Member"}
-        avatarUrl={profile?.avatarUrl}
+        avatarUrl={profile?.portraitUrl ?? profile?.avatarUrl}
         statusLabel={meta.label}
         statusTone={meta.tone}
+        accountHref={isAdmin ? "/admin" : "/member/profile"}
+        accountLabel={isAdmin ? "Admin Dashboard" : "Profile"}
       >
         {children}
       </MemberShell>
