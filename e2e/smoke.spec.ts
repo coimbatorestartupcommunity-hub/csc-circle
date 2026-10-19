@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-for (const route of ["/", "/about", "/directory", "/events", "/login", "/signup", "/forgot-password", "/reset-password"]) {
+for (const route of ["/", "/about", "/directory", "/events", "/login", "/signup", "/forgot-password", "/reset-password", "/privacy", "/security", "/terms"]) {
   test(`${route} renders CSC branding and stays within a mobile viewport`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     const response = await page.goto(route);
@@ -9,6 +9,42 @@ for (const route of ["/", "/about", "/directory", "/events", "/login", "/signup"
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   });
 }
+test("legal and security pages are linked visibly from the site footer", async ({ page }) => {
+  for (const [route, label] of [["/privacy", "Privacy Policy"], ["/security", "Security"], ["/terms", "Terms and Conditions"]]) {
+    await page.goto(route);
+    const link = page.locator("footer nav[aria-label='Legal and security']").getByRole("link", { name: label });
+    await expect(link).toBeVisible();
+    await expect(page.locator("main")).toBeVisible();
+  }
+});
+test("mobile footer centers CSC and policies with Get Involved left of Community", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+
+  const layout = await page.evaluate(() => {
+    const rect = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing footer element: ${selector}`);
+      const box = element.getBoundingClientRect();
+      return { left: box.left, right: box.right, center: (box.left + box.right) / 2 };
+    };
+    return {
+      brand: rect('[data-testid="footer-brand"]'),
+      involved: rect('[data-testid="footer-get-involved"]'),
+      community: rect('[data-testid="footer-community"]'),
+      legal: rect('[data-testid="footer-legal"]'),
+      width: innerWidth,
+    };
+  });
+
+  expect(Math.abs(layout.brand.center - layout.width / 2)).toBeLessThan(2);
+  expect(layout.involved.left).toBeLessThan(layout.community.left);
+  expect(Math.abs(layout.legal.center - layout.width / 2)).toBeLessThan(2);
+  await expect(page.locator('footer [aria-label="CSC Circle on Instagram"]')).toBeVisible();
+  await expect(page.locator('footer [aria-label="Join the CSC Circle WhatsApp community"]')).toBeVisible();
+  await expect(page.locator('footer [aria-label="Email CSC Circle"]')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
 test("password visibility and signup validation", async ({ page }) => {
   await page.goto("/signup");
   await page.getByLabel("Full name", { exact: true }).fill("Test Member");

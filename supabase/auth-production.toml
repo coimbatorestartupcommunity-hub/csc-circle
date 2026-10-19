@@ -2,8 +2,8 @@
 # SMTP configuration and preview tests before applying to the official project.
 project_id = "csc-circle"
 [auth]
-site_url = "https://csc-circle-lake.vercel.app"
-additional_redirect_urls = ["https://csc-circle-lake.vercel.app/auth/callback", "https://csc-circle-lake.vercel.app/auth/confirm", "https://csc-circle-lake.vercel.app/reset-password", "http://localhost:3000/auth/callback", "http://localhost:3000/auth/confirm", "http://localhost:3000/reset-password", "https://csc-circle-lake.vercel.app"]
+site_url = "https://csc.logicintelligencetechnologies.in"
+additional_redirect_urls = ["https://csc.logicintelligencetechnologies.in/auth/callback", "https://csc.logicintelligencetechnologies.in/auth/confirm", "https://csc.logicintelligencetechnologies.in/reset-password", "https://csc.logicintelligencetechnologies.in", "https://csc-circle-lake.vercel.app/auth/callback", "https://csc-circle-lake.vercel.app/auth/confirm", "https://csc-circle-lake.vercel.app/reset-password", "http://localhost:3000/auth/callback", "http://localhost:3000/auth/confirm", "http://localhost:3000/reset-password", "https://csc-circle-lake.vercel.app"]
 enable_signup = true
 enable_anonymous_sign_ins = false
 minimum_password_length = 12

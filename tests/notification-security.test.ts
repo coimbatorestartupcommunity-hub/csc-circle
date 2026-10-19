@@ -15,7 +15,7 @@ it("rejects unauthenticated dispatch even when no cron secret is configured",asy
  vi.stubEnv("CRON_SECRET","");expect((await GET(new Request("https://example.test/api/internal/notifications"))).status).toBe(401);
 });
 it("escapes template content and keeps CTA destinations trusted",()=>{
- for(const [key,value] of Object.entries({SMTP_HOST:"smtp.gmail.com",SMTP_USER:"sender@example.test",SMTP_APP_PASSWORD:"synthetic-only",CSC_SUPPORT_EMAIL:"support@example.test",CSC_ADMIN_NOTIFICATION_EMAILS:"admin@example.test",APP_BASE_URL:"https://csc-circle-lake.vercel.app"})) vi.stubEnv(key,value);
+ for(const [key,value] of Object.entries({SMTP_HOST:"smtp.gmail.com",SMTP_USER:"sender@example.test",SMTP_APP_PASSWORD:"synthetic-only",CSC_SUPPORT_EMAIL:"support@example.test",CSC_ADMIN_NOTIFICATION_EMAILS:"admin@example.test",APP_BASE_URL:"https://csc.logicintelligencetechnologies.in"})) vi.stubEnv(key,value);
  const result=renderNotification("EventRSVPReceived",{name:'<script>alert(1)</script>',eventTitle:'<img onerror="alert(1)">',url:"https://evil.example",internalNotes:"private-secret",pass_token:"private-token"});
  expect(result.html).not.toContain("<script>");expect(result.html).toContain("&lt;script&gt;");
  expect(result.html).not.toContain("evil.example");expect(result.text).not.toContain("private-secret");expect(result.html).not.toContain("private-token");
