@@ -82,7 +82,7 @@ export const demoNotifications: NotificationRecord[] = [
 
 export const demoMedia: MediaAsset[] = [
   { id: "md1", filename: "csc-logo.png", altText: "CSC Circle logo", type: "image/png", width: 1254, height: 1254, sizeBytes: 340000, category: "branding", visibility: "public", createdAt: d(30) },
-  { id: "md2", filename: "community.jpg", altText: "Community group photo", type: "image/jpeg", width: 1179, height: 823, sizeBytes: 230000, category: "community", visibility: "public", createdAt: d(20) },
+  { id: "md2", filename: "community.png", altText: "Community group photo", type: "image/png", width: 1501, height: 1048, sizeBytes: 2865940, category: "community", visibility: "public", createdAt: d(20) },
 ];
 
 export const demoContent: ContentBlock[] = [

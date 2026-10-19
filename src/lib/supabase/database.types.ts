@@ -6,8 +6,6 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-type OperationalTable<R> = { Row: R; Insert: Partial<R>; Update: Partial<R>; Relationships: [] }
-
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -16,12 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      notification_deliveries: OperationalTable<{ notification_id: string; recipient_digest: string; status: string; error_code: string | null; accepted_at: string | null; updated_at: string }>
-
-      payments: OperationalTable<{ id: string; registration_id: string; amount_minor: number; currency: string; status: string; reference: string | null; evidence_path: string | null; reviewed_by: string | null; reviewed_at: string | null; created_at: string }>
-      event_staff: OperationalTable<{ event_id: string; user_id: string }>
-      attendance_checkins: OperationalTable<{ id: string; registration_id: string; event_id: string; staff_id: string; checked_in_at: string }>
-
       admin_roles: {
         Row: {
           created_at: string
@@ -42,6 +34,45 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      attendance_checkins: {
+        Row: {
+          checked_in_at: string
+          event_id: string
+          id: string
+          registration_id: string
+          staff_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          event_id: string
+          id?: string
+          registration_id: string
+          staff_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          event_id?: string
+          id?: string
+          registration_id?: string
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_checkins_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_checkins_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: true
+            referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -81,6 +112,214 @@ export type Database = {
           target_type?: string | null
         }
         Relationships: []
+      }
+      collaboration_media: {
+        Row: {
+          alt_text: string | null
+          caption: string | null
+          collaboration_id: string
+          created_at: string
+          display_order: number
+          id: string
+          media_path: string
+          media_type: string
+        }
+        Insert: {
+          alt_text?: string | null
+          caption?: string | null
+          collaboration_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          media_path: string
+          media_type?: string
+        }
+        Update: {
+          alt_text?: string | null
+          caption?: string | null
+          collaboration_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          media_path?: string
+          media_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_media_collaboration_id_fkey"
+            columns: ["collaboration_id"]
+            isOneToOne: false
+            referencedRelation: "collaborations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaboration_organizations: {
+        Row: {
+          approved_social_urls: Json
+          created_at: string
+          description: string | null
+          id: string
+          logo_path: string | null
+          name: string
+          organization_type: string
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          slug: string
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          approved_social_urls?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_path?: string | null
+          name: string
+          organization_type?: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          slug: string
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          approved_social_urls?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_path?: string | null
+          name?: string
+          organization_type?: string
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          slug?: string
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      collaboration_partners: {
+        Row: {
+          collaboration_id: string
+          created_at: string
+          display_order: number
+          id: string
+          organization_id: string
+          participation_role: string | null
+        }
+        Insert: {
+          collaboration_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          organization_id: string
+          participation_role?: string | null
+        }
+        Update: {
+          collaboration_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          organization_id?: string
+          participation_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_partners_collaboration_id_fkey"
+            columns: ["collaboration_id"]
+            isOneToOne: false
+            referencedRelation: "collaborations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_partners_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "collaboration_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaborations: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          event_date: string | null
+          event_id: string | null
+          featured_image_path: string | null
+          highlights: Json
+          id: string
+          meta_description: string | null
+          publication_status: Database["public"]["Enums"]["publication_status"]
+          published_at: string | null
+          seo_title: string | null
+          slug: string
+          status: string
+          story: string | null
+          summary: string | null
+          tagline: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+          venue_address: string | null
+          venue_name: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          event_date?: string | null
+          event_id?: string | null
+          featured_image_path?: string | null
+          highlights?: Json
+          id?: string
+          meta_description?: string | null
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          seo_title?: string | null
+          slug: string
+          status?: string
+          story?: string | null
+          summary?: string | null
+          tagline?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          venue_address?: string | null
+          venue_name?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          event_date?: string | null
+          event_id?: string | null
+          featured_image_path?: string | null
+          highlights?: Json
+          id?: string
+          meta_description?: string | null
+          publication_status?: Database["public"]["Enums"]["publication_status"]
+          published_at?: string | null
+          seo_title?: string | null
+          slug?: string
+          status?: string
+          story?: string | null
+          summary?: string | null
+          tagline?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          venue_address?: string | null
+          venue_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consultation_submissions: {
         Row: {
@@ -252,12 +491,12 @@ export type Database = {
       }
       event_registrations: {
         Row: {
-          pass_token: string | null
           attendance: Database["public"]["Enums"]["attendance_status"]
           created_at: string
           event_id: string
           goal: string | null
           id: string
+          pass_token: string | null
           payment: Database["public"]["Enums"]["payment_status"]
           reference: string
           status: Database["public"]["Enums"]["registration_status"]
@@ -270,6 +509,7 @@ export type Database = {
           event_id: string
           goal?: string | null
           id?: string
+          pass_token?: string | null
           payment?: Database["public"]["Enums"]["payment_status"]
           reference: string
           status?: Database["public"]["Enums"]["registration_status"]
@@ -282,6 +522,7 @@ export type Database = {
           event_id?: string
           goal?: string | null
           id?: string
+          pass_token?: string | null
           payment?: Database["public"]["Enums"]["payment_status"]
           reference?: string
           status?: Database["public"]["Enums"]["registration_status"]
@@ -298,10 +539,31 @@ export type Database = {
           },
         ]
       }
+      event_staff: {
+        Row: {
+          event_id: string
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_staff_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
-          price_minor: number
-          settings: Json
           admission: string
           capacity: number | null
           category: string
@@ -312,8 +574,10 @@ export type Database = {
           featured: boolean
           id: string
           location: string
+          price_minor: number
           registration_deadline: string | null
           registration_state: string
+          settings: Json
           slug: string
           starts_at: string
           status: Database["public"]["Enums"]["publication_status"]
@@ -331,8 +595,10 @@ export type Database = {
           featured?: boolean
           id?: string
           location: string
+          price_minor?: number
           registration_deadline?: string | null
           registration_state?: string
+          settings?: Json
           slug: string
           starts_at: string
           status?: Database["public"]["Enums"]["publication_status"]
@@ -350,8 +616,10 @@ export type Database = {
           featured?: boolean
           id?: string
           location?: string
+          price_minor?: number
           registration_deadline?: string | null
           registration_state?: string
+          settings?: Json
           slug?: string
           starts_at?: string
           status?: Database["public"]["Enums"]["publication_status"]
@@ -449,7 +717,6 @@ export type Database = {
       }
       memberships: {
         Row: {
-          verification_token: string | null
           created_at: string
           expires_at: string | null
           id: string
@@ -458,6 +725,7 @@ export type Database = {
           status: Database["public"]["Enums"]["membership_status"]
           updated_at: string
           user_id: string
+          verification_token: string | null
         }
         Insert: {
           created_at?: string
@@ -468,6 +736,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id: string
+          verification_token?: string | null
         }
         Update: {
           created_at?: string
@@ -478,56 +747,187 @@ export type Database = {
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id?: string
+          verification_token?: string | null
+        }
+        Relationships: []
+      }
+      notification_deliveries: {
+        Row: {
+          accepted_at: string | null
+          error_code: string | null
+          notification_id: string
+          recipient_digest: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          error_code?: string | null
+          notification_id: string
+          recipient_digest: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          error_code?: string | null
+          notification_id?: string
+          recipient_digest?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_worker_state: {
+        Row: {
+          locked_until: string | null
+          singleton: boolean
+          worker_id: string | null
+        }
+        Insert: {
+          locked_until?: string | null
+          singleton?: boolean
+          worker_id?: string | null
+        }
+        Update: {
+          locked_until?: string | null
+          singleton?: boolean
+          worker_id?: string | null
         }
         Relationships: []
       }
       notifications: {
         Row: {
-          template_key: string | null
-          template_version: number
-          recipient_user_id: string | null
-          audience: string
-          related_record_type: string | null
-          related_record_id: string | null
-          max_attempts: number
-          attempts: number
-          available_at: string
-          locked_until: string | null
-          lease_id: string | null
           accepted_at: string | null
-          last_error: string | null
-          dedupe_key: string | null
-          updated_at: string
+          attempts: number
+          audience: string
+          available_at: string
           channel: string
           created_at: string
+          dedupe_key: string | null
           id: string
+          last_error: string | null
+          lease_id: string | null
+          locked_until: string | null
+          max_attempts: number
           payload: Json | null
           recipient: string | null
+          recipient_user_id: string | null
+          related_record_id: string | null
+          related_record_type: string | null
           sent_at: string | null
           status: string
+          template_key: string | null
+          template_version: number
           type: string
+          updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
+          attempts?: number
+          audience?: string
+          available_at?: string
           channel: string
           created_at?: string
+          dedupe_key?: string | null
           id?: string
+          last_error?: string | null
+          lease_id?: string | null
+          locked_until?: string | null
+          max_attempts?: number
           payload?: Json | null
           recipient?: string | null
+          recipient_user_id?: string | null
+          related_record_id?: string | null
+          related_record_type?: string | null
           sent_at?: string | null
           status?: string
+          template_key?: string | null
+          template_version?: number
           type: string
+          updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
+          attempts?: number
+          audience?: string
+          available_at?: string
           channel?: string
           created_at?: string
+          dedupe_key?: string | null
           id?: string
+          last_error?: string | null
+          lease_id?: string | null
+          locked_until?: string | null
+          max_attempts?: number
           payload?: Json | null
           recipient?: string | null
+          recipient_user_id?: string | null
+          related_record_id?: string | null
+          related_record_type?: string | null
           sent_at?: string | null
           status?: string
+          template_key?: string | null
+          template_version?: number
           type?: string
+          updated_at?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount_minor: number
+          created_at: string
+          currency: string
+          evidence_path: string | null
+          id: string
+          reference: string | null
+          registration_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          amount_minor: number
+          created_at?: string
+          currency?: string
+          evidence_path?: string | null
+          id?: string
+          reference?: string | null
+          registration_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          amount_minor?: number
+          created_at?: string
+          currency?: string
+          evidence_path?: string | null
+          id?: string
+          reference?: string | null
+          registration_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: true
+            referencedRelation: "event_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -696,24 +1096,88 @@ export type Database = {
       }
     }
     Functions: {
-      csc_claim_notifications: { Args: { batch: number; worker: string }; Returns: Database["public"]["Tables"]["notifications"]["Row"][] }
-      csc_begin_email_delivery: { Args: { job: string; lease: string; digest: string }; Returns: boolean }
-      csc_finish_email_delivery: { Args: { job: string; lease: string; digest: string; outcome: string; code: string }; Returns: undefined }
-      csc_finish_notification: { Args: { job: string; lease: string; outcome: string; code: string }; Returns: undefined }
-      csc_notification_recipient: { Args: { member: string }; Returns: string }
-      csc_release_notification_dispatch: { Args: { worker: string }; Returns: undefined }
-      csc_email_budget_available: { Args: Record<string, never>; Returns: boolean }
-      csc_retry_notification: { Args: { job: string; reason: string; acknowledge_ambiguous: boolean }; Returns: undefined }
-      csc_schedule_event_reminders: { Args: Record<string, never>; Returns: number }
-
-      csc_save_content: { Args: { content_key: string; content_value: string; publish: boolean }; Returns: undefined }
-      csc_admin_action: { Args: { kind: string; target: string; decision: string; reason: string }; Returns: Json }
-      csc_register_event: { Args: { event: string; objective: string }; Returns: Json }
+      csc_admin_action: {
+        Args: { decision: string; kind: string; reason: string; target: string }
+        Returns: Json
+      }
+      csc_begin_email_delivery: {
+        Args: { digest: string; job: string; lease: string }
+        Returns: boolean
+      }
       csc_check_in: { Args: { event: string; token: string }; Returns: Json }
-      csc_save_event: { Args: { payload: Json; target?: string | null }; Returns: string }
+      csc_claim_notifications: {
+        Args: { batch?: number; worker?: string }
+        Returns: {
+          accepted_at: string | null
+          attempts: number
+          audience: string
+          available_at: string
+          channel: string
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          last_error: string | null
+          lease_id: string | null
+          locked_until: string | null
+          max_attempts: number
+          payload: Json | null
+          recipient: string | null
+          recipient_user_id: string | null
+          related_record_id: string | null
+          related_record_type: string | null
+          sent_at: string | null
+          status: string
+          template_key: string | null
+          template_version: number
+          type: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      csc_email_budget_available: { Args: never; Returns: boolean }
+      csc_ensure_profile: { Args: never; Returns: undefined }
+      csc_finish_email_delivery: {
+        Args: {
+          code: string
+          digest: string
+          job: string
+          lease: string
+          outcome: string
+        }
+        Returns: undefined
+      }
+      csc_finish_notification: {
+        Args: { code: string; job: string; lease: string; outcome: string }
+        Returns: undefined
+      }
+      csc_notification_recipient: { Args: { member: string }; Returns: string }
+      csc_register_event: {
+        Args: { event: string; objective: string }
+        Returns: Json
+      }
+      csc_release_notification_dispatch: {
+        Args: { worker: string }
+        Returns: undefined
+      }
+      csc_retry_notification: {
+        Args: { acknowledge_ambiguous?: boolean; job: string; reason: string }
+        Returns: undefined
+      }
+      csc_save_content: {
+        Args: { content_key: string; content_value: string; publish: boolean }
+        Returns: undefined
+      }
+      csc_save_event: {
+        Args: { payload: Json; target?: string }
+        Returns: string
+      }
+      csc_schedule_event_reminders: { Args: never; Returns: number }
       csc_verify_membership: { Args: { token: string }; Returns: boolean }
-      csc_ensure_profile: { Args: Record<string, never>; Returns: undefined }
-
       is_admin: { Args: never; Returns: boolean }
       next_member_number: { Args: never; Returns: string }
       submit_consultation: {

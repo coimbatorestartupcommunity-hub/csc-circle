@@ -51,8 +51,12 @@ export const brandAssets = {
   cscLogo: "/brand/csc-logo.png",
   cscIcon: "/brand/csc-icon.png",
   litLogo: "/brand/lit-logo.png",
+  /** Outlier partner logo (orange background, white lettering). */
+  outlierLogo: "/brand/outlier-logo.png",
   /** Approved community group photograph. */
-  communityPhoto: "/images/community.jpg",
+  communityPhoto: "/images/community.png",
+  /** CSC × Outlier meetup group photograph. */
+  communityOutlier: "/images/community-outlier.png",
   /** Approved portrait of the technical partner. */
   vikashPortrait: "/images/vikash.jpg",
 } as const;
@@ -67,6 +71,7 @@ export const primaryNav: NavItem[] = [
   { label: "About CSC", href: "/about" },
   { label: "Founder Directory", href: "/directory" },
   { label: "Events & Booking", href: "/events" },
+  { label: "Collaborations", href: "/collaborations" },
 ];
 
 export const routes = {
@@ -74,6 +79,7 @@ export const routes = {
   about: "/about",
   directory: "/directory",
   events: "/events",
+  collaborations: "/collaborations",
   /** Join / Login entry point. Phase 3 implements the real portal here. */
   join: "/login",
   login: "/login",
@@ -88,6 +94,7 @@ export const footerNav: { heading: string; links: NavItem[] }[] = [
       { label: "About CSC", href: routes.about },
       { label: "Founder Directory", href: routes.directory },
       { label: "Events & Booking", href: routes.events },
+      { label: "Collaborations", href: routes.collaborations },
     ],
   },
   {

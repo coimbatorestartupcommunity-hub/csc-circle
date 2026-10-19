@@ -51,7 +51,7 @@ export async function dispatchNotifications(batch = 3) {
       const message = renderNotification(job.template_key,payload);
       let outcome = "sent", code = "";
       for (const recipient of recipients) {
-        const { data: budget, error: budgetError } = await sb.rpc("csc_email_budget_available", {});
+        const { data: budget, error: budgetError } = await sb.rpc("csc_email_budget_available");
         if (budgetError || !budget) { outcome="failed_retryable";code="EMAIL_RATE_DEFERRED";break; }
         const digest = createHash("sha256").update(recipient.toLowerCase()).digest("hex");
         const { data: begin, error: beginError } = await sb.rpc("csc_begin_email_delivery", { job:job.id,lease,digest });

@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   try {
     const sb=createSubmissionClient();
     if (!sb) return Response.json({error:"Queue unavailable"},{status:503});
-    const scheduled=await sb.rpc("csc_schedule_event_reminders",{});
+    const scheduled=await sb.rpc("csc_schedule_event_reminders");
     if (scheduled.error) return Response.json({error:"Queue unavailable"},{status:503});
     const result=await dispatchNotifications();
     return Response.json(result,{status:result.state==="processed"?200:503,headers:{"Cache-Control":"no-store"}});

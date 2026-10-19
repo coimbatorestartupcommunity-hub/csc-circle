@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const user = await getAuthUser();
   if (!user?.email_confirmed_at) return NextResponse.redirect(new URL("/login", url.origin));
   const sb = await createClient();
-  const { error: bootstrapError } = await sb.rpc("csc_ensure_profile", {});
+  const { error: bootstrapError } = await sb.rpc("csc_ensure_profile");
   if (bootstrapError) return NextResponse.redirect(new URL("/access-denied", url.origin));
   const [{ data: membership, error: membershipError }, { data: profile, error: profileError }] = await Promise.all([
     sb.from("memberships").select("status").eq("user_id", user.id).maybeSingle(),

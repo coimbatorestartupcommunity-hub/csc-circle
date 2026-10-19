@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     const { event, id } = parsed.data;
     if (!ctx.permissions.has(id ? "events.update" : "events.create") || (event.status === "published" && !ctx.permissions.has("events.publish"))) return authResponse({ error: "Permission denied." }, 403);
     const sb = await createClient();
-    const { data, error } = await sb.rpc("csc_save_event", { payload: event, target: id ?? null });
+    const { data, error } = await sb.rpc("csc_save_event", { payload: event, target: id ?? undefined });
     if (error) return authResponse({ error: "Event was not saved. Check times, price, capacity, and slug uniqueness." }, 409);
     revalidateTag("events", { expire: 0 });
     scheduleNotificationDelivery();

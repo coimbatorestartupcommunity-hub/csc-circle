@@ -20,6 +20,7 @@ import {
   Bell,
   ScrollText,
   Settings,
+  Handshake,
   Menu,
   LogOut,
 } from "lucide-react";
@@ -52,6 +53,7 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
       { href: "/admin/members", label: "Members", icon: Users, perm: "members.read" },
       { href: "/admin/membership-claims", label: "Claims", icon: FileCheck, perm: "members.approve" },
       { href: "/admin/startups", label: "Startups", icon: Building2, perm: "directory.manage" },
+      { href: "/admin/collaborations", label: "Collaborations", icon: Handshake, perm: "content.manage" },
     ],
   },
   {

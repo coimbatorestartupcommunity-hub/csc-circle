@@ -2,6 +2,7 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 import { createAnonClient } from "@/lib/supabase/anon";
+import type { Collaboration } from "@/types/collaboration";
 import {
   USE_FIXTURES,
   startupFixtures,
@@ -164,4 +165,94 @@ export async function getPublicTestimonials(): Promise<Testimonial[]> {
     .filter((t) => t.status === "published" && t.rating >= 1 && t.rating <= 5)
     .slice()
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/* --- Collaborations -------------------------------------------------------- */
+
+const COLLAB_SELECT =
+  "*, collaboration_partners(participation_role, display_order, collaboration_organizations(*)), collaboration_media(*)";
+
+function mapCollaboration(r: Row): Collaboration {
+  const partners = ((r.collaboration_partners as Row[]) ?? [])
+    .map((p) => {
+      const org = (p.collaboration_organizations as Row) ?? {};
+      return {
+        role: (p.participation_role as string) ?? undefined,
+        order: (p.display_order as number) ?? 0,
+        organization: {
+          id: String(org.id ?? ""),
+          name: (org.name as string) ?? "",
+          slug: (org.slug as string) ?? "",
+          organizationType: (org.organization_type as string) ?? "community",
+          description: (org.description as string) ?? undefined,
+          logoPath: (org.logo_path as string) ?? undefined,
+          websiteUrl: (org.website_url as string) ?? undefined,
+        },
+      };
+    })
+    .sort((a, b) => a.order - b.order);
+
+  const media = ((r.collaboration_media as Row[]) ?? [])
+    .map((m) => ({
+      id: String(m.id),
+      path: (m.media_path as string) ?? "",
+      type: (m.media_type as string) ?? "image",
+      alt: (m.alt_text as string) ?? undefined,
+      caption: (m.caption as string) ?? undefined,
+      order: (m.display_order as number) ?? 0,
+    }))
+    .sort((a, b) => a.order - b.order);
+
+  return {
+    id: String(r.id),
+    slug: (r.slug as string) ?? "",
+    title: (r.title as string) ?? "",
+    tagline: (r.tagline as string) ?? undefined,
+    summary: (r.summary as string) ?? undefined,
+    story: (r.story as string) ?? undefined,
+    category: (r.category as string) ?? "Collaboration",
+    status: (r.status as Collaboration["status"]) ?? "completed",
+    featuredImagePath: (r.featured_image_path as string) ?? undefined,
+    highlights: (r.highlights as Collaboration["highlights"]) ?? [],
+    eventId: (r.event_id as string) ?? undefined,
+    eventDate: (r.event_date as string) ?? undefined,
+    venueName: (r.venue_name as string) ?? undefined,
+    venueAddress: (r.venue_address as string) ?? undefined,
+    seoTitle: (r.seo_title as string) ?? undefined,
+    metaDescription: (r.meta_description as string) ?? undefined,
+    publishedAt: (r.published_at as string) ?? undefined,
+    partners,
+    media,
+  };
+}
+
+export async function getPublicCollaborations(): Promise<Collaboration[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("collaborations");
+  const sb = createAnonClient();
+  if (!sb) return [];
+  const { data } = await sb
+    .from("collaborations")
+    .select(COLLAB_SELECT)
+    .eq("publication_status", "published")
+    .order("published_at", { ascending: false });
+  return (data ?? []).map((r) => mapCollaboration(r as Row));
+}
+
+export async function getCollaborationBySlug(
+  slug: string,
+): Promise<Collaboration | null> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("collaborations");
+  const sb = createAnonClient();
+  if (!sb) return null;
+  const { data } = await sb
+    .from("collaborations")
+    .select(COLLAB_SELECT)
+    .eq("publication_status", "published")
+    .eq("slug", slug)
+    .maybeSingle();
+  return data ? mapCollaboration(data as Row) : null;
 }
