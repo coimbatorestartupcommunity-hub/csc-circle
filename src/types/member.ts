@@ -19,6 +19,9 @@ export interface AuthenticatedUser {
   email: string;
   displayName?: string;
   avatarUrl?: string;
+  portraitUrl?: string;
+  portraitPath?: string;
+  portraitPublic?: boolean;
   emailVerified: boolean;
   provider: "google" | "email";
 }
@@ -124,6 +127,10 @@ export interface MemberProfile {
   whatsapp?: string;
   city?: string;
   avatarUrl?: string;
+  /** Private, server-validated 4:5 portrait used by the profile and eligible ID card. */
+  portraitPath?: string;
+  portraitUrl?: string;
+  portraitPublic?: boolean;
   designations: MemberDesignation[];
   startup?: {
     name?: string;

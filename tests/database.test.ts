@@ -14,7 +14,13 @@ beforeAll(async () => {
   await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
     create schema auth; create table auth.users(id uuid primary key, email text, raw_user_meta_data jsonb default '{}', email_confirmed_at timestamptz);
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+    create schema storage;
+    create table storage.buckets(id text primary key, name text not null, public boolean not null default false, file_size_limit bigint, allowed_mime_types text[]);
+    create table storage.objects(id uuid primary key default gen_random_uuid(), bucket_id text not null, name text not null);
+    create function storage.foldername(name text) returns text[] language sql immutable as $$select string_to_array(name,'/')$$;
+    alter table storage.objects enable row level security;
     grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;
+    grant usage on schema storage to anon,authenticated; grant execute on function storage.foldername(text) to anon,authenticated;
   `);
   for (const file of readdirSync("supabase/migrations").filter(f => f.endsWith(".sql")).sort()) {
     await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
@@ -65,6 +71,13 @@ describe("isolated PostgreSQL authorization regressions", () => {
     expect((await asUser(a, "select private.has_permission('members.approve') as allowed"))[0].rows).toEqual([{ allowed: true }]);
     await db.exec(`delete from admin_roles where user_id='${a}'`);
     expect((await asUser(a, "select private.has_permission('members.approve') as allowed"))[0].rows).toEqual([{ allowed: false }]);
+  });
+  it("isolates resumes and prevents clients from forging private portrait paths", async () => {
+    await asUser(a, `insert into member_resumes(user_id,resume_data) values ('${a}','{"name":"Test Member"}')`);
+    expect((await asUser(a, "select resume_data->>'name' as name from member_resumes"))[0].rows).toEqual([{ name: "Test Member" }]);
+    expect((await asUser(b, "select user_id from member_resumes"))[0].rows).toHaveLength(0);
+    await expect(asUser(a, `update profiles set portrait_path='${a}/forged.webp' where id='${a}'`)).rejects.toThrow(/permission/i);
+    expect((await db.query("select public,file_size_limit from storage.buckets where id='member-portraits'")).rows).toEqual([{ public: false, file_size_limit: 8388608 }]);
   });
   it("restricts collaboration writes to content managers and publishes through the atomic RPC", async () => {
     await db.exec(`insert into admin_roles(user_id,role) values ('${a}','checkin_staff')`);

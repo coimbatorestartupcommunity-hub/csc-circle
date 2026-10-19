@@ -61,6 +61,9 @@ function mapProfile(p: Row, m: Row | null): MemberProfile {
     whatsapp: (p.whatsapp as string) ?? undefined,
     city: (p.city as string) ?? undefined,
     avatarUrl: (p.avatar_url as string) ?? undefined,
+    portraitPath: (p.portrait_path as string) ?? undefined,
+    portraitUrl: p.portrait_path ? "/api/member/portrait" : undefined,
+    portraitPublic: (p.portrait_public as boolean) ?? false,
     designations: (p.designations as MemberProfile["designations"]) ?? [],
     startup: (p.startup as MemberProfile["startup"]) ?? undefined,
     goals: (p.goals as MemberProfile["goals"]) ?? [],
@@ -110,7 +113,7 @@ export const memberServices = {
         id: ctx.user!.id,
         email: ctx.user!.email ?? "",
         displayName: (ctx.user!.user_metadata?.name as string) ?? undefined,
-        avatarUrl: (ctx.user!.user_metadata?.avatar_url as string) ?? undefined,
+        avatarUrl: (ctx.user!.user_metadata?.avatar_url as string) ?? (ctx.user!.user_metadata?.picture as string) ?? undefined,
         emailVerified: !!ctx.user!.email_confirmed_at,
         provider: (ctx.user!.app_metadata?.provider as "google" | "email") ?? "email",
       },
@@ -148,7 +151,7 @@ export const memberServices = {
         .maybeSingle();
       const { data: p } = await sb
         .from("profiles")
-        .select("full_name, display_name, avatar_url, designations, startup")
+        .select("full_name, display_name, portrait_path, designations, startup")
         .eq("id", ctx.user!.id)
         .maybeSingle();
       const mm = m as Row | null;
@@ -159,6 +162,7 @@ export const memberServices = {
         );
       }
       const pp = (p as Row) ?? {};
+      if (!pp.portrait_path) return fail("forbidden", "Upload a 4:5 profile portrait before using your official CSC digital ID.");
       const designations = (pp.designations as string[]) ?? [];
       const startup = (pp.startup as { name?: string }) ?? {};
       return ok({
@@ -169,7 +173,7 @@ export const memberServices = {
             (designations[0] as keyof typeof designationLabels) ?? "other"
           ] ?? "Member",
         startupName: startup.name,
-        avatarUrl: (pp.avatar_url as string) ?? undefined,
+        avatarUrl: "/api/member/portrait",
         status: mm.status as MembershipStatus,
         issuedAt: (mm.issued_at as string) ?? new Date().toISOString(),
         expiresAt: (mm.expires_at as string) ?? undefined,

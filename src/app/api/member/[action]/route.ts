@@ -54,7 +54,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       if (!parsed.success) return authResponse({ error: "Complete all onboarding fields and required consent." }, 422);
       const v = parsed.data;
       const { membershipTerms, operationalEmail, marketingEmail, directoryParticipation, displayNamePublicly, displayPhotoPublicly } = v;
-      const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, email: user.email, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, designations: v.designations as Database["public"]["Enums"]["member_designation"][], goals: v.goals as Database["public"]["Enums"]["community_goal"][], startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription ?? v.description }, consent: { membershipTerms, operationalEmail, marketingEmail, directoryParticipation, displayNamePublicly, displayPhotoPublicly }, profile_completion: 100 }).eq("id", user.id).select("id").single();
+      const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, designations: v.designations as Database["public"]["Enums"]["member_designation"][], goals: v.goals as Database["public"]["Enums"]["community_goal"][], startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription ?? v.description }, consent: { membershipTerms, operationalEmail, marketingEmail, directoryParticipation, displayNamePublicly, displayPhotoPublicly }, profile_completion: 100 }).eq("id", user.id).select("id").single();
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Onboarding was not saved." }, 409) : authResponse({ ok: true, id: data.id });
     }
@@ -63,7 +63,8 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = z.object({ name: z.string().trim().min(2).max(120), slug: z.string().regex(/^[a-z0-9-]{3,120}$/), industry: z.enum(["ai", "saas", "d2c", "healthtech", "fintech", "marketing", "education", "other"]), description: z.string().trim().min(20).max(600), website: url, consent: z.literal(true) }).safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your startup details and consent." }, 422);
       const v = parsed.data;
-      const { data: profile } = await sb.from("profiles").select("display_name,consent").eq("id", user.id).single();
+      const { data: profile } = await sb.from("profiles").select("display_name,consent,portrait_path").eq("id", user.id).single();
+      if (!profile?.portrait_path) return authResponse({ error: "Upload a validated 4:5 profile portrait before submitting a startup.", action: "/member/profile#profile-portrait" }, 422);
       if (!profile || !profile.consent || typeof profile.consent !== "object" || Array.isArray(profile.consent) || profile.consent.directoryParticipation !== true) return authResponse({ error: "Enable directory participation in your privacy preferences first." }, 422);
       const { data, error } = await sb.from("directory_startups").insert({ user_id: user.id, name: v.name, slug: v.slug, industry: v.industry, description: v.description, website: v.website || null, founder: { name: profile.display_name ?? "CSC Founder" }, status: "pending" }).select("id").single();
       if (!error) scheduleNotificationDelivery();

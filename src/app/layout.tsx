@@ -4,7 +4,7 @@ import "./globals.css";
 
 import { Providers } from "@/app/providers";
 import { SiteHeader } from "@/components/layout/site-header";
-import { SiteFooter } from "@/components/layout/site-footer";
+import { PublicFooterBoundary } from "@/components/layout/public-footer-boundary";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { siteConfig } from "@/lib/content/site";
 
@@ -97,7 +97,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <main id="main-content" className="flex flex-1 flex-col">
             {children}
           </main>
-          <SiteFooter />
+          <PublicFooterBoundary />
           <ScrollToTop />
         </Providers>
       </body>

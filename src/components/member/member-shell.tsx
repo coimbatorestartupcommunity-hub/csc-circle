@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -13,18 +12,23 @@ import {
   Star,
   Settings,
   LogOut,
+  FileText,
+  Menu,
 } from "lucide-react";
 import { cn } from "cn";
 import { Container } from "@/components/common/container";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { StatusBadge } from "@/components/member/status-badge";
-import { initials } from "@/lib/format";
+import { AccountAvatar } from "@/components/layout/account-avatar";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 const nav = [
   { href: "/member", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/member/id-card", label: "Digital ID", icon: IdCard },
   { href: "/member/events", label: "My Events", icon: CalendarDays },
   { href: "/member/profile", label: "Profile", icon: UserCircle },
+  { href: "/member/resume", label: "Resume Creation", icon: FileText },
   { href: "/member/consultations", label: "Consultations", icon: MessagesSquare },
   { href: "/member/reviews", label: "Reviews", icon: Star },
   { href: "/member/settings", label: "Settings", icon: Settings },
@@ -35,6 +39,8 @@ export interface MemberShellProps {
   avatarUrl?: string;
   statusLabel: string;
   statusTone: string;
+  accountHref: string;
+  accountLabel: "Profile" | "Admin Dashboard";
   children: React.ReactNode;
 }
 
@@ -43,6 +49,8 @@ export function MemberShell({
   avatarUrl,
   statusLabel,
   statusTone,
+  accountHref,
+  accountLabel,
   children,
 }: MemberShellProps) {
   const pathname = usePathname();
@@ -54,19 +62,32 @@ export function MemberShell({
       {/* Member top bar */}
       <div className="border-b border-brand-border bg-brand-white">
         <Container className="flex h-16 items-center justify-between gap-4">
-          <BrandLogo showWordmark={false} markSize={36} />
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <Sheet>
+              <SheetTrigger render={<Button variant="outline" size="icon" aria-label="Open member navigation" className="lg:hidden"><Menu /></Button>} />
+              <SheetContent side="left" className="w-[min(86vw,22rem)] overflow-y-auto p-4">
+                <SheetHeader className="border-b border-brand-border px-0"><SheetTitle>Member navigation</SheetTitle></SheetHeader>
+                <nav className="flex flex-col gap-1 py-3" aria-label="Member">
+                  {nav.map((item) => {
+                    const active = isActive(item.href, item.exact);
+                    return <SheetClose key={item.href} render={<Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-medium", active ? "bg-brand-ink text-brand-white" : "text-brand-secondary hover:bg-brand-cloud")} />}>
+                      <item.icon className="size-4" aria-hidden />{item.label}
+                    </SheetClose>;
+                  })}
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <BrandLogo showWordmark={false} markSize={36} />
+            <Link href={accountHref} className="inline-flex min-h-9 items-center justify-center rounded-lg bg-brand-ink px-3 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4 sm:text-sm" aria-current={pathname === accountHref ? "page" : undefined}>
+              {accountLabel}
+            </Link>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold text-brand-ink">{memberName}</p>
               <StatusBadge label={statusLabel} tone={statusTone} />
             </div>
-            <span className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-brand-purple text-sm font-semibold text-brand-ink ring-1 ring-brand-border">
-              {avatarUrl ? (
-                <Image src={avatarUrl} alt="" width={36} height={36} className="size-full object-cover" />
-              ) : (
-                initials(memberName)
-              )}
-            </span>
+            <AccountAvatar name={memberName} src={avatarUrl} className="size-8 sm:size-9" />
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
@@ -84,7 +105,7 @@ export function MemberShell({
         {/* Nav */}
         <nav
           aria-label="Member"
-          className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:w-56 lg:shrink-0 lg:flex-col lg:px-0"
+          className="hidden lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:gap-1"
         >
           {nav.map((item) => {
             const active = isActive(item.href, item.exact);

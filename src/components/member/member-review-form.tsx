@@ -53,9 +53,9 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-5 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border"
+      className="flex flex-col items-center gap-5 rounded-2xl bg-brand-white p-6 text-center ring-1 ring-brand-border"
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex w-full flex-col gap-1 text-center">
         <h2 className="text-lg font-semibold text-brand-ink">
           Share your CSC experience
         </h2>
@@ -64,7 +64,7 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
         </p>
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex w-full flex-col items-center gap-1.5">
         <span className="text-sm font-medium text-brand-ink">Your rating</span>
         <div className="flex items-center gap-1" role="radiogroup" aria-label="Rating">
           {Array.from({ length: 5 }).map((_, i) => {
@@ -80,6 +80,12 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
                 onMouseEnter={() => setHover(n)}
                 onMouseLeave={() => setHover(0)}
                 onClick={() => setRating(n)}
+                tabIndex={rating === n || (!rating && n === 1) ? 0 : -1}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowRight" || event.key === "ArrowUp") { event.preventDefault(); setRating(Math.min(5, n + 1)); }
+                  if (event.key === "ArrowLeft" || event.key === "ArrowDown") { event.preventDefault(); setRating(Math.max(1, n - 1)); }
+                  if (event.key === " ") { event.preventDefault(); setRating(n); }
+                }}
                 className="rounded-md p-0.5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <Star
@@ -95,8 +101,8 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
         {errors.rating ? <FieldError>{errors.rating}</FieldError> : null}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="member-review" className="text-sm font-medium text-brand-ink">
+      <div className="flex w-full flex-col gap-1.5">
+        <label htmlFor="member-review" className="text-center text-sm font-medium text-brand-ink">
           Your review
         </label>
         <Textarea
@@ -110,7 +116,7 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
         {errors.review ? <FieldError>{errors.review}</FieldError> : null}
       </div>
 
-      <label className="flex items-start gap-2 text-sm text-brand-secondary">
+      <label className="flex items-start justify-center gap-2 text-left text-sm text-brand-secondary">
         <input
           type="checkbox"
           checked={consent}
@@ -121,7 +127,7 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
       </label>
       {errors.consent ? <FieldError>{errors.consent}</FieldError> : null}
 
-      <Button type="submit" disabled={submitting} className="h-11 w-full gap-2">
+      <Button type="submit" disabled={submitting} className="h-11 w-full max-w-md gap-2">
         {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
         Submit review
       </Button>

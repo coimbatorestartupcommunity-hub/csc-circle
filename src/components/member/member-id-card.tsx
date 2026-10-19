@@ -10,9 +10,10 @@ import { StatusBadge } from "@/components/member/status-badge";
 import { brandAssets, siteConfig } from "@/lib/content/site";
 import { membershipStatusMeta } from "@/lib/content/member-taxonomy";
 import { buildMembershipQrPayload } from "@/lib/member/qr";
-import { initials, formatEventDate } from "@/lib/format";
+import { formatEventDate } from "@/lib/format";
 import type { MemberCard } from "@/types/member";
 import Link from "next/link";
+import { AccountAvatar } from "@/components/layout/account-avatar";
 
 export function MemberIdCard({
   card,
@@ -87,17 +88,7 @@ export function MemberIdCard({
         {/* Profile */}
         <div className="flex flex-col items-center gap-1 px-6 pt-4">
           <span className="flex size-16 items-center justify-center overflow-hidden rounded-full bg-brand-purple text-xl font-bold text-brand-ink ring-2 ring-brand-white">
-            {card.avatarUrl ? (
-              <Image
-                src={card.avatarUrl}
-                alt=""
-                width={64}
-                height={64}
-                className="size-full object-cover"
-              />
-            ) : (
-              initials(card.fullName)
-            )}
+            <AccountAvatar name={card.fullName} src={card.avatarUrl} className="size-16 text-xl" />
           </span>
           <p className="mt-1 text-lg font-bold text-brand-ink">{card.fullName}</p>
           <p className="text-xs font-medium text-brand-accent">

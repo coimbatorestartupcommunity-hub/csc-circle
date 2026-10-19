@@ -751,6 +751,30 @@ export type Database = {
         }
         Relationships: []
       }
+      member_resumes: {
+        Row: {
+          created_at: string
+          resume_data: Json
+          schema_version: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          resume_data?: Json
+          schema_version?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          resume_data?: Json
+          schema_version?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_deliveries: {
         Row: {
           accepted_at: string | null
@@ -942,6 +966,9 @@ export type Database = {
           goals: Database["public"]["Enums"]["community_goal"][]
           id: string
           profile_completion: number
+          portrait_original_path: string | null
+          portrait_path: string | null
+          portrait_public: boolean
           skills: string[]
           startup: Json | null
           updated_at: string
@@ -959,6 +986,9 @@ export type Database = {
           goals?: Database["public"]["Enums"]["community_goal"][]
           id: string
           profile_completion?: number
+          portrait_original_path?: string | null
+          portrait_path?: string | null
+          portrait_public?: boolean
           skills?: string[]
           startup?: Json | null
           updated_at?: string
@@ -976,6 +1006,9 @@ export type Database = {
           goals?: Database["public"]["Enums"]["community_goal"][]
           id?: string
           profile_completion?: number
+          portrait_original_path?: string | null
+          portrait_path?: string | null
+          portrait_public?: boolean
           skills?: string[]
           startup?: Json | null
           updated_at?: string
