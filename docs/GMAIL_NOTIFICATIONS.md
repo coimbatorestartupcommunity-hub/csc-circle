@@ -1,6 +1,6 @@
 # CSC Gmail notification release evidence
 
-Updated 2026-10-19. Production target: https://csc-circle-lake.vercel.app.
+Updated 2026-10-20. Canonical production target: https://csc.logicintelligencetechnologies.in. The legacy `csc-circle-lake.vercel.app` alias currently returns Vercel `404 DEPLOYMENT_NOT_FOUND`.
 
 ## Implemented in this branch
 

@@ -1,5 +1,15 @@
 # CSC Circle — Admin (Phase 4) Integration Contracts
 
+## Release verification update — 20 October 2026
+
+The current release is on `main` through merged PR #8 (which contains the earlier Phase 2, Phase 3, Phase 4, integration, auth, and notification work), plus merged PRs #9 and #10. PRs #2–#4 were closed as stacked source PRs; their commits were incorporated by PR #8 and are ancestors of `main`. The current GitHub main head when this update was prepared is `3987cec`.
+
+The active production deployment is READY at `https://csc.logicintelligencetechnologies.in/` and is attached to the existing `csc-circle` Vercel project. `https://csc-circle-lake.vercel.app/` currently returns Vercel `404 DEPLOYMENT_NOT_FOUND`; use the custom CSC domain as canonical. Production and Preview `NEXT_PUBLIC_SITE_URL` and `APP_BASE_URL` were updated to the custom domain; a new deployment is required for the environment changes to be reflected in rendered metadata and email links.
+
+Supabase reports Google and email providers enabled. The production OAuth authorize request for the custom CSC domain reaches Google's sign-in page, with no redirect-URI error before account authentication. The real account consent, callback code exchange, resulting session, and member landing page have not been completed with a CSC test account, so end-to-end Google login remains unverified. Supabase management-log access was denied to the connected dashboard integration; the linked CLI could query the database, but no Auth audit events were present in the last 24 hours.
+
+The legal routes `/privacy`, `/security`, and `/terms` are now implemented or completed, linked in the shared footer on every site route, and included in the public sitemap. This source change is being prepared for release; it is not yet deployed.
+
 ## Release follow-up — 19 October 2026
 
 The current consolidated source is PR #6, including every commit from PRs #1–#5. Database baseline history has been reconciled; security, notification and platform-helper permission migrations are now applied to `mmsrtfktwcrbyrucjmzo`. Schema/data backups were restored and migrations rehearsed on isolated PostgreSQL 17 first. Live RLS smoke assertions passed with all synthetic rows rolled back. Separate-connection staging tests protected the final event seat and rejected duplicate simultaneous check-ins. Live security advisors now report no findings.
