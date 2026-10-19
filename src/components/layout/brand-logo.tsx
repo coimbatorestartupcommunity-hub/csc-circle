@@ -36,10 +36,10 @@ export function BrandLogo({
       />
       {showWordmark ? (
         <span className="flex flex-col leading-none">
-          <span className="text-base font-bold tracking-tight text-brand-ink">
+          <span className="text-base font-bold tracking-tight whitespace-nowrap text-brand-ink">
             CSC Circle
           </span>
-          <span className="mt-0.5 text-[10px] font-medium tracking-[0.14em] text-brand-muted uppercase">
+          <span className="mt-0.5 text-[10px] font-medium tracking-[0.14em] whitespace-nowrap text-brand-muted uppercase">
             Coimbatore Startup Community
           </span>
         </span>

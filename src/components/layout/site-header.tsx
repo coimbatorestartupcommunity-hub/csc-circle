@@ -35,7 +35,7 @@ export function SiteHeader() {
         <BrandLogo />
 
         <nav
-          className="hidden items-center gap-1 md:flex"
+          className="hidden items-center gap-0.5 lg:flex"
           aria-label="Primary"
         >
           {primaryNav.map((item) => {
@@ -49,7 +49,7 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap transition-colors",
                   active
                     ? "text-brand-ink"
                     : "text-brand-secondary hover:text-brand-ink",
@@ -70,7 +70,7 @@ export function SiteHeader() {
             variant="ghost"
             size="md"
             arrow={false}
-            className="hidden sm:inline-flex"
+            className="hidden whitespace-nowrap lg:inline-flex"
           >
             Login
           </CtaLink>
@@ -78,7 +78,7 @@ export function SiteHeader() {
             href={routes.join}
             size="md"
             arrow={false}
-            className="hidden sm:inline-flex"
+            className="hidden whitespace-nowrap lg:inline-flex"
           >
             Join Community
           </CtaLink>

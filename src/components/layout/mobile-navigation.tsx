@@ -31,7 +31,7 @@ export function MobileNavigation() {
             variant="outline"
             size="icon"
             aria-label="Open menu"
-            className="md:hidden"
+            className="lg:hidden"
           />
         }
       >
