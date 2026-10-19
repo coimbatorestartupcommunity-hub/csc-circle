@@ -29,7 +29,7 @@ export const siteConfig = {
         "Community leadership, founder engagement, events, partnerships, and community operations.",
     },
     technicalPartner: {
-      name: "Vikash",
+      name: "Vikash Saravanan",
       role: "Founder & Lead System Engineer — Logic Intelligence Technologies",
       responsibility:
         "CSC web platform architecture, digital experience, technical infrastructure, system integration, and technology direction.",
@@ -59,6 +59,10 @@ export const brandAssets = {
   communityOutlier: "/images/community-outlier.png",
   /** Approved portrait of the technical partner. */
   vikashPortrait: "/images/vikash.jpg",
+  /** Owner-supplied portrait of CSC founder Reyash. */
+  reyashPortrait: "/images/Reyash.png",
+  /** Owner-supplied Belvoria logo. */
+  belvoriaLogo: "/brand/belvoria-logo.png",
 } as const;
 
 export interface NavItem {

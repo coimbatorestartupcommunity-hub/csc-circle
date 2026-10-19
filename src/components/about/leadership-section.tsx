@@ -23,6 +23,12 @@ export function LeadershipSection() {
       role: siteConfig.people.founder.role,
       responsibility: siteConfig.people.founder.responsibility,
       surface: "from-brand-purple to-brand-pink",
+      photo: brandAssets.reyashPortrait,
+      org: {
+        name: "Belvoria",
+        logo: brandAssets.belvoriaLogo,
+        url: "https://belvoria.vercel.app/",
+      },
     },
     {
       name: siteConfig.people.technicalPartner.name,
