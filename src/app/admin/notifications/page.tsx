@@ -1,3 +1,4 @@
+import { NotificationRetry } from "@/components/admin/notification-retry";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { getAdminContext } from "@/lib/admin/gate";
@@ -10,6 +11,8 @@ const columns: Column[] = [
   { key: "channel", header: "Channel", type: "badge" },
   { key: "recipient", header: "Recipient" },
   { key: "status", header: "Status", type: "statusNotification", sortable: true },
+  { key: "attempts", header: "Attempts" },
+  { key: "lastError", header: "Delivery issue" },
   { key: "createdAt", header: "Created", type: "date", sortable: true },
   { key: "sentAt", header: "Sent", type: "date" },
 ];
@@ -30,7 +33,10 @@ const facets: Facet[] = [
     options: [
       { label: "Queued", value: "queued" },
       { label: "Sent", value: "sent" },
-      { label: "Failed", value: "failed" },
+      { label: "Processing", value: "processing" },
+      { label: "Retry scheduled", value: "failed_retryable" },
+      { label: "Needs review", value: "failed_permanent" },
+      { label: "Failed (legacy)", value: "failed" },
       { label: "Retrying", value: "retrying" },
     ],
   },
@@ -45,9 +51,10 @@ export default async function AdminNotificationsPage() {
     <>
       <AdminPageHeader
         title="Notifications"
-        description="Outbox for in-app, email and WhatsApp notifications. Queued from committed business events; no messages are sent until the provider + consent are configured."
+        description="Email delivery queue for committed business events. SMTP acceptance does not prove inbox delivery. Uncertain outcomes require mailbox reconciliation before retrying."
         isDemo={ctx.mode === "preview"}
       />
+      {ctx.mode === "live" && ctx.permissions.has("settings.manage") && <NotificationRetry jobs={rows.filter(r=>["failed_retryable","failed_permanent"].includes(r.status)).map(r=>({id:r.id,type:r.type}))} />}
       <DataTable
         rows={rows}
         columns={columns}

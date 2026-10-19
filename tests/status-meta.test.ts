@@ -53,7 +53,7 @@ describe("status meta completeness", () => {
   });
 
   it("covers every notification status", () => {
-    const all: NotificationStatus[] = ["queued", "sent", "failed", "retrying"];
+    const all: NotificationStatus[] = ["queued", "processing", "sent", "failed", "retrying", "failed_retryable", "failed_permanent"];
     for (const s of all) expect(notificationStatusMeta[s]).toBeDefined();
   });
 });

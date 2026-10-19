@@ -16,6 +16,8 @@ export type Database = {
   }
   public: {
     Tables: {
+      notification_deliveries: OperationalTable<{ notification_id: string; recipient_digest: string; status: string; error_code: string | null; accepted_at: string | null; updated_at: string }>
+
       payments: OperationalTable<{ id: string; registration_id: string; amount_minor: number; currency: string; status: string; reference: string | null; evidence_path: string | null; reviewed_by: string | null; reviewed_at: string | null; created_at: string }>
       event_staff: OperationalTable<{ event_id: string; user_id: string }>
       attendance_checkins: OperationalTable<{ id: string; registration_id: string; event_id: string; staff_id: string; checked_in_at: string }>
@@ -481,6 +483,21 @@ export type Database = {
       }
       notifications: {
         Row: {
+          template_key: string | null
+          template_version: number
+          recipient_user_id: string | null
+          audience: string
+          related_record_type: string | null
+          related_record_id: string | null
+          max_attempts: number
+          attempts: number
+          available_at: string
+          locked_until: string | null
+          lease_id: string | null
+          accepted_at: string | null
+          last_error: string | null
+          dedupe_key: string | null
+          updated_at: string
           channel: string
           created_at: string
           id: string
@@ -679,6 +696,16 @@ export type Database = {
       }
     }
     Functions: {
+      csc_claim_notifications: { Args: { batch: number; worker: string }; Returns: Database["public"]["Tables"]["notifications"]["Row"][] }
+      csc_begin_email_delivery: { Args: { job: string; lease: string; digest: string }; Returns: boolean }
+      csc_finish_email_delivery: { Args: { job: string; lease: string; digest: string; outcome: string; code: string }; Returns: undefined }
+      csc_finish_notification: { Args: { job: string; lease: string; outcome: string; code: string }; Returns: undefined }
+      csc_notification_recipient: { Args: { member: string }; Returns: string }
+      csc_release_notification_dispatch: { Args: { worker: string }; Returns: undefined }
+      csc_email_budget_available: { Args: Record<string, never>; Returns: boolean }
+      csc_retry_notification: { Args: { job: string; reason: string; acknowledge_ambiguous: boolean }; Returns: undefined }
+      csc_schedule_event_reminders: { Args: Record<string, never>; Returns: number }
+
       csc_save_content: { Args: { content_key: string; content_value: string; publish: boolean }; Returns: undefined }
       csc_admin_action: { Args: { kind: string; target: string; decision: string; reason: string }; Returns: Json }
       csc_register_event: { Args: { event: string; objective: string }; Returns: Json }

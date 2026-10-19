@@ -2,7 +2,7 @@ name: Verify CSC Circle
 on:
   pull_request:
   push:
-    branches: [main, feature/csc-password-auth, feature/csc-complete-integration]
+    branches: [main, feature/csc-password-auth, feature/csc-complete-integration, feature/csc-gmail-notifications]
 permissions:
   contents: read
 jobs:

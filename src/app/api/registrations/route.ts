@@ -1,3 +1,4 @@
+import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { z } from "zod";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +14,7 @@ export async function POST(request: Request) {
     const sb = await createClient();
     const { data, error } = await sb.rpc("csc_register_event", parsed.data);
     if (error) return authResponse({ error: "Registration unavailable. An active membership and open event are required." }, 409);
+    scheduleNotificationDelivery();
     return authResponse({ ok: true, registration: data });
   } catch { return authResponse({ error: "Could not register. Please try again." }, 503); }
 }

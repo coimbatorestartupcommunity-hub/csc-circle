@@ -141,7 +141,7 @@ export interface MediaAsset {
   createdAt: string;
 }
 
-export type NotificationStatus = "queued" | "sent" | "failed" | "retrying";
+export type NotificationStatus = "queued" | "processing" | "sent" | "failed" | "retrying" | "failed_retryable" | "failed_permanent";
 
 export interface NotificationRecord {
   id: string;
@@ -149,6 +149,8 @@ export interface NotificationRecord {
   channel: "in_app" | "email" | "whatsapp";
   recipient: string;
   status: NotificationStatus;
+  attempts?: number;
+  lastError?: string;
   createdAt: string;
   sentAt?: string;
 }

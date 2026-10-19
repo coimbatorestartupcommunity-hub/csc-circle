@@ -1,3 +1,4 @@
+import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { createSubmissionClient } from "@/lib/supabase/submissions";
@@ -41,6 +42,7 @@ export async function POST(req: Request) {
     const sb = await createClient();
     const { data, error } = await sb.rpc("csc_register_event", { event: v.eventId!, objective: v.goal });
     if (error || !data || typeof data !== "object" || Array.isArray(data)) return NextResponse.json({ ok: false, error: "Registration requires an active membership and an open event." }, { status: 409 });
+    scheduleNotificationDelivery();
     return NextResponse.json({ ok: true, reference: data.reference });
   }
   const supabase = createSubmissionClient();
@@ -63,5 +65,6 @@ export async function POST(req: Request) {
     );
   }
 
+  scheduleNotificationDelivery();
   return NextResponse.json({ ok: true, reference: data });
 }

@@ -11,8 +11,11 @@ export const paymentStatusMeta: Record<PaymentStatusAdmin, { label: string; tone
 };
 
 export const notificationStatusMeta: Record<NotificationStatus, { label: string; tone: string }> = {
+  processing: { label: "Processing", tone: "bg-brand-blue text-brand-ink" },
+  failed_retryable: { label: "Retry scheduled", tone: "bg-brand-gold text-brand-ink" },
+  failed_permanent: { label: "Needs review", tone: "bg-brand-red text-brand-ink" },
   queued: { label: "Queued", tone: "bg-brand-blue text-brand-ink" },
-  sent: { label: "Sent", tone: "bg-green-100 text-green-700" },
+  sent: { label: "SMTP accepted", tone: "bg-green-100 text-green-700" },
   failed: { label: "Failed", tone: "bg-brand-red text-brand-ink" },
   retrying: { label: "Retrying", tone: "bg-brand-gold text-brand-ink" },
 };

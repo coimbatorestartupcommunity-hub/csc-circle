@@ -129,3 +129,46 @@ describe("trusted operations and replay protection", () => {
     expect(JSON.stringify(rows)).not.toMatch(/pass_token|verification_token|password|@example/);
   });
 });
+
+describe("durable notification delivery",()=>{
+ it("queues applicant and admin receipts from persisted records",async()=>{
+  const {rows}=await db.query<{template_key:string}>("select template_key from notifications where template_key in ('EventRSVPReceived','EventRSVPAdminAlert')");
+  expect(rows.some(r=>r.template_key==='EventRSVPReceived')).toBe(true);expect(rows.some(r=>r.template_key==='EventRSVPAdminAlert')).toBe(true);
+ });
+ it("does not grant members queue or dispatch authority",async()=>{
+  await expect(asUser(b,"select * from csc_claim_notifications()" )).rejects.toThrow();
+  await expect(asUser(b,"select csc_retry_notification(gen_random_uuid(),'unauthorized retry',false)")).rejects.toThrow(/forbidden/);
+  expect((await asUser(b,"select * from notification_deliveries"))[0].rows).toHaveLength(0);
+ });
+ it("leases jobs exclusively and never resends an accepted recipient",async()=>{
+  await db.exec("set role service_role");
+  try {
+   const first=await db.query<{id:string;lease_id:string}>("select * from csc_claim_notifications(1,'11111111-1111-4111-8111-111111111111')");
+   expect(first.rows).toHaveLength(1);const job=first.rows[0];
+   expect((await db.query("select * from csc_claim_notifications(1,'22222222-2222-4222-8222-222222222222')")).rows).toHaveLength(0);
+   expect((await db.query("select csc_begin_email_delivery($1,$2,'syntheticdigest') as ok",[job.id,job.lease_id])).rows).toEqual([{ok:true}]);
+   await db.query("select csc_finish_email_delivery($1,$2,'syntheticdigest','accepted','')",[job.id,job.lease_id]);
+   expect((await db.query("select csc_begin_email_delivery($1,$2,'syntheticdigest') as ok",[job.id,job.lease_id])).rows).toEqual([{ok:false}]);
+   await db.query("select csc_finish_notification($1,$2,'sent','')",[job.id,job.lease_id]);
+   await db.query("select csc_release_notification_dispatch('11111111-1111-4111-8111-111111111111')");
+  }finally{await db.exec("reset role");}
+ });
+});
+
+describe("notification uncertainty and retry policy",()=>{
+ it("requires manual acknowledgement before replaying an uncertain SMTP attempt",async()=>{
+  const {rows}=await db.query<{id:string}>("insert into notifications(type,template_key,channel,status,last_error) values('Test','OperationalAlert','email','failed_permanent','AMBIGUOUS_DELIVERY') returning id");
+  await db.query("insert into notification_deliveries(notification_id,recipient_digest,status) values($1,'uncertain','ambiguous')",[rows[0].id]);
+  await expect(asUser(admin,`select csc_retry_notification('${rows[0].id}','Reviewed test failure',false)`)).rejects.toThrow(/reconciliation/);
+  await asUser(admin,`select csc_retry_notification('${rows[0].id}','Mailbox reconciled; synthetic resend approved',true)`);
+  expect((await db.query("select status,attempts from notifications where id=$1",[rows[0].id])).rows).toEqual([{status:'queued',attempts:0}]);
+ });
+ it("limits retries and defers rate caps without consuming retry allowance",async()=>{
+  const {rows}=await db.query<{id:string;lease_id:string}>("insert into notifications(type,template_key,channel,status,attempts,max_attempts,lease_id) values('Test','OperationalAlert','email','processing',5,5,gen_random_uuid()) returning id,lease_id");
+  await db.query("select csc_finish_notification($1,$2,'failed_retryable','EMAIL_RATE_DEFERRED')",[rows[0].id,rows[0].lease_id]);
+  expect((await db.query("select status,attempts from notifications where id=$1",[rows[0].id])).rows).toEqual([{status:'failed_retryable',attempts:4}]);
+  await db.query("update notifications set status='processing',attempts=5,lease_id=$2 where id=$1",[rows[0].id,rows[0].lease_id]);
+  await db.query("select csc_finish_notification($1,$2,'failed_retryable','SMTP_TEMPORARY_REJECTION')",[rows[0].id,rows[0].lease_id]);
+  expect((await db.query("select status from notifications where id=$1",[rows[0].id])).rows).toEqual([{status:'failed_permanent'}]);
+ });
+});

@@ -1,26 +1,20 @@
 import "server-only";
 import nodemailer from "nodemailer";
-
-/** Server-only SMTP transport. Credentials come exclusively from managed secrets. */
+import { emailConfiguration, validEmail } from "@/lib/notifications/config";
 export function createEmailTransport() {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASSWORD;
-  const port = Number(process.env.SMTP_PORT ?? 465);
-  if (!host || !user || !pass || ![465, 587].includes(port)) return null;
-  return nodemailer.createTransport({
-    host, port, secure: port === 465, requireTLS: true,
-    auth: { user, pass },
-    connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 20_000,
-    tls: { minVersion: "TLSv1.2", rejectUnauthorized: true },
-    disableFileAccess: true, disableUrlAccess: true,
-  });
+  try {
+    const c = emailConfiguration();
+    return nodemailer.createTransport({ host: c.host, port: c.port, secure: c.secure, requireTLS: true, auth: { user: c.user, pass: c.password }, connectionTimeout: 8_000, greetingTimeout: 8_000, socketTimeout: 12_000, tls: { minVersion: "TLSv1.2", rejectUnauthorized: true }, disableFileAccess: true, disableUrlAccess: true });
+  } catch { return null; }
 }
-
-/** Must only be called by the trusted outbox dispatcher, never a public mail relay. */
-export async function sendCommunityEmail(input: { to: string; subject: string; text: string; notificationId: string }) {
+export async function verifyEmailTransport() {
   const transport = createEmailTransport();
-  const from = process.env.SMTP_FROM;
-  if (!transport || !from) throw new Error("Email delivery is not configured.");
-  return transport.sendMail({ from, to: input.to, subject: input.subject, text: input.text, messageId: `<csc-${input.notificationId}@gmail.com>` });
+  if (!transport) throw new Error("EMAIL_CONFIGURATION_INVALID");
+  return transport.verify();
+}
+export async function sendCommunityEmail(input: { to: string; subject: string; text: string; html?: string; notificationId: string }) {
+  const c = emailConfiguration(); const transport = createEmailTransport();
+  if (!c.enabled || !transport) throw new Error("EMAIL_DISABLED_OR_UNCONFIGURED");
+  if (!validEmail(input.to) || /[\r\n]/.test(input.subject) || input.subject.length>180 || !/^[a-zA-Z0-9-]{1,100}$/.test(input.notificationId)) throw new Error("EMAIL_INPUT_INVALID");
+  return transport.sendMail({ from: { name: c.fromName, address: c.from }, replyTo: c.support, to: input.to, subject: input.subject, text: input.text, html: input.html, messageId: `<csc-${input.notificationId}@gmail.com>` });
 }

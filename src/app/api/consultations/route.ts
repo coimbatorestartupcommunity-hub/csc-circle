@@ -1,3 +1,4 @@
+import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { NextResponse } from "next/server";
 import { createSubmissionClient } from "@/lib/supabase/submissions";
 import { publicConsultationSchema } from "@/lib/validations/forms";
@@ -51,5 +52,6 @@ export async function POST(req: Request) {
     );
   }
 
+  scheduleNotificationDelivery();
   return NextResponse.json({ ok: true, reference: data });
 }

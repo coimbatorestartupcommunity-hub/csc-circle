@@ -1,3 +1,4 @@
+import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getAdminContext } from "@/lib/admin/gate";
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
     const { data, error } = await sb.rpc("csc_save_event", { payload: event, target: id ?? null });
     if (error) return authResponse({ error: "Event was not saved. Check times, price, capacity, and slug uniqueness." }, 409);
     revalidateTag("events", { expire: 0 });
+    scheduleNotificationDelivery();
     return authResponse({ ok: true, id: data });
   } catch { return authResponse({ error: "Event saving is unavailable." }, 503); }
 }

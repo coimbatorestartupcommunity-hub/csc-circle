@@ -1,3 +1,4 @@
+import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getAdminContext } from "@/lib/admin/gate";
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
     const { data, error } = await sb.rpc("csc_admin_action", parsed.data);
     if (error) return authResponse({ error: "Action was not saved. Check the current state, required reason, payment, and capacity." }, 409);
     for (const tag of ["events", "directory", "reviews"]) revalidateTag(tag, { expire: 0 });
+    scheduleNotificationDelivery();
     return authResponse({ ok: true, result: data });
   } catch { return authResponse({ error: "Could not process the action." }, 503); }
 }
