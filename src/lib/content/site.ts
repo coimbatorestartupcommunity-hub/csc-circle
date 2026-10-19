@@ -25,12 +25,14 @@ export const siteConfig = {
     founder: {
       name: "Reyash",
       role: "Founder — Coimbatore Startup Community",
+      belvoriaRole: "Founder — Belvoria",
       responsibility:
         "Community leadership, founder engagement, events, partnerships, and community operations.",
     },
     technicalPartner: {
-      name: "Vikash",
-      role: "Founder & Lead System Engineer — Logic Intelligence Technologies",
+      name: "Vikash Saravanan",
+      role: "Founder — Logic Intelligence Technologies",
+      communityRole: "Co-founder — Coimbatore Startup Community",
       responsibility:
         "CSC web platform architecture, digital experience, technical infrastructure, system integration, and technology direction.",
     },
@@ -59,6 +61,10 @@ export const brandAssets = {
   communityOutlier: "/images/community-outlier.png",
   /** Approved portrait of the technical partner. */
   vikashPortrait: "/images/vikash.jpg",
+  /** Owner-supplied portrait of CSC founder Reyash. */
+  reyashPortrait: "/images/Reyash.png",
+  /** Owner-supplied Belvoria logo. */
+  belvoriaLogo: "/brand/belvoria-logo.png",
 } as const;
 
 export interface NavItem {

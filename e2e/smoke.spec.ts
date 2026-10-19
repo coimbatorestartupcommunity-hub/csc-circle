@@ -17,6 +17,18 @@ test("legal and security pages are linked visibly from the site footer", async (
     await expect(page.locator("main")).toBeVisible();
   }
 });
+test("about leadership shows the supplied founder portrait and both organization links", async ({ page }) => {
+  await page.goto("/about");
+  const reyash = page.locator("article").filter({ has: page.getByRole("heading", { name: "Reyash", exact: true }) });
+  await expect(reyash.getByRole("img", { name: "Reyash, Founder — Coimbatore Startup Community" })).toHaveAttribute("src", /Reyash\.png/);
+  await expect(reyash.getByRole("link", { name: "Belvoria" })).toHaveAttribute("href", "https://belvoria.vercel.app/");
+  await expect(reyash.getByText("Founder — Belvoria")).toBeVisible();
+
+  const vikash = page.locator("article").filter({ has: page.getByRole("heading", { name: "Vikash Saravanan", exact: true }) });
+  await expect(vikash.getByRole("link", { name: "Logic Intelligence Technologies" })).toHaveAttribute("href", "https://www.logicintelligencetechnologies.in");
+  await expect(vikash.getByText("Founder — Logic Intelligence Technologies")).toBeVisible();
+  await expect(vikash.getByText("Co-founder — Coimbatore Startup Community")).toBeVisible();
+});
 test("mobile footer centers CSC and policies with Get Involved left of Community", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
