@@ -10,6 +10,17 @@ export async function GET(request: Request) {
   const sb = await createClient();
   const { error: bootstrapError } = await sb.rpc("csc_ensure_profile");
   if (bootstrapError) return NextResponse.redirect(new URL("/access-denied", url.origin));
+  // Admins skip the member onboarding/membership gate and go straight to the dashboard.
+  const { data: adminRoles } = await sb
+    .from("admin_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .limit(1);
+  if (adminRoles && adminRoles.length > 0) {
+    const requested = safeNext(url.searchParams.get("next"));
+    const adminTarget = requested.startsWith("/admin") ? requested : "/admin";
+    return NextResponse.redirect(new URL(adminTarget, url.origin));
+  }
   const [{ data: membership, error: membershipError }, { data: profile, error: profileError }] = await Promise.all([
     sb.from("memberships").select("status").eq("user_id", user.id).maybeSingle(),
     sb.from("profiles").select("profile_completion").eq("id", user.id).maybeSingle(),
