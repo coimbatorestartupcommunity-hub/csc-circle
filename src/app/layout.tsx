@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins, Lora, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 import { Providers } from "@/app/providers";
@@ -8,24 +8,30 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { siteConfig } from "@/lib/content/site";
 
-const poppins = Poppins({
+const poppins = localFont({
+  src: [
+    { path: "./fonts/Poppins-300.woff2", weight: "300" },
+    { path: "./fonts/Poppins-400.woff2", weight: "400" },
+    { path: "./fonts/Poppins-500.woff2", weight: "500" },
+    { path: "./fonts/Poppins-600.woff2", weight: "600" },
+    { path: "./fonts/Poppins-700.woff2", weight: "700" },
+    { path: "./fonts/Poppins-800.woff2", weight: "800" },
+  ],
   variable: "--font-poppins",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-const lora = Lora({
+const lora = localFont({
+  src: "./fonts/Lora-Variable.woff2",
   variable: "--font-lora",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "400 600",
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMono = localFont({
+  src: "./fonts/JetBrainsMono-Variable.woff2",
   variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: "400 500",
   display: "swap",
 });
 
