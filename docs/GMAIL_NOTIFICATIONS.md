@@ -53,7 +53,7 @@ The application cannot be called fully activated until an authorized preview is 
 
 CI root cause found and repaired: Linux npm 11.19 rejected the previous lockfile because @emnapi/core and @emnapi/runtime 1.11.3 were missing. Regenerated the lock in an isolated directory using that npm version, preserved application versions, and verified a clean npm 11.19 install locally. Remote CI must still be checked on the new commit.
 
-Vercel documents that Hobby teams cannot deploy private GitHub organization repositories: https://vercel.com/docs/git. Keeping the current private organization repository therefore requires a supported plan/team setup as well as legitimate contributor access.
+GitHub API verification reports the repository owner as type `User`, not `Organization`. The private-organization Hobby restriction therefore does not apply to this repository. The confirmed Vercel blocker is contributor-author access. Test a legitimate owner-authenticated GitHub merge/release without rewriting contributor history; do not assume an upgrade is required.
 
 The existing event publication enum has no explicit cancelled state. Archiving generates an EventUpdated message, not an unsupported cancellation claim. EventCancelled currently covers actual registration cancellation; full event-cancellation workflow remains a separate prerequisite.
 

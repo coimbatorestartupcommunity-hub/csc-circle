@@ -1,6 +1,14 @@
 # CSC Circle — Admin (Phase 4) Integration Contracts
 
-## Verified integration status — 19 October 2026
+## Release follow-up — 19 October 2026
+
+The current consolidated source is PR #6, including every commit from PRs #1–#5. Database baseline history has been reconciled; security, notification and platform-helper permission migrations are now applied to `mmsrtfktwcrbyrucjmzo`. Schema/data backups were restored and migrations rehearsed on isolated PostgreSQL 17 first. Live RLS smoke assertions passed with all synthetic rows rolled back. Separate-connection staging tests protected the final event seat and rejected duplicate simultaneous check-ins. Live security advisors now report no findings.
+
+Current local validation: 95 automated tests, 13 Chromium smoke tests, TypeScript, ESLint and production build pass. CI-only missing-environment and homepage horizontal-motion issues were repaired. Gmail delivery, leases, retries, templates, protected dispatch and authorized retry UI are implemented; actual inbox receipt and live identity flows remain unverified. See `GMAIL_NOTIFICATIONS.md` for current notification scope and limits.
+
+Repository owner type is `User`, not `Organization`; an earlier private-organization plan diagnosis was incorrect. The verified Vercel failure is the contributor author's deployment access. No paid upgrade has been performed. A legitimate owner-authenticated merge/release is the next controlled path. The earlier report below is historical evidence, superseded where this follow-up records newer results.
+
+## Initial verified integration status — 19 October 2026
 
 This section supersedes the deferred-service descriptions below. The release is **not activated in production**. All changes are reviewable in PR #5 on `feature/csc-password-auth`.
 
