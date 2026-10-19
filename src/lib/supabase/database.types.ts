@@ -1096,6 +1096,8 @@ export type Database = {
       }
     }
     Functions: {
+      csc_save_collaboration_organization: { Args: { payload: Json }; Returns: string }
+      csc_save_collaboration: { Args: { payload: Json }; Returns: string }
       csc_admin_action: {
         Args: { decision: string; kind: string; reason: string; target: string }
         Returns: Json

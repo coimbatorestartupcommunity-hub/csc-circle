@@ -40,10 +40,38 @@ test("mobile footer centers CSC and policies with Get Involved left of Community
   expect(Math.abs(layout.brand.center - layout.width / 2)).toBeLessThan(2);
   expect(layout.involved.left).toBeLessThan(layout.community.left);
   expect(Math.abs(layout.legal.center - layout.width / 2)).toBeLessThan(2);
+  for (const selector of ['[data-testid="footer-get-involved"]', '[data-testid="footer-community"]']) {
+    const alignment = await page.locator(selector).evaluate((element) => {
+      const nav = element.getBoundingClientRect();
+      const center = nav.left + nav.width / 2;
+      const heading = element.querySelector("h2")!.getBoundingClientRect();
+      const links = [...element.querySelectorAll("li a")].map((link) => {
+        const box = link.getBoundingClientRect();
+        return Math.abs(box.left + box.width / 2 - center);
+      });
+      return {
+        headingCentered: getComputedStyle(element).textAlign === "center" && Math.abs(heading.left + heading.width / 2 - center) < 2,
+        linkOffsets: links,
+      };
+    });
+    expect(alignment.headingCentered).toBe(true);
+    expect(alignment.linkOffsets.every((offset) => offset < 2)).toBe(true);
+  }
   await expect(page.locator('footer [aria-label="CSC Circle on Instagram"]')).toBeVisible();
   await expect(page.locator('footer [aria-label="Join the CSC Circle WhatsApp community"]')).toBeVisible();
   await expect(page.locator('footer [aria-label="Email CSC Circle"]')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
+test("OAuth callback leaves the PKCE verifier cookie untouched", async ({ request }) => {
+  const verifierCookie = "sb-mmsrtfktwcrbyrucjmzo-auth-token-flow-abcdef123456-code-verifier=pending-verifier";
+  const response = await request.get("/auth/callback?next=%2Fmember", {
+    headers: { cookie: verifierCookie },
+    maxRedirects: 0,
+  });
+  expect(response.status()).toBe(307);
+  const setCookie = response.headers()["set-cookie"] ?? "";
+  expect(setCookie).not.toMatch(/code-verifier=.*(?:Max-Age=0|1970)/i);
 });
 test("password visibility and signup validation", async ({ page }) => {
   await page.goto("/signup");
@@ -57,7 +85,7 @@ test("password visibility and signup validation", async ({ page }) => {
   await expect(page.getByText("Use at least 12 characters.")).toBeVisible();
 });
 test("unauthorized admin APIs and recovery are denied", async ({ request }) => {
-  for (const route of ["actions", "events", "check-in"]) {
+  for (const route of ["actions", "events", "check-in", "collaborations", "collaboration-organizations"]) {
     const response = await request.post(`/api/admin/${route}`, { data: {} });
     expect(response.status()).toBe(403);
   }

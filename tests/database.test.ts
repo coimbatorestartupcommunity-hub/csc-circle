@@ -66,6 +66,35 @@ describe("isolated PostgreSQL authorization regressions", () => {
     await db.exec(`delete from admin_roles where user_id='${a}'`);
     expect((await asUser(a, "select private.has_permission('members.approve') as allowed"))[0].rows).toEqual([{ allowed: false }]);
   });
+  it("restricts collaboration writes to content managers and publishes through the atomic RPC", async () => {
+    await db.exec(`insert into admin_roles(user_id,role) values ('${a}','checkin_staff')`);
+    await expect(asUser(a, `insert into collaborations(slug,title) values ('blocked-test','Blocked Test')`)).rejects.toThrow();
+    await expect(asUser(a, `select public.csc_save_collaboration('{}'::jsonb)`)).rejects.toThrow(/forbidden/);
+    await expect(asUser(a, `select public.csc_save_collaboration_organization('{}'::jsonb)`)).rejects.toThrow(/forbidden/);
+    await db.exec(`delete from admin_roles where user_id='${a}'; insert into admin_roles(user_id,role) values ('${a}','content_manager')`);
+    await expect(asUser(a, `insert into collaborations(slug,title) values ('direct-write-test','Direct Write Test')`)).rejects.toThrow();
+    const organizationPayload = JSON.stringify({ name: "Approved Test Partner", slug: "approved-test-partner", organization_type: "startup", publication_approved: true, publication_status: "published" }).replaceAll("'", "''");
+    const orgSaved = await asUser(a, `select public.csc_save_collaboration_organization('${organizationPayload}'::jsonb) as id`);
+    expect((await db.query("select publication_status from collaboration_organizations where slug='approved-test-partner'")).rows).toEqual([{ publication_status: "published" }]);
+    expect((await db.query("select action from audit_logs where target_id=$1", [(orgSaved[0].rows[0] as { id: string }).id])).rows).toEqual([{ action: "collaboration.organization_saved" }]);
+
+    const orgs = await db.query<{ id: string }>("select id from collaboration_organizations where slug in ('csc-circle','outlier') order by slug");
+    const payload = JSON.stringify({
+      slug: "permission-test", title: "Permission Test", tagline: "A safe test",
+      summary: "An isolated database test.", story: "Synthetic test content.",
+      category: "Community Meetup", status: "completed", publication_status: "draft",
+      partner_ids: orgs.rows.map((org) => org.id), highlights: [], media: [],
+    }).replaceAll("'", "''");
+    const saved = await asUser(a, `select public.csc_save_collaboration('${payload}'::jsonb) as id`);
+    const id = (saved[0].rows[0] as { id: string }).id;
+    expect((await db.query("select publication_status from collaborations where id=$1", [id])).rows).toEqual([{ publication_status: "draft" }]);
+    expect((await db.query("select action from audit_logs where target_id=$1", [id])).rows).toEqual([{ action: "collaboration.saved" }]);
+
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query("select id from collaborations where slug='permission-test'")).rows).toHaveLength(0);
+    } finally { await db.exec("reset role;"); }
+  });
 });
 
 const admin = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
