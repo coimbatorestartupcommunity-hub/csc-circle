@@ -1,0 +1,207 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Users,
+  FileCheck,
+  Building2,
+  CalendarDays,
+  ClipboardList,
+  ScanLine,
+  CheckSquare,
+  MessagesSquare,
+  CreditCard,
+  Star,
+  FileText,
+  Image as ImageIcon,
+  Bell,
+  ScrollText,
+  Settings,
+  Menu,
+  LogOut,
+} from "lucide-react";
+import { cn } from "cn";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/layout/brand-logo";
+import type { Permission } from "@/lib/admin/permissions";
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  perm?: Permission;
+}
+
+const navGroups: { heading: string; items: NavItem[] }[] = [
+  {
+    heading: "Overview",
+    items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
+    heading: "Community",
+    items: [
+      { href: "/admin/members", label: "Members", icon: Users, perm: "members.read" },
+      { href: "/admin/membership-claims", label: "Claims", icon: FileCheck, perm: "members.approve" },
+      { href: "/admin/startups", label: "Startups", icon: Building2, perm: "directory.manage" },
+    ],
+  },
+  {
+    heading: "Events",
+    items: [
+      { href: "/admin/events", label: "Events", icon: CalendarDays, perm: "events.update" },
+      { href: "/admin/registrations", label: "Registrations", icon: ClipboardList, perm: "registrations.read" },
+      { href: "/admin/check-in", label: "Check-in", icon: ScanLine, perm: "attendance.scan" },
+      { href: "/admin/attendance", label: "Attendance", icon: CheckSquare, perm: "attendance.scan" },
+    ],
+  },
+  {
+    heading: "Operations",
+    items: [
+      { href: "/admin/consultations", label: "Consultations", icon: MessagesSquare, perm: "consultations.manage" },
+      { href: "/admin/payments", label: "Payments", icon: CreditCard, perm: "payments.verify" },
+      { href: "/admin/reviews", label: "Reviews", icon: Star, perm: "reviews.moderate" },
+    ],
+  },
+  {
+    heading: "Platform",
+    items: [
+      { href: "/admin/content", label: "Content", icon: FileText, perm: "content.manage" },
+      { href: "/admin/media", label: "Media", icon: ImageIcon, perm: "media.manage" },
+      { href: "/admin/notifications", label: "Notifications", icon: Bell, perm: "settings.manage" },
+      { href: "/admin/audit-logs", label: "Audit logs", icon: ScrollText, perm: "audit.read" },
+      { href: "/admin/settings", label: "Settings", icon: Settings, perm: "settings.manage" },
+    ],
+  },
+];
+
+function NavList({
+  permissions,
+  onNavigate,
+}: {
+  permissions: string[];
+  onNavigate?: () => void;
+}) {
+  const pathname = usePathname();
+  const allowed = new Set(permissions);
+  return (
+    <nav className="flex flex-col gap-4" aria-label="Admin">
+      {navGroups.map((group) => {
+        const items = group.items.filter((i) => !i.perm || allowed.has(i.perm));
+        if (items.length === 0) return null;
+        return (
+          <div key={group.heading} className="flex flex-col gap-1">
+            <p className="px-3 text-[10px] font-semibold tracking-[0.12em] text-brand-muted uppercase">
+              {group.heading}
+            </p>
+            {items.map((item) => {
+              const active =
+                item.href === "/admin"
+                  ? pathname === "/admin"
+                  : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-brand-ink text-brand-white"
+                      : "text-brand-secondary hover:bg-brand-purple/50 hover:text-brand-ink",
+                  )}
+                >
+                  <item.icon className="size-4" aria-hidden />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
+
+export function AdminShell({
+  displayName,
+  roleLabel,
+  permissions,
+  children,
+}: {
+  displayName: string;
+  roleLabel: string;
+  permissions: string[];
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const crumbs = pathname.split("/").filter(Boolean);
+
+  return (
+    <div className="flex min-h-screen bg-brand-cloud">
+      {/* Desktop sidebar */}
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-5 overflow-y-auto border-r border-brand-border bg-brand-white p-4 lg:flex">
+        <BrandLogo showWordmark={false} markSize={34} />
+        <NavList permissions={permissions} />
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Top bar */}
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-brand-border bg-brand-white/90 px-4 backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <Sheet>
+              <SheetTrigger
+                render={<Button variant="outline" size="icon" aria-label="Open menu" className="lg:hidden" />}
+              >
+                <Menu />
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 overflow-y-auto p-4">
+                <SheetTitle className="sr-only">Admin navigation</SheetTitle>
+                <div className="mb-4">
+                  <BrandLogo showWordmark={false} markSize={34} />
+                </div>
+                <NavList permissions={permissions} />
+              </SheetContent>
+            </Sheet>
+            <nav aria-label="Breadcrumb" className="hidden items-center gap-1.5 text-sm text-brand-muted sm:flex">
+              {crumbs.map((c, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  {i > 0 ? <span className="text-brand-border">/</span> : null}
+                  <span className={cn(i === crumbs.length - 1 && "font-medium text-brand-ink")}>
+                    {c.replace(/-/g, " ")}
+                  </span>
+                </span>
+              ))}
+            </nav>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-semibold text-brand-ink">{displayName}</p>
+              <p className="text-xs text-brand-muted">{roleLabel}</p>
+            </div>
+            <form action="/auth/signout" method="post">
+              <button
+                type="submit"
+                aria-label="Sign out"
+                className="flex size-9 items-center justify-center rounded-full text-brand-muted ring-1 ring-brand-border transition-colors hover:bg-brand-cloud hover:text-brand-ink"
+              >
+                <LogOut className="size-4" />
+              </button>
+            </form>
+          </div>
+        </header>
+
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+      </div>
+    </div>
+  );
+}

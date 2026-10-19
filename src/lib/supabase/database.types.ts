@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_role: string | null
+          after: Json | null
+          before: Json | null
+          correlation_id: string | null
+          created_at: string
+          id: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_role?: string | null
+          after?: Json | null
+          before?: Json | null
+          correlation_id?: string | null
+          created_at?: string
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_role?: string | null
+          after?: Json | null
+          before?: Json | null
+          correlation_id?: string | null
+          created_at?: string
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       consultations: {
         Row: {
           assigned_rep: string | null
@@ -56,6 +116,30 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      content_blocks: {
+        Row: {
+          key: string
+          label: string
+          status: Database["public"]["Enums"]["publication_status"]
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          label: string
+          status?: Database["public"]["Enums"]["publication_status"]
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          key?: string
+          label?: string
+          status?: Database["public"]["Enums"]["publication_status"]
+          updated_at?: string
+          value?: string
         }
         Relationships: []
       }
@@ -214,6 +298,48 @@ export type Database = {
         }
         Relationships: []
       }
+      media_assets: {
+        Row: {
+          alt_text: string | null
+          category: string
+          created_at: string
+          filename: string
+          height: number | null
+          id: string
+          size_bytes: number | null
+          storage_path: string | null
+          type: string | null
+          visibility: string
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          category?: string
+          created_at?: string
+          filename: string
+          height?: number | null
+          id?: string
+          size_bytes?: number | null
+          storage_path?: string | null
+          type?: string | null
+          visibility?: string
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          category?: string
+          created_at?: string
+          filename?: string
+          height?: number | null
+          id?: string
+          size_bytes?: number | null
+          storage_path?: string | null
+          type?: string | null
+          visibility?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
       membership_claims: {
         Row: {
           applicant_type: string
@@ -289,6 +415,39 @@ export type Database = {
           status?: Database["public"]["Enums"]["membership_status"]
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          payload: Json | null
+          recipient: string | null
+          sent_at: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          recipient?: string | null
+          sent_at?: string | null
+          status?: string
+          type: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          payload?: Json | null
+          recipient?: string | null
+          sent_at?: string | null
+          status?: string
+          type?: string
         }
         Relationships: []
       }
@@ -406,6 +565,7 @@ export type Database = {
       }
     }
     Functions: {
+      is_admin: { Args: never; Returns: boolean }
       next_member_number: { Args: never; Returns: string }
     }
     Enums: {
