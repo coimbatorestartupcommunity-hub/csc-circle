@@ -9,6 +9,7 @@ import { leadership } from "@/lib/content/about";
 interface Leader {
   name: string;
   role: string;
+  additionalRole?: string;
   responsibility: string;
   surface: string;
   photo?: string;
@@ -21,6 +22,7 @@ export function LeadershipSection() {
     {
       name: siteConfig.people.founder.name,
       role: siteConfig.people.founder.role,
+      additionalRole: siteConfig.people.founder.belvoriaRole,
       responsibility: siteConfig.people.founder.responsibility,
       surface: "from-brand-purple to-brand-pink",
       photo: brandAssets.reyashPortrait,
@@ -33,6 +35,7 @@ export function LeadershipSection() {
     {
       name: siteConfig.people.technicalPartner.name,
       role: siteConfig.people.technicalPartner.role,
+      additionalRole: siteConfig.people.technicalPartner.communityRole,
       responsibility: siteConfig.people.technicalPartner.responsibility,
       surface: "from-brand-blue to-brand-lilac",
       photo: brandAssets.vikashPortrait,
@@ -98,6 +101,11 @@ export function LeadershipSection() {
                 <p className="text-sm font-medium text-brand-accent">
                   {leader.role}
                 </p>
+                {leader.additionalRole ? (
+                  <p className="text-sm font-medium text-brand-accent">
+                    {leader.additionalRole}
+                  </p>
+                ) : null}
                 <p className="mt-1 text-sm leading-relaxed text-brand-secondary">
                   {leader.responsibility}
                 </p>

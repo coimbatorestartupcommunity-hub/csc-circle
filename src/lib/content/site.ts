@@ -25,12 +25,14 @@ export const siteConfig = {
     founder: {
       name: "Reyash",
       role: "Founder — Coimbatore Startup Community",
+      belvoriaRole: "Founder — Belvoria",
       responsibility:
         "Community leadership, founder engagement, events, partnerships, and community operations.",
     },
     technicalPartner: {
       name: "Vikash Saravanan",
-      role: "Founder & Lead System Engineer — Logic Intelligence Technologies",
+      role: "Founder — Logic Intelligence Technologies",
+      communityRole: "Co-founder — Coimbatore Startup Community",
       responsibility:
         "CSC web platform architecture, digital experience, technical infrastructure, system integration, and technology direction.",
     },
