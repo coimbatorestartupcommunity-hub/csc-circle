@@ -1,3 +1,4 @@
+import { CommunityAnnouncement, CommunityIntroduction } from "@/components/home/community-announcement";
 import { HeroSection } from "@/components/home/hero-section";
 import { CommunityStats } from "@/components/home/community-stats";
 import { FeaturesGrid } from "@/components/home/features-grid";
@@ -11,7 +12,9 @@ import { FinalCta } from "@/components/home/final-cta";
 export default function HomePage() {
   return (
     <>
+      <CommunityAnnouncement />
       <HeroSection />
+      <CommunityIntroduction />
       <CommunityStats />
       <FeaturesGrid />
       <HowItWorks />

@@ -91,33 +91,24 @@ export function CheckInScanner({
     }
   }
 
-  function verify(text: string) {
-    // Stop scanning while we show a result.
-    controlsRef.current?.stop();
-    controlsRef.current = null;
-    setCameraState("off");
-    setResult("verifying");
-
-    // Parse the opaque payload. Real verification happens server-side (Phase 1).
-    window.setTimeout(() => {
-      try {
-        const payload = JSON.parse(text) as { t?: string; ref?: string };
-        if (payload.t !== "csc.eventpass" || !payload.ref) {
-          setResult("invalid");
-          setDetail("Not a CSC event pass credential.");
-          return;
-        }
-        setResult("valid");
-        setDetail(
-          isDemo
-            ? `DEMO: parsed pass ${payload.ref}. No attendance was recorded — the trusted API performs real verification and atomic check-in in Phase 1.`
-            : `Pass ${payload.ref} submitted for server verification.`,
-        );
-      } catch {
-        setResult("invalid");
-        setDetail("Could not read a valid QR credential.");
+  const verifying = React.useRef(false);
+  async function verify(text: string) {
+    if (verifying.current) return;
+    verifying.current = true;
+    stop(); setResult("verifying");
+    try {
+      const payload = JSON.parse(text);
+      if (payload.t !== "csc.eventpass" || payload.v !== 1 || !payload.ref) throw new Error("invalid");
+      if (isDemo) { setResult("invalid"); setDetail("DEMO only. No entry authorized and no attendance recorded."); return; }
+      const res = await fetch("/api/admin/check-in", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: eventId, payload }) });
+      const data = await res.json();
+      if (!res.ok || !data.status || !(data.status in resultMeta)) {
+        setResult("invalid"); setDetail(data.error ?? "Verification unavailable. No entry authorized."); return;
       }
-    }, 600);
+      setResult(data.status as ResultState);
+      setDetail(data.status === "valid" ? `${data.name ?? "Attendee"} · ${data.reference} · check-in recorded` : data.status === "already" ? `Previously checked in at ${data.checkedInAt}` : "Entry blocked by the server.");
+    } catch { setResult("invalid"); setDetail("Could not verify this credential. Check the code and network connection."); }
+    finally { verifying.current = false; }
   }
 
   const selectedEvent = events.find((e) => e.id === eventId);

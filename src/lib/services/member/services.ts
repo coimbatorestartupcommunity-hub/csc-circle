@@ -152,7 +152,7 @@ export const memberServices = {
         .eq("id", ctx.user!.id)
         .maybeSingle();
       const mm = m as Row | null;
-      if (!mm || !mm.member_number || mm.status !== "active") {
+      if (!mm || !mm.member_number || !mm.verification_token || mm.status !== "active" || (mm.expires_at && new Date(String(mm.expires_at)).getTime() <= Date.now())) {
         return fail(
           "forbidden",
           "Your membership ID becomes available once your membership is active.",
@@ -173,7 +173,7 @@ export const memberServices = {
         status: mm.status as MembershipStatus,
         issuedAt: (mm.issued_at as string) ?? new Date().toISOString(),
         expiresAt: (mm.expires_at as string) ?? undefined,
-        verificationToken: `mbr.v1.${mm.member_number}`,
+        verificationToken: String(mm.verification_token ?? ""),
       });
     } catch {
       return fail("unknown", "Could not load your membership card.");
@@ -214,6 +214,18 @@ export const memberServices = {
         "A pass is only available once a registration is confirmed.",
       );
     }
+    const ctx = await getMemberContext();
+    let token: string | null = null;
+    if (ctx.mode === "preview") token = "DEMO-PASS-NOT-VALID";
+    if (ctx.mode === "live") {
+      const sb = await createClient();
+      const { data: membership } = await sb.from("memberships").select("status,expires_at").eq("user_id", ctx.user!.id).maybeSingle();
+      if (membership?.status !== "active" || (membership.expires_at && new Date(membership.expires_at).getTime() <= Date.now())) return fail("forbidden", "An active membership is required for an event pass.");
+      const { data } = await sb.from("event_registrations").select("pass_token, payment, user_id").eq("id", reg.id).eq("user_id", ctx.user!.id).maybeSingle();
+      if (!data?.pass_token || !["paid", "not_required"].includes(data.payment) || new Date(reg.endsAt).getTime() <= Date.now()) return fail("forbidden", "This pass is unavailable or expired.");
+      token = data.pass_token;
+    }
+    if (!token) return unavailable();
     return ok({
       registrationId: reg.id,
       eventTitle: reg.eventTitle,
@@ -224,7 +236,7 @@ export const memberServices = {
       memberName: reg.memberName,
       reference: reg.reference,
       status: reg.status,
-      verificationToken: `pass.v1.${reg.reference}`,
+      verificationToken: token,
     });
   },
 

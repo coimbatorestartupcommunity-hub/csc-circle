@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { createClient } from "@/lib/supabase/client";
+import { memberRequest } from "@/lib/services/member/request";
 import { profileSchema, type ProfileFormValues } from "@/lib/validations/member";
 import type { MemberProfile } from "@/types/member";
 
@@ -42,37 +42,8 @@ export function MemberProfileForm({
   async function onSubmit(values: ProfileFormValues) {
     setSaving(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Please sign in to update your profile.");
-        return;
-      }
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: values.fullName,
-          display_name: values.displayName,
-          whatsapp: values.whatsapp,
-          city: values.city,
-          skills: (values.skills ?? "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
-          startup: {
-            ...(profile.startup ?? {}),
-            name: values.startupName,
-            website: values.startupWebsite,
-            description: values.startupDescription,
-          },
-        })
-        .eq("id", user.id);
-      if (error) {
-        toast.error("Couldn't save your profile. Please try again.");
-        return;
-      }
+      const result = await memberRequest("profile", values);
+      if (result.error) { toast.error(result.error); return; }
       toast.success("Profile updated.");
     } finally {
       setSaving(false);

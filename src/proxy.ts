@@ -33,11 +33,17 @@ export async function proxy(request: NextRequest) {
   });
 
   // Touch the session so expired tokens are refreshed into the response cookies.
-  await supabase.auth.getUser();
+  try {
+    const { error } = await supabase.auth.getUser();
+    if (error) await supabase.auth.signOut({ scope: "local" });
+  } catch {
+    // Auth availability does not grant access: each server data operation verifies identity.
+  }
+  response.headers.set("Cache-Control", "private, no-store");
 
   return response;
 }
 
 export const config = {
-  matcher: ["/member/:path*", "/admin/:path*", "/auth/:path*"],
+  matcher: ["/member/:path*", "/admin/:path*", "/auth/:path*", "/login", "/signup", "/forgot-password", "/reset-password"],
 };

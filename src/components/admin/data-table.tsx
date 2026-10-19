@@ -64,6 +64,7 @@ export interface Facet {
 
 export interface ActionDef {
   label: string;
+  operation?: { kind: string; decision: string };
   message?: string;
   confirm?: string;
   variant?: "default" | "outline" | "ghost" | "destructive" | "secondary";
@@ -270,6 +271,7 @@ export function DataTable<T extends { id: string }>({
                             <ActionButton
                               key={a.label}
                               label={a.label}
+                              operation={a.operation ? { ...a.operation, target: row.id } : undefined}
                               message={a.message}
                               confirm={a.confirm}
                               variant={a.variant}

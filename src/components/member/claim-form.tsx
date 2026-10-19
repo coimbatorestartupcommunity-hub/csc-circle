@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { createClient } from "@/lib/supabase/client";
+import { memberRequest } from "@/lib/services/member/request";
 import { claimSchema, type ClaimFormValues } from "@/lib/validations/member";
 import { designationOptions } from "@/lib/content/member-taxonomy";
 
@@ -36,7 +36,7 @@ export function ClaimForm({ isDemo }: { isDemo: boolean }) {
       applicantType: "new_applicant",
       reference: "",
       whatsapp: "",
-      designation: "",
+      designation: undefined,
       startupAffiliation: "",
       declarationAccurate: false as unknown as true,
     },
@@ -46,29 +46,8 @@ export function ClaimForm({ isDemo }: { isDemo: boolean }) {
   async function onSubmit(values: ClaimFormValues) {
     setSubmitting(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        toast.message("DEMO preview — sign in with a real account to submit a claim.");
-        return;
-      }
-      const { error } = await supabase.from("membership_claims").insert({
-        user_id: user.id,
-        full_name: values.fullName,
-        linked_account_email: values.linkedAccountEmail,
-        applicant_type: values.applicantType,
-        reference: values.reference || null,
-        whatsapp: values.whatsapp,
-        designation: values.designation as never,
-        startup_affiliation: values.startupAffiliation || null,
-        declaration_accurate: values.declarationAccurate,
-      });
-      if (error) {
-        toast.error("Couldn't submit your claim. Please try again.");
-        return;
-      }
+      const result = await memberRequest("claim", values);
+      if (result.error) { toast.error(result.error); return; }
       toast.success("Your membership claim was submitted for review.");
       router.refresh();
     } finally {

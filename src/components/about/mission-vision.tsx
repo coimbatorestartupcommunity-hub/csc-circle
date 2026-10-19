@@ -1,23 +1,25 @@
+import { getPublicContent } from "@/lib/services/content";
 import * as React from "react";
 import { Target, Telescope } from "lucide-react";
 import { Container } from "@/components/common/container";
 import { StaggerContainer, StaggerItem } from "@/components/motion";
 import { mission, vision } from "@/lib/content/about";
 
-export function MissionVision() {
+export async function MissionVision() {
+  const content = await getPublicContent();
   const panels = [
     {
       icon: Target,
       label: "Our mission",
       heading: mission.heading,
-      body: mission.body,
+      body: content["about.mission"] || mission.body,
       surface: "bg-brand-purple",
     },
     {
       icon: Telescope,
       label: "Our vision",
       heading: vision.heading,
-      body: vision.body,
+      body: content["about.vision"] || vision.body,
       surface: "bg-brand-blue",
     },
   ];

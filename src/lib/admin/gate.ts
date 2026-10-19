@@ -18,7 +18,7 @@ import {
  * - "closed"    — production, no session.
  *
  * Production NEVER grants admin access without a real provisioned role. The
- * preview is dev-only (or an explicit server-only ADMIN_PORTAL_PREVIEW env).
+ * preview is development-only. Production environment flags cannot enable it.
  * No NEXT_PUBLIC flag and no email comparison is used as authority.
  */
 export type AdminMode = "live" | "preview" | "forbidden" | "closed";
@@ -33,7 +33,7 @@ export interface AdminContext {
 
 function isAdminPreviewEnabled(): boolean {
   if (process.env.NODE_ENV !== "production") return true;
-  return process.env.ADMIN_PORTAL_PREVIEW === "true";
+  return false;
 }
 
 export async function getAdminContext(): Promise<AdminContext> {
@@ -42,6 +42,10 @@ export async function getAdminContext(): Promise<AdminContext> {
   if (user) {
     try {
       const supabase = await createClient();
+      const { data: membership, error: membershipError } = await supabase.from("memberships").select("status").eq("user_id", user.id).maybeSingle();
+      if (membershipError || (membership && ["suspended", "revoked", "rejected"].includes(membership.status))) {
+        return { mode: "forbidden", roles: [], permissions: new Set(), userId: user.id, displayName: "" };
+      }
       const { data } = await supabase
         .from("admin_roles")
         .select("role")

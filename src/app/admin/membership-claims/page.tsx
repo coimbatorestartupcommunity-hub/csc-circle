@@ -22,8 +22,9 @@ export default async function ClaimsPage() {
 
   const actions: ActionDef[] | undefined = can(ctx, "members.approve")
     ? [
-        { label: "Approve", message: "Transitions the claim toward Approved → Active via trusted issuance (Phase 1)." },
-        { label: "Reject", variant: "destructive", confirm: "Reject this membership claim?" },
+        { label: "Verify", operation: ctx.mode === "live" ? { kind: "claim", decision: "pending_verification" } : undefined },
+        { operation: ctx.mode === "live" ? { kind: "claim", decision: "active" } : undefined, label: "Approve", message: "Transitions the claim toward Approved → Active via trusted issuance (Phase 1)." },
+        { operation: ctx.mode === "live" ? { kind: "claim", decision: "rejected" } : undefined, label: "Reject", variant: "destructive", confirm: "Reject this membership claim?" },
       ]
     : undefined;
 

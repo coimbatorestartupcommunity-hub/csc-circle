@@ -5,6 +5,8 @@
  */
 
 import { z } from "zod";
+const designationSchema = z.enum(["startup_founder", "co_founder", "team_member", "developer", "student_entrepreneur", "designer", "marketing", "investor", "mentor", "aspiring_entrepreneur", "other"]);
+const goalSchema = z.enum(["networking", "technical_collaboration", "finding_co_founder", "mentorship", "product_development", "marketing", "funding_connections", "hiring", "startup_learning", "community_participation"]);
 
 const whatsappRegex = /^[+]?[\d][\d\s-]{7,16}$/;
 const urlOrEmpty = z
@@ -28,7 +30,7 @@ export const onboardingStep1Schema = z.object({
 
 export const onboardingStep2Schema = z.object({
   designations: z
-    .array(z.string())
+    .array(designationSchema)
     .min(1, "Select at least one that describes you."),
 });
 
@@ -43,7 +45,7 @@ export const onboardingStep3Schema = z.object({
 });
 
 export const onboardingStep4Schema = z.object({
-  goals: z.array(z.string()).min(1, "Select at least one goal."),
+  goals: z.array(goalSchema).min(1, "Select at least one goal."),
 });
 
 export const onboardingStep5Schema = z.object({
@@ -73,7 +75,7 @@ export const claimSchema = z.object({
   }),
   reference: z.string().trim().max(80).optional(),
   whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
-  designation: z.string().min(1, "Select your designation."),
+  designation: designationSchema,
   startupAffiliation: z.string().trim().max(120).optional(),
   declarationAccurate: z.literal(true, {
     message: "Please confirm the information is accurate.",

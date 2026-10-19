@@ -66,7 +66,7 @@ export default async function AdminMemberDetail({
               <ActionButton label="Reject" variant="destructive" confirm="Reject this member's claim?" />
             ) : null}
             {can(ctx, "members.suspend") ? (
-              <ActionButton label="Suspend" variant="destructive" confirm="Suspend this membership?" />
+              <ActionButton operation={ctx.mode === "live" ? { kind: "member", target: memberId, decision: "suspended" } : undefined} label="Suspend" variant="destructive" confirm="Suspend this membership?" />
             ) : null}
           </div>
         </div>

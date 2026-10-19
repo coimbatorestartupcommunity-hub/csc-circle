@@ -1,6 +1,6 @@
 import { ImageIcon, Upload } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { ActionButton } from "@/components/admin/action-button";
+import { MediaUpload } from "@/components/admin/media-upload";
 import { EmptyState } from "@/components/common/empty-state";
 import { getAdminContext, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
@@ -25,9 +25,10 @@ export default async function AdminMediaPage() {
         title="Media library"
         description="Manage branding, photos, logos and banners. Uploads validate type, size and dimensions; files go to Supabase Storage (Phase 1) with public/private classification."
         isDemo={ctx.mode === "preview"}
-        action={can(ctx, "media.manage") ? <ActionButton label="Upload" message="Uploads validate extension, MIME type, size and dimensions, then store to Supabase Storage (Phase 1). Executable uploads are rejected." variant="default" /> : null}
+
       />
 
+      {can(ctx, "media.manage") ? <MediaUpload isDemo={ctx.mode === "preview"} /> : null}
       {assets.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {assets.map((a) => (

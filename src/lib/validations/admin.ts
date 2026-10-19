@@ -28,9 +28,9 @@ export const eventEditorSchema = z.object({
   coverImage: urlOrEmpty,
   imageAlt: z.string().trim().max(160).optional(),
   // C. Scheduling (Asia/Kolkata)
-  date: z.string().min(1, "Choose a date."),
-  startTime: z.string().min(1, "Choose a start time."),
-  endTime: z.string().min(1, "Choose an end time."),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a date."),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Choose a start time."),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Choose an end time."),
   registrationDeadline: z.string().optional(),
   // D. Location
   format: z.enum(["offline", "online", "hybrid"]),

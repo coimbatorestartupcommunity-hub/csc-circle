@@ -37,8 +37,8 @@ export default async function AdminPaymentsPage() {
 
   const actions: ActionDef[] | undefined = can(ctx, "payments.verify")
     ? [
-        { label: "Verify", message: "Independent manual verification against securely-stored payment evidence (Phase 1). A screenshot alone is never settlement." },
-        { label: "Reject", variant: "destructive", confirm: "Reject this payment?" },
+        { operation: ctx.mode === "live" ? { kind: "payment", decision: "verified" } : undefined, label: "Verify", message: "Independent manual verification against securely-stored payment evidence (Phase 1). A screenshot alone is never settlement." },
+        { operation: ctx.mode === "live" ? { kind: "payment", decision: "rejected" } : undefined, label: "Reject", variant: "destructive", confirm: "Reject this payment?" },
       ]
     : undefined;
 

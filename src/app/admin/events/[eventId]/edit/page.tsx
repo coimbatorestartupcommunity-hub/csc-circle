@@ -1,3 +1,5 @@
+import { createClient } from "@/lib/supabase/server";
+import { eventEditorSchema } from "@/lib/validations/admin";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
@@ -19,6 +21,9 @@ export default async function EditEventPage({
 
   const res = await adminServices.getEvent(eventId);
   const e = res.ok ? res.data : null;
+  const sb = ctx.mode === "live" ? await createClient() : null;
+  const stored = sb ? await sb.from("events").select("settings").eq("id", eventId).maybeSingle() : null;
+  const parsed = eventEditorSchema.safeParse(stored?.data?.settings);
 
   return (
     <>
@@ -27,10 +32,11 @@ export default async function EditEventPage({
       </Link>
       <AdminPageHeader title="Edit event" isDemo={ctx.mode === "preview"} />
       <EventEditorForm
+        eventId={eventId}
         mode="edit"
         isDemo={ctx.mode === "preview"}
         initial={
-          e
+          parsed.success ? parsed.data : e
             ? {
                 title: e.title,
                 category: e.category as never,

@@ -36,9 +36,10 @@ export async function createClient() {
 
 /** The currently authenticated user (verified against Supabase), or null. */
 export async function getAuthUser() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return null;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user;
+  return user?.email_confirmed_at ? user : null;
 }

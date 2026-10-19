@@ -44,3 +44,9 @@ next-env.d.ts
 CSC community.jpg
 Vikash's approved portrait.heic
 Vikash's approved biography.heic
+
+# Supabase CLI local state
+/supabase/.temp/
+
+/playwright-report/
+/test-results/

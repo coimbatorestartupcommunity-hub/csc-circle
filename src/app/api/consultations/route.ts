@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAnonClient } from "@/lib/supabase/anon";
+import { createSubmissionClient } from "@/lib/supabase/submissions";
 import { publicConsultationSchema } from "@/lib/validations/forms";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
@@ -34,7 +34,8 @@ export async function POST(req: Request) {
   }
   const v = parsed.data;
 
-  const supabase = createAnonClient();
+  const supabase = createSubmissionClient();
+  if (!supabase) return NextResponse.json({ ok: false, error: "Submissions are temporarily unavailable." }, { status: 503 });
   const { data, error } = await supabase.rpc("submit_consultation", {
     p_full_name: v.fullName,
     p_startup: v.startup,

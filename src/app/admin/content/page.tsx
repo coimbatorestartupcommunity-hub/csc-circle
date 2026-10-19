@@ -1,3 +1,4 @@
+import { ContentEditor } from "@/components/admin/content-editor";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type ActionDef } from "@/components/admin/data-table";
 import { getAdminContext, can } from "@/lib/admin/gate";
@@ -39,6 +40,7 @@ export default async function AdminContentPage() {
         actions={actions}
         emptyMessage={res.ok ? "No content blocks." : res.error.message}
       />
+      {can(ctx, "content.manage") ? <ContentEditor isDemo={ctx.mode === "preview"} /> : null}
     </>
   );
 }

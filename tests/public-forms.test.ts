@@ -7,6 +7,7 @@ import { rateLimit } from "@/lib/rate-limit";
 
 describe("public RSVP schema (server-side)", () => {
   const valid = {
+    eventId: "11111111-1111-4111-8111-111111111111",
     fullName: "Demo Member",
     startup: "Sample Startup",
     whatsapp: "+91 90000 00000",
@@ -14,7 +15,7 @@ describe("public RSVP schema (server-side)", () => {
     goal: "Networking" as const,
     consent: true as const,
   };
-  it("accepts a valid submission and an optional uuid event id", () => {
+  it("accepts a valid submission with a required UUID event id", () => {
     expect(publicRsvpSchema.safeParse(valid).success).toBe(true);
     expect(
       publicRsvpSchema.safeParse({

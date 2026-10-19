@@ -96,6 +96,7 @@ export const adminServices = {
         sb.from("reviews").select("*", head).eq("moderation", "approved"),
       ]);
 
+      if ([accounts, active, claims, events, rsvps, confirmed, consults, reviews].some(r => r.error)) return fail("unknown", "Dashboard data could not be loaded.");
       const metrics = [
         { key: "accounts", label: "Website accounts", value: n(accounts), href: "/admin/members" },
         { key: "active", label: "Active memberships", value: n(active), href: "/admin/members" },
@@ -224,9 +225,17 @@ export const adminServices = {
   },
 
   listEvents(): Promise<ServiceResult<AdminEventRow[]>> {
-    return guard("events.update", demoEvents, async () => {
+    return guard("attendance.scan", demoEvents, async () => {
       const sb = await createClient();
-      const { data } = await sb.from("events").select("*").order("starts_at", { ascending: false });
+      const context = await getAdminContext();
+      let query = sb.from("events").select("*").order("starts_at", { ascending: false });
+      if (!context.permissions.has("events.update")) {
+        const { data: assignments } = await sb.from("event_staff").select("event_id").eq("user_id", context.userId!);
+        query = query.in("id", (assignments ?? []).map(a => a.event_id));
+      }
+      const { data, error } = await query;
+      if (error) return fail("unknown", "Could not load events.");
+      const { data: registrations } = context.permissions.has("registrations.read") ? await sb.from("event_registrations").select("event_id, status") : { data: [] };
       const rows: AdminEventRow[] = (data ?? []).map((e) => {
         const r = e as Row;
         return {
@@ -236,8 +245,8 @@ export const adminServices = {
           startsAt: (r.starts_at as string) ?? "",
           venue: (r.venue as string) ?? undefined,
           capacity: (r.capacity as number) ?? undefined,
-          confirmed: 0,
-          waitlisted: 0,
+          confirmed: (registrations ?? []).filter(x => x.event_id === r.id && ["confirmed", "checked_in"].includes(x.status)).length,
+          waitlisted: (registrations ?? []).filter(x => x.event_id === r.id && x.status === "waitlisted").length,
           status: (r.status as AdminEventRow["status"]) ?? "draft",
           admission: (r.admission as AdminEventRow["admission"]) ?? "free",
         };
@@ -261,30 +270,28 @@ export const adminServices = {
 
   listRegistrations(): Promise<ServiceResult<EventRegistration[]>> {
     return guard("registrations.read", demoRegistrations, async () => {
-      // Public website RSVPs land in rsvp_submissions (the admin review queue).
       const sb = await createClient();
-      const { data } = await sb
-        .from("rsvp_submissions")
-        .select("*")
-        .order("created_at", { ascending: false });
-      const rows: EventRegistration[] = (data ?? []).map((v) => {
-        const r = v as Row;
-        return {
-          id: String(r.id),
-          eventId: (r.event_id as string) ?? "",
-          eventTitle: (r.event_label as string) ?? "Event",
-          startsAt: "",
-          endsAt: "",
-          location: "",
-          reference: `RSVP-${String(r.id).slice(0, 8).toUpperCase()}`,
-          status: (r.status as EventRegistration["status"]) ?? "pending",
-          payment: "not_required",
-          attendance: "not_attended",
-          memberName: (r.full_name as string) ?? "",
-          createdAt: (r.created_at as string) ?? "",
-        };
+      const [{ data, error }, { data: profiles }, { data: events }] = await Promise.all([
+        sb.from("event_registrations").select("*").order("created_at", { ascending: false }),
+        sb.from("profiles").select("id, display_name, full_name"),
+        sb.from("events").select("id, title, starts_at, ends_at, venue, location"),
+      ]);
+      if (error) return fail("unknown", "Could not load registrations.");
+      const rows: EventRegistration[] = (data ?? []).map(r => {
+        const e = (events ?? []).find(e => e.id === r.event_id);
+        const p = (profiles ?? []).find(p => p.id === r.user_id);
+        return { id: r.id, eventId: r.event_id, eventTitle: e?.title ?? "Event", startsAt: e?.starts_at ?? "", endsAt: e?.ends_at ?? "", location: e?.location ?? "", venue: e?.venue ?? undefined, reference: r.reference, status: r.status, payment: r.payment, attendance: r.attendance, memberName: p?.display_name ?? p?.full_name ?? "CSC member", createdAt: r.created_at };
       });
       return ok(rows);
+    });
+  },
+
+  listEnquiries(): Promise<ServiceResult<{ id: string; fullName: string; email: string; whatsapp: string; startup: string; event: string; goal: string; status: string; createdAt: string }[]>> {
+    return guard("registrations.read", [], async () => {
+      const sb = await createClient();
+      const { data, error } = await sb.from("rsvp_submissions").select("*").order("created_at", { ascending: false });
+      if (error) return fail("unknown", "Could not load RSVP enquiries.");
+      return ok((data ?? []).map(r => ({ id: r.id, fullName: r.full_name, email: r.email, whatsapp: r.whatsapp, startup: r.startup ?? "", event: r.event_label ?? "", goal: r.goal ?? "", status: r.status, createdAt: r.created_at })));
     });
   },
 
@@ -305,7 +312,7 @@ export const adminServices = {
           startup: (r.startup as string) ?? undefined,
           whatsapp: (r.whatsapp as string) ?? undefined,
           email: (r.email as string) ?? undefined,
-          requested: (r.goal as string) ?? (r.challenge as string)?.slice(0, 40) ?? "",
+          requested: (r.goal as string) ?? (r.challenge as string) ?? "",
           submittedAt: (r.created_at as string) ?? "",
           assignedTo: (r.assigned_rep as string) ?? undefined,
           status: (r.status as AdminConsultationRow["status"]) ?? "submitted",
@@ -317,8 +324,12 @@ export const adminServices = {
   },
 
   listPayments(): Promise<ServiceResult<AdminPaymentRow[]>> {
-    // No payment table yet (gateway deferred). Demo-only; live returns empty.
-    return guard("payments.verify", demoPayments, async () => ok([]));
+    return guard("payments.verify", demoPayments, async () => {
+      const sb = await createClient();
+      const { data, error } = await sb.from("payments").select("*").order("created_at", { ascending: false });
+      if (error) return fail("unknown", "Could not load payments.");
+      return ok((data ?? []).map(p => ({ id: p.id, reference: p.reference ?? p.id, registrationReference: p.registration_id, attendee: "Restricted to registration detail", event: "See registration", amount: p.amount_minor / 100, currency: p.currency, status: p.status as AdminPaymentRow["status"], verifiedAt: p.reviewed_at ?? undefined, verifiedBy: p.reviewed_by ?? undefined })));
+    });
   },
 
   listReviews(): Promise<ServiceResult<AdminReviewRow[]>> {
@@ -331,7 +342,7 @@ export const adminServices = {
           id: String(r.id),
           reviewer: String(r.user_id).slice(0, 8),
           rating: (r.rating as number) ?? 0,
-          excerpt: ((r.review as string) ?? "").slice(0, 80),
+          excerpt: (r.review as string) ?? "",
           submittedAt: (r.created_at as string) ?? "",
           status: (r.moderation as AdminReviewRow["status"]) ?? "submitted",
         };
@@ -362,14 +373,26 @@ export const adminServices = {
   },
 
   listNotifications(): Promise<ServiceResult<NotificationRecord[]>> {
-    return guard("settings.manage", demoNotifications, async () => ok([]));
+    return guard("settings.manage", demoNotifications, async () => {
+      const sb = await createClient(); const { data, error } = await sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(200);
+      if (error) return fail("unknown", "Could not load notifications.");
+      return ok((data ?? []).map(r => ({ id: r.id, type: r.type, channel: r.channel as NotificationRecord["channel"], recipient: r.recipient ?? "", status: r.status as NotificationRecord["status"], createdAt: r.created_at, sentAt: r.sent_at ?? undefined })));
+    });
   },
 
   listMedia(): Promise<ServiceResult<MediaAsset[]>> {
-    return guard("media.manage", demoMedia, async () => ok([]));
+    return guard("media.manage", demoMedia, async () => {
+      const sb = await createClient(); const { data, error } = await sb.from("media_assets").select("*").order("created_at", { ascending: false });
+      if (error) return fail("unknown", "Could not load media.");
+      return ok((data ?? []).map(r => ({ id: r.id, filename: r.filename, altText: r.alt_text ?? undefined, type: r.type ?? "", width: r.width ?? undefined, height: r.height ?? undefined, sizeBytes: r.size_bytes ?? undefined, category: r.category as MediaAsset["category"], visibility: r.visibility as MediaAsset["visibility"], createdAt: r.created_at })));
+    });
   },
 
   listContent(): Promise<ServiceResult<ContentBlock[]>> {
-    return guard("content.manage", demoContent, async () => ok([]));
+    return guard("content.manage", demoContent, async () => {
+      const sb = await createClient(); const { data, error } = await sb.from("content_blocks").select("*").order("key");
+      if (error) return fail("unknown", "Could not load content.");
+      return ok((data ?? []).map(r => ({ key: r.key, label: r.label, value: r.value, status: r.status === "published" ? "published" as const : "draft" as const, updatedAt: r.updated_at })));
+    });
   },
 };

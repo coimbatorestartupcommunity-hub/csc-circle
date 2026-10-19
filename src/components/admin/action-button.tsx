@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +18,7 @@ export function ActionButton({
   variant = "outline",
   size = "sm",
   disabled,
+  operation,
 }: {
   label: string;
   message?: string;
@@ -24,17 +26,27 @@ export function ActionButton({
   variant?: "default" | "outline" | "ghost" | "destructive" | "secondary";
   size?: "default" | "sm" | "xs" | "lg";
   disabled?: boolean;
+  operation?: { kind: string; target: string; decision: string };
 }) {
-  function onClick() {
+  const router = useRouter();
+  const [saving, setSaving] = React.useState(false);
+  async function onClick() {
     if (confirm && !window.confirm(confirm)) return;
-    toast.info(
-      message ??
-        `“${label}” is recorded through the trusted backend with authorization + audit in Phase 1.`,
-    );
+    if (!operation) { toast.info(message ?? "This operation is unavailable. No changes were saved."); return; }
+    const reason = window.prompt("Review reason or independent payment settlement reference:", "");
+    if (reason === null) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...operation, reason }) });
+      const data = await res.json();
+      if (!res.ok || !data.ok) { toast.error(data.error ?? "Action was not saved."); return; }
+      toast.success("Change saved."); router.refresh();
+    } catch { toast.error("Could not connect. Verify the record before retrying."); }
+    finally { setSaving(false); }
   }
   return (
-    <Button type="button" variant={variant} size={size} onClick={onClick} disabled={disabled}>
-      {label}
+    <Button type="button" variant={variant} size={size} onClick={onClick} disabled={disabled || saving}>
+      {saving ? "Saving…" : label}
     </Button>
   );
 }

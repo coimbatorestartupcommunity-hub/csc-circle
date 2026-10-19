@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -33,11 +34,14 @@ export function EventEditorForm({
   initial,
   mode,
   isDemo,
+  eventId,
 }: {
   initial?: Partial<EventEditorValues>;
   mode: "create" | "edit";
   isDemo: boolean;
+  eventId?: string;
 }) {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -68,19 +72,17 @@ export function EventEditorForm({
     isFixture: false,
   };
 
-  function onSubmit(v: EventEditorValues) {
+  async function onSubmit(v: EventEditorValues) {
+    if (isDemo) { toast.info("DEMO preview. No event was saved or published."); return; }
     setSaving(true);
     try {
-      toast.success(
-        v.status === "published" ? "Event ready to publish." : "Event draft ready.",
-        {
-          description:
-            "Validated. Saving/publishing runs through the trusted EventManagementService (permission-checked, transactional, audited) in Phase 1 — then the public site shows it.",
-        },
-      );
-    } finally {
-      setSaving(false);
-    }
+      const res = await fetch("/api/admin/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: v, id: eventId }) });
+      const data = await res.json();
+      if (!res.ok || !data.ok) { toast.error(data.error ?? "Event was not saved."); return; }
+      toast.success(v.status === "published" ? "Event published." : "Draft saved.");
+      router.push(`/admin/events/${data.id}`); router.refresh();
+    } catch { toast.error("Could not save the event."); }
+    finally { setSaving(false); }
   }
 
   return (

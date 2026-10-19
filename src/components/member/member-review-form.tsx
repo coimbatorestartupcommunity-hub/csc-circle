@@ -7,7 +7,7 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldError } from "@/components/ui/field";
-import { createClient } from "@/lib/supabase/client";
+import { memberRequest } from "@/lib/services/member/request";
 import { reviewSchema } from "@/lib/validations/forms";
 
 /**
@@ -39,25 +39,8 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
     setErrors({});
     setSubmitting(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Please sign in to submit a review.");
-        return;
-      }
-      const { error } = await supabase
-        .from("reviews")
-        .insert({ user_id: user.id, rating, review, kind: "general" });
-      if (error) {
-        toast.error(
-          error.code === "23505"
-            ? "You already have a review. You can edit it instead."
-            : "Couldn't submit your review. Please try again.",
-        );
-        return;
-      }
+      const result = await memberRequest("review", { rating, review, consent });
+      if (result.error) { toast.error(result.error); return; }
       toast.success("Thanks! Your review was submitted for moderation.");
       setReview("");
       setRating(0);

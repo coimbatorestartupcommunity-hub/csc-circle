@@ -1,5 +1,6 @@
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { createAnonClient } from "@/lib/supabase/anon";
+import { createSubmissionClient } from "@/lib/supabase/submissions";
 import { publicRsvpSchema } from "@/lib/validations/forms";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
@@ -35,7 +36,15 @@ export async function POST(req: Request) {
   }
   const v = parsed.data;
 
-  const supabase = createAnonClient();
+  const user = await getAuthUser();
+  if (user) {
+    const sb = await createClient();
+    const { data, error } = await sb.rpc("csc_register_event", { event: v.eventId!, objective: v.goal });
+    if (error || !data || typeof data !== "object" || Array.isArray(data)) return NextResponse.json({ ok: false, error: "Registration requires an active membership and an open event." }, { status: 409 });
+    return NextResponse.json({ ok: true, reference: data.reference });
+  }
+  const supabase = createSubmissionClient();
+  if (!supabase) return NextResponse.json({ ok: false, error: "Submissions are temporarily unavailable." }, { status: 503 });
   const { data, error } = await supabase.rpc("submit_rsvp", {
     // event_id is a nullable uuid in the RPC; pass null when not provided.
     p_event_id: (v.eventId ?? null) as unknown as string,

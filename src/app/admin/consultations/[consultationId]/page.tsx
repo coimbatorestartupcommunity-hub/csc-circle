@@ -55,11 +55,12 @@ export default async function ConsultationDetail({
         {can(ctx, "consultations.manage") ? (
           <div className="flex flex-col gap-2 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
             <h2 className="text-sm font-semibold text-brand-ink">Actions</h2>
-            <ActionButton label="Assign reviewer" />
-            <ActionButton label="Request more info" />
+            <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "under_review" } : undefined} label="Begin review" />
+            <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "approved" } : undefined} label="Approve" />
+            <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "more_info_required" } : undefined} label="Request more info" />
             <ActionButton label="Propose meeting" />
-            <ActionButton label="Mark completed" />
-            <ActionButton label="Decline" variant="destructive" confirm="Decline this consultation request?" />
+            <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "completed" } : undefined} label="Mark completed" />
+            <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "declined" } : undefined} label="Decline" variant="destructive" confirm="Decline this consultation request?" />
           </div>
         ) : null}
       </div>

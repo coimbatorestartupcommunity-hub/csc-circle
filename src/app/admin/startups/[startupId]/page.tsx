@@ -52,9 +52,9 @@ export default async function AdminStartupDetail({
         </dl>
         {can(ctx, "directory.manage") ? (
           <div className="flex flex-wrap gap-2 border-t border-brand-border pt-4">
-            <ActionButton label="Approve & publish" message="Publishes to the public directory after persistence + approval (Phase 1)." />
+            <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "published" } : undefined} label="Approve & publish" message="Publishes to the public directory after persistence + approval (Phase 1)." />
             <ActionButton label="Edit details" />
-            <ActionButton label="Unpublish" variant="destructive" confirm="Unpublish this listing from the public directory?" />
+            <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "archived" } : undefined} label="Unpublish" variant="destructive" confirm="Unpublish this listing from the public directory?" />
           </div>
         ) : null}
       </div>

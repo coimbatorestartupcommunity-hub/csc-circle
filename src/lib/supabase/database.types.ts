@@ -6,6 +6,8 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+type OperationalTable<R> = { Row: R; Insert: Partial<R>; Update: Partial<R>; Relationships: [] }
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -14,6 +16,10 @@ export type Database = {
   }
   public: {
     Tables: {
+      payments: OperationalTable<{ id: string; registration_id: string; amount_minor: number; currency: string; status: string; reference: string | null; evidence_path: string | null; reviewed_by: string | null; reviewed_at: string | null; created_at: string }>
+      event_staff: OperationalTable<{ event_id: string; user_id: string }>
+      attendance_checkins: OperationalTable<{ id: string; registration_id: string; event_id: string; staff_id: string; checked_in_at: string }>
+
       admin_roles: {
         Row: {
           created_at: string
@@ -244,6 +250,7 @@ export type Database = {
       }
       event_registrations: {
         Row: {
+          pass_token: string | null
           attendance: Database["public"]["Enums"]["attendance_status"]
           created_at: string
           event_id: string
@@ -291,6 +298,8 @@ export type Database = {
       }
       events: {
         Row: {
+          price_minor: number
+          settings: Json
           admission: string
           capacity: number | null
           category: string
@@ -438,6 +447,7 @@ export type Database = {
       }
       memberships: {
         Row: {
+          verification_token: string | null
           created_at: string
           expires_at: string | null
           id: string
@@ -669,6 +679,14 @@ export type Database = {
       }
     }
     Functions: {
+      csc_save_content: { Args: { content_key: string; content_value: string; publish: boolean }; Returns: undefined }
+      csc_admin_action: { Args: { kind: string; target: string; decision: string; reason: string }; Returns: Json }
+      csc_register_event: { Args: { event: string; objective: string }; Returns: Json }
+      csc_check_in: { Args: { event: string; token: string }; Returns: Json }
+      csc_save_event: { Args: { payload: Json; target?: string | null }; Returns: string }
+      csc_verify_membership: { Args: { token: string }; Returns: boolean }
+      csc_ensure_profile: { Args: Record<string, never>; Returns: undefined }
+
       is_admin: { Args: never; Returns: boolean }
       next_member_number: { Args: never; Returns: string }
       submit_consultation: {

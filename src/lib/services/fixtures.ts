@@ -16,11 +16,7 @@ const explicitFlag = process.env.NEXT_PUBLIC_USE_FIXTURES;
 
 /** True only when explicitly enabled, or in local development. Never in prod unless opted in. */
 export const USE_FIXTURES: boolean =
-  explicitFlag === "true"
-    ? true
-    : explicitFlag === "false"
-      ? false
-      : process.env.NODE_ENV === "development";
+  process.env.NODE_ENV !== "production" && explicitFlag !== "false";
 
 export const startupFixtures: Startup[] = [
   {

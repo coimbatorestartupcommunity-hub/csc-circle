@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { createClient } from "@/lib/supabase/client";
+import { memberRequest } from "@/lib/services/member/request";
 import {
   designationOptions,
   goalOptions,
@@ -171,43 +171,8 @@ export function OnboardingWizard({ isDemo }: { isDemo: boolean }) {
     if (!validateStep()) return;
     setSaving(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        toast.message("DEMO preview — sign in with a real account to save onboarding.");
-        return;
-      }
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: data.fullName,
-          display_name: data.displayName,
-          whatsapp: data.whatsapp,
-          city: data.city,
-          designations: data.designations as never,
-          goals: data.goals as never,
-          startup: {
-            name: data.startupName,
-            website: data.startupWebsite,
-            description: data.startupDescription,
-          },
-          consent: {
-            membershipTerms: data.membershipTerms,
-            operationalEmail: data.operationalEmail,
-            marketingEmail: data.marketingEmail,
-            directoryParticipation: data.directoryParticipation,
-            displayNamePublicly: data.displayNamePublicly,
-            displayPhotoPublicly: data.displayPhotoPublicly,
-          },
-          profile_completion: 90,
-        })
-        .eq("id", user.id);
-      if (error) {
-        toast.error("Couldn't save your onboarding. Please try again.");
-        return;
-      }
+      const result = await memberRequest("onboarding", data);
+      if (result.error) { toast.error(result.error); return; }
       toast.success("Welcome! Your profile is set up.");
       router.push("/member/claim");
     } finally {

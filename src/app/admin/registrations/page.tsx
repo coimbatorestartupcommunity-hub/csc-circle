@@ -35,12 +35,13 @@ export default async function AdminRegistrationsPage() {
   const ctx = await getAdminContext();
   const res = await adminServices.listRegistrations();
   const rows = res.ok ? res.data : [];
+  const enquiries = await adminServices.listEnquiries();
 
   const actions: ActionDef[] | undefined = can(ctx, "registrations.approve")
     ? [
-        { label: "Approve", message: "Approval checks capacity + paid-event payment verification atomically (Phase 1). Paid events cannot be confirmed before verified payment." },
-        { label: "Waitlist" },
-        { label: "Cancel", variant: "destructive", confirm: "Cancel this registration?" },
+        { operation: ctx.mode === "live" ? { kind: "registration", decision: "confirmed" } : undefined, label: "Approve", message: "Approval checks capacity + paid-event payment verification atomically (Phase 1). Paid events cannot be confirmed before verified payment." },
+        { operation: ctx.mode === "live" ? { kind: "registration", decision: "waitlisted" } : undefined, label: "Waitlist" },
+        { operation: ctx.mode === "live" ? { kind: "registration", decision: "cancelled" } : undefined, label: "Cancel", variant: "destructive", confirm: "Cancel this registration?" },
       ]
     : undefined;
 
@@ -60,6 +61,11 @@ export default async function AdminRegistrationsPage() {
         actions={actions}
         emptyMessage={res.ok ? "No registrations." : res.error.message}
       />
+      <h2 className="mt-10 mb-3 text-xl font-semibold">Visitor RSVP enquiries</h2>
+      <p className="mb-4 text-sm text-brand-secondary">Visitor enquiries await identity verification. They do not issue an official event pass. Members register through their signed-in account.</p>
+      <DataTable rows={enquiries.ok ? enquiries.data : []} columns={[
+        { key: "fullName", header: "Applicant" }, { key: "email", header: "Email" }, { key: "whatsapp", header: "WhatsApp" }, { key: "startup", header: "Startup" }, { key: "event", header: "Event" }, { key: "goal", header: "Objective" }, { key: "status", header: "Status" }, { key: "createdAt", header: "Submitted", type: "date" }
+      ]} searchKeys={["fullName", "email", "event"]} emptyMessage={enquiries.ok ? "No visitor enquiries." : enquiries.error.message} />
     </>
   );
 }

@@ -70,7 +70,7 @@ export const publicRsvpSchema = z.object({
   startup: z.string().trim().min(2).max(120),
   whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
   email: z.string().trim().email("Enter a valid email address."),
-  eventId: z.string().uuid().optional(),
+  eventId: z.string().uuid(),
   eventLabel: z.string().trim().max(160).optional(),
   goal: z.enum(rsvpGoals),
   consent: z.literal(true),

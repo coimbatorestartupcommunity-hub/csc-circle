@@ -4,7 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
+import { memberRequest } from "@/lib/services/member/request";
 import type { MemberProfile } from "@/types/member";
 
 type ConsentKey = keyof MemberProfile["consent"];
@@ -31,22 +31,8 @@ export function MemberSettingsForm({
   async function save() {
     setSaving(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        toast.message("DEMO preview — sign in to save your preferences.");
-        return;
-      }
-      const { error } = await supabase
-        .from("profiles")
-        .update({ consent })
-        .eq("id", user.id);
-      if (error) {
-        toast.error("Couldn't save your preferences.");
-        return;
-      }
+      const result = await memberRequest("preferences", consent);
+      if (result.error) { toast.error(result.error); return; }
       toast.success("Preferences saved.");
     } finally {
       setSaving(false);

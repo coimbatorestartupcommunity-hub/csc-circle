@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Container } from "@/components/common/container";
 import { AmbientPastelBackground } from "@/components/motion";
-import { LoginCard } from "@/components/member/login-card";
+import { AuthCard } from "@/components/auth/auth-card";
+import { LoginForm } from "@/components/auth/login-form";
+import { safeNext } from "@/lib/auth/redirects";
 import { Icon, type IconName } from "@/components/common/icon";
 import { getAuthUser } from "@/lib/supabase/server";
 import { memberExperience } from "@/lib/content/home";
@@ -10,7 +12,7 @@ import { memberExperience } from "@/lib/content/home";
 export const metadata: Metadata = {
   title: "Sign in",
   description:
-    "Sign in to CSC Circle to manage your community profile, explore member opportunities, and access your digital membership experience.",
+    "Welcome Back to CSC Circle to manage your community profile, explore member opportunities, and access your digital membership experience.",
   alternates: { canonical: "/login" },
   robots: { index: false, follow: true },
 };
@@ -21,19 +23,18 @@ export const instant = false;
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   // Already signed in → go to the member area.
+  const { next } = await searchParams;
   const user = await getAuthUser();
-  if (user) redirect("/member");
-
-  const { error } = await searchParams;
+  if (user) redirect(`/auth/complete?next=${encodeURIComponent(safeNext(next))}`);
 
   return (
     <section className="relative overflow-hidden">
       <AmbientPastelBackground intensity="subtle" />
       <Container className="flex flex-col items-center gap-14 py-16 sm:py-24">
-        <LoginCard authError={!!error} />
+        <AuthCard title="Welcome Back to CSC Circle" description="Sign in to access your community profile, digital membership ID, event registrations, and CSC opportunities."><LoginForm /></AuthCard>
 
         <div className="w-full max-w-3xl">
           <h2 className="text-center text-sm font-semibold tracking-wide text-brand-muted uppercase">

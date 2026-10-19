@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { MemberProfileForm } from "@/components/member/member-profile-form";
 import { StatusBadge } from "@/components/member/status-badge";
@@ -51,6 +52,7 @@ export default async function MemberProfilePage() {
       </div>
 
       <MemberProfileForm profile={profile} isDemo={ctx.mode === "preview"} />
+      <Link href="/member/startup" className="mt-5 inline-block text-brand-accent underline">Submit a startup to the directory</Link>
     </>
   );
 }
