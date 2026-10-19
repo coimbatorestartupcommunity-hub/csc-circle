@@ -5,12 +5,7 @@ import { Star, Lock } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field";
+import { FieldDescription, FieldError } from "@/components/ui/field";
 import { reviewSchema, type ReviewFormValues } from "@/lib/validations/forms";
 
 /**
@@ -48,7 +43,7 @@ export function ReviewInvitation({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "mx-auto flex w-full max-w-xl flex-col gap-5 rounded-3xl bg-brand-white p-7 text-left ring-1 ring-brand-border sm:p-8",
+        "mx-auto flex w-full max-w-xl flex-col items-center gap-5 rounded-3xl bg-brand-white p-7 text-center ring-1 ring-brand-border sm:p-8",
         className,
       )}
     >
@@ -62,9 +57,9 @@ export function ReviewInvitation({ className }: { className?: string }) {
         </p>
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col items-center gap-1.5">
         <span className="text-sm font-medium text-brand-ink">Your rating</span>
-        <div className="flex items-center gap-1" role="radiogroup" aria-label="Rating">
+        <div className="flex items-center justify-center gap-1" role="radiogroup" aria-label="Rating">
           {Array.from({ length: 5 }).map((_, i) => {
             const n = i + 1;
             const on = (hover || rating) >= n;
@@ -97,8 +92,10 @@ export function ReviewInvitation({ className }: { className?: string }) {
         ) : null}
       </div>
 
-      <Field>
-        <FieldLabel htmlFor="review-text">Your review</FieldLabel>
+      <div className="flex w-full flex-col items-center gap-1.5">
+        <label htmlFor="review-text" className="text-sm font-medium text-brand-ink">
+          Your review
+        </label>
         <Textarea
           id="review-text"
           value={review}
@@ -106,11 +103,12 @@ export function ReviewInvitation({ className }: { className?: string }) {
           placeholder="What has your experience with CSC Circle been like?"
           rows={4}
           aria-invalid={!!errors.review}
+          className="w-full"
         />
         {errors.review ? <FieldError>{errors.review}</FieldError> : null}
-      </Field>
+      </div>
 
-      <label className="flex items-start gap-2 text-sm text-brand-secondary">
+      <label className="flex max-w-md items-center justify-center gap-2 text-sm text-brand-secondary">
         <input
           type="checkbox"
           checked={consent}
