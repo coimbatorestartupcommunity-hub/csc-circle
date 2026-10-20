@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type ActionDef, type Column, type Facet } from "@/components/admin/data-table";
 import { can, getAdminContext } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata = { title: "Startups" };
 
@@ -31,6 +33,9 @@ export default async function AdminStartupsPage() {
   const ctx = await getAdminContext();
   const res = await adminServices.listStartups();
   const rows = res.ok ? res.data : [];
+  const { count: pendingRevisionCount } = ctx.mode === "live" && can(ctx, "directory.manage")
+    ? await createAdminClient().from("directory_startup_revisions").select("id", { count: "exact", head: true }).eq("status", "pending")
+    : { count: 0 };
   const actions: ActionDef[] | undefined = can(ctx, "directory.manage")
     ? [
         { label: "Approve & publish", operation: ctx.mode === "live" ? { kind: "startup", decision: "published" } : undefined, message: "Review the founder-submitted information before publishing this startup.", visibleForStatuses: ["pending", "draft"] },
@@ -46,6 +51,7 @@ export default async function AdminStartupsPage() {
         title="Startup directory management"
         description="Review, approve and manage directory submissions."
         isDemo={ctx.mode === "preview"}
+        action={can(ctx, "directory.manage") ? <Link href="/admin/startups/revisions" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand-ink px-4 text-sm font-semibold text-white hover:bg-brand-secondary">Pending changes <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">{pendingRevisionCount ?? 0}</span></Link> : undefined}
       />
       <DataTable
         rows={rows}

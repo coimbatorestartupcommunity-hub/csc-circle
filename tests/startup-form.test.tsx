@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 
 const requestMock = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/services/member/request", () => ({ memberRequest: requestMock }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 
 import { MemberStartupForm } from "@/components/member/member-startup-form";
 
@@ -50,7 +51,7 @@ describe("MemberStartupForm", () => {
       consent: true,
     })));
     expect(await screen.findByText("Startup submitted")).toBeInTheDocument();
-    expect(screen.getByText(/under active CSC administrator review/i)).toBeInTheDocument();
+    expect(screen.getByText(/under CSC administrator review/i)).toBeInTheDocument();
     expect(container.querySelector("form")).toBeNull();
   });
 

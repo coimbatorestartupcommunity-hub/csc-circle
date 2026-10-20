@@ -40,6 +40,11 @@ describe("isolated PostgreSQL authorization regressions", () => {
   it("allows members to save About Me without granting access to protected profile fields", async () => {
     const saved = await asUser(a, `update profiles set about_me='A short professional introduction.' where id='${a}' returning about_me`);
     expect(saved[0].rows).toEqual([{ about_me: "A short professional introduction." }]);
+    const profile = await asUser(a, `update profiles set full_name='Member A Updated',display_name='Member A',whatsapp='+919000000000',city='Coimbatore',skills=array['Product','Engineering'],startup='{"name":"Test Company","website":"https://example.test"}'::jsonb where id='${a}' returning id`);
+    expect(profile[0].rows).toEqual([{ id: a }]);
+    expect((await db.query(`select full_name,display_name,whatsapp,city,skills,startup->>'name' as startup_name from profiles where id='${a}'`)).rows).toEqual([{
+      full_name: "Member A Updated", display_name: "Member A", whatsapp: "+919000000000", city: "Coimbatore", skills: ["Product", "Engineering"], startup_name: "Test Company",
+    }]);
     await expect(asUser(a, `update profiles set portrait_path='${a}/forged.webp' where id='${a}'`)).rejects.toThrow(/permission/i);
   });
   it("cannot activate membership or assign roles", async () => {
@@ -200,7 +205,7 @@ describe("CSC founder hub database permissions", () => {
   });
 
   it("returns only opted-in member fields and cannot search hidden profile data", async () => {
-    await db.exec(`update memberships set status='active' where user_id in ('${a}','${b}');
+    await db.exec(`update memberships set status='active',member_number=case when user_id='${a}' then 'CSC-2026-900001' else 'CSC-2026-900002' end,issued_at=now(),verification_token=case when user_id='${a}' then repeat('a',64) else repeat('b',64) end where user_id in ('${a}','${b}');
       update profiles set display_name='Consent Test Founder', city='Hidden City', designations=array['developer']::member_designation[], skills=array['Hidden Expertise'], about_me='Private introduction', consent='{"communityProfileVisible":true,"showCityToMembers":false,"showProfessionalRoleToMembers":true,"showAboutMeToMembers":false,"showSkillsToMembers":false,"showStartupAffiliationsToMembers":false,"shareWhatsappWithMembers":false,"showProfilePhotoToMembers":false}'::jsonb where id='${a}';`);
     const listed = await asUser(b, "select display_name,city,designation,about_me,skills,whatsapp,has_photo from public.list_discoverable_members('',30,0)");
     expect(listed[0].rows).toEqual([{ display_name: "Consent Test Founder", city: null, designation: "developer", about_me: null, skills: [], whatsapp: null, has_photo: false }]);
@@ -208,6 +213,53 @@ describe("CSC founder hub database permissions", () => {
     const hiddenSkill = await asUser(b, "select member_id from public.list_discoverable_members('Hidden Expertise',30,0)");
     expect(hiddenCity[0].rows).toHaveLength(0);
     expect(hiddenSkill[0].rows).toHaveLength(0);
+    const ownProfile = await asUser(a, `select member_id from public.get_discoverable_member('${a}')`);
+    expect(ownProfile[0].rows).toEqual([{ member_id: a }]);
+  });
+
+  it("prevents unverified, inactive, and non-card holders from enabling community sharing", async () => {
+    await db.exec(`update profiles set display_name='Sharing Test Member' where id='${b}'; update memberships set status='pending_verification',member_number=null,issued_at=null,verification_token=null where user_id='${b}';`);
+    await expect(asUser(b, `select set_member_profile_sharing(true,'{"showCity":true}'::jsonb)`)).rejects.toThrow(/active CSC membership/i);
+    expect((await db.query(`select consent->>'communityProfileVisible' as visible from profiles where id='${b}'`)).rows).toEqual([{ visible: null }]);
+  });
+
+  it("keeps a published startup unchanged until its owner revision is approved", async () => {
+    const startupId = "f2000000-0000-4000-8000-000000000001";
+    const revisionId = "f2000000-0000-4000-8000-000000000002";
+    const imagePath = `${a}/${startupId}-directory-startup.webp`;
+    await db.exec(`update profiles set display_name='Revision Test Founder',consent='{"directoryParticipation":true,"displayNamePublicly":true}'::jsonb where id='${a}';
+      insert into storage.objects(bucket_id,name) values ('member-portraits','${imagePath}');
+      insert into directory_startups(id,user_id,slug,name,industry,description,status,publication_consent,publication_consent_at,founder,directory_image_path)
+      values ('${startupId}','${a}','revision-test-startup','Revision Test Startup','Software','The currently approved published startup description is long enough.','published',true,now(),'{"name":"Revision Test Founder"}','${imagePath}');`);
+    const proposed = JSON.stringify({ name: "Revision Test Startup Updated", slug: "revision-test-startup", industry: "Software", description: "The proposed description is different, complete, and meets the validation limit.", website: null, logo_url: null, directory_image_path: imagePath, details: { city: "Coimbatore" }, collaboration: [], founder: { id: a, name: "Revision Test Founder", role: "Founder" } }).replaceAll("'", "''");
+    const submitted = await asUser(a, `select submit_startup_revision('${startupId}','${revisionId}','${proposed}'::jsonb,'{}'::jsonb,true) as id`);
+    expect(submitted[0].rows).toEqual([{ id: revisionId }]);
+    expect((await db.query(`select name,description,status from directory_startups where id='${startupId}'`)).rows).toEqual([{ name: "Revision Test Startup", description: "The currently approved published startup description is long enough.", status: "published" }]);
+    await expect(asUser(a, `select review_startup_revision('${revisionId}','approved','')`)).rejects.toThrow(/forbidden/i);
+    const approver = "f3000000-0000-4000-8000-000000000001";
+    await db.exec(`insert into auth.users(id,email,email_confirmed_at) values ('${approver}','revision-admin@example.test',now()); insert into admin_roles(user_id,role) values ('${approver}','community_admin');`);
+    await asUser(approver, `select review_startup_revision('${revisionId}','approved','Reviewed updated startup information')`);
+    expect((await db.query(`select id,name,description,status from directory_startups where id='${startupId}'`)).rows).toEqual([{ id: startupId, name: "Revision Test Startup Updated", description: "The proposed description is different, complete, and meets the validation limit.", status: "published" }]);
+    expect((await db.query(`select status from directory_startup_revisions where id='${revisionId}'`)).rows).toEqual([{ status: "approved" }]);
+
+    const correction = "f2000000-0000-4000-8000-000000000003";
+    const firstCorrection = JSON.stringify({ name: "Revision Test Startup Updated", slug: "revision-test-startup", industry: "Software", description: "The first follow-up description is complete but needs administrator feedback.", website: null, logo_url: null, directory_image_path: imagePath, details: { city: "Coimbatore" }, collaboration: [], founder: { id: a, name: "Revision Test Founder", role: "Founder" } }).replaceAll("'", "''");
+    await asUser(a, `select submit_startup_revision('${startupId}','${correction}','${firstCorrection}'::jsonb,'{}'::jsonb,true)`);
+    await asUser(approver, `select review_startup_revision('${correction}','rejected','Please clarify the service coverage area.')`);
+    const corrected = JSON.stringify({ name: "Revision Test Startup Updated", slug: "revision-test-startup", industry: "Software", description: "The corrected follow-up description now clearly explains our service coverage area across Tamil Nadu.", website: null, logo_url: null, directory_image_path: imagePath, details: { city: "Coimbatore" }, collaboration: [], founder: { id: a, name: "Revision Test Founder", role: "Founder" } }).replaceAll("'", "''");
+    await asUser(a, `select submit_startup_revision('${startupId}','${correction}','${corrected}'::jsonb,'{}'::jsonb,true)`);
+    expect((await db.query(`select status,review_reason,reviewed_at,proposed_data->>'description' as description from directory_startup_revisions where id='${correction}'`)).rows).toEqual([{ status: "pending", review_reason: null, reviewed_at: null, description: "The corrected follow-up description now clearly explains our service coverage area across Tamil Nadu." }]);
+    expect((await db.query(`select action from audit_logs where target_id='${correction}' order by created_at`)).rows).toEqual([{ action: "startup.revision.submitted" }, { action: "startup.revision.rejected" }, { action: "startup.revision.submitted" }]);
+  });
+  it("stores resume data through owner-bound functions and hides the underlying table", async () => {
+    const payload = JSON.stringify({ headline: "Member-entered role", summary: "A synthetic resume summary owned by one test member." }).replaceAll("'", "''");
+    await asUser(a, `select save_member_resume('${payload}'::jsonb)`);
+    expect((await asUser(a, "select get_member_resume() as resume"))[0].rows[0].resume).toEqual({ headline: "Member-entered role", summary: "A synthetic resume summary owned by one test member." });
+    expect((await asUser(b, "select get_member_resume() as resume"))[0].rows[0].resume).toEqual({});
+    await expect(asUser(a, "select * from private.member_resumes")).rejects.toThrow(/permission/i);
+    await db.exec("set role anon;");
+    try { await expect(db.exec(`select public.get_member_resume()`)).rejects.toThrow(/permission/i); }
+    finally { await db.exec("reset role;"); }
   });
 });
 

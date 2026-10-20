@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Bell, Check, CheckCheck, Loader2 } from "lucide-react";
 import { cn } from "cn";
@@ -25,6 +26,8 @@ function displayDate(value: string) {
 
 export function MemberNotificationMenu() {
   const [open, setOpen] = React.useState(false);
+  const [panelPosition, setPanelPosition] = React.useState({ top: 0, left: 12, listHeight: 320 });
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = React.useState(true);
   const [working, setWorking] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -56,6 +59,32 @@ export function MemberNotificationMenu() {
     };
   }, [load]);
 
+  const positionPanel = React.useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const margin = 12;
+    const width = Math.min(384, window.innerWidth - margin * 2);
+    const maxPanelHeight = Math.min(window.innerHeight * 0.7, 448);
+    const left = Math.min(Math.max(margin, rect.right - width), window.innerWidth - width - margin);
+    const below = rect.bottom + 8;
+    const top = below + maxPanelHeight > window.innerHeight - margin
+      ? Math.max(margin, rect.top - maxPanelHeight - 8)
+      : below;
+    setPanelPosition({ top, left, listHeight: Math.max(96, maxPanelHeight - 64) });
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    positionPanel();
+    window.addEventListener("resize", positionPanel);
+    window.addEventListener("scroll", positionPanel, true);
+    return () => {
+      window.removeEventListener("resize", positionPanel);
+      window.removeEventListener("scroll", positionPanel, true);
+    };
+  }, [open, positionPanel]);
+
   async function markRead(id?: string) {
     setWorking(true);
     try {
@@ -80,19 +109,23 @@ export function MemberNotificationMenu() {
   return (
     <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
         aria-expanded={open}
         aria-controls="member-notification-panel"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          if (!open) positionPanel();
+          setOpen((value) => !value);
+        }}
         className="relative flex size-9 items-center justify-center rounded-full text-brand-secondary ring-1 ring-brand-border transition hover:bg-brand-cloud hover:text-brand-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <Bell className="size-4" aria-hidden="true" />
         {unreadCount > 0 ? <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-brand-accent px-1 text-[10px] leading-4 font-bold text-white">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
       </button>
 
-      {open ? (
-        <section id="member-notification-panel" aria-label="Your notifications" className="absolute right-0 z-50 mt-2 w-[min(92vw,24rem)] overflow-hidden rounded-2xl border border-brand-border bg-white shadow-xl">
+      {open ? createPortal((
+        <section id="member-notification-panel" aria-label="Your notifications" style={{ top: panelPosition.top, left: panelPosition.left }} className="fixed z-[100] max-h-[min(70dvh,28rem)] w-[min(24rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-brand-border bg-white shadow-xl">
           <header className="flex items-center justify-between gap-3 border-b border-brand-border px-4 py-3">
             <div>
               <h2 className="text-sm font-semibold text-brand-ink">Notifications</h2>
@@ -105,7 +138,7 @@ export function MemberNotificationMenu() {
           </header>
 
           {error ? <div role="alert" className="border-b border-brand-border px-4 py-3 text-sm text-red-700">{error}<button type="button" onClick={() => { setLoading(true); void load(); }} className="ml-2 font-semibold underline">Retry</button></div> : null}
-          <div className="max-h-[min(70vh,28rem)] overflow-y-auto">
+          <div style={{ maxHeight: panelPosition.listHeight }} className="overflow-y-auto overscroll-contain">
             {loading ? <div className="flex justify-center px-4 py-8"><Loader2 className="size-5 animate-spin text-brand-muted" aria-label="Loading notifications" /></div> : null}
             {!loading && !error && items.length === 0 ? <p className="px-4 py-8 text-center text-sm text-brand-muted">You have no notifications yet.</p> : null}
             {!loading ? items.map((item) => {
@@ -125,7 +158,7 @@ export function MemberNotificationMenu() {
             }) : null}
           </div>
         </section>
-      ) : null}
+      ), document.body) : null}
     </div>
   );
 }

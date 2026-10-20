@@ -23,7 +23,10 @@ const startup: Startup = {
 describe("StartupCard", () => {
   it("keeps the company name on one line and wraps long industry text inside the card", () => {
     render(<StartupCard startup={startup} />);
-    expect(screen.getByRole("heading", { name: startup.name })).toHaveClass("truncate", "whitespace-nowrap");
+    const companyName = screen.getByRole("heading", { name: startup.name });
+    expect(companyName).toHaveClass("whitespace-nowrap");
+    expect(companyName).not.toHaveClass("truncate");
+    expect(Number.parseFloat(companyName.style.fontSize)).toBeLessThan(18);
     expect(screen.getByText(startup.industry)).toHaveClass("min-w-0", "max-w-full", "whitespace-normal", "break-words");
     expect(screen.getByText(startup.description)).toHaveClass("min-w-0", "max-w-full", "break-words");
     expect(screen.getByRole("img", { name: `${startup.name} logo` })).toHaveAttribute("src", "/brand/lit-logo.png");

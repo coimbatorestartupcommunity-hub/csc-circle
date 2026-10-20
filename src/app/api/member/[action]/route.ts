@@ -48,15 +48,21 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, about_me: v.aboutMe ?? "", skills: (v.skills ?? "").split(",").map(x => x.trim()).filter(Boolean), startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription } }).eq("id", user.id).select("id").single();
       if (!error) revalidateTag("directory", { expire: 0 });
       if (!error) scheduleNotificationDelivery();
-      return error ? authResponse({ error: "Profile was not saved." }, 409) : authResponse({ ok: true, id: data.id });
+      if (error) {
+        console.error("CSC_MEMBER_PROFILE_UPDATE_FAILED", { code: error.code ?? "unknown" });
+        if (error.code === "PGRST116") return authResponse({ error: "Your member profile could not be found. Refresh the page and sign in again." }, 404);
+        if (error.code === "42501") return authResponse({ error: "Profile editing is temporarily unavailable for this account. Contact CSC support if the problem continues." }, 403);
+        return authResponse({ error: "Profile changes could not be saved. Check the highlighted fields and try again." }, 409);
+      }
+      return authResponse({ ok: true, id: data.id });
     }
     if (action === "preferences") {
       const parsed = consentSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your privacy preferences." }, 422);
-      const { data, error } = await sb.from("profiles").update({ consent: parsed.data }).eq("id", user.id).select("id").single();
+      const { error } = await sb.rpc("update_member_profile_preferences", { p_consent: parsed.data });
       if (!error) revalidateTag("directory", { expire: 0 });
       if (!error) scheduleNotificationDelivery();
-      return error ? authResponse({ error: "Preferences were not saved." }, 409) : authResponse({ ok: true, id: data.id });
+      return error ? authResponse({ error: "Preferences were not saved." }, 409) : authResponse({ ok: true, id: user.id });
     }
     if (action === "startup-save") {
       const parsed = memberStartupSchema.safeParse(body);
@@ -68,22 +74,26 @@ export async function POST(request: Request, context: { params: Promise<{ action
         return authResponse({ error: "Complete your profile and enable directory participation and public-name consent before submitting." }, 422);
       }
       const admin = createAdminClient();
+      const { data: existingStartup } = v.existingId ? await sb.from("directory_startups").select("id,status,directory_image_path,logo_url").eq("id", v.existingId).eq("user_id", user.id).maybeSingle() : { data: null };
+      if (v.existingId && !existingStartup) return authResponse({ error: "That startup could not be found in your account." }, 404);
+      const isPublishedEdit = existingStartup?.status === "published";
       const expectedDirectory = `${user.id}/${v.id}-directory-startup.webp`;
-      if (v.directoryImagePath !== expectedDirectory) return authResponse({ error: "Upload a separate 4:3 directory image for this startup." }, 422);
-      const { error: imageError } = await admin.storage.from("member-portraits").download(expectedDirectory);
+      const expectedRevisionDirectory = v.revisionId ? `${user.id}/${v.id}-revision-${v.revisionId}-directory-startup.webp` : "";
+      const validDirectoryPath = v.directoryImagePath === expectedDirectory || (isPublishedEdit && (v.directoryImagePath === existingStartup?.directory_image_path || v.directoryImagePath === expectedRevisionDirectory));
+      if (!validDirectoryPath) return authResponse({ error: "Upload or keep this startup's own 4:3 directory image." }, 422);
+      const { error: imageError } = await admin.storage.from("member-portraits").download(v.directoryImagePath);
       if (imageError) return authResponse({ error: "The 4:3 startup directory image could not be verified. Upload it again." }, 422);
       const expectedLogo = v.logoPath;
-      if (expectedLogo && expectedLogo !== `${user.id}/${v.id}-startup-logo.webp`) {
-        const { data: ownedExisting } = v.existingId ? await sb.from("directory_startups").select("logo_url").eq("id", v.existingId).eq("user_id", user.id).maybeSingle() : { data: null };
-        const legacyPathAllowed = ownedExisting?.logo_url === expectedLogo && new RegExp(`^${user.id}/[0-9a-f-]{36}-startup-logo\\.webp$`, "i").test(expectedLogo);
-        if (!legacyPathAllowed) return authResponse({ error: "The company logo could not be verified. Upload it again." }, 422);
-      }
+      const expectedLogoPath = `${user.id}/${v.id}-startup-logo.webp`;
+      const expectedRevisionLogo = v.revisionId ? `${user.id}/${v.id}-revision-${v.revisionId}-startup-logo.webp` : "";
+      const validLogoPath = !expectedLogo || expectedLogo === expectedLogoPath || (isPublishedEdit && (expectedLogo === existingStartup?.logo_url || expectedLogo === expectedRevisionLogo));
+      if (!validLogoPath) return authResponse({ error: "The company logo could not be verified. Upload it again." }, 422);
       if (expectedLogo) {
         const { error: logoError } = await admin.storage.from("member-portraits").download(expectedLogo);
         if (logoError) return authResponse({ error: "The company logo could not be verified. Upload it again." }, 422);
       }
       const safeDetails = { ...v };
-      for (const key of ["supportEmail", "additionalSupportEmail", "companyEmail", "companyMobile", "companyWhatsapp", "website", "id", "name", "slug", "industry", "description", "logoPath", "directoryImagePath", "existingId", "consent", "contactPerson", "founderCity", "founderMobile", "founderWhatsapp", "founderEmail"] as const) Reflect.deleteProperty(safeDetails, key);
+      for (const key of ["supportEmail", "additionalSupportEmail", "companyEmail", "companyMobile", "companyWhatsapp", "website", "id", "name", "slug", "industry", "description", "logoPath", "directoryImagePath", "existingId", "revisionId", "submitForApproval", "consent", "contactPerson", "founderCity", "founderMobile", "founderWhatsapp", "founderEmail"] as const) Reflect.deleteProperty(safeDetails, key);
       const details = {
         ...safeDetails,
         ownerName: profile.display_name,
@@ -95,27 +105,52 @@ export async function POST(request: Request, context: { params: Promise<{ action
         },
       };
       const privateDetails = { website: v.website, supportEmail: v.supportEmail, additionalSupportEmail: v.additionalSupportEmail, companyEmail: v.companyEmail, companyMobile: v.companyMobile, companyWhatsapp: v.companyWhatsapp, contactPerson: v.contactPerson, founderCity: v.founderCity, founderMobile: v.founderMobile, founderWhatsapp: v.founderWhatsapp, founderEmail: v.founderEmail };
+      const pStartup = {
+        id: v.id,
+        ...(v.existingId ? { existingId: v.existingId } : {}),
+        name: v.name,
+        slug: v.slug,
+        industry: v.industry,
+        description: v.description,
+        website: v.website,
+        logoPath: expectedLogo || null,
+        directoryImagePath: v.directoryImagePath,
+        founderRole: v.founderRole,
+        consent: true,
+        details,
+      };
+      if (isPublishedEdit) {
+        if (!v.revisionId) return authResponse({ error: "Reload the startup editor to create a secure revision." }, 409);
+        const { data: revisionId, error } = await sb.rpc("submit_startup_revision", {
+          p_startup_id: v.existingId!, p_revision_id: v.revisionId,
+          p_proposed: {
+            name: v.name, slug: v.slug, industry: v.industry, description: v.description,
+            website: v.publishWebsite ? v.website : null, logo_url: expectedLogo || null,
+            directory_image_path: v.directoryImagePath, details,
+            collaboration: v.collaboration,
+            founder: { id: user.id, name: profile.display_name, role: v.founderRole },
+          },
+          p_private_details: privateDetails,
+          p_submit: v.submitForApproval,
+        });
+        if (error || !revisionId) {
+          const msg = error?.message ?? "Could not save startup changes.";
+          if (msg.includes("already pending")) return authResponse({ error: "A startup revision is already awaiting administrator approval." }, 409);
+          if (msg.includes("duplicate key")) return authResponse({ error: "That directory URL is already in use. Change the startup slug and try again." }, 409);
+          return authResponse({ error: "Startup changes could not be saved. Refresh and review the current startup status." }, 409);
+        }
+        if (v.submitForApproval) scheduleNotificationDelivery();
+        revalidateTag("directory", { expire: 0 });
+        return authResponse({ ok: true, id: revisionId, status: v.submitForApproval ? "pending" : "draft" });
+      }
       const { data: startupId, error } = await sb.rpc("save_member_startup", {
-        p_startup: {
-          id: v.id,
-          ...(v.existingId ? { existingId: v.existingId } : {}),
-          name: v.name,
-          slug: v.slug,
-          industry: v.industry,
-          description: v.description,
-          website: v.website,
-          logoPath: expectedLogo || null,
-          directoryImagePath: expectedDirectory,
-          founderRole: v.founderRole,
-          consent: true,
-          details,
-        },
+        p_startup: pStartup,
         p_private_details: privateDetails,
       });
       if (error || !startupId) {
         const msg = error?.message ?? "Could not save this startup.";
         if (msg.includes("startup_limit_reached")) return authResponse({ error: "You have reached the maximum of four startups." }, 409);
-        if (msg.includes("published startups")) return authResponse({ error: "Only draft or pending startup submissions can be edited here." }, 409);
+        if (msg.includes("published startups")) return authResponse({ error: "Refresh the startup editor to submit published changes for approval." }, 409);
         if (msg.includes("duplicate key")) return authResponse({ error: "That directory URL is already in use. Change the startup slug and try again." }, 409);
         return authResponse({ error: "The startup could not be saved for CSC review. Please check the details and retry." }, 409);
       }
@@ -127,11 +162,12 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = onboardingSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Complete all onboarding fields and required consent." }, 422);
       const v = parsed.data;
-      const { membershipTerms, operationalEmail, marketingEmail, directoryParticipation, displayNamePublicly, displayPhotoPublicly } = v;
-      const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, designations: v.designations as Database["public"]["Enums"]["member_designation"][], goals: v.goals as Database["public"]["Enums"]["community_goal"][], startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription ?? v.description }, consent: { membershipTerms, operationalEmail, marketingEmail, directoryParticipation, displayNamePublicly, displayPhotoPublicly }, profile_completion: 100 }).eq("id", user.id).select("id").single();
+      const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, designations: v.designations as Database["public"]["Enums"]["member_designation"][], goals: v.goals as Database["public"]["Enums"]["community_goal"][], startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription ?? v.description }, profile_completion: 100 }).eq("id", user.id).select("id").single();
+      const consentResult = !error ? await sb.rpc("update_member_profile_preferences", { p_consent: v }) : { error };
+      if (!error && consentResult.error) return authResponse({ error: "Profile saved, but privacy preferences were not saved. Review Settings and try again." }, 409);
       if (!error) revalidateTag("directory", { expire: 0 });
       if (!error) scheduleNotificationDelivery();
-      return error ? authResponse({ error: "Onboarding was not saved." }, 409) : authResponse({ ok: true, id: data.id });
+      return error ? authResponse({ error: "Onboarding was not saved." }, 409) : consentResult.error ? authResponse({ error: "Profile saved, but privacy preferences were not saved. Review Settings and try again." }, 409) : authResponse({ ok: true, id: data.id });
     }
     return authResponse({ error: "Not found." }, 404);
   } catch { return authResponse({ error: "Could not save your information. Please try again." }, 503); }

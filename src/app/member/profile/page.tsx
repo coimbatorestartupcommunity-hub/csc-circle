@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Rocket, UserCircle, UsersRound, ArrowRight } from "lucide-react";
+import { Rocket, UserCircle, ArrowRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MemberProfileForm } from "@/components/member/member-profile-form";
 import { MemberPortraitUpload } from "@/components/member/member-portrait-upload";
@@ -10,6 +10,7 @@ import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 import { designationLabels, membershipStatusMeta } from "@/lib/content/member-taxonomy";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { CommunityProfileSharing } from "@/components/member/community-profile-sharing";
 
 export const metadata = { title: "Profile" };
 
@@ -40,6 +41,11 @@ export default async function MemberProfilePage() {
 
       <MemberProfileForm key={profile.id} profile={profile} isDemo={ctx.mode === "preview"} />
 
+      <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div><h2 className="font-semibold text-brand-ink">Create your professional resume</h2><p className="mt-1 text-sm text-brand-muted">Build and export a searchable resume from the professional details you choose to include.</p></div>
+        <Button variant="outline" render={<Link href="/member/resume" />} className="w-full shrink-0 gap-2 sm:w-auto"><FileText className="size-4" />Create My Resume<ArrowRight className="size-4" /></Button>
+      </section>
+
       {!(["claim_submitted", "pending_verification", "approved", "active"].includes(profile.membership.status)) ? (
         <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
@@ -56,10 +62,11 @@ export default async function MemberProfilePage() {
           <p className="mt-1 text-sm text-brand-muted">Manage up to four separate startup profiles. {startupCount} of 4 slots used.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button variant="outline" render={<Link href="/members" />} className="w-full shrink-0 gap-2 sm:w-auto"><UsersRound className="size-4" /> View CSC Profiles</Button>
           <Button render={<Link href="/member/startups" />} className="w-full shrink-0 gap-2 sm:w-auto"><Rocket className="size-4" /> Manage My Startups <ArrowRight className="size-4" /></Button>
         </div>
       </section>
+
+      <CommunityProfileSharing memberId={profile.id} portraitUrl={profile.portraitUrl} />
 
       <div className="flex justify-center">
         {directoryReady ? (

@@ -14,6 +14,7 @@ export async function POST(request: Request) {
   const file = form?.get("file");
   const startupId = String(form?.get("startupId") ?? "");
   const kind = String(form?.get("kind") ?? "");
+  const revisionId = String(form?.get("revisionId") ?? "");
   if (!(file instanceof File) || !/^[0-9a-f-]{36}$/i.test(startupId) || !["logo", "directory"].includes(kind)) {
     return authResponse({ error: "Choose a startup image and try again." }, 400);
   }
@@ -27,8 +28,18 @@ export async function POST(request: Request) {
     const output = kind === "directory"
       ? await sharp(source).rotate().resize(1200, 900, { fit: "cover", position: sharp.strategy.attention }).webp({ quality: 88, effort: 5 }).toBuffer()
       : await sharp(source).rotate().resize(640, 640, { fit: "inside", withoutEnlargement: true }).webp({ quality: 90, effort: 5 }).toBuffer();
-    const path = `${ctx.user!.id}/${startupId}-${kind === "directory" ? "directory-startup" : "startup-logo"}.webp`;
     const admin = createAdminClient();
+    let publishedEdit = false;
+    if (revisionId) {
+      if (!/^[0-9a-f-]{36}$/i.test(revisionId)) return authResponse({ error: "Invalid startup revision." }, 422);
+      const { data: startup } = await admin.from("directory_startups").select("id,status").eq("id", startupId).eq("user_id", ctx.user!.id).maybeSingle();
+      if (!startup || startup.status !== "published") return authResponse({ error: "Only the owner of a published startup can upload revision media." }, 403);
+      publishedEdit = true;
+    }
+    const suffix = kind === "directory" ? "directory-startup" : "startup-logo";
+    const path = publishedEdit
+      ? `${ctx.user!.id}/${startupId}-revision-${revisionId}-${suffix}.webp`
+      : `${ctx.user!.id}/${startupId}-${suffix}.webp`;
     const { error } = await admin.storage.from("member-portraits").upload(path, output, { contentType: "image/webp", upsert: true, cacheControl: "3600" });
     if (error) return authResponse({ error: "The startup image could not be saved. Please try again." }, 503);
     const { data: preview } = await admin.storage.from("member-portraits").createSignedUrl(path, 1800);
