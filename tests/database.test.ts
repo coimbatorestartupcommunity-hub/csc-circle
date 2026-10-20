@@ -174,6 +174,19 @@ describe("trusted operations and replay protection", () => {
       insert into events(id,slug,title,category,starts_at,ends_at,location,capacity,status,admission,registration_state)
       values ('${event}','isolated-event','Isolated Test Event','meetup',now()+interval '1 hour',now()+interval '3 hours','Test venue',1,'published','free','open');`);
   });
+  it("creates an event with explicit local-time timestamp parsing", async () => {
+    const payload = JSON.stringify({
+      slug: "timestamp-regression-event", title: "Timestamp Regression Event",
+      category: "meetup", description: "A synthetic event used to verify the admin event save path.",
+      status: "draft", admission: "free", date: "2099-01-02", startTime: "10:00",
+      endTime: "12:00", capacity: "25", venueAddress: "Coimbatore",
+    }).replaceAll("'", "''");
+    const saved = await asUser(admin, `select public.csc_save_event('${payload}'::jsonb,null) as id`);
+    const id = (saved[0].rows[0] as { id: string }).id;
+    expect((await db.query("select starts_at,ends_at,status from events where id=$1", [id])).rows).toEqual([
+      { starts_at: new Date("2099-01-02T04:30:00.000Z"), ends_at: new Date("2099-01-02T06:30:00.000Z"), status: "draft" },
+    ]);
+  });
   it("keeps startup submissions private until an authorized admin approves them", async () => {
     const startup = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
     const startupImage = `${a}/${startup}-directory-startup.webp`;
