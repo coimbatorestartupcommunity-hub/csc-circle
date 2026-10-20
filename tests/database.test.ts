@@ -271,6 +271,23 @@ describe("CSC founder hub database permissions", () => {
     const legacyLogoProposal = JSON.stringify({ name: "Legacy Logo Startup", slug: "legacy-logo-startup", industry: "Software", description: "Updated startup description preserves an existing owner-scoped logo unchanged.", website: null, logo_url: legacyLogo, directory_image_path: legacyImage, details: { city: "Coimbatore" }, collaboration: [], founder: { id: a, name: "Revision Test Founder", role: "Founder" } }).replaceAll("'", "''");
     await asUser(a, `select submit_startup_revision('${legacyStartup}','${legacyRevision}','${legacyLogoProposal}'::jsonb,'{}'::jsonb,true)`);
     expect((await db.query(`select status,proposed_data->>'logo_url' as logo_url from directory_startup_revisions where id='${legacyRevision}'`)).rows).toEqual([{ status: "pending", logo_url: legacyLogo }]);
+
+    // A legacy published directory image may have a noncanonical object name.
+    // Only the exact path already stored on this locked startup row is accepted.
+    const legacyPhotoStartup = "f2000000-0000-4000-8000-000000000007";
+    const legacyPhotoRevision = "f2000000-0000-4000-8000-000000000008";
+    const legacyPhotoPath = `${a}/legacy-directory/${legacyPhotoStartup}.webp`;
+    const otherStartupPhotoPath = `${a}/another-startup/directory.webp`;
+    const canonicalPhotoPath = `${a}/${legacyPhotoStartup}-directory-startup.webp`;
+    await db.exec(`insert into storage.objects(bucket_id,name) values ('member-portraits','${legacyPhotoPath}'),('member-portraits','${otherStartupPhotoPath}'),('member-portraits','${canonicalPhotoPath}');
+      insert into directory_startups(id,user_id,slug,name,industry,description,status,publication_consent,publication_consent_at,founder,directory_image_path)
+      values ('${legacyPhotoStartup}','${a}','legacy-directory-photo','Legacy Directory Photo','Software','A valid previously published directory image uses a legacy object naming convention.','published',true,now(),'{"name":"Revision Test Founder"}','${canonicalPhotoPath}');
+      update directory_startups set directory_image_path='${legacyPhotoPath}' where id='${legacyPhotoStartup}';`);
+    const legacyPhotoProposal = JSON.stringify({ name: "Legacy Directory Photo", slug: "legacy-directory-photo", industry: "Software", description: "The owner updates text while keeping the exact previously approved directory photo.", website: null, logo_url: null, directory_image_path: legacyPhotoPath, details: { city: "Coimbatore" }, collaboration: [], founder: { id: a, name: "Revision Test Founder", role: "Founder" } }).replaceAll("'", "''");
+    await asUser(a, `select submit_startup_revision('${legacyPhotoStartup}','${legacyPhotoRevision}','${legacyPhotoProposal}'::jsonb,'{}'::jsonb,true)`);
+    expect((await db.query(`select status,proposed_data->>'directory_image_path' as directory_image_path from directory_startup_revisions where id='${legacyPhotoRevision}'`)).rows).toEqual([{ status: "pending", directory_image_path: legacyPhotoPath }]);
+    const forgedPhotoProposal = legacyPhotoProposal.replace(legacyPhotoPath, otherStartupPhotoPath);
+    await expect(asUser(a, `select submit_startup_revision('${legacyPhotoStartup}','${legacyPhotoRevision}','${forgedPhotoProposal}'::jsonb,'{}'::jsonb,true)`)).rejects.toThrow(/invalid revision image path/i);
   });
   it("stores resume data through owner-bound functions and hides the underlying table", async () => {
     const payload = JSON.stringify({ headline: "Member-entered role", summary: "A synthetic resume summary owned by one test member." }).replaceAll("'", "''");

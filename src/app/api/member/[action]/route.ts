@@ -11,6 +11,7 @@ import { reviewSchema } from "@/lib/validations/forms";
 import type { Database } from "@/lib/supabase/database.types";
 import { memberStartupSchema } from "@/lib/validations/member-startup";
 import { isExactPendingStartupRevisionRetry } from "@/lib/member/startup-revision-retry";
+import { classifyStartupSaveError, startupSaveErrorResponse } from "@/lib/member/startup-save-errors";
 const consentSchema = onboardingStep5Schema;
 const onboardingSchema = onboardingStep1Schema.merge(onboardingStep2Schema).merge(onboardingStep3Schema).merge(onboardingStep4Schema).merge(onboardingStep5Schema).extend({ startupDescription: z.string().max(600).optional() });
 export async function POST(request: Request, context: { params: Promise<{ action: string }> }) {
@@ -76,7 +77,10 @@ export async function POST(request: Request, context: { params: Promise<{ action
     }
     if (action === "startup-save") {
       const parsed = memberStartupSchema.safeParse(body);
-      if (!parsed.success) return authResponse({ error: "Check the required startup details, directory image, and publication consent." }, 422);
+      if (!parsed.success) {
+        const issue = parsed.error.issues[0];
+        return authResponse({ code: "STARTUP_FIELD_INVALID", field: issue?.path.join(".") ?? "startup", error: issue?.message ?? "Check the highlighted startup information." }, 422);
+      }
       const v = parsed.data;
       const { data: profile } = await sb.from("profiles").select("display_name,consent").eq("id", user.id).maybeSingle();
       const consent = profile?.consent;
@@ -87,12 +91,25 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const { data: existingStartup } = v.existingId ? await sb.from("directory_startups").select("id,status,directory_image_path,logo_url").eq("id", v.existingId).eq("user_id", user.id).maybeSingle() : { data: null };
       if (v.existingId && !existingStartup) return authResponse({ error: "That startup could not be found in your account." }, 404);
       const isPublishedEdit = existingStartup?.status === "published";
+      if (isPublishedEdit && v.submitForApproval) {
+        const { data: pendingRevision, error: pendingLookupError } = await sb.from("directory_startup_revisions")
+          .select("id,status")
+          .eq("startup_id", v.existingId!)
+          .eq("status", "pending")
+          .limit(1)
+          .maybeSingle();
+        if (pendingLookupError) return authResponse({ error: "The current startup review status could not be checked. Refresh and try again." }, 503);
+        if (pendingRevision && pendingRevision.id !== v.revisionId) return authResponse(startupSaveErrorResponse("STARTUP_REVISION_PENDING"), 409);
+      }
       const expectedDirectory = `${user.id}/${v.id}-directory-startup.webp`;
       const expectedRevisionDirectory = v.revisionId ? `${user.id}/${v.id}-revision-${v.revisionId}-directory-startup.webp` : "";
       const validDirectoryPath = v.directoryImagePath === expectedDirectory || (isPublishedEdit && (v.directoryImagePath === existingStartup?.directory_image_path || v.directoryImagePath === expectedRevisionDirectory));
       if (!validDirectoryPath) return authResponse({ error: "Upload or keep this startup's own 4:3 directory image." }, 422);
       const { error: imageError } = await admin.storage.from("member-portraits").download(v.directoryImagePath);
-      if (imageError) return authResponse({ error: "The 4:3 startup directory image could not be verified. Upload it again." }, 422);
+      if (imageError) {
+        console.error("CSC_STARTUP_MEDIA_VERIFY_FAILED", { kind: "directory_image", storageCode: imageError.name, startupId: v.existingId ?? v.id, revisionId: v.revisionId });
+        return authResponse({ code: "DIRECTORY_IMAGE_MISSING", error: "The saved directory image could not be found. Please upload your 4:3 image again." }, 422);
+      }
       const expectedLogo = v.logoPath;
       const expectedLogoPath = `${user.id}/${v.id}-startup-logo.webp`;
       const expectedRevisionLogo = v.revisionId ? `${user.id}/${v.id}-revision-${v.revisionId}-startup-logo.webp` : "";
@@ -100,7 +117,10 @@ export async function POST(request: Request, context: { params: Promise<{ action
       if (!validLogoPath) return authResponse({ error: "The company logo could not be verified. Upload it again." }, 422);
       if (expectedLogo && !/^https?:\/\//i.test(expectedLogo)) {
         const { error: logoError } = await admin.storage.from("member-portraits").download(expectedLogo);
-        if (logoError) return authResponse({ error: "The company logo could not be verified. Upload it again." }, 422);
+        if (logoError) {
+          console.error("CSC_STARTUP_MEDIA_VERIFY_FAILED", { kind: "startup_logo", storageCode: logoError.name, startupId: v.existingId ?? v.id, revisionId: v.revisionId });
+          return authResponse(startupSaveErrorResponse("STARTUP_LOGO_MISSING"), 422);
+        }
       }
       const safeDetails = { ...v };
       for (const key of ["supportEmail", "additionalSupportEmail", "companyEmail", "companyMobile", "companyWhatsapp", "website", "id", "name", "slug", "industry", "description", "logoPath", "directoryImagePath", "existingId", "revisionId", "submitForApproval", "consent", "contactPerson", "founderCity", "founderMobile", "founderWhatsapp", "founderEmail"] as const) Reflect.deleteProperty(safeDetails, key);
@@ -160,23 +180,11 @@ export async function POST(request: Request, context: { params: Promise<{ action
               return authResponse({ ok: true, id: v.revisionId, status: "pending" });
             }
           }
-          const reason = msg.includes("already pending") || msg.includes("already submitted") ? "revision_pending"
-            : msg.includes("duplicate key") ? "slug_conflict"
-            : code === "40001" ? "stale_revision"
-            : code === "42501" ? "ownership_or_status"
-            : code === "23514" || code === "22023" ? "validation_or_media"
-            : "database_error";
-          console.error("CSC_STARTUP_REVISION_SAVE_FAILED", { code, reason });
-          if (msg.includes("already pending")) return authResponse({ error: "A startup revision is already awaiting administrator approval." }, 409);
-          if (msg.includes("already submitted")) return authResponse({ error: "These changes are already awaiting CSC administrator approval. Refresh My Startups to see the current status." }, 409);
-          if (msg.includes("duplicate key")) return authResponse({ error: "That directory URL is already in use. Change the startup slug and try again." }, 409);
-          if (code === "40001") return authResponse({ error: "This startup changed after you opened the editor. Reload the latest version, then apply your changes again." }, 409);
-          if (code === "42501") return authResponse({ error: "This startup is no longer available for editing in its current status. Refresh My Startups and try again." }, 409);
-          if (msg.includes("revision image missing")) return authResponse({ error: "The startup directory photo is not present in saved media. Upload it again, wait for the preview to finish, then submit." }, 422);
-          if (msg.includes("invalid revision image path")) return authResponse({ error: "The directory photo belongs to a different edit session. Refresh the editor and upload the photo again." }, 422);
-          if (msg.includes("revision logo missing") || msg.includes("invalid revision logo path")) return authResponse({ error: "The company logo could not be matched to this edit. Re-upload the logo or keep the currently approved logo." }, 422);
-          if (code === "23514" || code === "22023") return authResponse({ error: "Some startup details or image references could not be verified. Check the directory image and required fields, then try again." }, 422);
-          return authResponse({ error: "Startup changes could not be saved. Refresh and review the current startup status." }, 409);
+          const category = classifyStartupSaveError(code, msg);
+          console.error("CSC_STARTUP_REVISION_SAVE_FAILED", { sqlState: code, category, startupId: v.existingId, revisionId: v.revisionId });
+          const status = category === "STARTUP_REVISION_PENDING" || category === "STARTUP_SLUG_CONFLICT" || category === "STARTUP_REVISION_STALE" || category === "STARTUP_NOT_EDITABLE" ? 409
+            : category === "STARTUP_SAVE_FAILED" ? 503 : 422;
+          return authResponse(startupSaveErrorResponse(category), status);
         }
         if (v.submitForApproval) scheduleNotificationDelivery();
         revalidateTag("directory", { expire: 0 });
