@@ -16,7 +16,7 @@ import type { MemberCard } from "@/types/member";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AccountAvatar } from "@/components/layout/account-avatar";
-import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions, waitForMembershipCardAssets } from "@/lib/member/card-export";
+import { clipMembershipCardPng, createMembershipCardExportNode, createMembershipCardPdf, membershipCardCaptureOptions, waitForMembershipCardAssets } from "@/lib/member/card-export";
 
 export function MemberIdCard({
   card,
@@ -67,10 +67,16 @@ export function MemberIdCard({
       const cardElement = cardRef.current;
       if (!qr) throw new Error("The membership verification QR is not ready.");
       await waitForMembershipCardAssets(cardElement);
-      const rawPng = await toBlob(
-        cardElement,
-        membershipCardCaptureOptions(cardElement.getBoundingClientRect().height),
-      );
+      const exportNode = await createMembershipCardExportNode(cardElement);
+      let rawPng: Blob | null;
+      try {
+        rawPng = await toBlob(
+          exportNode,
+          membershipCardCaptureOptions(cardElement.getBoundingClientRect().height),
+        );
+      } finally {
+        exportNode.remove();
+      }
       if (!rawPng) throw new Error("Could not render the membership card image.");
       const computedStyle = window.getComputedStyle(cardElement);
       const cornerRadiusCssPx = Number.parseFloat(computedStyle.borderTopLeftRadius) || 0;
