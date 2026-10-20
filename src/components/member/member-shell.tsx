@@ -33,7 +33,6 @@ const nav = [
   { href: "/member/consultations", label: "Consultations", icon: MessagesSquare },
   { href: "/member/reviews", label: "Reviews", icon: Star },
   { href: "/member/settings", label: "Settings", icon: Settings },
-  { href: "/", label: "Back to Home Page", icon: Home },
 ];
 
 export interface MemberShellProps {
@@ -80,16 +79,26 @@ export function MemberShell({
               </SheetContent>
             </Sheet>
             <BrandLogo showWordmark={false} markSize={36} />
-            <Link href={accountHref} className="inline-flex min-h-9 items-center justify-center rounded-lg bg-brand-ink px-3 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4 sm:text-sm" aria-current={pathname === accountHref ? "page" : undefined}>
-              {accountLabel}
-            </Link>
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold text-brand-ink">{memberName}</p>
-              <StatusBadge label={statusLabel} tone={statusTone} />
+            <div className="hidden shrink-0 items-center gap-2 text-right lg:flex">
+              <p className="whitespace-nowrap text-sm font-semibold text-brand-ink">{memberName}</p>
+              <StatusBadge label={statusLabel} tone={statusTone} className="shrink-0 whitespace-nowrap" />
             </div>
+            <Link
+              href="/"
+              aria-label="Back to Home Page"
+              title="Back to Home Page"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-brand-border bg-brand-white px-2.5 text-xs font-semibold whitespace-nowrap text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3"
+            >
+              <Home className="size-4" aria-hidden="true" />
+              <span className="hidden lg:inline">Back to Home Page</span>
+              <span className="sr-only lg:hidden">Back to Home Page</span>
+            </Link>
             <AccountAvatar name={memberName} src={avatarUrl} className="size-8 sm:size-9" />
+            <Link href={accountHref} className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-brand-ink px-2.5 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3" aria-current={pathname === accountHref ? "page" : undefined}>
+              {accountLabel}
+            </Link>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
@@ -103,7 +112,7 @@ export function MemberShell({
         </Container>
       </div>
 
-      <Container className="flex flex-col gap-6 py-6 lg:flex-row lg:gap-8 lg:py-8">
+      <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8 lg:py-8 xl:px-8">
         {/* Nav */}
         <nav
           aria-label="Member"
@@ -132,9 +141,9 @@ export function MemberShell({
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <div className="mx-auto w-full max-w-5xl">{children}</div>
+          <div className="w-full min-w-0">{children}</div>
         </div>
-      </Container>
+      </div>
     </div>
   );
 }

@@ -27,9 +27,12 @@ export async function UpcomingEvents() {
               </StaggerItem>
             ))}
           </StaggerContainer>
-          <div className="mt-10 flex justify-center">
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
             <CtaLink href={upcomingEventsSection.cta.href} variant="outline">
               {upcomingEventsSection.cta.label}
+            </CtaLink>
+            <CtaLink href="/login" size="md" arrow={false}>
+              Member Login
             </CtaLink>
           </div>
         </>
@@ -39,13 +42,16 @@ export async function UpcomingEvents() {
             icon={CalendarClock}
             title={upcomingEventsSection.emptyTitle}
             description={upcomingEventsSection.emptyBody}
-          >
-            <CtaLink href="/login" size="md">
-              Join the Community
-            </CtaLink>
-          </EmptyState>
+          />
         </div>
       )}
+      {events.length === 0 ? (
+        <div className="mt-6 flex justify-center">
+          <CtaLink href="/login" size="md" arrow={false}>
+            Member Login
+          </CtaLink>
+        </div>
+      ) : null}
     </Section>
   );
 }

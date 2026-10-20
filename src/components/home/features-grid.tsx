@@ -5,6 +5,7 @@ import { StaggerContainer, StaggerItem } from "@/components/motion";
 import type { IconName } from "@/components/common/icon";
 import type { Surface } from "@/components/common/surfaces";
 import { whyJoin } from "@/lib/content/home";
+import { CtaLink } from "@/components/common/cta-link";
 
 export function FeaturesGrid() {
   return (
@@ -26,6 +27,11 @@ export function FeaturesGrid() {
           </StaggerItem>
         ))}
       </StaggerContainer>
+      <div className="mt-10 flex justify-center">
+        <CtaLink href="/directory" variant="outline" size="lg">
+          Founder Directory
+        </CtaLink>
+      </div>
     </Section>
   );
 }
