@@ -50,6 +50,12 @@ describe("isolated PostgreSQL authorization regressions", () => {
   it("cannot publish its own startup directly", async () => {
     await expect(asUser(a, `insert into directory_startups(user_id,slug,name,status) values ('${a}','test-startup','Test Startup','published')`)).rejects.toThrow();
   });
+  it("requires explicit name/photo consent and both validated portrait paths before publication", async () => {
+    await expect(db.exec(`insert into directory_startups(user_id,slug,name,status) values ('${a}','blocked-photo-test','Blocked Photo Test','published')`)).rejects.toThrow(/directory profile/i);
+    await db.exec(`update profiles set display_name='Test Founder', portrait_path='${a}/portrait.webp', directory_photo_path='${a}/directory.webp', consent='{"directoryParticipation":true,"displayNamePublicly":true,"displayPhotoPublicly":true}'::jsonb where id='${a}'`);
+    await db.exec(`insert into directory_startups(user_id,slug,name,status) values ('${a}','consented-photo-test','Consented Photo Test','published')`);
+    expect((await db.query(`select status from directory_startups where slug='consented-photo-test'`)).rows).toEqual([{ status: "published" }]);
+  });
   it("cannot use anonymous submission RPCs to bypass server validation", async () => {
     await db.exec("set role anon;");
     try { await expect(db.exec("select submit_consultation('a','b','c','d','e')")).rejects.toThrow(); }
@@ -77,6 +83,7 @@ describe("isolated PostgreSQL authorization regressions", () => {
     expect((await asUser(a, "select resume_data->>'name' as name from member_resumes"))[0].rows).toEqual([{ name: "Test Member" }]);
     expect((await asUser(b, "select user_id from member_resumes"))[0].rows).toHaveLength(0);
     await expect(asUser(a, `update profiles set portrait_path='${a}/forged.webp' where id='${a}'`)).rejects.toThrow(/permission/i);
+    await expect(asUser(a, `update profiles set directory_photo_path='${a}/forged-directory.webp' where id='${a}'`)).rejects.toThrow(/permission/i);
     expect((await db.query("select public,file_size_limit from storage.buckets where id='member-portraits'")).rows).toEqual([{ public: false, file_size_limit: 8388608 }]);
   });
   it("restricts collaboration writes to content managers and publishes through the atomic RPC", async () => {

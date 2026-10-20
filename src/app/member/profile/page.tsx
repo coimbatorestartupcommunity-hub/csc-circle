@@ -17,10 +17,11 @@ export default async function MemberProfilePage() {
   if (!result.ok) return <EmptyState icon={UserCircle} title="Profile unavailable." description={result.error.message} />;
   const profile = result.data;
   const status = membershipStatusMeta[profile.membership.status];
+  const directoryReady = !!profile.portraitPath && !!profile.directoryPhotoPath && profile.consent.directoryParticipation && profile.consent.displayNamePublicly && profile.consent.displayPhotoPublicly;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-      <MemberPortraitUpload key={profile.id} portraitUrl={profile.portraitUrl} />
+      <MemberPortraitUpload key={profile.id} portraitUrl={profile.portraitUrl} directoryPhotoUrl={profile.directoryPhotoUrl} />
       <header className="flex flex-col items-center gap-2 text-center">
         <p className="text-xs font-semibold tracking-[0.18em] text-brand-accent uppercase">CSC Circle Member Profile</p>
         <h1 className="text-3xl font-bold tracking-tight text-brand-ink sm:text-4xl">{profile.displayName || profile.fullName || "Your profile"}</h1>
@@ -55,10 +56,10 @@ export default async function MemberProfilePage() {
       </section>
 
       <div className="flex justify-end">
-        {profile.portraitPath ? (
-          <Button render={<Link href="/member/startup" />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Submit a startup to the directory</Button>
+        {directoryReady ? (
+          <Button render={<Link href="/member/startup" />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Submit a Startup to the Directory</Button>
         ) : (
-          <Button variant="outline" render={<Link href="/member/profile#profile-portrait" />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Upload a portrait to submit a startup</Button>
+          <Button variant="outline" render={<Link href={!profile.portraitPath || !profile.directoryPhotoPath ? "/member/profile#profile-portrait" : "/member/settings"} />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Complete Directory profile setup</Button>
         )}
       </div>
     </div>
