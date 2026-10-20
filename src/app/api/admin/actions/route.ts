@@ -18,7 +18,18 @@ export async function POST(request: Request) {
     if (!ctx.permissions.has(permissions[parsed.data.kind])) return authResponse({ error: "Permission denied." }, 403);
     const sb = await createClient();
     const { data, error } = await sb.rpc("csc_admin_action", parsed.data);
-    if (error) return authResponse({ error: "Action was not saved. Check the current state, required reason, payment, and capacity." }, 409);
+    if (error) {
+      const claimErrors: Record<string, string> = {
+        "unverified account": "This account's email must be verified before membership can be approved.",
+        "membership unavailable": "The member record is missing or cannot be activated. Ask the member to refresh their account, then retry.",
+        "claim already decided": "This claim has already been decided. Refresh the page to see its current status.",
+        "not found": "This claim could not be found. Refresh the page and try again.",
+      };
+      const message = parsed.data.kind === "claim"
+        ? claimErrors[error.message] ?? "Membership approval was not saved. Refresh the claim and verify the member account before retrying."
+        : "Action was not saved. Check the current state, required reason, event payment, and capacity.";
+      return authResponse({ error: message }, 409);
+    }
     for (const tag of ["events", "directory", "reviews"]) revalidateTag(tag, { expire: 0 });
     scheduleNotificationDelivery();
     return authResponse({ ok: true, result: data });

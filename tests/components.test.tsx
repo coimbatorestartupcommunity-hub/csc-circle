@@ -1,8 +1,11 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { RatingStars } from "@/components/testimonials/rating-stars";
 import { StatusBadge } from "@/components/member/status-badge";
 import { ReviewInvitation } from "@/components/testimonials/review-invitation";
+import { ActionButton } from "@/components/admin/action-button";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 describe("RatingStars", () => {
   it("renders the two-decimal value and an accessible label", () => {
@@ -32,5 +35,23 @@ describe("ReviewInvitation", () => {
     expect(actions).toHaveClass("w-full", "max-w-md", "min-w-0", "items-stretch");
     expect(screen.getByRole("button", { name: "Check my review" })).toHaveClass("w-full", "whitespace-normal");
     expect(screen.getByRole("button", { name: /Review submission opens with member accounts/ })).toHaveClass("w-full", "whitespace-normal");
+  });
+});
+
+describe("membership approval dialog", () => {
+  it("shows submitted details in the wide, non-scrolling free-card approval layout", () => {
+    render(<ActionButton
+      label="Approve"
+      operation={{ kind: "claim", target: "abababab-abab-4bab-8bab-abababababab", decision: "active" }}
+      details={{ applicantName: "Vikash Saravanan", email: "vikash@example.test", applicantType: "new_applicant" }}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+
+    expect(screen.getByText(/Membership cards are free.*no payment is required/i)).toBeInTheDocument();
+    expect(screen.getByText("Vikash Saravanan")).toBeInTheDocument();
+    expect(screen.getByText("vikash@example.test")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveClass("max-w-5xl", "sm:max-w-5xl", "overflow-hidden");
+    expect(dialog).not.toHaveClass("overflow-y-auto");
   });
 });

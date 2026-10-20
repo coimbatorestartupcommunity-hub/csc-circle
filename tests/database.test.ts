@@ -144,6 +144,19 @@ describe("trusted operations and replay protection", () => {
     } finally { await db.exec("reset role;"); }
     expect((await db.query("select action from audit_logs where target_id=$1", [startup])).rows).toEqual([{ action: "startup.published" }]);
   });
+  it("allows direct admin approval of a free membership claim and issues its card", async () => {
+    const claim = "abababab-abab-4bab-8bab-abababababab";
+    await db.exec(`update memberships set status='not_started',member_number=null,issued_at=null where user_id='${b}';
+      insert into membership_claims(id,user_id,full_name,linked_account_email,applicant_type,designation,whatsapp,status)
+      values ('${claim}','${b}','Synthetic Member','b@example.test','new_applicant','student_entrepreneur','+15555550123','claim_submitted')`);
+
+    const result = await asUser(admin, `select csc_admin_action('claim','${claim}','active','Reviewed synthetic free membership') as result`);
+    expect(result[0].rows[0].result).toMatchObject({ ok: true, status: "active" });
+    expect((await db.query(`select status from membership_claims where id='${claim}'`)).rows).toEqual([{ status: "active" }]);
+    expect((await db.query(`select status,member_number,issued_at is not null as issued from memberships where user_id='${b}'`)).rows[0]).toMatchObject({ status: "active", issued: true });
+    expect((await db.query<{ n: number }>("select count(*)::int as n from payments")).rows[0].n).toBe(0);
+    expect((await db.query<{ action: string }>(`select action from audit_logs where target_id='${claim}' order by created_at`)).rows.map((row) => row.action)).toEqual(["claim.pending_verification", "claim.active"]);
+  });
   it("registers idempotently without issuing a pass", async () => {
     const first = await asUser(a, `select csc_register_event('${event}','Networking') as result`);
     const second = await asUser(a, `select csc_register_event('${event}','Networking') as result`);

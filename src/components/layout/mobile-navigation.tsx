@@ -32,7 +32,7 @@ export function MobileNavigation({ account }: { account: { authenticated: boolea
             variant="outline"
             size="icon"
             aria-label="Open menu"
-            className="xl:hidden"
+            className="2xl:hidden"
           />
         }
       >

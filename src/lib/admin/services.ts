@@ -145,8 +145,18 @@ export const adminServices = {
       if (missingEmails) {
         try {
           const admin = createAdminClient();
-          const { data: authPage } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-          for (const authUser of authPage?.users ?? []) if (authUser.email) authEmails.set(authUser.id, authUser.email);
+          const missingIds = new Set((data ?? []).filter((p) => !(p as Row).email).map((p) => String((p as Row).id)));
+          for (let page = 1; page <= 100 && missingIds.size > 0; page += 1) {
+            const { data: authPage, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+            if (error || !authPage?.users.length) break;
+            for (const authUser of authPage.users) {
+              if (authUser.email && missingIds.has(authUser.id)) {
+                authEmails.set(authUser.id, authUser.email);
+                missingIds.delete(authUser.id);
+              }
+            }
+            if (authPage.users.length < 1000) break;
+          }
         } catch { /* profile emails remain available as the non-privileged fallback */ }
       }
       const rows: AdminMemberRow[] = (data ?? []).map((p) => {
