@@ -154,6 +154,17 @@ export async function clipMembershipCardPng(
   context.drawImage(image, 0, 0, width, height);
   context.restore();
 
+  // Refuse to deliver a valid-looking PDF wrapper around an empty Safari
+  // capture. Sample a small grid instead of scanning all ~12M export pixels.
+  const samplePoints = [
+    [0.5, 0.5], [0.25, 0.25], [0.75, 0.25],
+    [0.25, 0.75], [0.75, 0.75], [0.5, 0.15], [0.5, 0.85],
+  ];
+  const hasVisibleCardPixels = samplePoints.some(([x, y]) =>
+    context.getImageData(Math.floor(width * x), Math.floor(height * y), 1, 1).data[3] > 0,
+  );
+  if (!hasVisibleCardPixels) throw new Error("The membership card render was blank. Please try downloading it again.");
+
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
