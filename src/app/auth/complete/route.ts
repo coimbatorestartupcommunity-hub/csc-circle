@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/redirects";
+import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 
 /** Re-check the authoritative identity and account state after either sign-in method. */
 export async function GET(request: Request) {
@@ -20,6 +21,9 @@ export async function GET(request: Request) {
   if (adminRoles && adminRoles.length > 0) {
     const requested = safeNext(url.searchParams.get("next"));
     const adminTarget = requested === "/admin" || requested.startsWith("/admin/") ? requested : "/member/profile";
+    // First verified login queues a welcome in an auth.users trigger. Drain
+    // it after successful auth completion instead of waiting for daily cron.
+    scheduleNotificationDelivery();
     return NextResponse.redirect(new URL(`/auth/success?next=${encodeURIComponent(adminTarget)}`, url.origin));
   }
   const [{ data: membership, error: membershipError }, { data: profile, error: profileError }] = await Promise.all([
@@ -33,5 +37,7 @@ export async function GET(request: Request) {
   // Incomplete profiles are completed on the profile page itself; avoid
   // splitting first-time members into an unrelated empty onboarding screen.
   if (!profile) return NextResponse.redirect(new URL("/access-denied", url.origin));
+  // Drain queued first-login welcome emails for ordinary member accounts too.
+  scheduleNotificationDelivery();
   return NextResponse.redirect(new URL(`/auth/success?next=${encodeURIComponent(next)}`, url.origin));
 }
