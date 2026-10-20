@@ -1,14 +1,43 @@
 import { describe, expect, it, vi } from "vitest";
 import sharp from "sharp";
 import { PDFDict, PDFDocument, PDFName } from "pdf-lib";
-import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
+import { clipMembershipCardPng, createMembershipCardExportNode, createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
 
 describe("membership card export", () => {
-  it("keeps a sharp 1,440px long edge without creating oversized mobile canvases", () => {
-    expect(membershipCardCaptureOptions(480)).toEqual({ pixelRatio: 3, cacheBust: true });
-    expect(membershipCardCaptureOptions(1200).pixelRatio).toBe(3);
-    expect(membershipCardCaptureOptions(360).pixelRatio).toBe(4);
-    expect(membershipCardCaptureOptions(300).pixelRatio).toBe(4);
+  it("renders the 4:5 card at 4K while keeping the canvas within mobile pixel limits", () => {
+    expect(membershipCardCaptureOptions(480)).toEqual({ pixelRatio: 8, cacheBust: true });
+    expect(membershipCardCaptureOptions(420).pixelRatio * 420).toBeCloseTo(3840);
+    expect(membershipCardCaptureOptions(360).pixelRatio * 360).toBeCloseTo(3840);
+    expect(membershipCardCaptureOptions(300).pixelRatio).toBe(12);
+  });
+
+  it("inlines authenticated and local image assets into an isolated export clone", async () => {
+    const source = document.createElement("div");
+    const image = document.createElement("img");
+    image.src = "/api/member/portrait";
+    source.append(image);
+    document.body.append(source);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      blob: async () => new Blob(["portrait"], { type: "image/webp" }),
+    } as Response);
+
+    try {
+      const clone = await createMembershipCardExportNode(source);
+      const clonedImage = clone.querySelector("img");
+      expect(clone).not.toBe(source);
+      expect(clonedImage?.src).toMatch(/^data:image\/webp;base64,/);
+      expect(clonedImage?.hasAttribute("srcset")).toBe(false);
+      expect(image.getAttribute("src")).toBe("/api/member/portrait");
+      expect(fetchSpy).toHaveBeenCalledWith("http://localhost:3000/api/member/portrait", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      clone.remove();
+    } finally {
+      fetchSpy.mockRestore();
+      source.remove();
+    }
   });
 
   it("clips the captured bitmap to the card's rounded corners before exporting it", async () => {

@@ -1,11 +1,10 @@
-/**
- * Keep mobile canvas memory bounded while retaining print-sharp output.
- * The card is rendered at about 1,440 px on its long edge (roughly 288 DPI
- * when placed on the 4 × 5 inch PDF page).
- */
+/** Render the 4:5 card at up to 4K on its long edge for crisp zoom and print. */
 export function membershipCardCaptureOptions(cardHeightCssPx: number) {
   return {
-    pixelRatio: Math.min(4, Math.max(3, Math.ceil(1440 / Math.max(1, cardHeightCssPx)))),
+    // A 4:5 4K card is about 3,072 × 3,840 (11.8 MP), below common mobile
+    // canvas pixel limits. Blob capture avoids holding a multi-megabyte
+    // base64 string in addition to the render surfaces.
+    pixelRatio: Math.min(12, 3840 / Math.max(1, cardHeightCssPx)),
     cacheBust: true,
   } as const;
 }
@@ -18,6 +17,68 @@ export async function waitForMembershipCardAssets(element: HTMLElement) {
     if (image.complete && image.naturalWidth > 0) return;
     try { await image.decode(); } catch { /* Avatar has a text fallback; QR is checked by the caller. */ }
   }));
+}
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => typeof reader.result === "string"
+      ? resolve(reader.result)
+      : reject(new Error("Could not prepare a membership card image."));
+    reader.onerror = () => reject(new Error("Could not prepare a membership card image."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Clone the card for export and inline image bytes before html-to-image
+ * serializes the DOM. This avoids losing authenticated portrait responses,
+ * local Next.js assets, or the data-URL QR during foreignObject capture.
+ */
+export async function createMembershipCardExportNode(element: HTMLElement) {
+  const sourceImages = Array.from(element.querySelectorAll("img"));
+  const clone = element.cloneNode(true) as HTMLElement;
+  const cloneImages = Array.from(clone.querySelectorAll("img"));
+  const bounds = element.getBoundingClientRect();
+  Object.assign(clone.style, {
+    position: "fixed",
+    top: "0",
+    left: "-10000px",
+    width: `${bounds.width}px`,
+    height: `${bounds.height}px`,
+    margin: "0",
+    transform: "none",
+    transition: "none",
+    animation: "none",
+    pointerEvents: "none",
+  });
+  clone.setAttribute("aria-hidden", "true");
+  document.body.appendChild(clone);
+
+  try {
+    await Promise.all(sourceImages.map(async (source, index) => {
+      const target = cloneImages[index];
+      const sourceUrl = source.currentSrc || source.src;
+      if (!target || !sourceUrl) throw new Error("A membership card image is missing.");
+      target.removeAttribute("srcset");
+      target.removeAttribute("sizes");
+      if (sourceUrl.startsWith("data:")) {
+        target.src = sourceUrl;
+        return;
+      }
+
+      const response = await fetch(sourceUrl, { credentials: "same-origin", cache: "no-store" });
+      if (!response.ok) throw new Error("A membership card image could not be loaded.");
+      const imageBlob = await response.blob();
+      if (!imageBlob.type.startsWith("image/")) throw new Error("A membership card image could not be loaded.");
+      target.src = await blobToDataUrl(imageBlob);
+    }));
+    await waitForMembershipCardAssets(clone);
+    return clone;
+  } catch (error) {
+    clone.remove();
+    throw error;
+  }
 }
 
 const CIRCLE_HANDLE = 0.55228475;
