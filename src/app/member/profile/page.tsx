@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, FileText, LockKeyhole, Rocket, ShieldCheck, UserCircle } from "lucide-react";
+import { ArrowRight, LockKeyhole, Rocket, ShieldCheck, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MemberProfileForm } from "@/components/member/member-profile-form";
-import { MemberProfessionalProfile } from "@/components/member/member-professional-profile";
 import { MemberPortraitUpload } from "@/components/member/member-portrait-upload";
 import { DirectorySetupButton } from "@/components/member/directory-setup-button";
 import { StatusBadge } from "@/components/member/status-badge";
@@ -13,7 +12,6 @@ import { designationLabels, membershipStatusMeta } from "@/lib/content/member-ta
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { CommunityProfileSharing } from "@/components/member/community-profile-sharing";
-import { emptyResumeData, resumeDataSchema } from "@/lib/member/resume-schema";
 import { roleLabels, type AdminRole } from "@/lib/admin/permissions";
 
 export const metadata = { title: "Profile" };
@@ -25,31 +23,17 @@ export default async function MemberProfilePage() {
   const profile = result.data;
   const startupCount = ctx.mode === "live" ? (await createAdminClient().from("directory_startups").select("id", { count: "exact", head: true }).eq("user_id", ctx.user!.id).neq("status", "archived")).count ?? 0 : 0;
   const supabase = ctx.mode === "live" ? await createClient() : null;
-  const [{ data: storedResume }, { data: memberRoles }] = supabase ? await Promise.all([
-    supabase.rpc("get_member_resume"),
-    supabase.from("admin_roles").select("role").eq("user_id", ctx.user!.id),
-  ]) : [{ data: null }, { data: [] }];
-  const parsedResume = resumeDataSchema.safeParse(storedResume ?? {});
-  const resume = parsedResume.success ? {
-    ...parsedResume.data,
-    aboutMe: parsedResume.data.aboutMe || profile.aboutMe || "",
-    contact: { ...parsedResume.data.contact, location: parsedResume.data.contact.location || profile.city || "" },
-    skills: parsedResume.data.skills.length ? parsedResume.data.skills : profile.skills?.length ? [{ id: crypto.randomUUID(), category: "Professional Skills", items: profile.skills }] : [],
-  } : {
-    ...emptyResumeData,
-    contact: { ...emptyResumeData.contact, location: profile.city ?? "" },
-    aboutMe: profile.aboutMe ?? "",
-    skills: profile.skills?.length ? [{ id: crypto.randomUUID(), category: "Professional Skills", items: profile.skills }] : [],
-  };
+  const { data: memberRoles } = supabase
+    ? await supabase.from("admin_roles").select("role").eq("user_id", ctx.user!.id)
+    : { data: [] };
   const roles = (memberRoles ?? []).map((entry) => entry.role as AdminRole).filter((role) => role in roleLabels);
   const status = membershipStatusMeta[profile.membership.status];
   const directoryReady = !!profile.portraitPath && !!profile.directoryPhotoPath && profile.consent.directoryParticipation && profile.consent.displayNamePublicly && profile.consent.displayPhotoPublicly;
   const completion = [
     Boolean(profile.fullName.trim()), Boolean(profile.displayName.trim()), Boolean(profile.city),
     Boolean(profile.portraitPath), Boolean(profile.aboutMe?.trim()), Boolean(profile.skills?.length), Boolean(profile.designations.length),
-    Boolean(resume.summary.trim()), Boolean(resume.headline.trim()), Boolean(resume.experiences.length || resume.education.length || resume.projects.length),
   ].filter(Boolean).length;
-  const completionPercent = Math.round(completion / 12 * 100);
+  const completionPercent = Math.round(completion / 7 * 100);
   const identityEmail = ctx.user?.email || profile.email;
   const emailVerified = Boolean(ctx.user?.email_confirmed_at);
 
@@ -74,13 +58,13 @@ export default async function MemberProfilePage() {
 
       <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-6">
         <h2 className="text-lg font-semibold text-brand-ink">Welcome to Your CSC Circle Member Profile</h2>
-        <p className="mt-2 text-sm leading-6 text-brand-secondary">Your CSC member profile keeps selected personal and professional information, expertise and career achievements organized in one secure location. Your official CSC member ID, verified account identity, membership approval status and site permissions are controlled by CSC Circle. Your professional work history and resume remain yours to maintain.</p>
+        <p className="mt-2 text-sm leading-6 text-brand-secondary">Your CSC member profile keeps your personal and professional information organized in one secure location. Your official CSC member ID, verified account identity, membership approval status and site permissions are controlled by CSC Circle.</p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="text-sm font-semibold text-brand-ink">Profile completion</h3><p className="mt-1 text-xs text-brand-muted">Based on information you have saved. Private contact details do not increase this score.</p></div><span className="text-lg font-bold tabular-nums text-brand-ink">{completionPercent}%</span></div>
         <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-brand-cloud" role="progressbar" aria-label="Profile completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completionPercent}><div className="h-full rounded-full bg-brand-accent transition-[width]" style={{ width: `${completionPercent}%` }} /></div>
       </section>
 
       <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-6">
-        <div className="flex items-start gap-3"><LockKeyhole className="mt-0.5 size-5 shrink-0 text-brand-muted" /><div className="min-w-0 flex-1"><h2 className="text-lg font-semibold text-brand-ink">CSC-Verified Membership Details</h2><p className="mt-1 text-sm leading-6 text-brand-muted">Official membership information is controlled by CSC Circle. Your professional work history and resume wording are member-maintained.</p></div></div>
+        <div className="flex items-start gap-3"><LockKeyhole className="mt-0.5 size-5 shrink-0 text-brand-muted" /><div className="min-w-0 flex-1"><h2 className="text-lg font-semibold text-brand-ink">CSC-Verified Membership Details</h2><p className="mt-1 text-sm leading-6 text-brand-muted">Official membership information is controlled by CSC Circle.</p></div></div>
         <dl className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">{[
           ["CSC Member ID", profile.membership.memberNumber ?? "Not Assigned"],
           ["Verified Account Email", emailVerified ? identityEmail : `${identityEmail} (not verified)`],
@@ -91,9 +75,7 @@ export default async function MemberProfilePage() {
       </section>
 
       <MemberProfileForm key={profile.id} profile={profile} isDemo={ctx.mode === "preview"} />
-      <MemberProfessionalProfile initial={resume} />
-
-      <section className="rounded-2xl border border-brand-border bg-brand-cloud/50 p-5 sm:p-6"><h2 className="text-lg font-semibold text-brand-ink">Private Information</h2><p className="mt-1 text-sm leading-6 text-brand-secondary">Your account email and mobile/WhatsApp information are stored for CSC account and member-support workflows. They are not included in the community directory or resume export by default. Public profile and contact-sharing permissions are managed separately.</p><p className="mt-2 text-xs text-brand-muted">Review account and privacy controls in <Link href="/member/settings" className="font-semibold text-brand-accent underline underline-offset-2">Settings</Link>.</p></section>
+      <section className="rounded-2xl border border-brand-border bg-brand-cloud/50 p-5 sm:p-6"><h2 className="text-lg font-semibold text-brand-ink">Private Information</h2><p className="mt-1 text-sm leading-6 text-brand-secondary">Your account email and mobile/WhatsApp information are stored for CSC account and member-support workflows. They are not included in the community directory by default. Public profile and contact-sharing permissions are managed separately.</p><p className="mt-2 text-xs text-brand-muted">Review account and privacy controls in <Link href="/member/settings" className="font-semibold text-brand-accent underline underline-offset-2">Settings</Link>.</p></section>
 
       {!(["claim_submitted", "pending_verification", "approved", "active"].includes(profile.membership.status)) ? (
         <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:flex-row sm:items-center sm:justify-between sm:p-6">
@@ -125,10 +107,6 @@ export default async function MemberProfilePage() {
         )}
       </div>
 
-      <section className="flex min-w-0 flex-col gap-3 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div><h2 className="font-semibold text-brand-ink">Professional Resume Builder</h2><p className="mt-1 text-sm text-brand-muted">Create your resume using professional information saved in your CSC Member Portal profile.</p></div>
-        <Button variant="outline" render={<Link href="/member/resume" />} className="w-full shrink-0 gap-2 sm:w-auto"><FileText className="size-4" />Create My Resume<ArrowRight className="size-4" /></Button>
-      </section>
     </div>
   );
 }

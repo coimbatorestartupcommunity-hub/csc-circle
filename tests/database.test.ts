@@ -213,6 +213,8 @@ describe("CSC founder hub database permissions", () => {
     const hiddenSkill = await asUser(b, "select member_id from public.list_discoverable_members('Hidden Expertise',30,0)");
     expect(hiddenCity[0].rows).toHaveLength(0);
     expect(hiddenSkill[0].rows).toHaveLength(0);
+    const ownListing = await asUser(a, "select member_id,display_name from public.list_discoverable_members('',30,0)");
+    expect(ownListing[0].rows).toEqual([{ member_id: a, display_name: "Consent Test Founder" }]);
     const ownProfile = await asUser(a, `select member_id from public.get_discoverable_member('${a}')`);
     expect(ownProfile[0].rows).toEqual([{ member_id: a }]);
   });
