@@ -3,6 +3,7 @@ import { FileText, Rocket, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MemberProfileForm } from "@/components/member/member-profile-form";
 import { MemberPortraitUpload } from "@/components/member/member-portrait-upload";
+import { DirectorySetupButton } from "@/components/member/directory-setup-button";
 import { StatusBadge } from "@/components/member/status-badge";
 import { EmptyState } from "@/components/common/empty-state";
 import { getMemberContext } from "@/lib/services/member/context";
@@ -55,11 +56,11 @@ export default async function MemberProfilePage() {
         <Button render={<Link href="/member/resume" />} className="w-full shrink-0 gap-2 sm:w-auto"><FileText className="size-4" /> Create My Resume</Button>
       </section>
 
-      <div className="flex justify-end">
+      <div className="flex justify-center">
         {directoryReady ? (
           <Button render={<Link href="/member/startup" />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Submit a Startup to the Directory</Button>
         ) : (
-          <Button variant="outline" render={<Link href={!profile.portraitPath || !profile.directoryPhotoPath ? "/member/profile#profile-portrait" : "/member/settings"} />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Complete Directory profile setup</Button>
+          <DirectorySetupButton />
         )}
       </div>
     </div>

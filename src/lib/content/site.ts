@@ -51,7 +51,7 @@ export const siteConfig = {
 
 export const brandAssets = {
   cscLogo: "/brand/csc-logo.png",
-  cscIcon: "/brand/csc-icon.png",
+  cscIcon: "/brand/csc-logo.png",
   litLogo: "/brand/lit-logo.png",
   /** Outlier partner logo (orange background, white lettering). */
   outlierLogo: "/brand/outlier-logo.png",

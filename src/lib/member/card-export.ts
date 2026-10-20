@@ -1,19 +1,17 @@
-/** A subtle CSC lavender matte keeps the rounded silhouette visible in viewers that use a white canvas. */
-export const membershipCardExportMatte = "#F1ECFF";
-
-export const membershipCardCaptureOptions = {
-  pixelRatio: 3,
+/** Render the long edge at 4K while keeping the browser canvas within a safe scale. */
+export function membershipCardCaptureOptions(cardHeightCssPx: number) {
+  return {
+  pixelRatio: Math.min(10, Math.max(4, Math.ceil(3840 / Math.max(1, cardHeightCssPx)))),
   cacheBust: true,
-} as const;
+  } as const;
+}
 
 const CIRCLE_HANDLE = 0.55228475;
 
 /**
- * Apply the card's rounded silhouette to the captured bitmap itself.
- * html-to-image can retain the element's rectangular background in its PNG,
- * even when the live element clips correctly. Paint a subtle CSC matte first,
- * then clip the captured card over it so the curved silhouette remains visible
- * even in image/PDF viewers that otherwise show transparency as white.
+ * Apply an anti-aliased rounded silhouette to the captured bitmap itself.
+ * The pixels outside the card are intentionally transparent. Painting a matte
+ * here would bake a rectangle into both PNG and PDF exports.
  */
 export async function clipMembershipCardPng(
   pngDataUrl: string,
@@ -42,8 +40,7 @@ export async function clipMembershipCardPng(
   const width = canvas.width;
   const height = canvas.height;
 
-  context.fillStyle = membershipCardExportMatte;
-  context.fillRect(0, 0, width, height);
+  context.save();
   context.beginPath();
   context.moveTo(radius, 0);
   context.lineTo(width - radius, 0);
@@ -57,30 +54,24 @@ export async function clipMembershipCardPng(
   context.closePath();
   context.clip();
   context.drawImage(image, 0, 0, width, height);
+  context.restore();
 
   return canvas.toDataURL("image/png");
 }
 
 /**
- * Place the same 4:5 card artwork on a card-sized PDF page (4 × 5 inches),
- * with a matching matte behind its rounded corners so PDF viewers do not
- * make the card appear square against their default white page background.
+ * Place the same 4:5 card artwork on a card-sized PDF page (4 × 5 inches).
+ * No page background is painted; the PNG's alpha mask supplies the curved
+ * corners, leaving the page transparent outside the card in capable viewers.
  */
 export async function createMembershipCardPdf(pngDataUrl: string) {
-  const { PDFDocument, rgb } = await import("pdf-lib");
+  const { PDFDocument } = await import("pdf-lib");
   const pdf = await PDFDocument.create();
   pdf.setTitle("CSC Circle Membership Card");
   pdf.setSubject("CSC Circle digital membership card");
 
   const image = await pdf.embedPng(pngDataUrl);
   const page = pdf.addPage([288, 360]);
-  page.drawRectangle({
-    x: 0,
-    y: 0,
-    width: 288,
-    height: 360,
-    color: rgb(0.945, 0.925, 1),
-  });
   page.drawImage(image, { x: 0, y: 0, width: 288, height: 360 });
 
   return pdf.save();

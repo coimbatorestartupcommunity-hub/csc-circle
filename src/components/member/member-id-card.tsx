@@ -33,7 +33,7 @@ export function MemberIdCard({
     let active = true;
     QRCode.toDataURL(buildMembershipQrPayload(card.verificationToken), {
       margin: 1,
-      width: 320,
+      width: 1024,
       color: { dark: "#121826", light: "#ffffff" },
     })
       .then((url) => {
@@ -50,7 +50,10 @@ export function MemberIdCard({
     setDownloading(format);
     try {
       const cardElement = cardRef.current;
-      const rawPng = await toPng(cardElement, membershipCardCaptureOptions);
+      const rawPng = await toPng(
+        cardElement,
+        membershipCardCaptureOptions(cardElement.getBoundingClientRect().height),
+      );
       const computedStyle = window.getComputedStyle(cardElement);
       const cornerRadiusCssPx = Number.parseFloat(computedStyle.borderTopLeftRadius) || 0;
       const dataUrl = await clipMembershipCardPng(
@@ -91,6 +94,7 @@ export function MemberIdCard({
             alt=""
             width={56}
             height={56}
+            unoptimized
             className="rounded-full bg-brand-white/80 ring-1 ring-brand-border"
           />
           <p className="mt-1 text-sm font-bold tracking-tight text-brand-ink">
