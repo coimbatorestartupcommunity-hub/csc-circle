@@ -15,7 +15,7 @@ import { formatEventDate } from "@/lib/format";
 import type { MemberCard } from "@/types/member";
 import Link from "next/link";
 import { AccountAvatar } from "@/components/layout/account-avatar";
-import { createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
+import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
 
 export function MemberIdCard({
   card,
@@ -49,7 +49,15 @@ export function MemberIdCard({
     if (!cardRef.current) return;
     setDownloading(format);
     try {
-      const dataUrl = await toPng(cardRef.current, membershipCardCaptureOptions);
+      const cardElement = cardRef.current;
+      const rawPng = await toPng(cardElement, membershipCardCaptureOptions);
+      const computedStyle = window.getComputedStyle(cardElement);
+      const cornerRadiusCssPx = Number.parseFloat(computedStyle.borderTopLeftRadius) || 0;
+      const dataUrl = await clipMembershipCardPng(
+        rawPng,
+        cornerRadiusCssPx,
+        cardElement.getBoundingClientRect().width,
+      );
       const link = document.createElement("a");
       const suffix = isDemo ? "-DEMO" : "";
       link.download = `CSC-Membership-${card.memberNumber}${suffix}.${format}`;

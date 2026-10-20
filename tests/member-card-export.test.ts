@@ -1,11 +1,55 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PDFDocument } from "pdf-lib";
-import { createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
+import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
 
 describe("membership card export", () => {
   it("leaves the PNG canvas transparent outside the rounded card", () => {
     expect(membershipCardCaptureOptions).toEqual({ pixelRatio: 3, cacheBust: true });
     expect(membershipCardCaptureOptions).not.toHaveProperty("backgroundColor");
+  });
+
+  it("clips the captured bitmap to the card's rounded corners before exporting it", async () => {
+    const order: string[] = [];
+    const context = {
+      clearRect: vi.fn(() => order.push("clear")),
+      beginPath: vi.fn(() => order.push("path")),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
+      closePath: vi.fn(),
+      clip: vi.fn(() => order.push("clip")),
+      drawImage: vi.fn(() => order.push("draw")),
+    };
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => context),
+      toDataURL: vi.fn(() => "data:image/png;base64,rounded"),
+    } as unknown as HTMLCanvasElement;
+    const createElementSpy = vi.spyOn(document, "createElement").mockReturnValue(canvas);
+
+    class MockImage {
+      naturalWidth = 300;
+      naturalHeight = 375;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_value: string) { this.onload?.(); }
+    }
+    vi.stubGlobal("Image", MockImage);
+
+    try {
+      await expect(clipMembershipCardPng("data:image/png;base64,source", 20, 100)).resolves.toBe(
+        "data:image/png;base64,rounded",
+      );
+      expect(canvas.width).toBe(300);
+      expect(canvas.height).toBe(375);
+      expect(context.moveTo).toHaveBeenCalledWith(60, 0);
+      expect(order.indexOf("clip")).toBeLessThan(order.indexOf("draw"));
+      expect(canvas.toDataURL).toHaveBeenCalledWith("image/png");
+    } finally {
+      createElementSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("creates a card-sized 4:5 PDF containing the same PNG artwork", async () => {
