@@ -111,7 +111,7 @@ export default async function StartupDetailPage({ params }: { params: Promise<{ 
                 alt={`${startup.name} startup directory photograph`}
                 priority
                 sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
-                containerClassName="relative mx-5 aspect-[4/3] overflow-hidden rounded-2xl bg-brand-cloud sm:mx-8 lg:mx-10 lg:max-h-[560px]"
+                containerClassName="relative mx-auto aspect-[4/3] w-[calc(100%-2.5rem)] max-w-6xl overflow-hidden rounded-2xl bg-brand-cloud sm:w-[calc(100%-4rem)] lg:w-[calc(100%-5rem)]"
               />
             ) : null}
 
