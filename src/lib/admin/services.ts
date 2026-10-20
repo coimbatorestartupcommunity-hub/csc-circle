@@ -1,4 +1,5 @@
 import "server-only";
+import type { User } from "@supabase/supabase-js";
 
 /**
  * Admin service layer. Every method is permission-checked against the request's
@@ -136,28 +137,47 @@ export const adminServices = {
   listMembers(): Promise<ServiceResult<AdminMemberRow[]>> {
     return guard("members.read", demoMembers, async () => {
       const sb = await createClient();
-      const { data } = await sb
+      const { data: initialProfiles, error: profileError } = await sb
         .from("profiles")
         .select("id, full_name, display_name, email, whatsapp, designations, startup, created_at, updated_at, memberships(status, member_number)")
         .order("created_at", { ascending: false });
-      const missingEmails = (data ?? []).some((p) => !(p as Row).email);
+      if (profileError) return fail("unknown", "Member accounts could not be loaded.");
+      let data = initialProfiles ?? [];
       const authEmails = new Map<string, string>();
-      if (missingEmails) {
-        try {
-          const admin = createAdminClient();
-          const missingIds = new Set((data ?? []).filter((p) => !(p as Row).email).map((p) => String((p as Row).id)));
-          for (let page = 1; page <= 100 && missingIds.size > 0; page += 1) {
-            const { data: authPage, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
-            if (error || !authPage?.users.length) break;
-            for (const authUser of authPage.users) {
-              if (authUser.email && missingIds.has(authUser.id)) {
-                authEmails.set(authUser.id, authUser.email);
-                missingIds.delete(authUser.id);
-              }
-            }
-            if (authPage.users.length < 1000) break;
+      try {
+        const admin = createAdminClient();
+        const authUsers: User[] = [];
+        for (let page = 1; page <= 100; page += 1) {
+          const { data: authPage, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+          if (error) return fail("unknown", "Authenticated account inventory is temporarily unavailable.");
+          authUsers.push(...(authPage?.users ?? []));
+          if (!authPage?.users.length || authPage.users.length < 1000) break;
+        }
+        for (const user of authUsers) if (user.email) authEmails.set(user.id, user.email);
+        const profileIds = new Set(data.map((profile) => String(profile.id)));
+        const missingUsers = authUsers.filter((user) => !profileIds.has(user.id));
+        if (missingUsers.length) {
+          const profileRows = missingUsers.map((user) => {
+            const metadata = user.user_metadata ?? {};
+            const name = typeof metadata.full_name === "string" ? metadata.full_name : typeof metadata.name === "string" ? metadata.name : null;
+            const avatar = typeof metadata.avatar_url === "string" ? metadata.avatar_url : typeof metadata.picture === "string" ? metadata.picture : null;
+            return { id: user.id, full_name: name, display_name: name, email: user.email ?? null, avatar_url: avatar };
+          });
+          const { error: reconcileError } = await admin.from("profiles").insert(profileRows);
+          if (reconcileError && reconcileError.code !== "23505") return fail("unknown", "Missing member profiles could not be reconciled safely.");
+          const { data: memberships } = await admin.from("memberships").select("user_id").in("user_id", missingUsers.map((user) => user.id));
+          const membershipIds = new Set((memberships ?? []).map((membership) => membership.user_id));
+          const missingMemberships = missingUsers.filter((user) => !membershipIds.has(user.id)).map((user) => ({ user_id: user.id, status: "not_started" as const }));
+          if (missingMemberships.length) {
+            const { error: membershipError } = await admin.from("memberships").insert(missingMemberships);
+            if (membershipError && membershipError.code !== "23505") return fail("unknown", "Missing membership status records could not be reconciled safely.");
           }
-        } catch { /* profile emails remain available as the non-privileged fallback */ }
+          const refreshed = await sb.from("profiles").select("id, full_name, display_name, email, whatsapp, designations, startup, created_at, updated_at, memberships(status, member_number)").order("created_at", { ascending: false });
+          if (refreshed.error) return fail("unknown", "Reconciled member profiles could not be reloaded.");
+          data = refreshed.data ?? [];
+        }
+      } catch {
+        return fail("unknown", "Authenticated account inventory is temporarily unavailable.");
       }
       const rows: AdminMemberRow[] = (data ?? []).map((p) => {
         const r = p as Row;
@@ -440,7 +460,16 @@ export const adminServices = {
     return guard("content.manage", demoContent, async () => {
       const sb = await createClient(); const { data, error } = await sb.from("content_blocks").select("*").order("key");
       if (error) return fail("unknown", "Could not load content.");
-      return ok((data ?? []).map(r => ({ key: r.key, label: r.label, value: r.value, status: r.status === "published" ? "published" as const : "draft" as const, updatedAt: r.updated_at })));
+      const now = Date.now();
+      return ok((data ?? []).map(r => {
+        const status: ContentBlock["status"] = r.deleted_at ? "deleted"
+          : r.status === "archived" ? "archived"
+          : r.status !== "published" ? (r.status === "draft" ? "draft" : "unpublished")
+          : r.visible_from && new Date(r.visible_from).getTime() > now ? "scheduled"
+          : r.visible_until && new Date(r.visible_until).getTime() <= now ? "expired"
+          : "published";
+        return { key: r.key, label: r.label, value: r.value, status, updatedAt: r.updated_at, visibleFrom: r.visible_from ?? undefined, visibleUntil: r.visible_until ?? undefined, deletedAt: r.deleted_at ?? undefined };
+      }));
     });
   },
 };

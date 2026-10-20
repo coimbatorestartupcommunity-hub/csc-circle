@@ -173,8 +173,11 @@ export interface ContentBlock {
   key: string;
   label: string;
   value: string;
-  status: "draft" | "published";
+  status: "draft" | "scheduled" | "published" | "expired" | "unpublished" | "archived" | "deleted";
   updatedAt: string;
+  visibleFrom?: string;
+  visibleUntil?: string;
+  deletedAt?: string;
 }
 
 export interface AdminRoleAssignment {

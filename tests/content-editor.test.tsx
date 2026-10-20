@@ -29,9 +29,9 @@ describe("ContentEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "Publish Content" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ content_key: "homepage.announcement", publish: false });
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toMatchObject({ content_key: "homepage.announcement", publish: true });
-    expect(await screen.findByText(/now visible on the homepage/i)).toBeInTheDocument();
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ content_key: "homepage.announcement", action: "save" });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toMatchObject({ content_key: "homepage.announcement", action: "publish" });
+    expect(await screen.findByText(/published and visible on the website/i)).toBeInTheDocument();
     expect(refreshMock).toHaveBeenCalledTimes(2);
   });
 

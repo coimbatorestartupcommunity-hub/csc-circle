@@ -1,7 +1,6 @@
 /**
- * Zod schemas for the public forms. These prepare validation for Phase 1, when
- * the forms connect to a secure submission service. React Hook Form consumes
- * them via @hookform/resolvers/zod.
+ * Zod schemas for CSC forms. Server routes validate these schemas before
+ * persisting member submissions.
  */
 
 import { z } from "zod";

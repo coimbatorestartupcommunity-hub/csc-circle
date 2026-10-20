@@ -1,7 +1,8 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
-import { getAdminContext } from "@/lib/admin/gate";
+import { can, getAdminContext } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
+import { InviteMemberForm } from "@/components/admin/invite-member-form";
 
 export const metadata = { title: "Members" };
 
@@ -42,6 +43,7 @@ export default async function AdminMembersPage() {
         description="Search, filter and manage CSC community members."
         isDemo={ctx.mode === "preview"}
       />
+      {can(ctx, "members.approve") ? <InviteMemberForm disabled={ctx.mode !== "live"} /> : null}
       <DataTable
         rows={rows}
         columns={columns}

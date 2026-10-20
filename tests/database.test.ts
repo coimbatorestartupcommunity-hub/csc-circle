@@ -47,6 +47,48 @@ describe("isolated PostgreSQL authorization regressions", () => {
     await asUser(a, `insert into reviews(user_id,rating,review) values ('${a}',3,'A sufficiently detailed test review')`);
     await expect(asUser(a, `update reviews set moderation='approved' where user_id='${a}'`)).rejects.toThrow();
   });
+  it("publishes only consented approved reviews and removes an unpublished review", async () => {
+    await db.exec(`update profiles set display_name='Member B',consent='{"displayNamePublicly":true,"displayPhotoPublicly":false,"showProfessionalRoleToMembers":false}'::jsonb where id='${b}'`);
+    const inserted = await asUser(b, `insert into reviews(user_id,rating,review,publication_consent,publication_consent_at,publication_consent_version) values ('${b}',5,'A detailed review of the CSC founder community.',true,now(),'csc-review-publication-v1') returning id`);
+    const reviewId = inserted[0].rows[0].id as string;
+    await db.exec(`insert into admin_roles(user_id,role) values ('${a}','content_manager')`);
+    const own = await asUser(a, `select id from reviews where user_id='${a}' and kind='general'`);
+    const ownReviewId = own[0].rows[0].id as string;
+    await expect(asUser(a, `select csc_admin_action('review','${ownReviewId}','approved','')`)).rejects.toThrow(/cannot approve their own/i);
+    await asUser(a, `select csc_admin_action('review','${reviewId}','approved','')`);
+    await db.exec("set role anon;");
+    try {
+      const published = await db.query(`select id,name,avatar_url,designation from public_testimonials where id='${reviewId}'`);
+      expect(published.rows).toEqual([{ id: reviewId, name: "Member B", avatar_url: null, designation: "Community Member" }]);
+    } finally { await db.exec("reset role;"); }
+    await asUser(a, `select csc_admin_action('review','${reviewId}','under_review','Unpublished by admin')`);
+    await db.exec("set role anon;");
+    try { expect((await db.query(`select id from public_testimonials where id='${reviewId}'`)).rows).toEqual([]); }
+    finally { await db.exec("reset role;"); }
+    await db.exec(`insert into admin_roles(user_id,role) values ('${b}','content_manager')`);
+    await asUser(b, `select csc_admin_action('review','${ownReviewId}','approved','')`);
+    await db.exec("set role anon;");
+    try { expect((await db.query(`select id from public_testimonials where id='${ownReviewId}'`)).rows).toEqual([]); }
+    finally { await db.exec("reset role;"); }
+  });
+  it("honors scheduled content windows, immediate unpublishing, and soft deletion", async () => {
+    await db.exec(`insert into admin_roles(user_id,role) values ('${a}','content_manager') on conflict do nothing`);
+    await asUser(a, `select csc_manage_content('publish','homepage.announcement','Timed CSC notice',now()+interval '1 day',now()+interval '2 days')`);
+    await db.exec("set role anon;");
+    try { expect((await db.query("select key from content_blocks where key='homepage.announcement'")).rows).toEqual([]); }
+    finally { await db.exec("reset role;"); }
+    await asUser(a, `select csc_manage_content('publish','homepage.announcement','Timed CSC notice',now()-interval '1 day',now()+interval '1 day')`);
+    await db.exec("set role anon;");
+    try { expect((await db.query("select value from content_blocks where key='homepage.announcement'")).rows).toEqual([{ value: "Timed CSC notice" }]); }
+    finally { await db.exec("reset role;"); }
+    await asUser(a, `select csc_manage_content('unpublish','homepage.announcement','',null::timestamptz,null::timestamptz)`);
+    await db.exec("set role anon;");
+    try { expect((await db.query("select key from content_blocks where key='homepage.announcement'")).rows).toEqual([]); }
+    finally { await db.exec("reset role;"); }
+    await asUser(a, `select csc_manage_content('delete','homepage.announcement','',null::timestamptz,null::timestamptz)`);
+    expect((await db.query("select deleted_at is not null as deleted from content_blocks where key='homepage.announcement'")).rows).toEqual([{ deleted: true }]);
+    expect((await db.query("select count(*)::int as n from audit_logs where target_type='content' and target_id='homepage.announcement' and action in ('content.published','content.unpublished','content.deleted')")).rows).toEqual([{ n: 4 }]);
+  });
   it("cannot publish its own startup directly", async () => {
     await expect(asUser(a, `insert into directory_startups(user_id,slug,name,status) values ('${a}','test-startup','Test Startup','published')`)).rejects.toThrow();
   });
