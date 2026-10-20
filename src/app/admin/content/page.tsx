@@ -32,7 +32,7 @@ export default async function AdminContentPage() {
         searchKeys={["label", "key"]}
         emptyMessage={res.ok ? "No content blocks." : res.error.message}
       />
-      {can(ctx, "content.manage") ? <ContentEditor isDemo={ctx.mode === "preview"} /> : null}
+      {can(ctx, "content.manage") ? <ContentEditor isDemo={ctx.mode === "preview"} initialContent={rows} /> : null}
     </>
   );
 }
