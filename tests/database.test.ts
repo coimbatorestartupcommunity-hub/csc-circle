@@ -261,6 +261,23 @@ describe("CSC founder hub database permissions", () => {
     try { await expect(db.exec(`select public.get_member_resume()`)).rejects.toThrow(/permission/i); }
     finally { await db.exec("reset role;"); }
   });
+  it("saves private professional details and synchronizes only the owner profile summary and skills", async () => {
+    const payload = JSON.stringify({
+      aboutMe: "Synthetic professional summary for member A.",
+      skills: [{ id: "2f9c8d84-7d86-4b55-bf6b-4a28cc098688", category: "Engineering", items: ["TypeScript", "PostgreSQL"] }],
+      experiences: [{ id: "c48fd041-f44d-44bd-96d3-0e00d6e80aae", title: "Test Role" }],
+    }).replaceAll("'", "''");
+    await asUser(a, `select save_member_resume('${payload}'::jsonb)`);
+    expect((await db.query("select about_me,skills from profiles where id=$1", [a])).rows).toEqual([{
+      about_me: "Synthetic professional summary for member A.", skills: ["PostgreSQL", "TypeScript"],
+    }]);
+    expect((await db.query("select about_me,skills from profiles where id=$1", [b])).rows).toEqual([{ about_me: "", skills: [] }]);
+    expect((await asUser(a, "select get_member_resume() as resume"))[0].rows[0].resume).toMatchObject({ aboutMe: "Synthetic professional summary for member A." });
+
+    const malformed = JSON.stringify({ skills: [{ category: "", items: ["TypeScript"] }] }).replaceAll("'", "''");
+    await expect(asUser(a, `select save_member_resume('${malformed}'::jsonb)`)).rejects.toThrow(/invalid skills/i);
+    await expect(asUser(a, `select save_member_resume('{"aboutMe":"${"x".repeat(1201)}"}'::jsonb)`)).rejects.toThrow(/invalid profile biography/i);
+  });
 });
 
 const admin = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";

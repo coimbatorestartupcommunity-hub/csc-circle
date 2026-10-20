@@ -45,7 +45,16 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = profileSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your profile details." }, 422);
       const v = parsed.data;
-      const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, about_me: v.aboutMe ?? "", skills: (v.skills ?? "").split(",").map(x => x.trim()).filter(Boolean), startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription } }).eq("id", user.id).select("id").single();
+      const profileUpdate: Database["public"]["Tables"]["profiles"]["Update"] = {
+        full_name: v.fullName,
+        display_name: v.displayName,
+        whatsapp: v.whatsapp.replace(/[ -]/g, ""),
+        city: v.city,
+        startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription },
+      };
+      if (v.aboutMe !== undefined) profileUpdate.about_me = v.aboutMe;
+      if (v.skills !== undefined) profileUpdate.skills = v.skills.split(",").map(x => x.trim()).filter(Boolean);
+      const { data, error } = await sb.from("profiles").update(profileUpdate).eq("id", user.id).select("id").single();
       if (!error) revalidateTag("directory", { expire: 0 });
       if (!error) scheduleNotificationDelivery();
       if (error) {
