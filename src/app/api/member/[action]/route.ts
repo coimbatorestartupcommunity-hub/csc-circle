@@ -144,8 +144,20 @@ export async function POST(request: Request, context: { params: Promise<{ action
         });
         if (error || !revisionId) {
           const msg = error?.message ?? "Could not save startup changes.";
+          const code = error?.code ?? "unknown";
+          const reason = msg.includes("already pending") || msg.includes("already submitted") ? "revision_pending"
+            : msg.includes("duplicate key") ? "slug_conflict"
+            : code === "40001" ? "stale_revision"
+            : code === "42501" ? "ownership_or_status"
+            : code === "23514" || code === "22023" ? "validation_or_media"
+            : "database_error";
+          console.error("CSC_STARTUP_REVISION_SAVE_FAILED", { code, reason });
           if (msg.includes("already pending")) return authResponse({ error: "A startup revision is already awaiting administrator approval." }, 409);
+          if (msg.includes("already submitted")) return authResponse({ error: "These changes are already awaiting CSC administrator approval. Refresh My Startups to see the current status." }, 409);
           if (msg.includes("duplicate key")) return authResponse({ error: "That directory URL is already in use. Change the startup slug and try again." }, 409);
+          if (code === "40001") return authResponse({ error: "This startup changed after you opened the editor. Reload the latest version, then apply your changes again." }, 409);
+          if (code === "42501") return authResponse({ error: "This startup is no longer available for editing in its current status. Refresh My Startups and try again." }, 409);
+          if (code === "23514" || code === "22023") return authResponse({ error: "Some startup details or image references could not be verified. Check the directory image and required fields, then try again." }, 422);
           return authResponse({ error: "Startup changes could not be saved. Refresh and review the current startup status." }, 409);
         }
         if (v.submitForApproval) scheduleNotificationDelivery();
