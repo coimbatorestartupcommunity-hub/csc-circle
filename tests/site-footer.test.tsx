@@ -49,9 +49,14 @@ describe("route footer layouts", () => {
   });
 
   it("does not render the public footer in the member directory route family", () => {
-    render(<MembersLayout><div>Shared member profile</div></MembersLayout>);
+    const { container } = render(<MembersLayout><div>Shared member profile</div></MembersLayout>);
     expect(screen.getByText("Shared member profile")).toBeInTheDocument();
     expect(screen.queryByTestId("footer-brand")).not.toBeInTheDocument();
     expect(document.querySelector("footer")).not.toBeInTheDocument();
+    const main = container.querySelector("main");
+    expect(main?.className).toContain("px-4");
+    expect(main?.className).toContain("sm:px-6");
+    expect(main?.className).toContain("lg:px-8");
+    expect(main?.className).toContain("max-w-7xl");
   });
 });
