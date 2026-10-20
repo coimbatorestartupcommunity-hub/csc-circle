@@ -1,7 +1,6 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { brandAssets, siteConfig } from "@/lib/content/site";
 
 /** Shared branded card shell for auth pages. */
@@ -36,14 +35,6 @@ export function AuthCard({
         {children}
         {footer}
         <p className="text-xs text-brand-muted"><Link href="/privacy" className="underline">Privacy Policy</Link> · <Link href="/terms" className="underline">Terms</Link></p>
-      </div>
-      <div className="mt-5 text-center">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-ink"
-        >
-          <ArrowLeft className="size-4" /> Back to Home
-        </Link>
       </div>
     </div>
   );
