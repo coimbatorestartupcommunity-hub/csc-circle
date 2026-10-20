@@ -2,6 +2,8 @@ import * as React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { SiteFooter } from "@/components/layout/site-footer";
+import MarketingLayout from "@/app/(marketing)/layout";
+import MembersLayout from "@/app/members/layout";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: React.ComponentProps<"a"> & { href: string }) => <a href={href} {...props}>{children}</a>,
@@ -36,5 +38,20 @@ describe("SiteFooter", () => {
     for (const label of ["CSC Circle on Instagram", "Join the CSC Circle WhatsApp community", "Email CSC Circle"]) {
       expect(screen.getByRole("link", { name: label }).className).toContain("size-11");
     }
+  });
+});
+
+describe("route footer layouts", () => {
+  it("renders the public footer in the marketing route group", () => {
+    render(<MarketingLayout><div>Marketing page</div></MarketingLayout>);
+    expect(screen.getByText("Marketing page")).toBeInTheDocument();
+    expect(screen.getByTestId("footer-brand")).toBeInTheDocument();
+  });
+
+  it("does not render the public footer in the member directory route family", () => {
+    render(<MembersLayout><div>Shared member profile</div></MembersLayout>);
+    expect(screen.getByText("Shared member profile")).toBeInTheDocument();
+    expect(screen.queryByTestId("footer-brand")).not.toBeInTheDocument();
+    expect(document.querySelector("footer")).not.toBeInTheDocument();
   });
 });
