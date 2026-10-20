@@ -41,13 +41,13 @@ export function MemberSettingsForm({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
+    <section className="flex h-full flex-col rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
       <h2 className="text-sm font-semibold text-brand-ink">Privacy preferences</h2>
-      <div className="flex flex-col divide-y divide-brand-border">
+      <div className="mt-3 flex flex-col divide-y divide-brand-border">
         {consentFields.map((f) => (
           <label
             key={f.key}
-            className="flex items-center justify-between gap-4 py-3 text-sm text-brand-secondary"
+            className="flex min-h-10 items-center justify-between gap-4 py-2.5 text-sm text-brand-secondary"
           >
             <span>{f.label}</span>
             <input
@@ -62,7 +62,7 @@ export function MemberSettingsForm({
           </label>
         ))}
       </div>
-      <Button onClick={save} disabled={saving} className="h-10 gap-2 sm:w-fit sm:px-6">
+      <Button onClick={save} disabled={saving} className="mt-auto h-10 gap-2 self-start px-6">
         {saving ? <Loader2 className="size-4 animate-spin" /> : null}
         Save preferences
       </Button>
@@ -71,6 +71,6 @@ export function MemberSettingsForm({
           DEMO preview — sign in with a real account to save preferences.
         </p>
       ) : null}
-    </div>
+    </section>
   );
 }
