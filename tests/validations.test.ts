@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { rsvpSchema, reviewSchema } from "@/lib/validations/forms";
-import { claimSchema } from "@/lib/validations/member";
+import { claimSchema, startupSubmissionSchema } from "@/lib/validations/member";
 import { eventEditorSchema } from "@/lib/validations/admin";
 
 describe("RSVP schema", () => {
@@ -45,6 +45,25 @@ describe("claim schema", () => {
   });
   it("requires the accuracy declaration", () => {
     expect(claimSchema.safeParse({ ...valid, declarationAccurate: false }).success).toBe(false);
+  });
+});
+
+describe("startup submission schema", () => {
+  const valid = {
+    name: "Northstar Robotics",
+    slug: "northstar-robotics",
+    industry: "Industrial automation and robotics",
+    description: "Building automation systems for small manufacturers.",
+    website: "https://northstar.example",
+    consent: true as const,
+  };
+
+  it("accepts a founder-entered industry instead of requiring a preset option", () => {
+    expect(startupSubmissionSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("requires a readable industry value", () => {
+    expect(startupSubmissionSchema.safeParse({ ...valid, industry: " " }).success).toBe(false);
   });
 });
 

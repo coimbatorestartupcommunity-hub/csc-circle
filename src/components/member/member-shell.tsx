@@ -129,7 +129,9 @@ export function MemberShell({
         </nav>
 
         {/* Content */}
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0 flex-1">
+          <div className="mx-auto w-full max-w-5xl">{children}</div>
+        </div>
       </Container>
     </div>
   );

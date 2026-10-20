@@ -49,6 +49,11 @@ describe("directory filtering", () => {
     expect(filterStartups(startups, { ...emptyDirectoryFilters, search: "zzz" }).total).toBe(0);
   });
 
+  it("searches founder-entered industry names", () => {
+    const custom = { ...startups[0], industry: "Climate technology" };
+    expect(filterStartups([custom], { ...emptyDirectoryFilters, search: "climate" }).total).toBe(1);
+  });
+
   it("filters by industry", () => {
     const r = filterStartups(startups, { ...emptyDirectoryFilters, industry: "ai" });
     expect(r.total).toBe(1);

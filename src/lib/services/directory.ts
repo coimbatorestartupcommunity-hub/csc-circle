@@ -11,7 +11,7 @@ import type {
   PaginatedResult,
   Startup,
 } from "@/types";
-import { industryLabels, collaborationLabels } from "@/lib/content/taxonomy";
+import { industryLabel, collaborationLabels } from "@/lib/content/taxonomy";
 import { startupFixtures, USE_FIXTURES } from "@/lib/services/fixtures";
 
 /** All approved, published startups eligible for the public directory. */
@@ -32,7 +32,7 @@ function matchesSearch(startup: Startup, query: string): boolean {
     startup.name,
     startup.description,
     startup.founder.name,
-    industryLabels[startup.industry],
+    industryLabel(startup.industry),
     ...startup.collaboration.map((c) => collaborationLabels[c]),
   ]
     .join(" ")

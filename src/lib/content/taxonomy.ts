@@ -15,6 +15,11 @@ export const industryLabels: Record<IndustryCategory, string> = {
   other: "Other",
 };
 
+/** Use the curated label when known, while preserving founder-entered industries. */
+export function industryLabel(value: string): string {
+  return industryLabels[value as IndustryCategory] ?? value;
+}
+
 export const collaborationLabels: Record<CollaborationIntent, string> = {
   "open-to-collaboration": "Open to Collaboration",
   "looking-for-co-founder": "Looking for Co-Founder",
