@@ -51,6 +51,7 @@ function mapStartup(r: Row): Startup {
   const storedLogo = typeof r.logo_url === "string" ? r.logo_url : "";
   const isStoredStartupLogo = typeof r.user_id === "string" && /^[0-9a-f-]{36}\/[0-9a-f-]{36}-startup-logo\.webp$/i.test(storedLogo);
   const isLitCompany = String(r.name ?? "").trim().toLowerCase() === "logic intelligence technologies";
+  const details = r.details && typeof r.details === "object" && !Array.isArray(r.details) ? r.details as Record<string, unknown> : {};
   return {
     id: String(r.id),
     slug: (r.slug as string) ?? String(r.id),
@@ -62,6 +63,11 @@ function mapStartup(r: Row): Startup {
         : isLitCompany ? "/brand/lit-logo.png" : undefined,
     industry: (r.industry as string) ?? "other",
     description: (r.description as string) ?? "",
+    city: typeof details.city === "string" ? details.city : undefined,
+    tagline: typeof details.tagline === "string" ? details.tagline : undefined,
+    stage: typeof details.stage === "string" ? details.stage : undefined,
+    category: typeof details.category === "string" ? details.category : undefined,
+    details,
     collaboration: ((r.collaboration as string[]) ?? []) as CollaborationIntent[],
     website: (r.website as string) ?? undefined,
     founder: {
@@ -113,7 +119,7 @@ export async function getLivePublishedStartups(): Promise<Startup[]> {
     // Keep the query explicit. user_id is consumed only server-side to decide
     // whether a consent-gated founder image endpoint exists; it is discarded
     // by mapStartup and never sent to the client.
-    .select("id,slug,name,logo_url,industry,description,collaboration,website,founder,status,user_id,updated_at")
+    .select("id,slug,name,logo_url,industry,description,collaboration,website,founder,status,user_id,updated_at,details,directory_image_path")
     .eq("status", "published")
     .order("updated_at", { ascending: false });
   return (data ?? []).map((r) => mapStartup(r as Row));

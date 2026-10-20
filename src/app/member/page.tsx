@@ -27,7 +27,7 @@ const quickActions = [
   { href: "/member/id-card", label: "View Digital ID", icon: IdCard },
   { href: "/member/events", label: "Browse Events", icon: CalendarDays },
   { href: "/member/profile", label: "Complete Profile", icon: UserCircle },
-  { href: "/member/startup", label: "Submit a Startup", icon: Rocket },
+  { href: "/member/startups", label: "My Startups", icon: Rocket },
   { href: "/directory", label: "Founder Directory", icon: Compass },
   { href: "/member/consultations", label: "Request Consultation", icon: MessagesSquare },
   { href: "/member/reviews", label: "Write a Review", icon: Star },

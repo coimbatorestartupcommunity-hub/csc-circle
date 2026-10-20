@@ -56,6 +56,11 @@ export interface AdminStartupRow {
   status: "draft" | "pending" | "published" | "archived";
   submittedAt: string;
   updatedAt: string;
+  details?: Record<string, unknown>;
+  privateDetails?: Record<string, unknown>;
+  directoryImagePath?: string;
+  logoPath?: string;
+  city?: string;
 }
 
 export interface AdminEventRow {

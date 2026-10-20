@@ -17,6 +17,14 @@ const consentFields: { key: ConsentKey; label: string; locked?: boolean }[] = [
   { key: "directoryParticipation", label: "Appear in the public founder directory" },
   { key: "displayNamePublicly", label: "Display my name publicly" },
   { key: "displayPhotoPublicly", label: "Display my photo publicly" },
+  { key: "communityProfileVisible", label: "Show my profile to active CSC members" },
+  { key: "showProfilePhotoToMembers", label: "Show my profile photo to CSC members" },
+  { key: "showCityToMembers", label: "Show my city to CSC members" },
+  { key: "showProfessionalRoleToMembers", label: "Show my professional role to CSC members" },
+  { key: "showAboutMeToMembers", label: "Show my introduction to CSC members" },
+  { key: "showSkillsToMembers", label: "Show my skills to CSC members" },
+  { key: "showStartupAffiliationsToMembers", label: "Show my startup affiliation to CSC members" },
+  { key: "shareWhatsappWithMembers", label: "Allow CSC members to contact me on WhatsApp" },
 ];
 
 export function MemberSettingsForm({
@@ -52,7 +60,7 @@ export function MemberSettingsForm({
             <span>{f.label}</span>
             <input
               type="checkbox"
-              checked={consent[f.key]}
+              checked={Boolean(consent[f.key])}
               disabled={f.locked}
               onChange={(e) =>
                 setConsent((c) => ({ ...c, [f.key]: e.target.checked }))

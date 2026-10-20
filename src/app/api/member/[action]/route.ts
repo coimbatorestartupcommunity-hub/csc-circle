@@ -6,9 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getMemberContext } from "@/lib/services/member/context";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
 import { rateLimit } from "@/lib/rate-limit";
-import { claimSchema, profileSchema, startupSubmissionSchema, onboardingStep1Schema, onboardingStep2Schema, onboardingStep3Schema, onboardingStep4Schema, onboardingStep5Schema } from "@/lib/validations/member";
+import { claimSchema, profileSchema, onboardingStep1Schema, onboardingStep2Schema, onboardingStep3Schema, onboardingStep4Schema, onboardingStep5Schema } from "@/lib/validations/member";
 import { reviewSchema } from "@/lib/validations/forms";
 import type { Database } from "@/lib/supabase/database.types";
+import { memberStartupSchema } from "@/lib/validations/member-startup";
 const consentSchema = onboardingStep5Schema;
 const onboardingSchema = onboardingStep1Schema.merge(onboardingStep2Schema).merge(onboardingStep3Schema).merge(onboardingStep4Schema).merge(onboardingStep5Schema).extend({ startupDescription: z.string().max(600).optional() });
 export async function POST(request: Request, context: { params: Promise<{ action: string }> }) {
@@ -40,7 +41,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = profileSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your profile details." }, 422);
       const v = parsed.data;
-      const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, skills: (v.skills ?? "").split(",").map(x => x.trim()).filter(Boolean), startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription } }).eq("id", user.id).select("id").single();
+      const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, about_me: v.aboutMe ?? "", skills: (v.skills ?? "").split(",").map(x => x.trim()).filter(Boolean), startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription } }).eq("id", user.id).select("id").single();
       if (!error) revalidateTag("directory", { expire: 0 });
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Profile was not saved." }, 409) : authResponse({ ok: true, id: data.id });
@@ -53,6 +54,71 @@ export async function POST(request: Request, context: { params: Promise<{ action
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Preferences were not saved." }, 409) : authResponse({ ok: true, id: data.id });
     }
+    if (action === "startup-save") {
+      const parsed = memberStartupSchema.safeParse(body);
+      if (!parsed.success) return authResponse({ error: "Check the required startup details, directory image, and publication consent." }, 422);
+      const v = parsed.data;
+      const { data: profile } = await sb.from("profiles").select("display_name,consent").eq("id", user.id).maybeSingle();
+      const consent = profile?.consent;
+      if (!profile?.display_name?.trim() || !consent || typeof consent !== "object" || Array.isArray(consent) || consent.directoryParticipation !== true || consent.displayNamePublicly !== true) {
+        return authResponse({ error: "Complete your profile and enable directory participation and public-name consent before submitting." }, 422);
+      }
+      const admin = createAdminClient();
+      const expectedDirectory = `${user.id}/${v.id}-directory-startup.webp`;
+      if (v.directoryImagePath !== expectedDirectory) return authResponse({ error: "Upload a separate 4:3 directory image for this startup." }, 422);
+      const { error: imageError } = await admin.storage.from("member-portraits").download(expectedDirectory);
+      if (imageError) return authResponse({ error: "The 4:3 startup directory image could not be verified. Upload it again." }, 422);
+      const expectedLogo = v.logoPath;
+      if (expectedLogo && expectedLogo !== `${user.id}/${v.id}-startup-logo.webp`) {
+        const { data: ownedExisting } = v.existingId ? await sb.from("directory_startups").select("logo_url").eq("id", v.existingId).eq("user_id", user.id).maybeSingle() : { data: null };
+        const legacyPathAllowed = ownedExisting?.logo_url === expectedLogo && new RegExp(`^${user.id}/[0-9a-f-]{36}-startup-logo\\.webp$`, "i").test(expectedLogo);
+        if (!legacyPathAllowed) return authResponse({ error: "The company logo could not be verified. Upload it again." }, 422);
+      }
+      if (expectedLogo) {
+        const { error: logoError } = await admin.storage.from("member-portraits").download(expectedLogo);
+        if (logoError) return authResponse({ error: "The company logo could not be verified. Upload it again." }, 422);
+      }
+      const safeDetails = { ...v };
+      for (const key of ["supportEmail", "additionalSupportEmail", "companyEmail", "companyMobile", "companyWhatsapp", "website", "id", "name", "slug", "industry", "description", "logoPath", "directoryImagePath", "existingId", "consent", "contactPerson", "founderCity", "founderMobile", "founderWhatsapp", "founderEmail"] as const) Reflect.deleteProperty(safeDetails, key);
+      const details = {
+        ...safeDetails,
+        ownerName: profile.display_name,
+        visibility: {
+          publishWebsite: v.publishWebsite,
+          publishBusinessEmail: v.publishBusinessEmail,
+          publishCompanyPhone: v.publishCompanyPhone,
+          publishFounderContact: v.publishFounderContact,
+        },
+      };
+      const privateDetails = { website: v.website, supportEmail: v.supportEmail, additionalSupportEmail: v.additionalSupportEmail, companyEmail: v.companyEmail, companyMobile: v.companyMobile, companyWhatsapp: v.companyWhatsapp, contactPerson: v.contactPerson, founderCity: v.founderCity, founderMobile: v.founderMobile, founderWhatsapp: v.founderWhatsapp, founderEmail: v.founderEmail };
+      const { data: startupId, error } = await sb.rpc("save_member_startup", {
+        p_startup: {
+          id: v.id,
+          ...(v.existingId ? { existingId: v.existingId } : {}),
+          name: v.name,
+          slug: v.slug,
+          industry: v.industry,
+          description: v.description,
+          website: v.website,
+          logoPath: expectedLogo || null,
+          directoryImagePath: expectedDirectory,
+          founderRole: v.founderRole,
+          consent: true,
+          details,
+        },
+        p_private_details: privateDetails,
+      });
+      if (error || !startupId) {
+        const msg = error?.message ?? "Could not save this startup.";
+        if (msg.includes("startup_limit_reached")) return authResponse({ error: "You have reached the maximum of four startups." }, 409);
+        if (msg.includes("published startups")) return authResponse({ error: "Only draft or pending startup submissions can be edited here." }, 409);
+        if (msg.includes("duplicate key")) return authResponse({ error: "That directory URL is already in use. Change the startup slug and try again." }, 409);
+        return authResponse({ error: "The startup could not be saved for CSC review. Please check the details and retry." }, 409);
+      }
+      scheduleNotificationDelivery();
+      revalidateTag("directory", { expire: 0 });
+      return authResponse({ ok: true, id: startupId });
+    }
     if (action === "onboarding") {
       const parsed = onboardingSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Complete all onboarding fields and required consent." }, 422);
@@ -62,50 +128,6 @@ export async function POST(request: Request, context: { params: Promise<{ action
       if (!error) revalidateTag("directory", { expire: 0 });
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Onboarding was not saved." }, 409) : authResponse({ ok: true, id: data.id });
-    }
-    if (action === "startup" || action === "startup-update") {
-      const parsed = startupSubmissionSchema.extend({ startupId: z.string().uuid().optional() }).safeParse(body);
-      if (!parsed.success) return authResponse({ error: "Check your startup details and consent." }, 422);
-      const v = parsed.data;
-      if (action === "startup-update" && !v.startupId) return authResponse({ error: "The startup to edit could not be identified." }, 422);
-      if (!new RegExp(`^${user.id}/[0-9a-f-]{36}-startup-logo\\.webp$`, "i").test(v.logoPath)) return authResponse({ error: "Upload your company logo using the form before submitting." }, 422);
-      try {
-        const { error: logoError } = await createAdminClient().storage.from("member-portraits").download(v.logoPath);
-        if (logoError) return authResponse({ error: "Your company logo upload could not be verified. Upload it again before submitting." }, 422);
-      } catch {
-        return authResponse({ error: "Secure company-logo storage is unavailable. Please try again later." }, 503);
-      }
-      const { data: profile } = await sb.from("profiles").select("display_name,consent,portrait_path,directory_photo_path").eq("id", user.id).single();
-      if (!profile?.portrait_path || !profile.directory_photo_path) return authResponse({ error: "Save both your 4:5 member portrait and 4:3 directory photo before submitting a startup.", action: "/member/profile#profile-portrait" }, 422);
-      const consent = profile.consent;
-      if (!consent || typeof consent !== "object" || Array.isArray(consent) || consent.directoryParticipation !== true || consent.displayNamePublicly !== true || consent.displayPhotoPublicly !== true) return authResponse({ error: "Enable directory participation and consent to showing your name and photo in your privacy settings first." }, 422);
-      if (!profile.display_name?.trim()) return authResponse({ error: "Add a public display name to your profile before submitting." }, 422);
-      const startupValues = { name: v.name, slug: v.slug, industry: v.industry, description: v.description, website: v.website || null, logo_url: v.logoPath, founder: { name: profile.display_name }, publication_consent: true, publication_consent_at: new Date().toISOString(), status: "pending" as const };
-      let previousLogoPath = "";
-      if (action === "startup-update") {
-        const { data: existing, error: existingError } = await sb.from("directory_startups").select("status,logo_url").eq("id", v.startupId!).eq("user_id", user.id).maybeSingle();
-        if (existingError) return authResponse({ error: "The startup submission could not be loaded for editing." }, 503);
-        if (!existing) return authResponse({ error: "That startup was not found under your account." }, 404);
-        if (!["draft", "pending"].includes(existing.status)) return authResponse({ error: "Only draft or pending submissions can be edited. Published changes must be requested from a CSC administrator." }, 409);
-        previousLogoPath = typeof existing.logo_url === "string" ? existing.logo_url : "";
-      }
-      const result = action === "startup-update"
-        ? await sb.from("directory_startups").update(startupValues).eq("id", v.startupId!).eq("user_id", user.id).in("status", ["draft", "pending"]).select("id").maybeSingle()
-        : await sb.from("directory_startups").insert({ ...startupValues, user_id: user.id }).select("id").single();
-      const { data, error } = result;
-      if (!error) {
-        scheduleNotificationDelivery();
-        if (action === "startup-update") {
-          revalidateTag("directory", { expire: 0 });
-          if (previousLogoPath && previousLogoPath !== v.logoPath) {
-            try { await createAdminClient().storage.from("member-portraits").remove([previousLogoPath]); }
-            catch { console.error("CSC_STARTUP_OLD_LOGO_CLEANUP_FAILED"); }
-          }
-        }
-      }
-      if (error) return authResponse({ error: "Startup was not saved. The slug may already be in use." }, 409);
-      if (!data) return authResponse({ error: "That startup was not found under your account." }, 404);
-      return authResponse({ ok: true, id: data.id });
     }
     return authResponse({ error: "Not found." }, 404);
   } catch { return authResponse({ error: "Could not save your information. Please try again." }, 503); }

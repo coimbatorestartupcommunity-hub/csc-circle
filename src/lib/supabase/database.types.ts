@@ -446,6 +446,8 @@ export type Database = {
           collaboration: string[]
           created_at: string
           description: string
+          details: Json
+          directory_image_path: string | null
           founder: Json
           id: string
           industry: string
@@ -463,6 +465,8 @@ export type Database = {
           collaboration?: string[]
           created_at?: string
           description?: string
+          details?: Json
+          directory_image_path?: string | null
           founder?: Json
           id?: string
           industry?: string
@@ -480,6 +484,8 @@ export type Database = {
           collaboration?: string[]
           created_at?: string
           description?: string
+          details?: Json
+          directory_image_path?: string | null
           founder?: Json
           id?: string
           industry?: string
@@ -493,6 +499,12 @@ export type Database = {
           user_id?: string | null
           website?: string | null
         }
+        Relationships: []
+      }
+      directory_startup_private_details: {
+        Row: { created_at: string; details: Json; startup_id: string; updated_at: string; user_id: string }
+        Insert: { created_at?: string; details?: Json; startup_id: string; updated_at?: string; user_id: string }
+        Update: { created_at?: string; details?: Json; startup_id?: string; updated_at?: string; user_id?: string }
         Relationships: []
       }
       event_registrations: {
@@ -757,30 +769,6 @@ export type Database = {
         }
         Relationships: []
       }
-      member_resumes: {
-        Row: {
-          created_at: string
-          resume_data: Json
-          schema_version: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          resume_data?: Json
-          schema_version?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          resume_data?: Json
-          schema_version?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       notification_deliveries: {
         Row: {
           accepted_at: string | null
@@ -961,6 +949,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          about_me: string
           avatar_url: string | null
           city: string | null
           directory_photo_path: string | null
@@ -982,6 +971,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          about_me?: string
           avatar_url?: string | null
           city?: string | null
           directory_photo_path?: string | null
@@ -1003,6 +993,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          about_me?: string
           avatar_url?: string | null
           city?: string | null
           directory_photo_path?: string | null
@@ -1138,6 +1129,16 @@ export type Database = {
       }
     }
     Functions: {
+      save_member_startup: { Args: { p_private_details?: Json; p_startup: Json }; Returns: string }
+      list_discoverable_members: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string }
+        Returns: { about_me: string | null; city: string | null; designation: string | null; display_name: string; has_photo: boolean; member_id: string; skills: string[]; startup_name: string | null; whatsapp: string | null }[]
+      }
+      get_discoverable_member: {
+        Args: { p_member_id: string }
+        Returns: { about_me: string | null; city: string | null; designation: string | null; display_name: string; has_photo: boolean; member_id: string; skills: string[]; startup_name: string | null; startup_website: string | null; whatsapp: string | null }[]
+      }
+      get_directory_startup_contacts: { Args: { p_startup_id: string }; Returns: Json }
       csc_save_collaboration_organization: { Args: { payload: Json }; Returns: string }
       csc_save_collaboration: { Args: { payload: Json }; Returns: string }
       csc_admin_action: {

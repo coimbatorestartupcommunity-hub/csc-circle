@@ -147,6 +147,7 @@ export interface MemberProfile {
   };
   goals: CommunityGoal[];
   skills?: string[];
+  aboutMe?: string;
   /** Consent flags, each independently recorded by the backend. */
   consent: {
     membershipTerms: boolean;
@@ -155,6 +156,14 @@ export interface MemberProfile {
     directoryParticipation: boolean;
     displayNamePublicly: boolean;
     displayPhotoPublicly: boolean;
+    communityProfileVisible?: boolean;
+    showProfilePhotoToMembers?: boolean;
+    showCityToMembers?: boolean;
+    showProfessionalRoleToMembers?: boolean;
+    showAboutMeToMembers?: boolean;
+    showSkillsToMembers?: boolean;
+    showStartupAffiliationsToMembers?: boolean;
+    shareWhatsappWithMembers?: boolean;
   };
   membership: Membership;
   profileCompletion: number; // 0–100

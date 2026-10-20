@@ -36,6 +36,7 @@ export function MemberProfileForm({
       startupWebsite: profile.startup?.website ?? "",
       startupDescription: profile.startup?.description ?? "",
       skills: (profile.skills ?? []).join(", "),
+      aboutMe: profile.aboutMe ?? "",
     },
   });
   const [saving, setSaving] = React.useState(false);
@@ -102,6 +103,11 @@ export function MemberProfileForm({
         <Field>
           <FieldLabel htmlFor="p-skills">Skills (comma separated)</FieldLabel>
           <Input id="p-skills" placeholder="Product, Frontend, Marketing" {...register("skills")} />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="p-about">About me</FieldLabel>
+          <Textarea id="p-about" rows={4} placeholder="Share a short professional introduction." {...register("aboutMe")} />
+          {errors.aboutMe ? <FieldError>{errors.aboutMe.message}</FieldError> : null}
         </Field>
       </fieldset>
 

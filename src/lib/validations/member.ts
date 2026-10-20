@@ -57,6 +57,14 @@ export const onboardingStep5Schema = z.object({
   directoryParticipation: z.boolean(),
   displayNamePublicly: z.boolean(),
   displayPhotoPublicly: z.boolean(),
+  communityProfileVisible: z.boolean().default(false),
+  showProfilePhotoToMembers: z.boolean().default(false),
+  showCityToMembers: z.boolean().default(false),
+  showProfessionalRoleToMembers: z.boolean().default(false),
+  showAboutMeToMembers: z.boolean().default(false),
+  showSkillsToMembers: z.boolean().default(false),
+  showStartupAffiliationsToMembers: z.boolean().default(false),
+  shareWhatsappWithMembers: z.boolean().default(false),
 });
 
 export type OnboardingData = z.infer<typeof onboardingStep1Schema> &
@@ -95,18 +103,7 @@ export const profileSchema = z.object({
   startupWebsite: urlOrEmpty,
   startupDescription: z.string().trim().max(600).optional(),
   skills: z.string().trim().max(200).optional(),
+  aboutMe: z.string().trim().max(1200).optional(),
 });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
-
-export const startupSubmissionSchema = z.object({
-  name: z.string().trim().min(2, "Enter a startup name.").max(120, "Startup name must be 120 characters or fewer."),
-  slug: z.string().trim().min(3, "The directory URL must be at least 3 characters.").max(120, "The directory URL must be 120 characters or fewer.").regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers and hyphens only."),
-  industry: z.string().trim().min(2, "Enter an industry.").max(80),
-  description: z.string().trim().min(20, "Describe your startup in at least 20 characters.").max(600, "Description must be 600 characters or fewer."),
-  website: z.string().url("Enter a valid website URL, or leave this field blank.").refine((value) => /^https?:\/\//.test(value), "Website links must start with http:// or https://.").or(z.literal("")),
-  logoPath: z.string().trim().min(1, "Upload your company logo before submitting.").max(240),
-  consent: z.boolean().refine((value) => value, "Please consent to sharing these startup details after CSC approval."),
-});
-
-export type StartupSubmissionValues = z.infer<typeof startupSubmissionSchema>;
