@@ -86,10 +86,6 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
       { href: "/admin/settings", label: "Settings", icon: Settings, perm: "settings.manage" },
     ],
   },
-  {
-    heading: "Website",
-    items: [{ href: "/", label: "Back to Home Page", icon: Home }],
-  },
 ];
 
 function NavList({
@@ -197,13 +193,23 @@ export function AdminShell({
               ))}
             </nav>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold text-brand-ink">{displayName}</p>
-              <p className="text-xs text-brand-muted">{roleLabel}</p>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <Link
+              href="/"
+              aria-label="Back to Home Page"
+              title="Back to Home Page"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-brand-border bg-brand-white px-2.5 text-xs font-semibold whitespace-nowrap text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3"
+            >
+              <Home className="size-4" aria-hidden="true" />
+              <span className="hidden lg:inline">Back to Home Page</span>
+              <span className="sr-only lg:hidden">Back to Home Page</span>
+            </Link>
+            <div className="hidden shrink-0 items-center gap-2 text-right lg:flex">
+              <p className="whitespace-nowrap text-sm font-semibold text-brand-ink">{displayName}</p>
+              <p className="whitespace-nowrap text-xs text-brand-muted">{roleLabel}</p>
             </div>
-            <AccountAvatar name={displayName} src={avatarUrl} className="size-8" />
-            <Link href="/admin" aria-current={pathname === "/admin" ? "page" : undefined} className="inline-flex min-h-9 items-center justify-center rounded-lg bg-brand-ink px-3 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-4 sm:text-sm">
+            <AccountAvatar name={displayName} src={avatarUrl} className="hidden size-8 shrink-0 sm:block" />
+            <Link href="/admin" aria-current={pathname === "/admin" ? "page" : undefined} className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-brand-ink px-2.5 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3">
               Admin Dashboard
             </Link>
             <form action="/auth/signout" method="post">

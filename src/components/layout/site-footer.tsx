@@ -6,53 +6,18 @@ import { Container } from "@/components/common/container";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { CtaLink } from "@/components/common/cta-link";
 import { InstagramIcon, WhatsappIcon } from "@/components/common/brand-icons";
-import { brandAssets, footerNav, routes, siteConfig } from "@/lib/content/site";
-
-function FooterLinkGroup({
-  heading,
-  links,
-}: {
-  heading: string;
-  links: (typeof footerNav)[number]["links"];
-}) {
-  return (
-    <nav
-      aria-label={heading}
-      data-testid={heading === "Community" ? "footer-community" : "footer-get-involved"}
-      className="min-w-0 text-center"
-    >
-      <h2 className="text-[10px] font-semibold tracking-[0.12em] text-brand-ink uppercase sm:text-xs">
-        {heading}
-      </h2>
-      <ul className="mt-3 flex flex-col items-center gap-2 sm:mt-4 sm:gap-2.5">
-        {links.map((link) => (
-          <li key={`${heading}-${link.href}-${link.label}`}>
-            <Link
-              href={link.href}
-              className="text-[11px] leading-5 text-brand-secondary transition-colors hover:text-brand-ink focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink sm:text-sm sm:leading-6"
-            >
-              {link.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
+import { brandAssets, routes, siteConfig } from "@/lib/content/site";
 
 export function SiteFooter() {
   const year = siteConfig.established;
-  const community = footerNav.find((group) => group.heading === "Community");
-  const getInvolved = footerNav.find((group) => group.heading === "Get involved");
-
   return (
     <footer className="mt-auto border-t border-brand-border bg-brand-cloud">
       <Container className="py-8 sm:py-10 lg:py-12">
-        <div className="grid grid-cols-2 items-start gap-x-4 gap-y-7 sm:gap-x-8 sm:gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,1.15fr)_minmax(0,1fr)] lg:gap-10">
+        <div className="flex flex-col items-center gap-6">
           <section
             aria-label="About CSC Circle"
             data-testid="footer-brand"
-            className="col-span-2 order-1 flex min-w-0 flex-col items-center text-center lg:col-span-1 lg:col-start-2 lg:row-start-1"
+            className="flex w-full min-w-0 flex-col items-center text-center"
           >
             <BrandLogo className="justify-center" markSize={48} priority={false} />
             <p className="mt-3 max-w-[26rem] text-xs leading-relaxed text-brand-muted sm:mt-4 sm:text-sm">
@@ -103,28 +68,10 @@ export function SiteFooter() {
             </CtaLink>
           </section>
 
-          {community && (
-            <div className="order-2 min-w-0 lg:col-start-3 lg:row-start-1">
-              <FooterLinkGroup
-                heading={community.heading}
-                links={community.links}
-              />
-            </div>
-          )}
-
-          {getInvolved && (
-            <div className="order-3 min-w-0 lg:col-start-1 lg:row-start-1">
-              <FooterLinkGroup
-                heading={getInvolved.heading}
-                links={getInvolved.links}
-              />
-            </div>
-          )}
-
           <nav
             aria-label="Legal and security"
             data-testid="footer-legal"
-            className="col-span-2 order-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-brand-border pt-4 text-xs sm:gap-x-6 sm:gap-y-2.5 sm:pt-5 sm:text-sm lg:col-span-3"
+            className="flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-brand-border pt-4 text-xs sm:gap-x-6 sm:gap-y-2.5 sm:pt-5 sm:text-sm"
           >
             <Link href="/privacy" className="font-semibold text-brand-ink underline decoration-brand-border decoration-1 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent">
               Privacy Policy

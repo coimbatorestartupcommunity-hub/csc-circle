@@ -43,7 +43,7 @@ export default async function MemberSettingsPage() {
           <dl className="flex flex-col gap-2 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-brand-muted">Email</dt>
-              <dd className="font-medium text-brand-ink">{profile.email || "—"}</dd>
+              <dd className="min-w-0 break-all text-right font-medium text-brand-ink">{profile.email || "—"}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-brand-muted">Member number</dt>

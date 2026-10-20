@@ -13,33 +13,26 @@ vi.mock("next/image", () => ({
 afterEach(cleanup);
 
 describe("SiteFooter", () => {
-  it("places brand, social row and join action before the mobile navigation columns", () => {
+  it("keeps the footer focused on centered branding, social links and the join action", () => {
     render(<SiteFooter />);
     const brand = screen.getByTestId("footer-brand");
-    const community = screen.getByTestId("footer-community");
-    const involved = screen.getByTestId("footer-get-involved");
     const social = screen.getByTestId("footer-social");
     const join = screen.getByRole("link", { name: "Join CSC Circle" });
 
-    expect(brand.className).toContain("order-1");
-    expect(community.parentElement?.className).toContain("order-2");
-    expect(involved.parentElement?.className).toContain("order-3");
+    expect(brand.className).toContain("items-center");
+    expect(screen.queryByTestId("footer-community")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("footer-get-involved")).not.toBeInTheDocument();
     expect(social.compareDocumentPosition(join) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(join.parentElement).toBe(brand);
     expect(join).toHaveAttribute("href", "/member/claim");
   });
 
-  it("centers both navigation groups and keeps verified links in the footer", () => {
+  it("removes the Community and Get Involved link columns while retaining legal and social links", () => {
     render(<SiteFooter />);
-    for (const id of ["footer-community", "footer-get-involved"]) {
-      const nav = screen.getByTestId(id);
-      expect(nav.className).toContain("text-center");
-      expect(nav.querySelector("ul")?.className).toContain("items-center");
-    }
     expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy");
     expect(screen.getByRole("link", { name: "Terms and Conditions" })).toHaveAttribute("href", "/terms");
-    expect(screen.getByRole("link", { name: "Collaborations" })).toHaveAttribute("href", "/collaborations");
-    expect(screen.getByRole("link", { name: "Member Login" })).toHaveAttribute("href", "/member/profile");
+    expect(screen.queryByRole("link", { name: "Collaborations" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Member Login" })).not.toBeInTheDocument();
     for (const label of ["CSC Circle on Instagram", "Join the CSC Circle WhatsApp community", "Email CSC Circle"]) {
       expect(screen.getByRole("link", { name: label }).className).toContain("size-11");
     }
