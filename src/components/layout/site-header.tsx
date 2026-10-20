@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
-import { Container } from "@/components/common/container";
 import { CtaLink } from "@/components/common/cta-link";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
@@ -58,11 +57,11 @@ export function SiteHeader() {
           : "border-transparent bg-brand-white/0",
       )}
     >
-      <Container className="flex h-16 items-center justify-between gap-4 lg:h-18">
-        <BrandLogo />
+      <div className="mx-auto flex h-16 w-full items-center justify-between gap-2 px-3 sm:gap-3 sm:px-5 lg:h-18 lg:px-7 2xl:px-9">
+        <BrandLogo className="shrink-0" />
 
         <nav
-          className="hidden items-center gap-0.5 xl:flex"
+          className="hidden min-w-0 flex-1 items-center justify-center gap-0 2xl:flex"
           aria-label="Primary"
         >
           {primaryNav.map((item) => {
@@ -76,7 +75,7 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-lg px-2.5 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+                  "rounded-lg px-2 py-2 text-[13px] font-medium whitespace-nowrap transition-colors",
                   active
                     ? "text-brand-ink"
                     : "text-brand-secondary hover:text-brand-ink",
@@ -92,26 +91,26 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {account.loading ? <span className="hidden h-9 w-24 animate-pulse rounded-lg bg-brand-cloud xl:inline-flex" aria-label="Loading account" /> : account.authenticated ? (
-            <div className="hidden items-center gap-2 xl:flex">
-              <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-8" />
-              <span className="hidden max-w-36 truncate text-sm font-medium text-brand-ink 2xl:block">{account.name}</span>
-              <span className="hidden max-w-32 text-right text-xs text-brand-muted 2xl:block">
+          {account.loading ? <span className="hidden h-8 w-20 animate-pulse rounded-lg bg-brand-cloud xl:inline-flex" aria-label="Loading account" /> : account.authenticated ? (
+            <div className="hidden shrink-0 items-center gap-2 xl:flex 2xl:gap-2.5">
+              <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-8 shrink-0" />
+              <span className="whitespace-nowrap text-xs font-semibold text-brand-ink 2xl:text-sm">{account.name}</span>
+              <span className="whitespace-nowrap text-xs text-brand-muted">
                 {account.membershipLabel}
               </span>
-              <CtaLink href={account.accountHref ?? "/member/profile"} size="md" arrow={false} className="whitespace-nowrap">
+              <CtaLink href={account.accountHref ?? "/member/profile"} size="md" arrow={false} className="h-9 px-3 text-xs 2xl:px-4 2xl:text-sm">
                 {account.accountLabel ?? "Profile"}
               </CtaLink>
             </div>
           ) : (
-            <CtaLink href={routes.login} variant="ghost" size="md" arrow={false} className="hidden whitespace-nowrap xl:inline-flex">
+            <CtaLink href={routes.login} variant="ghost" size="md" arrow={false} className="hidden whitespace-nowrap 2xl:inline-flex">
               Log In
             </CtaLink>
           )}
-          {!account.authenticated && !account.loading ? <CtaLink href={routes.join} size="md" arrow={false} className="hidden whitespace-nowrap xl:inline-flex">Join Community</CtaLink> : null}
+          {!account.authenticated && !account.loading ? <CtaLink href={routes.join} size="md" arrow={false} className="hidden whitespace-nowrap 2xl:inline-flex">Join Community</CtaLink> : null}
           <MobileNavigation account={account} />
         </div>
-      </Container>
+      </div>
     </header>
   );
 }
