@@ -68,6 +68,7 @@ export interface ActionDef {
   message?: string;
   confirm?: string;
   variant?: "default" | "outline" | "ghost" | "destructive" | "secondary";
+  visibleForStatuses?: string[];
 }
 
 const get = (row: { id: string }, key: string): unknown =>
@@ -238,7 +239,7 @@ export function DataTable<T extends { id: string }>({
                   )}
                 </th>
               ))}
-              {actions ? <th className="px-4 py-3 text-right text-xs font-semibold tracking-wide text-brand-muted uppercase">Actions</th> : null}
+              {actions ? <th className="sticky right-0 z-20 min-w-56 bg-brand-white px-4 py-3 text-right text-xs font-semibold tracking-wide text-brand-muted uppercase shadow-[-10px_0_12px_-12px_rgba(18,24,38,0.35)]">Actions</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -265,9 +266,9 @@ export function DataTable<T extends { id: string }>({
                       </td>
                     ))}
                     {actions ? (
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1.5">
-                          {actions.map((a) => (
+                      <td className="sticky right-0 z-10 min-w-56 bg-brand-white px-4 py-3 text-right shadow-[-10px_0_12px_-12px_rgba(18,24,38,0.25)]">
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          {actions.filter((a) => !a.visibleForStatuses || a.visibleForStatuses.includes(String(get(row, "status")))).map((a) => (
                             <ActionButton
                               key={a.label}
                               label={a.label}

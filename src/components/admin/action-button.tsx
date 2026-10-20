@@ -38,7 +38,8 @@ export function ActionButton({
   const [result, setResult] = React.useState<"success" | "error" | null>(null);
   const [failureMessage, setFailureMessage] = React.useState("");
   const isMembershipApproval = operation?.kind === "claim" && operation.decision === "active";
-  const reasonRequired = operation?.kind === "payment" || ["rejected", "suspended", "revoked", "cancelled"].includes(operation?.decision ?? "");
+  const reasonRequired = operation?.kind === "payment" || ["rejected", "suspended", "revoked", "cancelled"].includes(operation?.decision ?? "") || (operation?.kind === "startup" && operation.decision === "archived");
+  const isStartupApproval = operation?.kind === "startup" && operation.decision === "published";
   const displayDetails = Object.entries(details ?? {}).filter(([key, value]) =>
     value !== null && value !== undefined && value !== "" && !["id", "user_id", "owner_id"].includes(key),
   ).slice(0, 12);
@@ -67,17 +68,17 @@ export function ActionButton({
     <>
       <Button type="button" variant={variant} size={size} onClick={openDialog} disabled={disabled || saving}>{label}</Button>
       <Dialog open={open} onOpenChange={(next) => !saving && setOpen(next)}>
-        <DialogContent className={isMembershipApproval ? "max-h-[min(82dvh,700px)] max-w-5xl sm:max-w-5xl overflow-hidden rounded-3xl border-0 p-0 shadow-2xl" : "max-h-[min(86dvh,760px)] max-w-2xl sm:max-w-2xl overflow-y-auto rounded-3xl border-0 p-0 shadow-2xl"}>
+        <DialogContent className={isMembershipApproval || isStartupApproval ? "max-h-[min(82dvh,700px)] max-w-5xl sm:max-w-5xl overflow-hidden rounded-3xl border-0 p-0 shadow-2xl" : "max-h-[min(86dvh,760px)] max-w-2xl sm:max-w-2xl overflow-y-auto rounded-3xl border-0 p-0 shadow-2xl"}>
           <div className="p-6 sm:p-8">
             <DialogHeader className="pr-8">
               <div className={`mb-1 flex size-12 items-center justify-center rounded-2xl ${result === "success" ? "bg-emerald-50 text-emerald-700" : result === "error" ? "bg-red-50 text-red-700" : "bg-brand-purple text-brand-ink"}`}>
                 {result === "success" ? <Check className="size-6" /> : result === "error" ? <CircleAlert className="size-6" /> : <CircleAlert className="size-6" />}
               </div>
               <DialogTitle className="text-xl font-semibold">{result === "success" ? "Action recorded" : result === "error" ? "Action needs attention" : label}</DialogTitle>
-              <DialogDescription>{result === "success" ? "The decision was saved and the record has been updated." : result === "error" ? failureMessage || "The action could not be completed. Review the current record status and try again." : isMembershipApproval ? "Membership cards are free. Approving confirms this account and activates its CSC membership card; no payment is required." : confirm ?? message ?? "Review the submitted information before continuing."}</DialogDescription>
+              <DialogDescription>{result === "success" ? "The decision was saved and the record has been updated." : result === "error" ? failureMessage || "The action could not be completed. Review the current record status and try again." : isMembershipApproval ? "Membership cards are free. Approving confirms this account and activates its CSC membership card; no payment is required." : isStartupApproval ? "Review the founder-submitted details below. Publishing makes this startup visible in the CSC Founder Directory." : confirm ?? message ?? "Review the submitted information before continuing."}</DialogDescription>
             </DialogHeader>
             {result === null && <>
-              {displayDetails.length > 0 && <dl className={`mt-5 grid gap-x-5 gap-y-3 rounded-2xl bg-brand-cloud p-4 ${isMembershipApproval ? "sm:grid-cols-3 xl:grid-cols-4" : "sm:grid-cols-2"}`}>
+              {displayDetails.length > 0 && <dl className={`mt-5 grid gap-x-5 gap-y-3 rounded-2xl bg-brand-cloud p-4 ${isMembershipApproval || isStartupApproval ? "sm:grid-cols-3 xl:grid-cols-4" : "sm:grid-cols-2"}`}>
                 {displayDetails.map(([key, value]) => <div key={key} className="min-w-0"><dt className="text-xs font-medium text-brand-muted">{detailLabel(key)}</dt><dd className="mt-1 break-words text-sm text-brand-ink">{detailValue(value)}</dd></div>)}
               </dl>}
               {operation && <div className="mt-4 grid gap-2"><label htmlFor="admin-action-reason" className="text-sm font-medium">{isMembershipApproval ? "Internal approval note" : operation.kind === "payment" ? "Independent settlement reference" : "Review reason"} {reasonRequired ? <span className="text-red-700">(required)</span> : <span className="font-normal text-brand-muted">(optional)</span>}</label><Textarea id="admin-action-reason" value={reason} onChange={(event) => setReason(event.target.value)} maxLength={1000} rows={isMembershipApproval ? 2 : 3} placeholder={reasonRequired ? "Enter at least 5 characters for the audit record…" : "Add an optional note for the audit record…"} aria-invalid={reasonRequired && reason.trim().length > 0 && reason.trim().length < 5} />{!isMembershipApproval && <p className="text-xs text-brand-muted">This note is attached to the privileged action for audit.</p>}</div>}

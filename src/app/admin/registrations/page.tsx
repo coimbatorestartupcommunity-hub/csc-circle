@@ -39,9 +39,9 @@ export default async function AdminRegistrationsPage() {
 
   const actions: ActionDef[] | undefined = can(ctx, "registrations.approve")
     ? [
-        { operation: ctx.mode === "live" ? { kind: "registration", decision: "confirmed" } : undefined, label: "Approve", message: "Approval checks capacity + paid-event payment verification atomically (Phase 1). Paid events cannot be confirmed before verified payment." },
-        { operation: ctx.mode === "live" ? { kind: "registration", decision: "waitlisted" } : undefined, label: "Waitlist" },
-        { operation: ctx.mode === "live" ? { kind: "registration", decision: "cancelled" } : undefined, label: "Cancel", variant: "destructive", confirm: "Cancel this registration?" },
+        { operation: ctx.mode === "live" ? { kind: "registration", decision: "confirmed" } : undefined, label: "Approve", message: "Approval checks capacity and any paid-event verification atomically. Free events and membership cards do not require payment.", visibleForStatuses: ["pending", "pending_review", "waitlisted"] },
+        { operation: ctx.mode === "live" ? { kind: "registration", decision: "waitlisted" } : undefined, label: "Waitlist", visibleForStatuses: ["pending", "pending_review"] },
+        { operation: ctx.mode === "live" ? { kind: "registration", decision: "cancelled" } : undefined, label: "Cancel", variant: "destructive", confirm: "Cancel this registration?", visibleForStatuses: ["pending", "pending_review", "pending_payment", "payment_verification", "confirmed", "waitlisted"] },
       ]
     : undefined;
 

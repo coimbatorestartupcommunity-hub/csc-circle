@@ -40,6 +40,9 @@ export async function POST(request: Request) {
     if (!parsed.success) return authResponse({ error: parsed.error.issues[0]?.message ?? "Invalid notice." }, 422);
     const { publish, ...notice } = parsed.data;
     if (publish && !notice.bannerPath) return authResponse({ error: "Upload a 4:3 event banner before publishing this notice." }, 422);
+    const startsAt = notice.startsAt ? Date.parse(notice.startsAt) : null;
+    const expiresAt = notice.expiresAt ? Date.parse(notice.expiresAt) : null;
+    if (startsAt !== null && expiresAt !== null && expiresAt <= startsAt) return authResponse({ error: "The end time must be later than the start time." }, 422);
     if (notice.expiresAt && new Date(notice.expiresAt) <= new Date()) return authResponse({ error: "The expiry must be in the future." }, 422);
     const sb = await createClient();
     const admin = createAdminClient();

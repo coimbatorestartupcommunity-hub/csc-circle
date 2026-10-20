@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const localAssetPath = z.string().regex(/^\/(images|brand)\/[A-Za-z0-9._/-]+$/).refine((path) => !path.includes(".."));
+const collaborationImagePath = localAssetPath.or(z.string().regex(/^collaboration-featured\/[0-9a-f-]{36}\.webp$/i));
 
 export const collaborationSaveSchema = z.object({
   id: z.string().uuid().optional(),
@@ -12,7 +13,7 @@ export const collaborationSaveSchema = z.object({
   category: z.string().trim().min(2).max(100),
   status: z.enum(["upcoming", "ongoing", "completed", "cancelled"]),
   publicationStatus: z.enum(["draft", "pending", "published", "archived"]),
-  featuredImagePath: localAssetPath.or(z.literal("")),
+  featuredImagePath: collaborationImagePath.or(z.literal("")),
   partnerIds: z.array(z.string().uuid()).min(2).max(8),
   eventId: z.string().uuid().or(z.literal("")),
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/).refine((value) => {
@@ -37,6 +38,10 @@ export const collaborationSaveSchema = z.object({
     caption: z.string().max(240).default(""),
     display_order: z.number().int().min(0).max(19),
   })).max(20),
+}).superRefine((value, context) => {
+  if (value.publicationStatus === "published" && !value.featuredImagePath) {
+    context.addIssue({ code: "custom", path: ["featuredImagePath"], message: "Upload a 4:5 featured image before publishing." });
+  }
 });
 
 export type CollaborationSaveValues = z.infer<typeof collaborationSaveSchema>;

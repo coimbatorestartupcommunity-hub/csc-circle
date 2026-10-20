@@ -66,7 +66,7 @@ export default async function AdminStartupDetail({
         </section>
         {can(ctx, "directory.manage") ? (
           <div className="flex flex-wrap gap-2 border-t border-brand-border pt-4">
-            <ActionButton
+            {(s.status === "pending" || s.status === "draft") && <ActionButton
               operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "published" } : undefined}
               label="Approve & publish"
               message="Review the founder-submitted details below. Approval makes this listing visible in the public Founder Directory."
@@ -83,9 +83,10 @@ export default async function AdminStartupDetail({
                 submitted: s.submittedAt ? formatEventDate(s.submittedAt) : "Unknown",
                 currentStatus: meta.label,
               }}
-            />
-            <ActionButton label="Edit details" />
-            <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "archived" } : undefined} label="Unpublish" variant="destructive" confirm="Unpublish this listing from the public directory?" />
+            />}
+            {(s.status === "pending" || s.status === "draft") && <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "archived" } : undefined} label="Cancel submission" variant="destructive" confirm="Cancel this startup submission and keep it out of the public directory?" />}
+            {s.status === "published" && <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "archived" } : undefined} label="Unpublish" variant="destructive" confirm="Unpublish this listing from the public directory?" />}
+            {s.status === "archived" && <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "pending" } : undefined} label="Return to review" confirm="Return this startup to the pending review queue?" />}
           </div>
         ) : null}
       </div>

@@ -25,3 +25,20 @@ export async function sanitizeEventBanner(bytes: Buffer, mime: string) {
     .toBuffer({ resolveWithObject: true });
   return { data, width: info.width, height: info.height, size: info.size };
 }
+
+/** Normalize collaboration artwork to a clear 4:5 portrait crop. */
+export async function sanitizeCollaborationPortrait(bytes: Buffer, mime: string) {
+  if (bytes.length > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(mime)) throw new Error("Invalid image type or size.");
+  const image = sharp(bytes, { limitInputPixels: 16_000_000, failOn: "warning" });
+  const metadata = await image.metadata();
+  const expected: Record<string, string> = { "image/jpeg": "jpeg", "image/png": "png", "image/webp": "webp" };
+  if (metadata.format !== expected[mime] || (metadata.pages ?? 1) > 1 || !metadata.width || !metadata.height || metadata.width < 512 || metadata.height < 640) {
+    throw new Error("Choose a single-frame image at least 512 × 640 px.");
+  }
+  const { data, info } = await image
+    .rotate()
+    .resize(1200, 1500, { fit: "cover", position: "attention" })
+    .webp({ quality: 88, effort: 4 })
+    .toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height, size: info.size };
+}

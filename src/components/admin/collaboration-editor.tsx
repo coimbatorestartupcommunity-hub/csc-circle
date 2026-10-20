@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Save } from "lucide-react";
+import { ImagePlus, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,12 @@ export function CollaborationEditor({
 }) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
+  const [featuredImagePreview, setFeaturedImagePreview] = React.useState(() => {
+    const path = initial?.featuredImagePath ?? "";
+    return path.startsWith("/") ? path : path.startsWith("collaboration-featured/") ? `/api/admin/collaborations/featured-image?path=${encodeURIComponent(path)}` : "";
+  });
+  const [uploadingImage, setUploadingImage] = React.useState(false);
+  const [imageMessage, setImageMessage] = React.useState("");
   const [organizationOptions, setOrganizationOptions] = React.useState(organizations);
   const [addingOrganization, setAddingOrganization] = React.useState(false);
   const [newOrganization, setNewOrganization] = React.useState({
@@ -61,6 +68,26 @@ export function CollaborationEditor({
       media: initial?.media ?? [],
     },
   });
+
+  async function uploadFeaturedImage(file?: File) {
+    if (!file || mode !== "live") return;
+    setUploadingImage(true);
+    setImageMessage("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch("/api/admin/collaborations/featured-image", { method: "POST", body });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error ?? "Could not upload the image.");
+      form.setValue("featuredImagePath", result.path, { shouldValidate: true });
+      setFeaturedImagePreview(result.previewUrl);
+      setImageMessage(`Image saved as ${result.width} × ${result.height} (4:5).`);
+    } catch (error) {
+      setImageMessage(error instanceof Error ? error.message : "Could not upload the image.");
+    } finally {
+      setUploadingImage(false);
+    }
+  }
 
   async function onSubmit(values: Values) {
     if (mode !== "live") {
@@ -159,7 +186,21 @@ export function CollaborationEditor({
 
       <section className="grid gap-4 rounded-2xl border border-brand-border bg-white p-4 sm:grid-cols-2 sm:p-6">
         <h2 className="text-base font-semibold text-brand-ink sm:col-span-2">Images and highlights</h2>
-        <label className={`${labelClass} sm:col-span-2`}>Featured image path<input className={inputClass} placeholder="/images/community-outlier.png" {...form.register("featuredImagePath")} /></label>
+        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-[minmax(10rem,14rem)_1fr] sm:items-center">
+          <div className="relative aspect-[4/5] w-full max-w-56 overflow-hidden rounded-2xl border border-brand-border bg-brand-cloud">
+            {featuredImagePreview ? <Image src={featuredImagePreview} alt="4:5 collaboration image preview" fill unoptimized sizes="224px" className="object-cover" /> : <div className="flex size-full flex-col items-center justify-center gap-2 text-sm text-brand-muted"><ImagePlus className="size-7" aria-hidden="true" />No image selected</div>}
+          </div>
+          <div className="grid content-center justify-items-start gap-2">
+            <p className="text-sm font-semibold text-brand-ink">Featured collaboration image (4:5)</p>
+            <p className="max-w-xl text-sm leading-6 text-brand-secondary">Upload a clear JPEG, PNG or WebP portrait up to 5 MB. CSC safely crops it to a 4:5 image for the collaboration page. A featured image is required before publishing.</p>
+            <label className={`inline-flex min-h-10 cursor-pointer items-center justify-center rounded-xl border border-brand-border bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-brand-cloud ${uploadingImage || mode !== "live" ? "pointer-events-none opacity-60" : ""}`}>
+              {uploadingImage ? "Uploading image…" : featuredImagePreview ? "Replace featured image" : "Upload 4:5 image"}
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingImage || mode !== "live"} onChange={(event) => { void uploadFeaturedImage(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+            </label>
+            {featuredImagePreview && <Button type="button" variant="ghost" disabled={saving || uploadingImage} onClick={() => { form.setValue("featuredImagePath", "", { shouldValidate: true }); setFeaturedImagePreview(""); }}>Remove image</Button>}
+            {imageMessage && <p role="status" aria-live="polite" className="text-xs text-brand-secondary">{imageMessage}</p>}
+          </div>
+        </div>
         <label className={`${labelClass} sm:col-span-2`}>Gallery rows (one per line: path | alt text | caption)<textarea key="media" defaultValue={mediaText} rows={3} className={inputClass} onChange={(event) => {
           const items = event.target.value.split("\n").filter(Boolean).map((line, index) => {
             const [media_path = "", alt_text = "", caption = ""] = line.split("|").map((part) => part.trim());

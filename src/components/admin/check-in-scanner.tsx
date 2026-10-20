@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import {
   Camera,
@@ -33,7 +34,7 @@ const resultMeta: Record<
   { label: string; tone: string; icon: React.ElementType }
 > = {
   valid: { label: "Valid — entry allowed", tone: "bg-green-100 text-green-800", icon: CheckCircle2 },
-  invalid: { label: "Invalid credential", tone: "bg-brand-red text-brand-ink", icon: XCircle },
+  invalid: { label: "Not registered — no event pass", tone: "bg-brand-red text-brand-ink", icon: XCircle },
   pending: { label: "Pending approval", tone: "bg-brand-gold text-brand-ink", icon: Clock },
   payment: { label: "Payment incomplete", tone: "bg-brand-gold text-brand-ink", icon: CreditCard },
   wrong_event: { label: "Wrong event", tone: "bg-brand-red text-brand-ink", icon: Ban },
@@ -60,6 +61,7 @@ export function CheckInScanner({
   const [cameraState, setCameraState] = React.useState<"off" | "starting" | "on" | "denied">("off");
   const [result, setResult] = React.useState<ResultState>("idle");
   const [detail, setDetail] = React.useState<string>("");
+  const [verifiedMember, setVerifiedMember] = React.useState<{ name: string; memberNumber: string | null; membershipStatus: string | null; designation: string | null; startupName: string | null; portraitUrl: string | null; eventTitle: string | null; registrationReference: string } | null>(null);
   const [manual, setManual] = React.useState("");
 
   const stop = React.useCallback(() => {
@@ -95,7 +97,7 @@ export function CheckInScanner({
   async function verify(text: string) {
     if (verifying.current) return;
     verifying.current = true;
-    stop(); setResult("verifying");
+    stop(); setResult("verifying"); setVerifiedMember(null);
     try {
       const payload = JSON.parse(text);
       if (payload.t !== "csc.eventpass" || payload.v !== 1 || !payload.ref) throw new Error("invalid");
@@ -106,6 +108,7 @@ export function CheckInScanner({
         setResult("invalid"); setDetail(data.error ?? "Verification unavailable. No entry authorized."); return;
       }
       setResult(data.status as ResultState);
+      setVerifiedMember(data.attendee ?? null);
       setDetail(data.status === "valid" ? `${data.name ?? "Attendee"} · ${data.reference} · check-in recorded` : data.status === "already" ? `Previously checked in at ${data.checkedInAt}` : "Entry blocked by the server.");
     } catch { setResult("invalid"); setDetail("Could not verify this credential. Check the code and network connection."); }
     finally { verifying.current = false; }
@@ -211,7 +214,11 @@ export function CheckInScanner({
               {resultMeta[result].label}
             </div>
             <p className="text-sm text-brand-secondary">{detail}</p>
-            <Button variant="outline" onClick={() => { setResult("idle"); start(); }} className="gap-2">
+            {verifiedMember && (result === "valid" || result === "already") ? <div className="flex items-center gap-4 rounded-2xl border border-brand-border bg-brand-cloud p-4">
+              {verifiedMember.portraitUrl ? <Image src={verifiedMember.portraitUrl} alt={`${verifiedMember.name} membership portrait`} width={80} height={100} unoptimized className="aspect-4/5 w-20 shrink-0 rounded-xl object-cover ring-1 ring-brand-border" /> : <span className="flex aspect-4/5 w-20 shrink-0 items-center justify-center rounded-xl bg-brand-purple text-lg font-bold text-brand-ink">{verifiedMember.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>}
+              <div className="min-w-0"><p className="font-semibold text-brand-ink">{verifiedMember.name}</p><p className="mt-1 text-xs capitalize text-brand-secondary">{verifiedMember.designation ?? "CSC member"}{verifiedMember.startupName ? ` · ${verifiedMember.startupName}` : ""}</p><p className="mt-2 font-mono text-xs text-brand-ink">{verifiedMember.memberNumber ?? "Membership ID unavailable"}</p><p className="mt-1 text-xs text-brand-secondary">{verifiedMember.eventTitle ?? selectedEvent?.title} · {verifiedMember.registrationReference}</p><p className="mt-1 text-xs font-medium text-emerald-700">Registered · check-in verified</p></div>
+            </div> : null}
+            <Button variant="outline" onClick={() => { setResult("idle"); setVerifiedMember(null); start(); }} className="gap-2">
               <ScanLine className="size-4" /> Scan next
             </Button>
           </div>

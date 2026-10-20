@@ -215,7 +215,11 @@ function mapCollaboration(r: Row): Collaboration {
     story: (r.story as string) ?? undefined,
     category: (r.category as string) ?? "Collaboration",
     status: (r.status as Collaboration["status"]) ?? "completed",
-    featuredImagePath: (r.featured_image_path as string) ?? undefined,
+    featuredImagePath: (() => {
+      const path = (r.featured_image_path as string) ?? "";
+      const stored = path.match(/^collaboration-featured\/([0-9a-f-]{36})\.webp$/i);
+      return stored ? `/api/collaborations/media/${stored[1]}` : path || undefined;
+    })(),
     highlights: (r.highlights as Collaboration["highlights"]) ?? [],
     eventId: (r.event_id as string) ?? undefined,
     eventDate: (r.event_date as string) ?? undefined,

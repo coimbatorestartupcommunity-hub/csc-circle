@@ -56,6 +56,20 @@ it("renders event broadcasts with live event details, registration CTA, and esca
   expect(message.text).not.toContain("private-moderation-note");
 });
 
+it("renders the individual event pass in the confirmed registration email", () => {
+  configure();
+  const message = renderNotification("EventConfirmed", {
+    registrationId: "123e4567-e89b-12d3-a456-426614174000",
+    eventPassQrCid: "csc-event-pass-job@example.csc",
+    reference: "EVT-TEST-123",
+    eventTitle: "CSC Founder Meetup",
+  });
+  expect(message.html).toContain("cid:csc-event-pass-job@example.csc");
+  expect(message.html).toContain("Your individual event pass QR");
+  expect(message.text).toContain("Your individual event pass QR is attached");
+  expect(message.html).toContain("/member/events/123e4567-e89b-12d3-a456-426614174000");
+});
+
 it("keeps the production Supabase auth email templates on the CSC frame with native placeholders", () => {
   const files = readdirSync("supabase/templates").filter((file) => file.endsWith(".html"));
   expect(files).toEqual(expect.arrayContaining(["confirmation.html", "recovery.html", "invite.html", "magic_link.html", "email_change.html", "reauthentication.html"]));

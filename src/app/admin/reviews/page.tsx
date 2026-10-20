@@ -38,8 +38,8 @@ export default async function AdminReviewsPage() {
 
   const actions: ActionDef[] | undefined = can(ctx, "reviews.moderate")
     ? [
-        { operation: ctx.mode === "live" ? { kind: "review", decision: "approved" } : undefined, label: "Approve", message: "Approving publishes the genuine review to the public carousel and updates the real rating aggregate (Phase 1). Admins cannot edit a member's opinion." },
-        { operation: ctx.mode === "live" ? { kind: "review", decision: "rejected" } : undefined, label: "Reject", variant: "destructive", confirm: "Reject this review?" },
+        { operation: ctx.mode === "live" ? { kind: "review", decision: "approved" } : undefined, label: "Approve", message: "Approving publishes the genuine review to the public carousel and updates the real rating aggregate. Admins cannot edit a member's opinion.", visibleForStatuses: ["submitted", "under_review"] },
+        { operation: ctx.mode === "live" ? { kind: "review", decision: "rejected" } : undefined, label: "Reject", variant: "destructive", confirm: "Reject this review?", visibleForStatuses: ["submitted", "under_review"] },
       ]
     : undefined;
 

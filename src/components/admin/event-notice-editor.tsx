@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-type Draft = { title: string; message: string; actionLabel: string; eventPath: string; bannerPath: string; expiresAt?: string | null };
-const emptyDraft: Draft = { title: "", message: "", actionLabel: "Register for event", eventPath: "/events", bannerPath: "", expiresAt: null };
+type Draft = { title: string; message: string; actionLabel: string; eventPath: string; bannerPath: string; startsAt?: string | null; expiresAt?: string | null };
+const emptyDraft: Draft = { title: "", message: "", actionLabel: "Register for event", eventPath: "/events", bannerPath: "", startsAt: null, expiresAt: null };
 
 function dateValue(value?: string | null) {
   if (!value) return "";
@@ -119,7 +119,11 @@ export function EventNoticeEditor({ isDemo, canPublish }: { isDemo: boolean; can
             <Input value={draft.actionLabel} maxLength={40} placeholder="Register for event" onChange={(e) => update("actionLabel", e.target.value)} />
           </label>
           <label className="grid min-w-0 gap-1.5 text-sm font-medium text-brand-ink">
-            Optional expiry date <span className="text-xs font-normal text-brand-muted">The notice stops appearing after this time.</span>
+            Starts showing <span className="text-xs font-normal text-brand-muted">Optional. Leave blank to show as soon as you publish; otherwise, choose a future start date and time.</span>
+            <Input type="datetime-local" value={dateValue(draft.startsAt)} onChange={(e) => update("startsAt", e.target.value ? new Date(e.target.value).toISOString() : null)} />
+          </label>
+          <label className="grid min-w-0 gap-1.5 text-sm font-medium text-brand-ink">
+            Stop showing <span className="text-xs font-normal text-brand-muted">Optional end date and time. Set a date range, such as Friday through Saturday; the notice hides automatically at the end.</span>
             <Input type="datetime-local" value={dateValue(draft.expiresAt)} onChange={(e) => update("expiresAt", e.target.value ? new Date(e.target.value).toISOString() : null)} />
           </label>
         </div>

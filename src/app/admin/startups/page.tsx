@@ -1,6 +1,6 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
-import { getAdminContext } from "@/lib/admin/gate";
+import { DataTable, type ActionDef, type Column, type Facet } from "@/components/admin/data-table";
+import { can, getAdminContext } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
 export const metadata = { title: "Startups" };
@@ -31,6 +31,14 @@ export default async function AdminStartupsPage() {
   const ctx = await getAdminContext();
   const res = await adminServices.listStartups();
   const rows = res.ok ? res.data : [];
+  const actions: ActionDef[] | undefined = can(ctx, "directory.manage")
+    ? [
+        { label: "Approve & publish", operation: ctx.mode === "live" ? { kind: "startup", decision: "published" } : undefined, message: "Review the founder-submitted information before publishing this startup.", visibleForStatuses: ["pending", "draft"] },
+        { label: "Cancel submission", operation: ctx.mode === "live" ? { kind: "startup", decision: "archived" } : undefined, variant: "destructive", confirm: "Cancel this startup submission and keep it out of the public directory?", visibleForStatuses: ["pending", "draft"] },
+        { label: "Unpublish", operation: ctx.mode === "live" ? { kind: "startup", decision: "archived" } : undefined, variant: "destructive", confirm: "Unpublish this startup from the public directory?", visibleForStatuses: ["published"] },
+        { label: "Return to review", operation: ctx.mode === "live" ? { kind: "startup", decision: "pending" } : undefined, confirm: "Return this archived startup to the pending review queue?", visibleForStatuses: ["archived"] },
+      ]
+    : undefined;
 
   return (
     <>
@@ -45,6 +53,7 @@ export default async function AdminStartupsPage() {
         facets={facets}
         searchKeys={["name", "founder", "industry"]}
         rowHrefBase="/admin/startups"
+        actions={actions}
         emptyMessage={res.ok ? "No startups submitted." : res.error.message}
       />
     </>

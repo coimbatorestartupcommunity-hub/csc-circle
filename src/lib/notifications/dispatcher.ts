@@ -5,6 +5,8 @@ import { emailConfiguration, validEmail } from "@/lib/notifications/config";
 import { isTemplateKey, renderNotification } from "@/lib/notifications/templates";
 import { sendCommunityEmail } from "@/lib/notifications/email";
 import { classifyEmailFailure } from "@/lib/notifications/failures";
+import QRCode from "qrcode";
+import { buildEventPassQrPayload } from "@/lib/member/qr";
 import type { Database } from "@/lib/supabase/database.types";
 type Job = Database["public"]["Tables"]["notifications"]["Row"];
 type Service = NonNullable<ReturnType<typeof createSubmissionClient>>;
@@ -119,7 +121,18 @@ export async function dispatchNotifications(batch = 15) {
         recipients = r.error ? [] : [r.data ?? ""];
       }
       if (!recipients.length || recipients.some(r=>!validEmail(r))) { await finish("failed_permanent","INVALID_RECIPIENT"); continue; }
-      const payload = job.payload && typeof job.payload === "object" && !Array.isArray(job.payload) ? job.payload : {};
+      const originalPayload = job.payload && typeof job.payload === "object" && !Array.isArray(job.payload) ? job.payload : {};
+      let payload: Record<string, unknown> = originalPayload;
+      let attachments: { filename: string; content: Buffer; contentType: string; cid: string }[] | undefined;
+      if (job.template_key === "EventConfirmed" && job.related_record_type === "event_registrations" && job.related_record_id) {
+        payload = { ...originalPayload, registrationId: job.related_record_id };
+        const { data: registration } = await sb.from("event_registrations").select("pass_token,reference").eq("id", job.related_record_id).maybeSingle();
+        if (registration?.pass_token && /^[a-f0-9]{64}$/i.test(registration.pass_token)) {
+          const cid = `csc-event-pass-${job.id}@csc`;
+          payload = { ...payload, eventPassQrCid: cid, reference: registration.reference };
+          attachments = [{ filename: `CSC-EventPass-${registration.reference}.png`, content: await QRCode.toBuffer(buildEventPassQrPayload(registration.pass_token), { type: "png", width: 440, margin: 2, color: { dark: "#121826", light: "#ffffff" } }), contentType: "image/png", cid }];
+        }
+      }
       const message = renderNotification(job.template_key,payload);
       let outcome = "sent", code = "";
       for (const recipient of recipients) {
@@ -134,7 +147,7 @@ export async function dispatchNotifications(batch = 15) {
           continue;
         }
         try {
-          const response = await sendCommunityEmail({ to:recipient,...message,notificationId:job.id });
+          const response = await sendCommunityEmail({ to:recipient,...message,notificationId:job.id,attachments });
           if (!response.accepted?.some(a=>String(a).toLowerCase()===recipient.toLowerCase())) throw { responseCode:550 };
           const recorded = await sb.rpc("csc_finish_email_delivery", { job:job.id,lease,digest,outcome:"accepted",code:"" });
           if (recorded.error) throw new Error("ACCEPTANCE_RECORD_FAILED");
