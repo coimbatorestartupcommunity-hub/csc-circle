@@ -1,7 +1,6 @@
 import { Check } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { ActionButton } from "@/components/admin/action-button";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { getAdminContext } from "@/lib/admin/gate";
 import {
   ALL_PERMISSIONS,
   roleHasPermission,
@@ -18,7 +17,6 @@ const roles = Object.keys(rolePermissions) as AdminRole[];
 
 export default async function AdminSettingsPage() {
   const ctx = await getAdminContext();
-  const canManage = can(ctx, "settings.manage");
 
   return (
     <>
@@ -39,15 +37,11 @@ export default async function AdminSettingsPage() {
             <Field label="Member ID format" value="CSC-2026-000000" mono />
             <Field label="Timezone" value={siteConfig.timezone} />
           </dl>
-          {canManage ? <div className="pt-2"><ActionButton label="Edit organisation settings" /></div> : null}
         </section>
 
         <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-brand-ink">Role & permission matrix</h2>
-            {can(ctx, "roles.manage") ? (
-              <ActionButton label="Assign role" message="Role assignment requires a verified identity + privileged server-side operation (Phase 1). Never granted from the UI alone." variant="default" />
-            ) : null}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-sm">

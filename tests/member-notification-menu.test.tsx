@@ -55,5 +55,28 @@ describe("member notification inbox", () => {
     expect(panel.parentElement).toBe(document.body);
     expect(panel.style.left).toBe("12px");
     expect(panel.style.top).toBe("68px");
+    expect(panel.style.width).toBe("366px");
+    expect(panel).toHaveClass("flex", "flex-col");
+  });
+
+  it("bounds the notification panel to the visible mobile viewport", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ unreadCount: 0, items: [] }) }));
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 900 });
+    Object.defineProperty(window, "visualViewport", { configurable: true, value: {
+      offsetLeft: 210, offsetTop: 18, width: 390, height: 700,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    } });
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      x: 540, y: 34, top: 34, right: 576, bottom: 70, left: 540, width: 36, height: 36,
+      toJSON: () => ({}),
+    });
+
+    render(<MemberNotificationMenu />);
+    fireEvent.click(await screen.findByRole("button", { name: "Notifications" }));
+    const panel = await screen.findByRole("region", { name: "Your notifications" });
+    expect(panel.style.left).toBe("222px");
+    expect(panel.style.top).toBe("78px");
+    expect(panel.style.width).toBe("366px");
   });
 });

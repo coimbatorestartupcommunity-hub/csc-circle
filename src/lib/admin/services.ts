@@ -20,6 +20,7 @@ import type {
   AdminConsultationRow,
   AdminDashboardData,
   AdminEventRow,
+  AdminMemberDetails,
   AdminMemberRow,
   AdminPaymentRow,
   AdminReviewRow,
@@ -212,6 +213,95 @@ export const adminServices = {
         return m ? ok(m) : fail("not_found", "Member not found.");
       },
     );
+  },
+
+  getMemberDetails(id: string): Promise<ServiceResult<AdminMemberDetails>> {
+    return guard<AdminMemberDetails>("members.read", {
+      claims: [], startups: [], registrations: [], consultations: [], audit: [],
+    }, async (context) => {
+      const sb = await createClient();
+      const [claimsResult, startupsResult, registrationsResult, consultationsResult, profileResult] = await Promise.all([
+        sb.from("membership_claims").select("id,status,submitted_at,applicant_type,startup_affiliation").eq("user_id", id).order("submitted_at", { ascending: false }),
+        sb.from("directory_startups").select("id,name,slug,industry,status,updated_at").eq("user_id", id).order("updated_at", { ascending: false }),
+        sb.from("event_registrations").select("id,event_id,reference,status,payment,attendance,created_at").eq("user_id", id).order("created_at", { ascending: false }),
+        sb.from("consultations").select("id,title,status,scheduled_at,created_at").eq("user_id", id).order("created_at", { ascending: false }),
+        sb.from("profiles").select("portrait_path,profile_completion,email").eq("id", id).maybeSingle(),
+      ]);
+      if (claimsResult.error || startupsResult.error || registrationsResult.error || consultationsResult.error || profileResult.error) {
+        return fail("unknown", "Member history could not be loaded.");
+      }
+
+      const registrations = registrationsResult.data ?? [];
+      const eventIds = [...new Set(registrations.map((row) => row.event_id))];
+      const { data: events, error: eventError } = eventIds.length
+        ? await sb.from("events").select("id,title,starts_at").in("id", eventIds)
+        : { data: [], error: null };
+      if (eventError) return fail("unknown", "Event history could not be loaded.");
+      const eventById = new Map((events ?? []).map((event) => [event.id, event]));
+      const registrationIds = registrations.map((row) => row.id);
+      const { data: checkins, error: checkinError } = registrationIds.length
+        ? await sb.from("attendance_checkins").select("registration_id,checked_in_at").in("registration_id", registrationIds)
+        : { data: [], error: null };
+      if (checkinError) return fail("unknown", "Event attendance history could not be loaded.");
+      const checkinByRegistration = new Map((checkins ?? []).map((row) => [row.registration_id, row.checked_in_at]));
+
+      const profile = profileResult.data;
+      let portraitUrl: string | undefined;
+      if (profile?.portrait_path) {
+        const { data } = await createAdminClient().storage.from("member-portraits").createSignedUrl(profile.portrait_path, 5 * 60);
+        portraitUrl = data?.signedUrl;
+      }
+
+      const admin = createAdminClient();
+      const authResult = await admin.auth.admin.getUserById(id);
+      const consultations = (consultationsResult.data ?? []).map((row) => ({
+        id: row.id, title: row.title, status: row.status,
+        scheduledAt: row.scheduled_at ?? undefined, submittedAt: row.created_at,
+      }));
+
+      // Legacy website requests are keyed by contact email rather than Auth
+      // UUID. Match only this member's stored account email, and only after the
+      // role check; never expose the global consultation queue here.
+      if (context.permissions.has("consultations.manage") && (profile?.email || authResult.data.user?.email)) {
+        const { data: legacyRows, error } = await admin.from("consultation_submissions")
+          .select("id,challenge,goal,status,scheduled_at,created_at")
+          .eq("email", profile?.email || authResult.data.user!.email!)
+          .order("created_at", { ascending: false });
+        if (error) return fail("unknown", "Consultation history could not be loaded.");
+        for (const row of legacyRows ?? []) consultations.push({
+          id: row.id,
+          title: row.goal || row.challenge || "Consultation request",
+          status: row.status,
+          scheduledAt: row.scheduled_at ?? undefined,
+          submittedAt: row.created_at,
+        });
+      }
+
+      let audit: AdminMemberDetails["audit"] = [];
+      if (context.permissions.has("audit.read")) {
+        const { data: auditRows, error } = await sb.from("audit_logs")
+          .select("action,actor_role,target_type,created_at")
+          .eq("target_id", id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (error) return fail("unknown", "Member audit history could not be loaded.");
+        audit = (auditRows ?? []).map((row) => ({ action: row.action, actorRole: row.actor_role ?? undefined, targetType: row.target_type ?? undefined, createdAt: row.created_at }));
+      }
+
+      return ok({
+        portraitUrl,
+        profileCompletion: profile?.profile_completion ?? undefined,
+        lastSignInAt: authResult.data.user?.last_sign_in_at ?? undefined,
+        claims: (claimsResult.data ?? []).map((row) => ({ id: row.id, status: row.status, submittedAt: row.submitted_at, applicantType: row.applicant_type, startup: row.startup_affiliation ?? undefined })),
+        startups: (startupsResult.data ?? []).map((row) => ({ id: row.id, name: row.name, slug: row.slug, industry: row.industry, status: row.status, updatedAt: row.updated_at })),
+        registrations: registrations.map((row) => {
+          const event = eventById.get(row.event_id);
+          return { id: row.id, eventTitle: event?.title ?? "Event", startsAt: event?.starts_at ?? "", reference: row.reference, status: row.status, payment: row.payment, attendance: row.attendance, checkedInAt: checkinByRegistration.get(row.id) ?? undefined, createdAt: row.created_at };
+        }),
+        consultations: consultations.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)),
+        audit,
+      });
+    });
   },
 
   listClaims(): Promise<ServiceResult<AdminClaimRow[]>> {

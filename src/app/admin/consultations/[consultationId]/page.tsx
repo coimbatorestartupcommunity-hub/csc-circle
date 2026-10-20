@@ -58,7 +58,6 @@ export default async function ConsultationDetail({
             <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "under_review" } : undefined} label="Begin review" />
             <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "approved" } : undefined} label="Approve" />
             <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "more_info_required" } : undefined} label="Request more info" />
-            <ActionButton label="Propose meeting" />
             <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "completed" } : undefined} label="Mark completed" />
             <ActionButton operation={ctx.mode === "live" ? { kind: "consultation", target: consultationId, decision: "declined" } : undefined} label="Decline" variant="destructive" confirm="Decline this consultation request?" />
           </div>

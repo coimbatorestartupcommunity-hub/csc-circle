@@ -69,6 +69,8 @@ test("unauthorized admin APIs and recovery are denied", async ({ request }) => {
   }
   const response = await request.get("/api/auth/recovery-status");
   expect(await response.json()).toEqual({ ok: false });
+  const attendanceExport = await request.get("/api/admin/attendance/export");
+  expect(attendanceExport.status()).toBe(403);
 });
 
 for (const width of [320, 360, 375, 390, 430, 768, 820, 1024, 1280, 1440, 1920]) {

@@ -23,7 +23,7 @@ export default async function AdminMediaPage() {
     <>
       <AdminPageHeader
         title="Media library"
-        description="Manage branding, photos, logos and banners. Uploads validate type, size and dimensions; files go to Supabase Storage (Phase 1) with public/private classification."
+        description="Manage branding, photos, logos and banners. Uploads validate type, size and dimensions before saving to scoped Supabase Storage."
         isDemo={ctx.mode === "preview"}
 
       />

@@ -65,7 +65,7 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
       { href: "/admin/events", label: "Events", icon: CalendarDays, perm: "events.update" },
       { href: "/admin/registrations", label: "Registrations", icon: ClipboardList, perm: "registrations.read" },
       { href: "/admin/check-in", label: "Check-in", icon: ScanLine, perm: "attendance.scan" },
-      { href: "/admin/attendance", label: "Attendance", icon: CheckSquare, perm: "attendance.scan" },
+      { href: "/admin/attendance", label: "Attendance", icon: CheckSquare, perm: "registrations.read" },
     ],
   },
   {

@@ -26,7 +26,7 @@ function displayDate(value: string) {
 
 export function MemberNotificationMenu() {
   const [open, setOpen] = React.useState(false);
-  const [panelPosition, setPanelPosition] = React.useState({ top: 0, left: 12, listHeight: 320 });
+  const [panelPosition, setPanelPosition] = React.useState({ top: 0, left: 12, width: 360, height: 400 });
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = React.useState(true);
   const [working, setWorking] = React.useState(false);
@@ -64,14 +64,24 @@ export function MemberNotificationMenu() {
     if (!trigger) return;
     const rect = trigger.getBoundingClientRect();
     const margin = 12;
-    const width = Math.min(384, window.innerWidth - margin * 2);
-    const maxPanelHeight = Math.min(window.innerHeight * 0.7, 448);
-    const left = Math.min(Math.max(margin, rect.right - width), window.innerWidth - width - margin);
+    // Mobile Safari can have a layout viewport wider than the visible viewport
+    // (for example while zoomed). Position and size the portal against the
+    // visible viewport so the panel never opens partly off-screen.
+    const visualViewport = window.visualViewport;
+    const viewportLeft = visualViewport?.offsetLeft ?? 0;
+    const viewportTop = visualViewport?.offsetTop ?? 0;
+    const viewportWidth = visualViewport?.width || document.documentElement.clientWidth || window.innerWidth;
+    const viewportHeight = visualViewport?.height ?? window.innerHeight;
+    const width = Math.max(1, Math.min(384, viewportWidth - margin * 2));
+    const maxPanelHeight = Math.max(180, Math.min(viewportHeight * 0.7, 448));
+    const minLeft = viewportLeft + margin;
+    const maxLeft = viewportLeft + viewportWidth - width - margin;
+    const left = Math.min(Math.max(minLeft, rect.right - width), maxLeft);
     const below = rect.bottom + 8;
-    const top = below + maxPanelHeight > window.innerHeight - margin
-      ? Math.max(margin, rect.top - maxPanelHeight - 8)
+    const top = below + maxPanelHeight > viewportTop + viewportHeight - margin
+      ? Math.max(viewportTop + margin, rect.top - maxPanelHeight - 8)
       : below;
-    setPanelPosition({ top, left, listHeight: Math.max(96, maxPanelHeight - 64) });
+    setPanelPosition({ top, left, width, height: maxPanelHeight });
   }, []);
 
   React.useEffect(() => {
@@ -79,9 +89,13 @@ export function MemberNotificationMenu() {
     positionPanel();
     window.addEventListener("resize", positionPanel);
     window.addEventListener("scroll", positionPanel, true);
+    window.visualViewport?.addEventListener("resize", positionPanel);
+    window.visualViewport?.addEventListener("scroll", positionPanel);
     return () => {
       window.removeEventListener("resize", positionPanel);
       window.removeEventListener("scroll", positionPanel, true);
+      window.visualViewport?.removeEventListener("resize", positionPanel);
+      window.visualViewport?.removeEventListener("scroll", positionPanel);
     };
   }, [open, positionPanel]);
 
@@ -125,7 +139,7 @@ export function MemberNotificationMenu() {
       </button>
 
       {open ? createPortal((
-        <section id="member-notification-panel" aria-label="Your notifications" style={{ top: panelPosition.top, left: panelPosition.left }} className="fixed z-[100] max-h-[min(70dvh,28rem)] w-[min(24rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-brand-border bg-white shadow-xl">
+        <section id="member-notification-panel" aria-label="Your notifications" style={{ top: panelPosition.top, left: panelPosition.left, width: panelPosition.width, maxHeight: panelPosition.height }} className="fixed z-[100] flex flex-col overflow-hidden rounded-2xl border border-brand-border bg-white shadow-xl">
           <header className="flex items-center justify-between gap-3 border-b border-brand-border px-4 py-3">
             <div>
               <h2 className="text-sm font-semibold text-brand-ink">Notifications</h2>
@@ -138,7 +152,7 @@ export function MemberNotificationMenu() {
           </header>
 
           {error ? <div role="alert" className="border-b border-brand-border px-4 py-3 text-sm text-red-700">{error}<button type="button" onClick={() => { setLoading(true); void load(); }} className="ml-2 font-semibold underline">Retry</button></div> : null}
-          <div style={{ maxHeight: panelPosition.listHeight }} className="overflow-y-auto overscroll-contain">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {loading ? <div className="flex justify-center px-4 py-8"><Loader2 className="size-5 animate-spin text-brand-muted" aria-label="Loading notifications" /></div> : null}
             {!loading && !error && items.length === 0 ? <p className="px-4 py-8 text-center text-sm text-brand-muted">You have no notifications yet.</p> : null}
             {!loading ? items.map((item) => {
