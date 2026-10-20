@@ -1,6 +1,6 @@
 import * as React from "react";
 import Image from "next/image";
-import { MapPin, Clock, Calendar } from "lucide-react";
+import { MapPin, Clock } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { FixtureNotice } from "@/components/common/empty-state";
@@ -46,8 +46,8 @@ export function EventCard({
 
   const body = (
     <>
-      <div className="relative aspect-video w-full overflow-hidden rounded-t-3xl bg-gradient-to-br from-brand-purple via-brand-blue to-brand-pink">
-        {event.coverImage ? (
+      {event.coverImage ? (
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-brand-cloud">
           <Image
             src={event.coverImage}
             alt={`${event.title} cover`}
@@ -55,25 +55,13 @@ export function EventCard({
             sizes="(max-width: 768px) 100vw, 400px"
             className="object-cover"
           />
-        ) : (
-          <div className="flex size-full items-center justify-center">
-            <Calendar className="size-10 text-brand-ink/30" aria-hidden />
+          <div className="absolute top-3 left-3 flex flex-col items-center rounded-xl bg-brand-white px-3 py-1.5 text-center shadow-sm ring-1 ring-brand-border">
+            <span className="text-lg leading-none font-bold text-brand-ink">{day}</span>
+            <span className="text-[10px] font-semibold tracking-wide text-brand-muted">{month}</span>
           </div>
-        )}
-        <div className="absolute top-3 left-3 flex flex-col items-center rounded-xl bg-brand-white px-3 py-1.5 text-center shadow-sm ring-1 ring-brand-border">
-          <span className="text-lg leading-none font-bold text-brand-ink">
-            {day}
-          </span>
-          <span className="text-[10px] font-semibold tracking-wide text-brand-muted">
-            {month}
-          </span>
+          {event.isFixture ? <div className="absolute top-3 right-3"><FixtureNotice /></div> : null}
         </div>
-        {event.isFixture ? (
-          <div className="absolute top-3 right-3">
-            <FixtureNotice />
-          </div>
-        ) : null}
-      </div>
+      ) : null}
 
       <div className="flex flex-1 flex-col gap-3 p-6">
         <div className="flex items-center gap-2">

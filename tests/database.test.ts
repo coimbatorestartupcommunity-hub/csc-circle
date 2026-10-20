@@ -37,6 +37,11 @@ describe("isolated PostgreSQL authorization regressions", () => {
     const result = await asUser(a, "select id from profiles");
     expect(result[0].rows).toEqual([{ id: a }]);
   });
+  it("allows members to save About Me without granting access to protected profile fields", async () => {
+    const saved = await asUser(a, `update profiles set about_me='A short professional introduction.' where id='${a}' returning about_me`);
+    expect(saved[0].rows).toEqual([{ about_me: "A short professional introduction." }]);
+    await expect(asUser(a, `update profiles set portrait_path='${a}/forged.webp' where id='${a}'`)).rejects.toThrow(/permission/i);
+  });
   it("cannot activate membership or assign roles", async () => {
     const result = await asUser(a, `update memberships set status='active' where user_id='${a}' returning id`);
     expect(result[0].rows).toHaveLength(0);

@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     if (ctx.mode !== "live" || !ctx.permissions.has("content.manage")) return authResponse({ error: "Permission denied." }, 403);
     const parsed = z.object({
       action: z.enum(["save", "publish", "unpublish", "delete"]),
-      content_key: z.enum(["homepage.announcement", "community.introduction", "about.mission", "about.vision", "homepage.event_notice"]),
+      content_key: z.enum(["homepage.announcement", "community.introduction", "about.mission", "about.vision"]),
       content_value: z.string().max(4000).default(""),
       visible_from: z.union([z.string().datetime({ offset: true }), z.null()]).optional(),
       visible_until: z.union([z.string().datetime({ offset: true }), z.null()]).optional(),

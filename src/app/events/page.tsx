@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/common/container";
 import { PageHero } from "@/components/common/page-hero";
-import { FeaturedEvent } from "@/components/events/featured-event";
+import { FeaturedEventNotices } from "@/components/events/featured-event-notices";
 import { EventsClient } from "@/components/events/events-client";
-import { getPublicEvents, getPublicFeaturedEvent } from "@/lib/services/public-data";
+import { getPublicEvents } from "@/lib/services/public-data";
 import { siteConfig } from "@/lib/content/site";
 
 export const metadata: Metadata = {
@@ -21,19 +21,24 @@ export const metadata: Metadata = {
 
 export default async function EventsPage() {
   const events = await getPublicEvents();
-  const featured = await getPublicFeaturedEvent();
 
   return (
     <>
       <PageHero
         eyebrow="Events & Booking"
-        title="Real Conversations. Real Connections. Real Opportunities."
+        title="Events & Booking"
         description="Discover CSC Circle meetups, pitch sessions, workshops, and opportunities to connect with Coimbatore's entrepreneurial community."
       />
       <section className="py-14 sm:py-16 lg:py-20">
         <Container className="flex flex-col gap-10">
-          {featured ? <FeaturedEvent event={featured} /> : null}
+          <FeaturedEventNotices />
+          <div className="w-full space-y-5">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-accent">Meet, learn, and build together</p>
+              <h2 className="mt-1 text-2xl font-semibold text-brand-ink sm:text-3xl">Upcoming Events</h2>
+            </div>
           <EventsClient events={events} />
+          </div>
         </Container>
       </section>
     </>
