@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FieldError } from "@/components/ui/field";
 import { memberRequest } from "@/lib/services/member/request";
 import { reviewSchema } from "@/lib/validations/forms";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 
 /**
  * Member review submission. In a live session this inserts a real review
@@ -41,7 +42,7 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
     try {
       const result = await memberRequest("review", { rating, review, consent });
       if (result.error) { toast.error(result.error); return; }
-      toast.success("Thanks! Your review was submitted for moderation.");
+      notifySubmissionSuccess({ title: "Successfully submitted", message: "Thank you. Your review was received and is waiting for moderation." });
       setReview("");
       setRating(0);
       setConsent(false);

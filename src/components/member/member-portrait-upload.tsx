@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Cropper, { type Area } from "react-easy-crop";
 import { Camera, Loader2, RotateCcw, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { Button } from "@/components/ui/button";
 
 function canvasCrop(source: string, area: Area): Promise<Blob> {
@@ -87,7 +88,7 @@ export function MemberPortraitUpload({ portraitUrl, directoryPhotoUrl }: { portr
       setSource(null);
       setOriginal(null);
       router.refresh();
-      toast.success("Your 4:5 profile portrait and private 4:3 directory crop were saved securely.");
+      notifySubmissionSuccess({ title: "Photo saved", message: "Your 4:5 member portrait and 4:3 directory image were saved securely." });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not save your photos.");
     } finally {

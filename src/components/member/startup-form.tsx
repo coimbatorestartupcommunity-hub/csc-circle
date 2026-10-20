@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { startupSubmissionSchema, type StartupSubmissionValues } from "@/lib/validations/member";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 
 export function StartupForm() {
   const { register, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<StartupSubmissionValues>({ resolver: zodResolver(startupSubmissionSchema) });
@@ -19,8 +20,8 @@ export function StartupForm() {
       className="mx-auto flex w-full max-w-2xl flex-col gap-5 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:p-7"
       onSubmit={handleSubmit(async (values) => {
         const result = await memberRequest("startup", values);
-        setMessage(result.error ?? `Submitted for review. Reference: ${result.id}`);
-        if (result.ok) reset();
+        setMessage(result.error ?? "");
+        if (result.ok) { reset(); notifySubmissionSuccess({ title: "Successfully submitted", message: "Your startup submission was received and is awaiting the review decision shown in your account.", reference: result.id }); }
       })}
     >
       <div className="grid gap-4 sm:grid-cols-2">

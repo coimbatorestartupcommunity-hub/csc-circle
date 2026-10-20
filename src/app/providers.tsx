@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
+import { SubmissionFeedbackHost } from "@/components/layout/submission-feedback-host";
 
 /**
  * The public site is intentionally light-dominant (per brand guidelines), so we
@@ -19,6 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       {children}
       <Toaster position="top-center" richColors />
+      <SubmissionFeedbackHost />
     </ThemeProvider>
   );
 }

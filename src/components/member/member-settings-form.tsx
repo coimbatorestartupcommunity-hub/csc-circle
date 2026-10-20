@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { memberRequest } from "@/lib/services/member/request";
@@ -33,7 +34,7 @@ export function MemberSettingsForm({
     try {
       const result = await memberRequest("preferences", consent);
       if (result.error) { toast.error(result.error); return; }
-      toast.success("Preferences saved.");
+      notifySubmissionSuccess({ title: "Settings updated", message: "Your preferences were saved successfully." });
     } finally {
       setSaving(false);
     }
