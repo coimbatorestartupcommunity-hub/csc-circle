@@ -12,7 +12,7 @@ async function asUser(id: string, sql: string) {
 beforeAll(async () => {
   db = new PGlite();
   await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
-    create schema auth; create table auth.users(id uuid primary key, email text, raw_user_meta_data jsonb default '{}', email_confirmed_at timestamptz);
+    create schema auth; create table auth.users(id uuid primary key, email text, raw_user_meta_data jsonb default '{}', email_confirmed_at timestamptz, last_sign_in_at timestamptz);
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
     create schema storage;
     create table storage.buckets(id text primary key, name text not null, public boolean not null default false, file_size_limit bigint, allowed_mime_types text[]);
@@ -210,6 +210,26 @@ describe("trusted operations and replay protection", () => {
 });
 
 describe("durable notification delivery",()=>{
+ it("queues a one-time welcome after first verified sign-in",async()=>{
+  await db.exec(`update auth.users set last_sign_in_at=now() where id='${a}'`);
+  expect((await db.query("select count(*)::int as n from notifications where template_key='FirstLoginWelcome' and recipient_user_id=$1",[a])).rows).toEqual([{n:1}]);
+  await db.exec(`update auth.users set last_sign_in_at=now()+interval '1 minute' where id='${a}'`);
+  expect((await db.query("select count(*)::int as n from notifications where template_key='FirstLoginWelcome' and recipient_user_id=$1",[a])).rows).toEqual([{n:1}]);
+ });
+ it("fans out published event details only to verified opted-in members",async()=>{
+  const broadcast = "12121212-1212-4212-8212-121212121212";
+  await db.exec(`update auth.users set last_sign_in_at=now() where id in ('${a}','${b}');
+    update profiles set consent=consent||'{"operationalEmail":true}'::jsonb where id='${a}';
+    update profiles set consent=consent||'{"operationalEmail":false}'::jsonb where id='${b}';
+    insert into events(id,slug,title,category,description,starts_at,ends_at,location,capacity,status,admission,registration_state,price_minor)
+    values ('${broadcast}','email-broadcast-test','Synthetic email broadcast test','meetup','Details must be sent.',now()+interval '2 days',now()+interval '2 days 2 hours','Coimbatore',20,'draft','free','open',0);
+    update events set status='published' where id='${broadcast}';`);
+  const {rows}=await db.query<{recipient_user_id:string;payload:Record<string,unknown>}>(
+    "select recipient_user_id,payload from notifications where template_key='EventPublishedBroadcast' and related_record_id=$1",[broadcast]);
+  expect(rows).toHaveLength(1);
+  expect(rows[0].recipient_user_id).toBe(a);
+  expect(rows[0].payload).toMatchObject({eventTitle:"Synthetic email broadcast test",location:"Coimbatore",admission:"free"});
+ });
  it("queues applicant and admin receipts from persisted records",async()=>{
   const {rows}=await db.query<{template_key:string}>("select template_key from notifications where template_key in ('EventRSVPReceived','EventRSVPAdminAlert')");
   expect(rows.some(r=>r.template_key==='EventRSVPReceived')).toBe(true);expect(rows.some(r=>r.template_key==='EventRSVPAdminAlert')).toBe(true);

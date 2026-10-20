@@ -1,32 +1,28 @@
-# Reviewed desired Auth settings. NOT applied. Owner must confirm token rotation,
-# SMTP configuration and preview tests before applying to the official project.
+# CSC Circle Auth email template manifest. Only these email subject/body templates
+# are published from this file. Provider, SMTP credentials, redirect allowlists,
+# sign-in policies, and other hosted Auth settings are managed separately.
 project_id = "csc-circle"
-[auth]
-site_url = "https://csc.logicintelligencetechnologies.in"
-additional_redirect_urls = ["https://csc.logicintelligencetechnologies.in/auth/callback", "https://csc.logicintelligencetechnologies.in/auth/confirm", "https://csc.logicintelligencetechnologies.in/reset-password", "https://csc.logicintelligencetechnologies.in", "https://csc-circle-lake.vercel.app/auth/callback", "https://csc-circle-lake.vercel.app/auth/confirm", "https://csc-circle-lake.vercel.app/reset-password", "http://localhost:3000/auth/callback", "http://localhost:3000/auth/confirm", "http://localhost:3000/reset-password", "https://csc-circle-lake.vercel.app"]
-enable_signup = true
-enable_anonymous_sign_ins = false
-minimum_password_length = 12
-password_requirements = "lower_upper_letters_digits_symbols"
-[auth.email]
-enable_signup = true
-enable_confirmations = true
-double_confirm_changes = true
-secure_password_change = true
-max_frequency = "1m"
+
 [auth.email.template.confirmation]
 subject = "Verify your CSC Circle email"
 content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.invite]
+subject = "You are invited to CSC Circle"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.magic_link]
+subject = "Your CSC Circle sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new CSC Circle email"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.reauthentication]
+subject = "Your CSC Circle security code is {{ .Token }}"
+content_path = "./supabase/templates/reauthentication.html"
+
 [auth.email.template.recovery]
 subject = "Reset your CSC Circle password"
 content_path = "./supabase/templates/recovery.html"
-
-# SMTP is already configured remotely. Credentials remain in managed secrets.
-[auth.email.smtp]
-enabled = true
-host = "smtp.gmail.com"
-port = 465
-user = "coimbatorestartupcommunity@gmail.com"
-pass = "env(SMTP_PASSWORD)"
-admin_email = "coimbatorestartupcommunity@gmail.com"
-sender_name = "CSC Circle"

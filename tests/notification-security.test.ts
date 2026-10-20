@@ -19,5 +19,5 @@ it("escapes template content and keeps CTA destinations trusted",()=>{
  const result=renderNotification("EventRSVPReceived",{name:'<script>alert(1)</script>',eventTitle:'<img onerror="alert(1)">',url:"https://evil.example",internalNotes:"private-secret",pass_token:"private-token"});
  expect(result.html).not.toContain("<script>");expect(result.html).toContain("&lt;script&gt;");
  expect(result.html).not.toContain("evil.example");expect(result.text).not.toContain("private-secret");expect(result.html).not.toContain("private-token");
- expect(result.text).toContain("pending review");
+ expect(result.text).toContain("not a seat confirmation");
 });
