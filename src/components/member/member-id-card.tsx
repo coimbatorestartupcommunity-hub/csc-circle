@@ -4,7 +4,8 @@ import * as React from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
-import { Download, RefreshCw, Ticket, Loader2 } from "lucide-react";
+import { Download, RefreshCw, Ticket, Loader2, FileDown } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/member/status-badge";
 import { brandAssets, siteConfig } from "@/lib/content/site";
@@ -14,6 +15,7 @@ import { formatEventDate } from "@/lib/format";
 import type { MemberCard } from "@/types/member";
 import Link from "next/link";
 import { AccountAvatar } from "@/components/layout/account-avatar";
+import { createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
 
 export function MemberIdCard({
   card,
@@ -24,7 +26,7 @@ export function MemberIdCard({
 }) {
   const cardRef = React.useRef<HTMLDivElement>(null);
   const [qr, setQr] = React.useState<string | null>(null);
-  const [downloading, setDownloading] = React.useState(false);
+  const [downloading, setDownloading] = React.useState<"png" | "pdf" | null>(null);
   const statusMeta = membershipStatusMeta[card.status];
 
   React.useEffect(() => {
@@ -43,21 +45,27 @@ export function MemberIdCard({
     };
   }, [card.verificationToken]);
 
-  async function download() {
+  async function download(format: "png" | "pdf") {
     if (!cardRef.current) return;
-    setDownloading(true);
+    setDownloading(format);
     try {
-      const dataUrl = await toPng(cardRef.current, {
-        pixelRatio: 3,
-        cacheBust: true,
-        backgroundColor: "#ffffff",
-      });
+      const dataUrl = await toPng(cardRef.current, membershipCardCaptureOptions);
       const link = document.createElement("a");
-      link.download = `CSC-Membership-${card.memberNumber}${isDemo ? "-DEMO" : ""}.png`;
-      link.href = dataUrl;
+      const suffix = isDemo ? "-DEMO" : "";
+      link.download = `CSC-Membership-${card.memberNumber}${suffix}.${format}`;
+      if (format === "png") {
+        link.href = dataUrl;
+      } else {
+        const pdfBytes = await createMembershipCardPdf(dataUrl);
+        const pdfBlob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
+        link.href = URL.createObjectURL(pdfBlob);
+        window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      }
       link.click();
+    } catch {
+      toast.error(`Could not download the membership card as ${format.toUpperCase()}. Please try again.`);
     } finally {
-      setDownloading(false);
+      setDownloading(null);
     }
   }
 
@@ -150,16 +158,24 @@ export function MemberIdCard({
       </div>
 
       {/* Controls (excluded from export) */}
-      <div className="flex w-full max-w-sm flex-col gap-2">
-        <Button onClick={download} disabled={downloading} className="h-11 w-full gap-2">
-          {downloading ? (
+      <div className="grid w-full max-w-sm grid-cols-2 gap-2">
+        <Button onClick={() => download("png")} disabled={downloading !== null} className="h-11 w-full gap-1.5 px-2 text-xs sm:gap-2 sm:px-3 sm:text-sm">
+          {downloading === "png" ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <Download className="size-4" />
           )}
           Download as PNG
         </Button>
-        <div className="flex gap-2">
+        <Button onClick={() => download("pdf")} disabled={downloading !== null} variant="outline" className="h-11 w-full gap-1.5 px-2 text-xs sm:gap-2 sm:px-3 sm:text-sm">
+          {downloading === "pdf" ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <FileDown className="size-4" />
+          )}
+          Download as PDF
+        </Button>
+        <div className="col-span-2 flex gap-2">
           <Button
             variant="outline"
             className="h-10 flex-1 gap-2"
@@ -176,7 +192,7 @@ export function MemberIdCard({
           </Button>
         </div>
         {isDemo ? (
-          <p className="text-center text-xs text-brand-muted">
+          <p className="col-span-2 text-center text-xs text-brand-muted">
             This is a DEMO card. Official credentials are issued only after your
             membership is verified and active.
           </p>
