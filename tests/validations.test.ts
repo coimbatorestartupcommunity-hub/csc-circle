@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { rsvpSchema, reviewSchema } from "@/lib/validations/forms";
-import { claimSchema, startupSubmissionSchema } from "@/lib/validations/member";
+import { claimSchema } from "@/lib/validations/member";
+import { memberStartupSchema } from "@/lib/validations/member-startup";
 import { eventEditorSchema } from "@/lib/validations/admin";
 
 describe("RSVP schema", () => {
@@ -48,27 +49,35 @@ describe("claim schema", () => {
   });
 });
 
-describe("startup submission schema", () => {
+describe("member startup schema", () => {
   const valid = {
+    id: "11111111-1111-4111-8111-111111111111",
     name: "Northstar Robotics",
     slug: "northstar-robotics",
     industry: "Industrial automation and robotics",
+    city: "Coimbatore",
+    country: "India",
     description: "Building automation systems for small manufacturers.",
     website: "https://northstar.example",
-    logoPath: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-startup-logo.webp",
-    consent: true as const,
+    directoryImagePath: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-directory-startup.webp",
+    consent: true,
   };
 
   it("accepts a founder-entered industry instead of requiring a preset option", () => {
-    expect(startupSubmissionSchema.safeParse(valid).success).toBe(true);
+    expect(memberStartupSchema.safeParse(valid).success).toBe(true);
   });
 
   it("requires a readable industry value", () => {
-    expect(startupSubmissionSchema.safeParse({ ...valid, industry: " " }).success).toBe(false);
+    expect(memberStartupSchema.safeParse({ ...valid, industry: " " }).success).toBe(false);
   });
 
-  it("requires a saved company logo", () => {
-    expect(startupSubmissionSchema.safeParse({ ...valid, logoPath: "" }).success).toBe(false);
+  it("requires a startup-specific directory image and rejects unsafe website schemes", () => {
+    expect(memberStartupSchema.safeParse({ ...valid, directoryImagePath: "" }).success).toBe(false);
+    expect(memberStartupSchema.safeParse({ ...valid, website: "javascript:alert(1)" }).success).toBe(false);
+  });
+
+  it("requires the owner to confirm publication consent", () => {
+    expect(memberStartupSchema.safeParse({ ...valid, consent: false }).success).toBe(false);
   });
 });
 

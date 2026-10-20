@@ -52,6 +52,14 @@ function mapProfile(p: Row, m: Row | null): MemberProfile {
     directoryParticipation: false,
     displayNamePublicly: false,
     displayPhotoPublicly: false,
+    communityProfileVisible: false,
+    showProfilePhotoToMembers: false,
+    showCityToMembers: false,
+    showProfessionalRoleToMembers: false,
+    showAboutMeToMembers: false,
+    showSkillsToMembers: false,
+    showStartupAffiliationsToMembers: false,
+    shareWhatsappWithMembers: false,
   };
   return {
     id: String(p.id),
@@ -70,6 +78,7 @@ function mapProfile(p: Row, m: Row | null): MemberProfile {
     startup: (p.startup as MemberProfile["startup"]) ?? undefined,
     goals: (p.goals as MemberProfile["goals"]) ?? [],
     skills: (p.skills as string[]) ?? [],
+    aboutMe: (p.about_me as string) ?? "",
     consent,
     membership: {
       id: String(m?.id ?? "none"),

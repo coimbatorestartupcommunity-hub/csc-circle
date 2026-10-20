@@ -1,0 +1,65 @@
+import { z } from "zod";
+
+const optionalText = (max: number) => z.string().trim().max(max).optional().default("");
+const optionalHttpUrl = z.string().trim().max(500).optional().default("").refine((v) => !v || /^https?:\/\//i.test(v), "Use a valid http(s) URL.");
+const optionalEmail = z.string().trim().max(254).optional().default("").refine((v) => !v || z.string().email().safeParse(v).success, "Enter a valid email address.");
+const optionalPhone = z.string().trim().max(24).optional().default("").refine((v) => !v || /^\+?[0-9][0-9 ()-]{7,20}$/.test(v), "Enter a valid phone number with country code.");
+const tags = z.array(z.string().trim().min(1).max(60)).max(20).default([]);
+
+export const memberStartupSchema = z.object({
+  id: z.string().uuid(),
+  existingId: z.string().uuid().optional(),
+  name: z.string().trim().min(2, "Enter a startup name.").max(120),
+  slug: z.string().trim().min(3).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  industry: z.string().trim().min(2, "Enter the startup industry.").max(80),
+  category: optionalText(80),
+  stage: optionalText(60),
+  city: z.string().trim().min(2, "Enter the startup city.").max(80),
+  state: optionalText(80),
+  country: z.string().trim().min(2, "Enter the country.").max(80),
+  yearFounded: z.number().int().min(1800).max(new Date().getFullYear()).nullable().optional(),
+  tagline: optionalText(180),
+  description: z.string().trim().min(20).max(3000),
+  whatWeDo: optionalText(2000),
+  howWeWork: optionalText(2000),
+  mission: optionalText(1500),
+  vision: optionalText(1500),
+  problemsSolved: optionalText(1500),
+  targetAudience: optionalText(1000),
+  approach: optionalText(1500),
+  coreSkills: tags,
+  technologies: tags,
+  technicalExpertise: tags,
+  services: tags,
+  capabilities: tags,
+  industriesServed: tags,
+  collaboration: tags,
+  partnershipOpportunities: tags,
+  mentorshipInterests: tags,
+  fundingInterests: tags,
+  website: optionalHttpUrl,
+  supportEmail: optionalEmail,
+  additionalSupportEmail: optionalEmail,
+  companyEmail: optionalEmail,
+  companyMobile: optionalPhone,
+  companyWhatsapp: optionalPhone,
+  contactPerson: optionalText(120),
+  founderRole: z.string().trim().min(2).max(80).default("Founder"),
+  founderCity: optionalText(80),
+  founderMobile: optionalPhone,
+  founderWhatsapp: optionalPhone,
+  founderEmail: optionalEmail,
+  founderWebsite: optionalHttpUrl,
+  founderLinkedin: optionalHttpUrl,
+  founderDescription: optionalText(1200),
+  founderSkills: tags,
+  logoPath: z.string().max(240).optional().default(""),
+  directoryImagePath: z.string().trim().min(1, "Upload a 4:3 directory image for this startup.").max(240),
+  publishWebsite: z.boolean().default(false),
+  publishBusinessEmail: z.boolean().default(false),
+  publishCompanyPhone: z.boolean().default(false),
+  publishFounderContact: z.boolean().default(false),
+  consent: z.literal(true),
+});
+
+export type MemberStartupInput = z.infer<typeof memberStartupSchema>;

@@ -61,7 +61,7 @@ export function StartupCard({ startup }: { startup: Startup }) {
             {startup.collaboration.map((tag) => (
               <li key={tag}>
                 <span className="inline-flex rounded-full bg-brand-lilac px-2.5 py-0.5 text-xs font-medium text-brand-ink">
-                  {collaborationLabels[tag]}
+                {collaborationLabels[tag] ?? tag}
                 </span>
               </li>
             ))}

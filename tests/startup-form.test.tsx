@@ -2,74 +2,68 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const requestMock = vi.hoisted(() => vi.fn());
-const successMock = vi.hoisted(() => vi.fn());
-
 vi.mock("@/lib/services/member/request", () => ({ memberRequest: requestMock }));
-vi.mock("@/lib/ui/submission-feedback", () => ({ notifySubmissionSuccess: successMock }));
 
-import { StartupForm } from "@/components/member/startup-form";
+import { MemberStartupForm } from "@/components/member/member-startup-form";
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   requestMock.mockReset();
-  successMock.mockReset();
 });
 
-describe("StartupForm", () => {
-  it("shows validation feedback instead of silently ignoring an incomplete submission", async () => {
-    const { container } = render(<StartupForm />);
-    fireEvent.submit(container.querySelector("form")!);
+function fillRequired(form: HTMLFormElement) {
+  const change = (name: string, value: string) => fireEvent.change(form.querySelector(`[name="${name}"]`) as Element, { target: { value } });
+  change("name", "Northstar Robotics");
+  change("industry", "Industrial automation");
+  change("city", "Coimbatore");
+  change("country", "India");
+  change("description", "Building automation systems for small manufacturers.");
+}
 
-    expect(await screen.findByText("Please complete the highlighted fields before submitting.")).toBeInTheDocument();
+describe("MemberStartupForm", () => {
+  it("requires a separate startup image and reports incomplete information", async () => {
+    const { container } = render(<MemberStartupForm />);
+    const form = container.querySelector("form")!;
+    fireEvent.submit(form);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/startup name/i);
     expect(requestMock).not.toHaveBeenCalled();
   });
 
-  it("generates the directory slug and submits a complete startup for review", async () => {
-    const uploadMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, logoPath: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-startup-logo.webp" }) });
-    vi.stubGlobal("fetch", uploadMock);
-    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:company-logo");
+  it("uploads a startup-specific 4:3 image, submits it for admin review, and closes the form", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, path: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-directory-startup.webp", previewUrl: "https://example.test/image.webp" }) });
+    vi.stubGlobal("fetch", fetchMock);
     requestMock.mockResolvedValue({ ok: true, id: "startup-test-id" });
-    const { container } = render(<StartupForm />);
-    const input = (id: string) => document.getElementById(id)!;
-
-    fireEvent.change(input("startup-name"), { target: { value: "Logic Labs" } });
-    fireEvent.change(input("startup-industry"), { target: { value: "Climate technology" } });
-    fireEvent.change(input("startup-description"), { target: { value: "We build software to help local businesses reduce energy use." } });
-    fireEvent.change(input("startup-logo"), { target: { files: [new File(["logo"], "company.png", { type: "image/png" })] } });
-    await waitFor(() => expect(uploadMock).toHaveBeenCalledTimes(1));
-    fireEvent.click(container.querySelector('input[type="checkbox"]')!);
-    fireEvent.submit(container.querySelector("form")!);
-
-    await waitFor(() => expect(requestMock).toHaveBeenCalledWith("startup", {
-      name: "Logic Labs",
-      slug: "logic-labs",
-      industry: "Climate technology",
-      description: "We build software to help local businesses reduce energy use.",
-      website: "",
-      logoPath: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-startup-logo.webp",
+    const { container } = render(<MemberStartupForm />);
+    const form = container.querySelector("form")!;
+    fillRequired(form);
+    fireEvent.change(document.getElementById("startup-directory-upload")!, { target: { files: [new File(["image"], "founder.png", { type: "image/png" })] } });
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(form.querySelector("button[type=submit]")).not.toBeDisabled());
+    fireEvent.submit(form);
+    await waitFor(() => expect(requestMock).toHaveBeenCalledWith("startup-save", expect.objectContaining({
+      name: "Northstar Robotics",
+      slug: "northstar-robotics",
+      industry: "Industrial automation",
+      city: "Coimbatore",
+      directoryImagePath: expect.stringContaining("-directory-startup.webp"),
       consent: true,
-    }));
-    expect(await screen.findByText(/awaiting CSC administrator review/i)).toBeInTheDocument();
-    expect(screen.getByText("Startup submitted")).toBeInTheDocument();
+    })));
+    expect(await screen.findByText("Startup submitted")).toBeInTheDocument();
+    expect(screen.getByText(/under active CSC administrator review/i)).toBeInTheDocument();
     expect(container.querySelector("form")).toBeNull();
-    expect(successMock).toHaveBeenCalledWith(expect.objectContaining({ title: "Successfully submitted", reference: "startup-test-id" }));
   });
 
-  it("displays backend errors to the member", async () => {
-    const uploadMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, logoPath: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-startup-logo.webp" }) });
-    vi.stubGlobal("fetch", uploadMock);
-    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:company-logo");
-    requestMock.mockResolvedValue({ error: "The directory slug is already in use." });
-    const { container } = render(<StartupForm />);
-    fireEvent.change(document.getElementById("startup-name")!, { target: { value: "Logic Labs" } });
-    fireEvent.change(document.getElementById("startup-industry")!, { target: { value: "Climate technology" } });
-    fireEvent.change(document.getElementById("startup-description")!, { target: { value: "We build software to help local businesses reduce energy use." } });
-    fireEvent.change(document.getElementById("startup-logo")!, { target: { files: [new File(["logo"], "company.png", { type: "image/png" })] } });
-    await waitFor(() => expect(uploadMock).toHaveBeenCalledTimes(1));
-    fireEvent.click(container.querySelector('input[type="checkbox"]')!);
-    fireEvent.submit(container.querySelector("form")!);
-
-    expect(await screen.findByRole("alert")).toHaveTextContent("The directory slug is already in use.");
+  it("shows backend errors instead of closing the form", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, path: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-directory-startup.webp", previewUrl: "https://example.test/image.webp" }) }));
+    requestMock.mockResolvedValue({ error: "You have reached the maximum of four startups." });
+    const { container } = render(<MemberStartupForm />);
+    const form = container.querySelector("form")!;
+    fillRequired(form);
+    fireEvent.change(document.getElementById("startup-directory-upload")!, { target: { files: [new File(["image"], "founder.png", { type: "image/png" })] } });
+    await waitFor(() => expect(form.querySelector("button[type=submit]")).not.toBeDisabled());
+    fireEvent.submit(form);
+    expect(await screen.findByRole("alert")).toHaveTextContent("You have reached the maximum of four startups.");
+    expect(screen.queryByText("Startup submitted")).not.toBeInTheDocument();
   });
 });

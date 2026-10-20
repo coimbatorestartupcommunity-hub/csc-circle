@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Rocket, UserCircle } from "lucide-react";
+import { Rocket, UserCircle, UsersRound, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MemberProfileForm } from "@/components/member/member-profile-form";
 import { MemberPortraitUpload } from "@/components/member/member-portrait-upload";
@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 import { designationLabels, membershipStatusMeta } from "@/lib/content/member-taxonomy";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata = { title: "Profile" };
 
@@ -17,6 +18,7 @@ export default async function MemberProfilePage() {
   const result = await memberServices.getProfile();
   if (!result.ok) return <EmptyState icon={UserCircle} title="Profile unavailable." description={result.error.message} />;
   const profile = result.data;
+  const startupCount = ctx.mode === "live" ? (await createAdminClient().from("directory_startups").select("id", { count: "exact", head: true }).eq("user_id", ctx.user!.id).neq("status", "archived")).count ?? 0 : 0;
   const status = membershipStatusMeta[profile.membership.status];
   const directoryReady = !!profile.portraitPath && !!profile.directoryPhotoPath && profile.consent.directoryParticipation && profile.consent.displayNamePublicly && profile.consent.displayPhotoPublicly;
 
@@ -48,17 +50,20 @@ export default async function MemberProfilePage() {
         </section>
       ) : null}
 
-      <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <section className="flex flex-col gap-4 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div>
-          <h2 className="font-semibold text-brand-ink">Build your professional profile</h2>
-          <p className="mt-1 text-sm text-brand-muted">Keep resume information separate and choose what to include in an ATS-friendly PDF.</p>
+          <h2 className="font-semibold text-brand-ink">My Startups</h2>
+          <p className="mt-1 text-sm text-brand-muted">Manage up to four separate startup profiles. {startupCount} of 4 slots used.</p>
         </div>
-        <Button render={<Link href="/member/resume" />} className="w-full shrink-0 gap-2 sm:w-auto"><FileText className="size-4" /> Create My Resume</Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="outline" render={<Link href="/members" />} className="w-full shrink-0 gap-2 sm:w-auto"><UsersRound className="size-4" /> View CSC Profiles</Button>
+          <Button render={<Link href="/member/startups" />} className="w-full shrink-0 gap-2 sm:w-auto"><Rocket className="size-4" /> Manage My Startups <ArrowRight className="size-4" /></Button>
+        </div>
       </section>
 
       <div className="flex justify-center">
         {directoryReady ? (
-          <Button render={<Link href="/member/startup" />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Submit a Startup to the Directory</Button>
+          <Button render={<Link href="/member/startups/new" />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Add a Startup</Button>
         ) : (
           <DirectorySetupButton />
         )}

@@ -16,11 +16,12 @@ export async function GET(_request: Request, context: { params: Promise<{ startu
   if (!uuidPattern.test(startupId)) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
   try {
     const db = createAdminClient();
-    const { data: startup } = await db.from("directory_startups").select("user_id").eq("id", startupId).maybeSingle();
+    const { data: startup } = await db.from("directory_startups").select("user_id,directory_image_path").eq("id", startupId).maybeSingle();
     if (!startup?.user_id) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
     const { data: profile } = await db.from("profiles").select("directory_photo_path").eq("id", startup.user_id).maybeSingle();
-    const path = profile?.directory_photo_path;
-    if (!path || !allowedPath(path, startup.user_id)) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
+    const path = startup.directory_image_path || profile?.directory_photo_path;
+    const validStartupImage = path === `${startup.user_id}/${startupId}-directory-startup.webp`;
+    if (!path || (!validStartupImage && !allowedPath(path, startup.user_id))) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
     const { data, error } = await db.storage.from("member-portraits").download(path);
     if (error || !data) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
     return new NextResponse(data, { headers: { "Content-Type": "image/webp", "Content-Length": String(data.size), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Content-Disposition": "inline; filename=founder-directory-review.webp" } });

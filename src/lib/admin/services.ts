@@ -226,9 +226,14 @@ export const adminServices = {
       const sb = await createClient();
       const { data, error } = await sb.from("directory_startups").select("*").order("updated_at", { ascending: false });
       if (error) return fail("unknown", "Startup submissions could not be loaded.");
+      const adminDb = createAdminClient();
+      const ids = (data ?? []).map((row) => row.id);
+      const { data: privateRows } = ids.length ? await adminDb.from("directory_startup_private_details").select("startup_id,details").in("startup_id", ids) : { data: [] };
+      const privateById = new Map((privateRows ?? []).map((row) => [row.startup_id, row.details as Record<string, unknown>]));
       const rows: AdminStartupRow[] = (data ?? []).map((s) => {
         const r = s as Row;
         const founder = r.founder as { name?: string } | null;
+        const details = (r.details && typeof r.details === "object" ? r.details : {}) as Record<string, unknown>;
         return {
           id: String(r.id),
           name: (r.name as string) ?? "—",
@@ -243,6 +248,11 @@ export const adminServices = {
           status: (r.status as AdminStartupRow["status"]) ?? "draft",
           submittedAt: (r.created_at as string) ?? "",
           updatedAt: (r.updated_at as string) ?? "",
+          details,
+          privateDetails: privateById.get(String(r.id)) ?? {},
+          directoryImagePath: (r.directory_image_path as string) ?? undefined,
+          logoPath: (r.logo_url as string) ?? undefined,
+          city: typeof details.city === "string" ? details.city : undefined,
         };
       });
       return ok(rows);

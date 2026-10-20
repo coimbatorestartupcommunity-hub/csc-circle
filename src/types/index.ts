@@ -55,6 +55,11 @@ export interface Startup {
   industry: string;
   /** Short approved description (2–4 lines). */
   description: string;
+  city?: string;
+  tagline?: string;
+  stage?: string;
+  category?: string;
+  details?: Record<string, unknown>;
   /** Collaboration interests this startup is signalling. */
   collaboration: CollaborationIntent[];
   /** Validated website URL (optional). */

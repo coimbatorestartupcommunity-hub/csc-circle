@@ -4,9 +4,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function allowedPath(path: string, userId: string) {
+function allowedPath(path: string, userId: string, startupId: string) {
   const escapedUserId = userId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`^${escapedUserId}/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}-directory\\.webp$`, "i").test(path);
+  return path === `${userId}/${startupId}-directory-startup.webp` || new RegExp(`^${escapedUserId}/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}-directory\\.webp$`, "i").test(path);
 }
 
 export async function GET(_request: Request, context: { params: Promise<{ startupId: string }> }) {
@@ -22,15 +22,16 @@ export async function GET(_request: Request, context: { params: Promise<{ startu
 
   try {
     const adminDb = createAdminClient();
-    const { data: startup } = await adminDb.from("directory_startups").select("user_id").eq("id", startupId).eq("status", "published").maybeSingle();
+    const { data: startup } = await adminDb.from("directory_startups").select("user_id,directory_image_path").eq("id", startupId).eq("status", "published").maybeSingle();
     if (!startup?.user_id) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     const { data: profile } = await adminDb.from("profiles").select("directory_photo_path,portrait_path,display_name,consent").eq("id", startup.user_id).maybeSingle();
     const consent = profile?.consent;
-    if (!profile?.portrait_path || !profile.directory_photo_path || !profile.display_name || !consent || typeof consent !== "object" || Array.isArray(consent) || consent.directoryParticipation !== true || consent.displayNamePublicly !== true || consent.displayPhotoPublicly !== true) {
+    if (!profile?.display_name || !consent || typeof consent !== "object" || Array.isArray(consent) || consent.directoryParticipation !== true || consent.displayNamePublicly !== true) {
       return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
-    if (!allowedPath(profile.directory_photo_path, startup.user_id)) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
-    const { data: image, error } = await adminDb.storage.from("member-portraits").download(profile.directory_photo_path);
+    const imagePath = startup.directory_image_path || (consent.displayPhotoPublicly === true ? profile.directory_photo_path : null);
+    if (!imagePath || !allowedPath(imagePath, startup.user_id, startupId)) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
+    const { data: image, error } = await adminDb.storage.from("member-portraits").download(imagePath);
     if (error || !image) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     return new NextResponse(image, { headers: { "Content-Type": "image/webp", "Content-Length": String(image.size), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Content-Disposition": "inline; filename=founder-directory.webp" } });
   } catch {

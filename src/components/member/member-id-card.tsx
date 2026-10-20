@@ -14,6 +14,7 @@ import { buildMembershipQrPayload } from "@/lib/member/qr";
 import { formatEventDate } from "@/lib/format";
 import type { MemberCard } from "@/types/member";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AccountAvatar } from "@/components/layout/account-avatar";
 import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions, pngDataUrlToBlob } from "@/lib/member/card-export";
 
@@ -27,6 +28,8 @@ export function MemberIdCard({
   const cardRef = React.useRef<HTMLDivElement>(null);
   const [qr, setQr] = React.useState<string | null>(null);
   const [downloading, setDownloading] = React.useState<"png" | "pdf" | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const router = useRouter();
   const statusMeta = membershipStatusMeta[card.status];
 
   function isAppleMobileBrowser() {
@@ -136,7 +139,7 @@ export function MemberIdCard({
       {/* The exportable card node (buttons are outside this ref) */}
       <div
         ref={cardRef}
-        className="relative flex aspect-4/5 w-full max-w-[21rem] flex-col overflow-hidden rounded-[1.75rem] bg-brand-white ring-1 ring-brand-border sm:max-w-sm"
+        className="relative flex aspect-4/5 min-h-[28rem] w-full max-w-[18rem] flex-col overflow-hidden rounded-[1.75rem] bg-brand-white ring-1 ring-brand-border sm:max-w-[21rem]"
       >
         {/* Header */}
         <div className="flex shrink-0 flex-col items-center gap-1 bg-gradient-to-br from-brand-purple via-brand-blue to-brand-lilac px-4 pt-4 pb-3 text-center sm:px-6 sm:pt-7 sm:pb-6">
@@ -248,10 +251,15 @@ export function MemberIdCard({
           </Button>
           <Button
             variant="outline"
+            disabled={refreshing}
+            onClick={() => {
+              setRefreshing(true);
+              router.refresh();
+              window.setTimeout(() => setRefreshing(false), 900);
+            }}
             className="h-10 flex-1 gap-2"
-            render={<Link href="/member/id-card" />}
           >
-            <RefreshCw className="size-4" /> Refresh status
+            <RefreshCw className={`size-4 ${refreshing ? "animate-spin" : ""}`} /> {refreshing ? "Refreshing…" : "Refresh status"}
           </Button>
         </div>
         {isDemo ? (

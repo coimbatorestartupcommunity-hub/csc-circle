@@ -50,10 +50,14 @@ describe("isolated PostgreSQL authorization regressions", () => {
   it("cannot publish its own startup directly", async () => {
     await expect(asUser(a, `insert into directory_startups(user_id,slug,name,status) values ('${a}','test-startup','Test Startup','published')`)).rejects.toThrow();
   });
-  it("requires explicit name/photo consent and both validated portrait paths before publication", async () => {
-    await expect(db.exec(`insert into directory_startups(user_id,slug,name,status) values ('${a}','blocked-photo-test','Blocked Photo Test','published')`)).rejects.toThrow(/directory profile/i);
-    await db.exec(`update profiles set display_name='Test Founder', portrait_path='${a}/portrait.webp', directory_photo_path='${a}/directory.webp', consent='{"directoryParticipation":true,"displayNamePublicly":true,"displayPhotoPublicly":true}'::jsonb where id='${a}'`);
-    await db.exec(`insert into directory_startups(user_id,slug,name,status,publication_consent,publication_consent_at) values ('${a}','consented-photo-test','Consented Photo Test','published',true,now())`);
+  it("requires name consent and a validated startup-specific 4:3 image before publication", async () => {
+    await expect(db.exec(`insert into directory_startups(user_id,slug,name,status) values ('${a}','blocked-photo-test','Blocked Photo Test','published')`)).rejects.toThrow(/directory participation/i);
+    await db.exec(`update profiles set display_name='Test Founder', consent='{"directoryParticipation":true,"displayNamePublicly":true}'::jsonb where id='${a}'`);
+    const startupId = "c1000000-0000-4000-8000-000000000001";
+    const imagePath = `${a}/${startupId}-directory-startup.webp`;
+    await expect(db.exec(`insert into directory_startups(id,user_id,slug,name,status,publication_consent,publication_consent_at,directory_image_path) values ('${startupId}','${a}','consented-photo-test','Consented Photo Test','published',true,now(),'${imagePath}')`)).rejects.toThrow(/4:3 directory image/i);
+    await db.exec(`insert into storage.objects(bucket_id,name) values ('member-portraits','${imagePath}');
+      insert into directory_startups(id,user_id,slug,name,status,publication_consent,publication_consent_at,directory_image_path) values ('${startupId}','${a}','consented-photo-test','Consented Photo Test','published',true,now(),'${imagePath}')`);
     expect((await db.query(`select status from directory_startups where slug='consented-photo-test'`)).rows).toEqual([{ status: "published" }]);
   });
   it("cannot use anonymous submission RPCs to bypass server validation", async () => {
@@ -78,10 +82,11 @@ describe("isolated PostgreSQL authorization regressions", () => {
     await db.exec(`delete from admin_roles where user_id='${a}'`);
     expect((await asUser(a, "select private.has_permission('members.approve') as allowed"))[0].rows).toEqual([{ allowed: false }]);
   });
-  it("isolates resumes and prevents clients from forging private portrait paths", async () => {
-    await asUser(a, `insert into member_resumes(user_id,resume_data) values ('${a}','{"name":"Test Member"}')`);
-    expect((await asUser(a, "select resume_data->>'name' as name from member_resumes"))[0].rows).toEqual([{ name: "Test Member" }]);
-    expect((await asUser(b, "select user_id from member_resumes"))[0].rows).toHaveLength(0);
+  it("archives historical resume data and prevents clients from forging private portrait paths", async () => {
+    const archive = await db.query("select table_schema,table_name from information_schema.tables where table_name='archived_member_resumes'");
+    expect(archive.rows).toEqual([{ table_schema: "private", table_name: "archived_member_resumes" }]);
+    const exposed = await db.query("select count(*)::int as n from information_schema.tables where table_schema='public' and table_name='member_resumes'");
+    expect(exposed.rows).toEqual([{ n: 0 }]);
     await expect(asUser(a, `update profiles set portrait_path='${a}/forged.webp' where id='${a}'`)).rejects.toThrow(/permission/i);
     await expect(asUser(a, `update profiles set directory_photo_path='${a}/forged-directory.webp' where id='${a}'`)).rejects.toThrow(/permission/i);
     expect((await db.query("select public,file_size_limit from storage.buckets where id='member-portraits'")).rows).toEqual([{ public: false, file_size_limit: 8388608 }]);
@@ -117,6 +122,48 @@ describe("isolated PostgreSQL authorization regressions", () => {
   });
 });
 
+describe("CSC founder hub database permissions", () => {
+  it("saves four separate startup records through the RPC and rejects a fifth", async () => {
+    await db.exec(`update profiles set display_name='Quota Test Founder', consent='{"directoryParticipation":true,"displayNamePublicly":true}'::jsonb where id='${b}'`);
+    const ids = [
+      "f1000000-0000-4000-8000-000000000001",
+      "f1000000-0000-4000-8000-000000000002",
+      "f1000000-0000-4000-8000-000000000003",
+      "f1000000-0000-4000-8000-000000000004",
+    ];
+    for (let i = 0; i < ids.length; i += 1) {
+      const image = `${b}/${ids[i]}-directory-startup.webp`;
+      await db.exec(`insert into storage.objects(bucket_id,name) values ('member-portraits','${image}')`);
+      const payload = JSON.stringify({
+        id: ids[i], name: `Independent Startup ${i + 1}`, slug: `independent-startup-${i + 1}`,
+        industry: "Climate technology", description: "An independent startup profile with a complete review-ready description.",
+        website: null, logoPath: null, directoryImagePath: image, founderRole: "Founder", consent: true,
+        details: { city: "Coimbatore", visibility: { publishWebsite: false } },
+      }).replaceAll("'", "''");
+      const result = await asUser(b, `select public.save_member_startup('${payload}'::jsonb,'{"companyEmail":"private@example.test"}'::jsonb) as id`);
+      expect(result[0].rows).toEqual([{ id: ids[i] }]);
+    }
+    const fifthId = "f1000000-0000-4000-8000-000000000005";
+    const fifthImage = `${b}/${fifthId}-directory-startup.webp`;
+    await db.exec(`insert into storage.objects(bucket_id,name) values ('member-portraits','${fifthImage}')`);
+    const fifth = JSON.stringify({ id: fifthId, name: "Startup Five", slug: "startup-five", industry: "Climate technology", description: "A fifth startup request should fail at the trusted database boundary.", logoPath: null, directoryImagePath: fifthImage, consent: true, details: {} }).replaceAll("'", "''");
+    await expect(asUser(b, `select public.save_member_startup('${fifth}'::jsonb,'{}'::jsonb)`)).rejects.toThrow(/startup_limit_reached/);
+    expect((await db.query(`select count(*)::int as n from directory_startups where user_id='${b}' and status <> 'archived'`)).rows).toEqual([{ n: 4 }]);
+    await expect(asUser(b, `select details from directory_startup_private_details`)).rejects.toThrow();
+  });
+
+  it("returns only opted-in member fields and cannot search hidden profile data", async () => {
+    await db.exec(`update memberships set status='active' where user_id in ('${a}','${b}');
+      update profiles set display_name='Consent Test Founder', city='Hidden City', designations=array['developer']::member_designation[], skills=array['Hidden Expertise'], about_me='Private introduction', consent='{"communityProfileVisible":true,"showCityToMembers":false,"showProfessionalRoleToMembers":true,"showAboutMeToMembers":false,"showSkillsToMembers":false,"showStartupAffiliationsToMembers":false,"shareWhatsappWithMembers":false,"showProfilePhotoToMembers":false}'::jsonb where id='${a}';`);
+    const listed = await asUser(b, "select display_name,city,designation,about_me,skills,whatsapp,has_photo from public.list_discoverable_members('',30,0)");
+    expect(listed[0].rows).toEqual([{ display_name: "Consent Test Founder", city: null, designation: "developer", about_me: null, skills: [], whatsapp: null, has_photo: false }]);
+    const hiddenCity = await asUser(b, "select member_id from public.list_discoverable_members('Hidden City',30,0)");
+    const hiddenSkill = await asUser(b, "select member_id from public.list_discoverable_members('Hidden Expertise',30,0)");
+    expect(hiddenCity[0].rows).toHaveLength(0);
+    expect(hiddenSkill[0].rows).toHaveLength(0);
+  });
+});
+
 const admin = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const event = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
 describe("trusted operations and replay protection", () => {
@@ -129,9 +176,11 @@ describe("trusted operations and replay protection", () => {
   });
   it("keeps startup submissions private until an authorized admin approves them", async () => {
     const startup = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
-    await db.exec(`update profiles set display_name='Pending Test Founder', consent='{"directoryParticipation":true,"displayNamePublicly":true,"displayPhotoPublicly":true}'::jsonb where id='${a}';
-      insert into directory_startups(id,user_id,slug,name,industry,description,status,publication_consent,publication_consent_at,founder)
-      values ('${startup}','${a}','approval-workflow-test','Approval Workflow Test','Climate technology','A sufficiently detailed synthetic startup description for the review workflow.','pending',false,null,'{"name":"Pending Test Founder"}');`);
+    const startupImage = `${a}/${startup}-directory-startup.webp`;
+    await db.exec(`update profiles set display_name='Pending Test Founder', consent='{"directoryParticipation":true,"displayNamePublicly":true}'::jsonb where id='${a}';
+      insert into storage.objects(bucket_id,name) values ('member-portraits','${startupImage}');
+      insert into directory_startups(id,user_id,slug,name,industry,description,status,publication_consent,publication_consent_at,founder,directory_image_path)
+      values ('${startup}','${a}','approval-workflow-test','Approval Workflow Test','Climate technology','A sufficiently detailed synthetic startup description for the review workflow.','pending',false,null,'{"name":"Pending Test Founder"}','${startupImage}');`);
     expect((await asUser(a, `select status from directory_startups where id='${startup}'`))[0].rows).toEqual([{ status: "pending" }]);
     await expect(asUser(a, `select csc_admin_action('startup','${startup}','published','')`)).rejects.toThrow();
     await expect(asUser(admin, `select csc_admin_action('startup','${startup}','published','Reviewed synthetic startup details')`)).rejects.toThrow(/publication consent/i);

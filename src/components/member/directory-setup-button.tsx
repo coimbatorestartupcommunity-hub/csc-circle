@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, Camera, Check } from "lucide-react";
 
-export function DirectorySetupButton({ href = "/member/startup" }: { href?: string }) {
+export function DirectorySetupButton({ href = "/member/startups/new" }: { href?: string }) {
   const router = useRouter();
   const reducedMotion = useReducedMotion();
   const [opening, setOpening] = React.useState(false);
