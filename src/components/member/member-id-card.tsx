@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
 import { toBlob } from "html-to-image";
-import { Download, RefreshCw, Ticket, Loader2, FileDown } from "lucide-react";
+import { Download, RefreshCw, Ticket, Loader2, FileDown, Share2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/member/status-badge";
@@ -17,6 +17,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AccountAvatar } from "@/components/layout/account-avatar";
 import { clipMembershipCardPng, createMembershipCardExportNode, createMembershipCardPdf, membershipCardCaptureOptions, waitForMembershipCardAssets } from "@/lib/member/card-export";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+type PendingMobileExport = {
+  file: File;
+  objectUrl: string;
+  filename: string;
+  format: "png" | "pdf";
+};
 
 export function MemberIdCard({
   card,
@@ -28,6 +36,7 @@ export function MemberIdCard({
   const cardRef = React.useRef<HTMLDivElement>(null);
   const [qr, setQr] = React.useState<string | null>(null);
   const [downloading, setDownloading] = React.useState<"png" | "pdf" | null>(null);
+  const [pendingMobileExport, setPendingMobileExport] = React.useState<PendingMobileExport | null>(null);
   const [refreshing, startRefresh] = React.useTransition();
   const router = useRouter();
   const statusMeta = membershipStatusMeta[card.status];
@@ -55,13 +64,17 @@ export function MemberIdCard({
     };
   }, [card.verificationToken]);
 
+  React.useEffect(() => {
+    return () => {
+      if (pendingMobileExport) URL.revokeObjectURL(pendingMobileExport.objectUrl);
+    };
+  }, [pendingMobileExport]);
+
   async function download(format: "png" | "pdf") {
     if (!cardRef.current) return;
-    // iOS Safari may ignore `a[download]` for generated Blob URLs. Reserve a
-    // same-gesture tab before rendering so the resulting file can still open
-    // in Safari if the native Share sheet is unavailable.
+    // iOS Safari may ignore `a[download]` for generated Blob URLs. Render first,
+    // then ask for a fresh tap before opening its native Share sheet.
     const appleMobile = isAppleMobileBrowser();
-    const fallbackWindow = appleMobile ? window.open("about:blank", "_blank") : null;
     setDownloading(format);
     try {
       const cardElement = cardRef.current;
@@ -75,7 +88,7 @@ export function MemberIdCard({
           membershipCardCaptureOptions(cardElement.getBoundingClientRect().height),
         );
       } finally {
-        exportNode.remove();
+        exportNode.parentElement?.remove();
       }
       if (!rawPng) throw new Error("Could not render the membership card image.");
       const computedStyle = window.getComputedStyle(cardElement);
@@ -97,31 +110,9 @@ export function MemberIdCard({
 
       if (appleMobile) {
         const file = new File([fileBlob], filename, { type: fileBlob.type });
-        if (navigator.canShare?.({ files: [file] }) && navigator.share) {
-          try {
-            await navigator.share({ files: [file], title: "CSC Circle membership card" });
-            fallbackWindow?.close();
-            return;
-          } catch (shareError) {
-            if (shareError instanceof DOMException && shareError.name === "AbortError") {
-              fallbackWindow?.close();
-              return;
-            }
-            // Continue to Safari's native file preview fallback below.
-          }
-        }
-
         const objectUrl = URL.createObjectURL(fileBlob);
-        if (fallbackWindow && !fallbackWindow.closed) {
-          fallbackWindow.location.replace(objectUrl);
-        } else {
-          // Popup blocking should not make the export inaccessible on iOS.
-          window.location.assign(objectUrl);
-        }
-        toast.info(format === "pdf"
-          ? "Your card is open in Safari. Use Share, then Save to Files."
-          : "Your card image is open in Safari. Touch and hold it to save or share.");
-        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        setPendingMobileExport({ file, objectUrl, filename, format });
+        toast.success("Your high-resolution card is ready to save.");
         return;
       }
 
@@ -136,11 +127,39 @@ export function MemberIdCard({
       // Safari may consume Blob URLs after a download event has returned.
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     } catch {
-      fallbackWindow?.close();
       toast.error(`Could not download the membership card as ${format.toUpperCase()}. Please try again.`);
     } finally {
       setDownloading(null);
     }
+  }
+
+  // This handler is intentionally synchronous up to navigator.share(): iOS
+  // Safari requires the Share call to occur directly within a fresh user tap.
+  function shareOrSaveMobileExport() {
+    if (!pendingMobileExport) return;
+    const { file, objectUrl, format } = pendingMobileExport;
+    const shareApi = Reflect.get(navigator, "share") as Navigator["share"] | undefined;
+    const canShareApi = Reflect.get(navigator, "canShare") as Navigator["canShare"] | undefined;
+    if (!shareApi || (canShareApi && !canShareApi.call(navigator, { files: [file] }))) {
+      // Same-tab fallback avoids popup blockers and the extra blank tabs seen
+      // when trying to reserve a window during the long 4K render.
+      window.location.assign(objectUrl);
+      return;
+    }
+    const shareRequest = shareApi.call(navigator, { files: [file], title: "CSC Circle membership card" });
+    void shareRequest.then(() => {
+      setPendingMobileExport(null);
+    }).catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        toast.info("Sharing cancelled. Your card is still ready here.");
+        return;
+      }
+      toast.error(`Could not open the Share sheet for your ${format.toUpperCase()}. Use Open file in this tab to save it.`);
+    });
+  }
+
+  function openMobileExportInSameTab() {
+    if (pendingMobileExport) window.location.assign(pendingMobileExport.objectUrl);
   }
 
   return (
@@ -273,6 +292,32 @@ export function MemberIdCard({
           </p>
         ) : null}
       </div>
+      <Dialog
+        open={pendingMobileExport !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingMobileExport(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Your membership card is ready</DialogTitle>
+            <DialogDescription>
+              Tap Share, then choose Save to Files (or another destination). This preserves the full-resolution {pendingMobileExport?.format.toUpperCase()} file.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="break-all rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+            {pendingMobileExport?.filename}
+          </p>
+          <DialogFooter className="sm:flex-col">
+            <Button onClick={shareOrSaveMobileExport} className="w-full gap-2">
+              <Share2 className="size-4" /> Share or Save to Files
+            </Button>
+            <Button variant="outline" onClick={openMobileExportInSameTab} className="w-full gap-2">
+              <ExternalLink className="size-4" /> Open file in this tab
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -26,6 +26,9 @@ describe("membership card export", () => {
       const clone = await createMembershipCardExportNode(source);
       const clonedImage = clone.querySelector("img");
       expect(clone).not.toBe(source);
+      expect(clone.style.position).toBe("relative");
+      expect(clone.style.left).toBe("auto");
+      expect(clone.parentElement?.style.left).toBe("-10000px");
       expect(clonedImage?.src).toMatch(/^data:image\/webp;base64,/);
       expect(clonedImage?.hasAttribute("srcset")).toBe(false);
       expect(image.getAttribute("src")).toBe("/api/member/portrait");
@@ -33,7 +36,7 @@ describe("membership card export", () => {
         credentials: "same-origin",
         cache: "no-store",
       });
-      clone.remove();
+      clone.parentElement?.remove();
     } finally {
       fetchSpy.mockRestore();
       source.remove();
@@ -52,6 +55,7 @@ describe("membership card export", () => {
       closePath: vi.fn(),
       clip: vi.fn(() => order.push("clip")),
       drawImage: vi.fn(() => order.push("draw")),
+      getImageData: vi.fn(() => ({ data: new Uint8ClampedArray([255, 255, 255, 255]) })),
     };
     const clippedPng = new Blob(["rounded"], { type: "image/png" });
     const canvas = {
@@ -90,6 +94,30 @@ describe("membership card export", () => {
       createElementSpy.mockRestore();
       createObjectUrlSpy.mockRestore();
       revokeObjectUrlSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("refuses to turn an empty browser capture into a downloadable blank card", async () => {
+    const context = {
+      save: vi.fn(), restore: vi.fn(), beginPath: vi.fn(), moveTo: vi.fn(), lineTo: vi.fn(),
+      bezierCurveTo: vi.fn(), closePath: vi.fn(), clip: vi.fn(), drawImage: vi.fn(),
+      getImageData: vi.fn(() => ({ data: new Uint8ClampedArray([0, 0, 0, 0]) })),
+    };
+    const canvas = { width: 0, height: 0, getContext: () => context } as unknown as HTMLCanvasElement;
+    const createElementSpy = vi.spyOn(document, "createElement").mockReturnValue(canvas);
+    const createObjectUrlSpy = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:blank-card");
+    vi.stubGlobal("Image", class {
+      naturalWidth = 300; naturalHeight = 375;
+      onload: (() => void) | null = null; onerror: (() => void) | null = null;
+      set src(_value: string) { this.onload?.(); }
+    });
+    try {
+      await expect(clipMembershipCardPng(new Blob(["blank"], { type: "image/png" }), 20, 100))
+        .rejects.toThrow("membership card render was blank");
+    } finally {
+      createElementSpy.mockRestore();
+      createObjectUrlSpy.mockRestore();
       vi.unstubAllGlobals();
     }
   });
