@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink, ArrowUpRight } from "lucide-react";
@@ -6,28 +9,29 @@ import { FixtureNotice } from "@/components/common/empty-state";
 import { industryLabel, collaborationLabels } from "@/lib/content/taxonomy";
 import { safeExternalUrl, displayHost, initials } from "@/lib/format";
 import { StartupCardName } from "@/components/directory/startup-card-name";
+import { StartupDirectoryImage } from "@/components/directory/startup-directory-image";
 import type { Startup } from "@/types";
 
 /** Directory startup card: logo/initials, founder, industry, tags, website. */
 export function StartupCard({ startup }: { startup: Startup }) {
+  const [logoImageFailed, setLogoImageFailed] = useState(false);
   const website = safeExternalUrl(startup.website);
   const host = displayHost(startup.website);
   const profile = safeExternalUrl(startup.founder.profileUrl);
   return (
     <HoverLiftCard>
       <article className="flex h-full min-w-0 w-full max-w-full flex-col gap-4 overflow-hidden rounded-3xl bg-brand-white p-6 ring-1 ring-brand-border">
-        {startup.founder.avatarUrl ? <div className="relative -mx-6 -mt-6 aspect-[4/3] min-w-0 w-[calc(100%+3rem)] max-w-none shrink-0 overflow-hidden rounded-t-3xl bg-brand-cloud">
-          <Image src={startup.founder.avatarUrl} alt={`${startup.founder.name}, founder of ${startup.name}`} fill sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover" />
-        </div> : null}
+        {startup.directoryImageUrl ? <StartupDirectoryImage src={startup.directoryImageUrl} alt={`${startup.name} directory image`} sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" containerClassName="relative -mx-6 -mt-6 aspect-[4/3] min-w-0 w-[calc(100%+3rem)] max-w-none shrink-0 overflow-hidden rounded-t-3xl bg-brand-cloud" /> : null}
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            {startup.logoUrl ? (
+            {startup.logoUrl && !logoImageFailed ? (
               <Image
                 src={startup.logoUrl}
                 alt={`${startup.name} logo`}
                 width={48}
                 height={48}
                 className="size-12 shrink-0 rounded-xl object-contain bg-white p-1 ring-1 ring-brand-border"
+                onError={() => setLogoImageFailed(true)}
               />
             ) : (
               <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-purple text-base font-bold text-brand-ink ring-1 ring-brand-border">

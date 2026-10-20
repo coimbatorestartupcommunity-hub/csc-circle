@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memberRequest } from "@/lib/services/member/request";
 import { memberStartupSchema, type MemberStartupInput } from "@/lib/validations/member-startup";
+import { isSupportedStartupImage } from "@/lib/startups/image-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,7 +67,7 @@ export function MemberStartupForm({ initial, startupId, revisionId, isPublished 
 
   async function upload(kind: "logo" | "directory", file?: File) {
     if (!file) return;
-    if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(file.type) || file.size > 8 * 1024 * 1024) { setError("Use a JPEG, PNG or WebP image smaller than 8 MB."); return; }
+    if (!isSupportedStartupImage(file) || file.size > 8 * 1024 * 1024) { setError("Use a valid JPG, JPEG, PNG, WebP, GIF, TIFF, AVIF or HEIC image smaller than 8 MB."); return; }
     setUploading(kind); setError("");
     try {
       const body = new FormData(); body.append("file", file); body.append("kind", kind); body.append("startupId", startupKey); if (isPublished) body.append("revisionId", revisionKey);
@@ -169,5 +170,5 @@ function Consent({ name, label, checked, onChange }: { name: string; label: stri
 
 function MediaUpload({ kind, label, path, preview, uploading, onFile }: { kind: "logo" | "directory"; label: string; path?: string; preview: string; uploading: boolean; onFile: (file?: File) => void }) {
   const id = `startup-${kind}-upload`;
-  return <div className="flex min-w-0 flex-col gap-3 rounded-xl bg-brand-cloud p-4 ring-1 ring-brand-border"><label htmlFor={id} className="text-sm font-semibold text-brand-ink">{label}</label>{preview ? <div className={`relative w-full overflow-hidden rounded-lg bg-white ${kind === "directory" ? "aspect-4/3" : "aspect-[4/3]"}`}>{/* URL comes from a short-lived authenticated storage signature. */}<Image src={preview} alt={`${label} preview`} fill unoptimized sizes="(max-width: 640px) 100vw, 50vw" className="object-contain" /></div> : <div className="flex aspect-4/3 items-center justify-center rounded-lg bg-white text-brand-muted ring-1 ring-dashed ring-brand-border"><ImagePlus className="size-7" /></div>}<input id={id} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} /><Button type="button" variant="outline" disabled={uploading} onClick={() => document.getElementById(id)?.click()} className="gap-2">{uploading ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}{uploading ? "Processing image…" : path ? "Replace image" : "Upload image"}</Button><span className="sr-only">{path ? "Image uploaded" : "Image required"}</span></div>;
+  return <div className="flex min-w-0 flex-col gap-3 rounded-xl bg-brand-cloud p-4 ring-1 ring-brand-border"><label htmlFor={id} className="text-sm font-semibold text-brand-ink">{label}</label>{preview ? <div className={`relative w-full overflow-hidden rounded-lg bg-white ${kind === "directory" ? "aspect-4/3" : "aspect-[4/3]"}`}>{/* URL comes from a short-lived authenticated storage signature. */}<Image src={preview} alt={`${label} preview`} fill unoptimized sizes="(max-width: 640px) 100vw, 50vw" className="object-contain" /></div> : <div className="flex aspect-4/3 items-center justify-center rounded-lg bg-white text-brand-muted ring-1 ring-dashed ring-brand-border"><ImagePlus className="size-7" /></div>}<input id={id} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,image/avif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.tif,.tiff,.avif,.heic,.heif" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} /><Button type="button" variant="outline" disabled={uploading} onClick={() => document.getElementById(id)?.click()} className="gap-2">{uploading ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}{uploading ? "Processing image…" : path ? "Replace image" : "Upload image"}</Button><span className="sr-only">{path ? "Image uploaded" : "Image required"}</span></div>;
 }

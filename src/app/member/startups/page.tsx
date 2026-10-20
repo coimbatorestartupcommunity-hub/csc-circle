@@ -6,6 +6,7 @@ import { MemberUnavailable } from "@/components/member/member-unavailable";
 import { Button } from "@/components/ui/button";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { internalStartupMediaPath } from "@/lib/startups/member-media-paths";
 
 export const metadata = { title: "My Startups" };
 
@@ -21,9 +22,13 @@ export default async function MyStartupsPage() {
   const revisionByStartup = new Map<string, NonNullable<typeof revisions>[number]>();
   for (const revision of revisions ?? []) if (!revisionByStartup.has(revision.startup_id)) revisionByStartup.set(revision.startup_id, revision);
   const rows = await Promise.all(items.map(async (s) => {
-    const paths = [s.directory_image_path, s.logo_url].filter((p): p is string => !!p && !/^https?:\/\//i.test(p));
-    const signed = await Promise.all(paths.map((p) => admin.storage.from("member-portraits").createSignedUrl(p, 1800)));
-    return { ...s, directoryUrl: signed[0]?.data?.signedUrl ?? "", logoUrl: signed[1]?.data?.signedUrl ?? "" };
+    const directoryPath = internalStartupMediaPath(s.directory_image_path);
+    const logoPath = internalStartupMediaPath(s.logo_url);
+    const [directoryResult, logoResult] = await Promise.all([
+      directoryPath ? admin.storage.from("member-portraits").createSignedUrl(directoryPath, 1800) : Promise.resolve({ data: null, error: null }),
+      logoPath ? admin.storage.from("member-portraits").createSignedUrl(logoPath, 1800) : Promise.resolve({ data: null, error: null }),
+    ]);
+    return { ...s, directoryUrl: directoryResult.data?.signedUrl ?? "", logoUrl: logoResult.data?.signedUrl ?? (s.logo_url && /^https:\/\//i.test(s.logo_url) ? s.logo_url : "") };
   }));
   return <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
     <MemberPageHeader title="My Startups" description="Create, manage, and showcase your startups within the CSC community." />

@@ -4,7 +4,6 @@ import "./globals.css";
 
 import { Providers } from "@/app/providers";
 import { SiteHeader } from "@/components/layout/site-header";
-import { PublicFooterBoundary } from "@/components/layout/public-footer-boundary";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { siteConfig } from "@/lib/content/site";
 
@@ -101,10 +100,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Skip to content
           </a>
           <SiteHeader />
-          <main id="main-content" className="flex flex-1 flex-col">
+          <div id="main-content" className="flex flex-1 flex-col">
             {children}
-          </main>
-          <PublicFooterBoundary />
+          </div>
           <ScrollToTop />
         </Providers>
       </body>
