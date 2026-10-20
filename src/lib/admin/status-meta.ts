@@ -16,6 +16,8 @@ export const notificationStatusMeta: Record<NotificationStatus, { label: string;
   failed_permanent: { label: "Needs review", tone: "bg-brand-red text-brand-ink" },
   queued: { label: "Queued", tone: "bg-brand-blue text-brand-ink" },
   sent: { label: "SMTP accepted", tone: "bg-green-100 text-green-700" },
+  available: { label: "Available in inbox", tone: "bg-green-100 text-green-700" },
+  superseded: { label: "Superseded", tone: "bg-brand-cloud text-brand-muted" },
   failed: { label: "Failed", tone: "bg-brand-red text-brand-ink" },
   retrying: { label: "Retrying", tone: "bg-brand-gold text-brand-ink" },
 };

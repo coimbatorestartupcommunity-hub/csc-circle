@@ -186,7 +186,7 @@ export const memberServices = {
         startupName: startup.name,
         avatarUrl: "/api/member/portrait",
         status: mm.status as MembershipStatus,
-        issuedAt: (mm.issued_at as string) ?? new Date().toISOString(),
+        issuedAt: (mm.issued_at as string) ?? undefined,
         expiresAt: (mm.expires_at as string) ?? undefined,
         verificationToken: String(mm.verification_token ?? ""),
       });

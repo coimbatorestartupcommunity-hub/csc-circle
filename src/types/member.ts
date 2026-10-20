@@ -177,7 +177,7 @@ export interface MemberCard {
   startupName?: string;
   avatarUrl?: string;
   status: MembershipStatus;
-  issuedAt: string;
+  issuedAt?: string;
   expiresAt?: string;
   /** Opaque verification token — resolved server-side. Never raw PII. */
   verificationToken: string;
