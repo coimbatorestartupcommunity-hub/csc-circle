@@ -43,11 +43,11 @@ export function ReviewInvitation({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "mx-auto flex w-full max-w-xl flex-col items-center gap-5 rounded-3xl bg-brand-white p-7 text-center ring-1 ring-brand-border sm:p-8",
+        "mx-auto flex w-full min-w-0 max-w-xl flex-col items-center gap-5 rounded-3xl bg-brand-white p-5 text-center ring-1 ring-brand-border sm:p-8",
         className,
       )}
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex w-full min-w-0 flex-col items-center gap-1">
         <h3 className="text-lg font-semibold text-brand-ink">
           Share your CSC experience
         </h3>
@@ -57,7 +57,7 @@ export function ReviewInvitation({ className }: { className?: string }) {
         </p>
       </div>
 
-      <div className="flex flex-col items-center gap-1.5">
+      <div className="flex w-full min-w-0 flex-col items-center gap-1.5">
         <span className="text-sm font-medium text-brand-ink">Your rating</span>
         <div className="flex items-center justify-center gap-1" role="radiogroup" aria-label="Rating">
           {Array.from({ length: 5 }).map((_, i) => {
@@ -108,7 +108,7 @@ export function ReviewInvitation({ className }: { className?: string }) {
         {errors.review ? <FieldError>{errors.review}</FieldError> : null}
       </div>
 
-      <label className="flex max-w-md items-center justify-center gap-2 text-sm text-brand-secondary">
+      <label className="flex w-full max-w-md min-w-0 items-start justify-center gap-2 text-left text-sm text-brand-secondary">
         <input
           type="checkbox"
           checked={consent}
@@ -122,20 +122,20 @@ export function ReviewInvitation({ className }: { className?: string }) {
       </label>
       {errors.consent ? <FieldError>{errors.consent}</FieldError> : null}
 
-      <div className="flex flex-col gap-2">
+      <div data-testid="review-invitation-actions" className="flex w-full min-w-0 max-w-md flex-col items-stretch gap-2">
         <Button
           type="button"
           variant="outline"
           onClick={validate}
-          className="h-10 w-full"
+          className="h-11 w-full min-w-0 whitespace-normal text-center"
         >
           Check my review
         </Button>
-        <Button type="button" size="lg" disabled className="h-11 w-full gap-2">
+        <Button type="button" size="lg" disabled className="h-auto min-h-11 w-full min-w-0 whitespace-normal px-3 py-2 text-center leading-snug">
           <Lock className="size-4" />
           Review submission opens with member accounts
         </Button>
-        <FieldDescription className="text-center">
+        <FieldDescription className="w-full text-center text-balance">
           Validation is ready now; publishing activates in Phase 1.
         </FieldDescription>
       </div>
