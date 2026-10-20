@@ -67,4 +67,37 @@ describe("MemberStartupForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("You have reached the maximum of four startups.");
     expect(screen.queryByText("Startup submitted")).not.toBeInTheDocument();
   });
+
+  it("keeps the approval action explicit when submit events omit submitter metadata", async () => {
+    requestMock.mockResolvedValue({ ok: true, id: "revision-test-id" });
+    const { container } = render(<MemberStartupForm
+      startupId="11111111-1111-4111-8111-111111111111"
+      revisionId="22222222-2222-4222-8222-222222222222"
+      isPublished
+      initial={{ directoryImagePath: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-directory-startup.webp" }}
+    />);
+    const form = container.querySelector("form")!;
+    fillRequired(form);
+    fireEvent.change(form.querySelector('[name="slug"]')!, { target: { value: "northstar-robotics" } });
+    // This is how submit can arrive from mobile keyboard/accessibility paths.
+    fireEvent.submit(form, { submitter: null });
+    await waitFor(() => expect(requestMock).toHaveBeenCalledWith("startup-save", expect.objectContaining({ submitForApproval: true })));
+    expect(await screen.findByText("Changes Pending Approval")).toBeInTheDocument();
+  });
+
+  it("uses the explicit Save Draft action even if the browser omits submitter", async () => {
+    requestMock.mockResolvedValue({ ok: true, id: "revision-test-id" });
+    const { container } = render(<MemberStartupForm
+      startupId="11111111-1111-4111-8111-111111111111"
+      revisionId="22222222-2222-4222-8222-222222222222"
+      isPublished
+      initial={{ directoryImagePath: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-directory-startup.webp" }}
+    />);
+    const form = container.querySelector("form")!;
+    fillRequired(form);
+    fireEvent.change(form.querySelector('[name="slug"]')!, { target: { value: "northstar-robotics" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Draft" }));
+    await waitFor(() => expect(requestMock).toHaveBeenCalledWith("startup-save", expect.objectContaining({ submitForApproval: false })));
+    expect(await screen.findByText("Draft saved")).toBeInTheDocument();
+  });
 });

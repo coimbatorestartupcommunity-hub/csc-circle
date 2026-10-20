@@ -57,6 +57,9 @@ export function MemberStartupForm({ initial, startupId, revisionId, isPublished 
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState("");
   const [complete, setComplete] = React.useState("");
+  // Some mobile browsers and assistive submission paths omit submitter.
+  // Keep the selected action explicitly, with approval as the safe default.
+  const submitMode = React.useRef<"approval" | "draft">("approval");
 
   const update = (key: string, value: unknown) => setValues((v) => ({ ...v, [key]: value }));
   const slugify = (v: string) => v.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 120);
@@ -79,7 +82,9 @@ export function MemberStartupForm({ initial, startupId, revisionId, isPublished 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError("");
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-    const submitForApproval = !isPublished || submitter?.value !== "draft";
+    if (submitter?.value === "draft" || submitter?.value === "approval") submitMode.current = submitter.value;
+    const submitForApproval = !isPublished || submitMode.current !== "draft";
+    submitMode.current = "approval";
     const formData = new FormData(event.currentTarget);
     const raw: Record<string, unknown> = { ...values };
     for (const [key, value] of formData.entries()) {
@@ -150,7 +155,7 @@ export function MemberStartupForm({ initial, startupId, revisionId, isPublished 
       <Consent name="publishFounderContact" label="Show founder contact details" checked={values.publishFounderContact} onChange={(v) => update("publishFounderContact", v)} />
       <label className="flex items-start gap-2 text-sm leading-6 text-brand-secondary sm:col-span-2"><input name="consent" type="checkbox" defaultChecked className="mt-1 accent-[var(--brand-accent)]" required />I consent to CSC reviewing this information and publishing approved directory details.</label>
     </div></section>
-    <div className="flex flex-col items-center gap-3">{isPublished ? <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row"><Button type="submit" name="submitMode" value="draft" variant="outline" disabled={saving || uploading !== null} className="min-h-12 w-full gap-2 sm:w-auto">{saving ? <Loader2 className="size-4 animate-spin" /> : null}Save Draft</Button><Button type="submit" name="submitMode" value="approval" disabled={saving || uploading !== null || !values.directoryImagePath} className="min-h-12 w-full gap-2 sm:w-auto">{saving ? <Loader2 className="size-4 animate-spin" /> : null}Submit Changes for Approval</Button></div> : <Button type="submit" name="submitMode" value="approval" disabled={saving || uploading !== null || !values.directoryImagePath} className="min-h-12 w-full gap-2 sm:w-auto sm:min-w-64">{saving ? <Loader2 className="size-4 animate-spin" /> : null}{saving ? "Submitting for review…" : startupId ? "Save changes & resubmit" : "Submit for CSC review"}</Button>}<p className="text-center text-xs text-brand-muted">{isPublished ? "Published details and images remain unchanged until an administrator approves these changes." : "You need a saved 4:3 directory image before submitting."}</p></div>
+    <div className="flex flex-col items-center gap-3">{isPublished ? <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row"><Button type="submit" name="submitMode" value="draft" onClick={() => { submitMode.current = "draft"; }} variant="outline" disabled={saving || uploading !== null} className="min-h-12 w-full gap-2 sm:w-auto">{saving ? <Loader2 className="size-4 animate-spin" /> : null}Save Draft</Button><Button type="submit" name="submitMode" value="approval" onClick={() => { submitMode.current = "approval"; }} disabled={saving || uploading !== null || !values.directoryImagePath} className="min-h-12 w-full gap-2 sm:w-auto">{saving ? <Loader2 className="size-4 animate-spin" /> : null}Submit Changes for Approval</Button></div> : <Button type="submit" name="submitMode" value="approval" onClick={() => { submitMode.current = "approval"; }} disabled={saving || uploading !== null || !values.directoryImagePath} className="min-h-12 w-full gap-2 sm:w-auto sm:min-w-64">{saving ? <Loader2 className="size-4 animate-spin" /> : null}{saving ? "Submitting for review…" : startupId ? "Save changes & resubmit" : "Submit for CSC review"}</Button>}<p className="text-center text-xs text-brand-muted">{isPublished ? "Published details and images remain unchanged until an administrator approves these changes." : "You need a saved 4:3 directory image before submitting."}</p></div>
   </form>;
 }
 
