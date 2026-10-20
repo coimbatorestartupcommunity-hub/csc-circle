@@ -236,10 +236,9 @@ describe("CSC founder hub database permissions", () => {
     const proposed = JSON.stringify({ name: "Revision Test Startup Updated", slug: "revision-test-startup", industry: "Software", description: "The proposed description is different, complete, and meets the validation limit.", website: null, logo_url: null, directory_image_path: imagePath, details: { city: "Coimbatore" }, collaboration: [], founder: { id: a, name: "Revision Test Founder", role: "Founder" } }).replaceAll("'", "''");
     const submitted = await asUser(a, `select submit_startup_revision('${startupId}','${revisionId}','${proposed}'::jsonb,'{}'::jsonb,true) as id`);
     expect(submitted[0].rows).toEqual([{ id: revisionId }]);
-    // Mobile connections can lose the HTTP response after Postgres commits.
-    // Retrying the exact same revision must acknowledge the existing submission.
-    const retried = await asUser(a, `select submit_startup_revision('${startupId}','${revisionId}','${proposed}'::jsonb,'{}'::jsonb,true) as id`);
-    expect(retried[0].rows).toEqual([{ id: revisionId }]);
+    // The RPC rejects all submitted revisions; the authenticated API performs
+    // the safe exact-snapshot replay check through the owner-scoped SELECT policy.
+    await expect(asUser(a, `select submit_startup_revision('${startupId}','${revisionId}','${proposed}'::jsonb,'{}'::jsonb,true)`)).rejects.toThrow(/already submitted for review/i);
     expect((await db.query(`select count(*)::int as n from directory_startup_revisions where startup_id='${startupId}' and status='pending'`)).rows).toEqual([{ n: 1 }]);
     const changedWhilePending = JSON.stringify({ name: "Revision Test Startup Updated", slug: "revision-test-startup", industry: "Software", description: "A different follow-up payload that must not replace the revision already awaiting approval.", website: null, logo_url: null, directory_image_path: imagePath, details: { city: "Coimbatore" }, collaboration: [], founder: { id: a, name: "Revision Test Founder", role: "Founder" } }).replaceAll("'", "''");
     await expect(asUser(a, `select submit_startup_revision('${startupId}','${revisionId}','${changedWhilePending}'::jsonb,'{}'::jsonb,true)`)).rejects.toThrow(/already submitted for review/i);

@@ -10,6 +10,7 @@ import { claimSchema, profileSchema, onboardingStep1Schema, onboardingStep2Schem
 import { reviewSchema } from "@/lib/validations/forms";
 import type { Database } from "@/lib/supabase/database.types";
 import { memberStartupSchema } from "@/lib/validations/member-startup";
+import { isExactPendingStartupRevisionRetry } from "@/lib/member/startup-revision-retry";
 const consentSchema = onboardingStep5Schema;
 const onboardingSchema = onboardingStep1Schema.merge(onboardingStep2Schema).merge(onboardingStep3Schema).merge(onboardingStep4Schema).merge(onboardingStep5Schema).extend({ startupDescription: z.string().max(600).optional() });
 export async function POST(request: Request, context: { params: Promise<{ action: string }> }) {
@@ -130,21 +131,35 @@ export async function POST(request: Request, context: { params: Promise<{ action
       };
       if (isPublishedEdit) {
         if (!v.revisionId) return authResponse({ error: "Reload the startup editor to create a secure revision." }, 409);
+        const proposed = {
+          name: v.name, slug: v.slug, industry: v.industry, description: v.description,
+          website: v.publishWebsite ? v.website : null, logo_url: expectedLogo || null,
+          directory_image_path: v.directoryImagePath, details,
+          collaboration: v.collaboration,
+          founder: { id: user.id, name: profile.display_name, role: v.founderRole },
+        };
         const { data: revisionId, error } = await sb.rpc("submit_startup_revision", {
           p_startup_id: v.existingId!, p_revision_id: v.revisionId,
-          p_proposed: {
-            name: v.name, slug: v.slug, industry: v.industry, description: v.description,
-            website: v.publishWebsite ? v.website : null, logo_url: expectedLogo || null,
-            directory_image_path: v.directoryImagePath, details,
-            collaboration: v.collaboration,
-            founder: { id: user.id, name: profile.display_name, role: v.founderRole },
-          },
+          p_proposed: proposed,
           p_private_details: privateDetails,
           p_submit: v.submitForApproval,
         });
         if (error || !revisionId) {
           const msg = error?.message ?? "Could not save startup changes.";
           const code = error?.code ?? "unknown";
+          if (v.submitForApproval && (msg.includes("already submitted") || msg.includes("already pending"))) {
+            // The first request may have committed while its response was lost
+            // on a mobile network. Confirm the exact pending snapshot through
+            // the owner-scoped RLS policy before acknowledging a safe retry.
+            const { data: existingRevision, error: lookupError } = await sb.from("directory_startup_revisions")
+              .select("status,proposed_data,proposed_private_details")
+              .eq("id", v.revisionId).eq("startup_id", v.existingId!).maybeSingle();
+            if (!lookupError && isExactPendingStartupRevisionRetry(existingRevision, proposed, privateDetails)) {
+              scheduleNotificationDelivery();
+              revalidateTag("directory", { expire: 0 });
+              return authResponse({ ok: true, id: v.revisionId, status: "pending" });
+            }
+          }
           const reason = msg.includes("already pending") || msg.includes("already submitted") ? "revision_pending"
             : msg.includes("duplicate key") ? "slug_conflict"
             : code === "40001" ? "stale_revision"
