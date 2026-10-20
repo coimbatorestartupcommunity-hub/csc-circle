@@ -4,8 +4,9 @@ import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowRight, BellRing, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
-type Notice = { title: string; message: string; actionLabel: string; eventPath: string; id: string };
+type Notice = { title: string; message: string; actionLabel: string; eventPath: string; bannerUrl?: string | null; id: string };
 
 export function PublicEventNotice() {
   const pathname = usePathname();
@@ -32,9 +33,10 @@ export function PublicEventNotice() {
   }
   return (
     <aside aria-label="Community event announcement" aria-live="polite" className="fixed inset-x-3 bottom-3 z-[70] mx-auto w-auto max-w-3xl animate-in slide-in-from-bottom-4 fade-in duration-300 sm:inset-x-6 sm:bottom-6">
-      <div className="relative flex flex-col gap-4 rounded-3xl border border-brand-border bg-white/95 p-5 shadow-[0_18px_70px_-20px_rgba(18,24,38,0.32)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="relative flex flex-col gap-4 rounded-3xl border border-brand-border bg-white/95 p-4 shadow-[0_18px_70px_-20px_rgba(18,24,38,0.32)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <button aria-label="Dismiss announcement" onClick={dismiss} className="absolute right-3 top-3 rounded-full p-2 text-brand-muted hover:bg-brand-cloud hover:text-brand-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink sm:static sm:order-3"><X className="size-4" /></button>
-        <div className="flex min-w-0 gap-3 pr-8 sm:pr-0">
+        {notice.bannerUrl ? <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-2xl bg-brand-cloud sm:w-52"><Image src={notice.bannerUrl} alt={`${notice.title} event banner`} fill sizes="(max-width: 640px) 100vw, 208px" className="object-cover" /></div> : null}
+        <div className="flex min-w-0 flex-1 gap-3 pr-8 sm:pr-0">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-brand-purple text-brand-ink"><BellRing className="size-5" /></span>
           <div className="min-w-0"><p className="font-semibold text-brand-ink">{notice.title}</p><p className="mt-1 text-sm leading-relaxed text-brand-secondary">{notice.message}</p></div>
         </div>

@@ -136,53 +136,53 @@ export function MemberIdCard({
       {/* The exportable card node (buttons are outside this ref) */}
       <div
         ref={cardRef}
-        className="relative aspect-4/5 w-full max-w-sm overflow-hidden rounded-[1.75rem] bg-brand-white ring-1 ring-brand-border"
+        className="relative flex aspect-4/5 w-full max-w-[21rem] flex-col overflow-hidden rounded-[1.75rem] bg-brand-white ring-1 ring-brand-border sm:max-w-sm"
       >
         {/* Header */}
-        <div className="relative flex flex-col items-center gap-1 bg-gradient-to-br from-brand-purple via-brand-blue to-brand-lilac px-6 pt-7 pb-6 text-center">
+        <div className="flex shrink-0 flex-col items-center gap-1 bg-gradient-to-br from-brand-purple via-brand-blue to-brand-lilac px-4 pt-4 pb-3 text-center sm:px-6 sm:pt-7 sm:pb-6">
           <Image
             src={brandAssets.cscIcon}
             alt=""
-            width={56}
-            height={56}
+            width={64}
+            height={64}
             unoptimized
-            className="rounded-full bg-brand-white/80 ring-1 ring-brand-border"
+            className="size-12 rounded-full bg-brand-white/80 ring-1 ring-brand-border sm:size-16"
           />
-          <p className="mt-1 text-sm font-bold tracking-tight text-brand-ink">
+          <p className="mt-1 text-xs font-bold tracking-tight text-brand-ink sm:text-sm">
             {siteConfig.legalName}
           </p>
-          <p className="font-mono text-[10px] tracking-widest text-brand-muted uppercase">
+          <p className="font-mono text-[9px] tracking-widest text-brand-muted uppercase sm:text-[10px]">
             estd {siteConfig.established}
           </p>
         </div>
 
         {/* Profile */}
-        <div className="flex flex-col items-center gap-1 px-6 pt-4">
-          <span className="flex size-16 items-center justify-center overflow-hidden rounded-full bg-brand-purple text-xl font-bold text-brand-ink ring-2 ring-brand-white">
-            <AccountAvatar name={card.fullName} src={card.avatarUrl} className="size-16 text-xl" />
+        <div className="flex shrink-0 flex-col items-center gap-1 px-4 pt-3 sm:px-6 sm:pt-4">
+          <span className="flex size-14 items-center justify-center overflow-hidden rounded-full bg-brand-purple text-lg font-bold text-brand-ink ring-2 ring-brand-white sm:size-16 sm:text-xl">
+            <AccountAvatar name={card.fullName} src={card.avatarUrl} className="size-14 text-lg sm:size-16 sm:text-xl" />
           </span>
-          <p className="mt-1 text-lg font-bold text-brand-ink">{card.fullName}</p>
-          <p className="text-xs font-medium text-brand-accent">
+          <p className="mt-1 max-w-full break-words text-center text-base font-bold leading-tight text-brand-ink sm:text-lg">{card.fullName}</p>
+          <p className="text-[11px] font-medium text-brand-accent sm:text-xs">
             {card.designationLabel}
           </p>
           {card.startupName ? (
-            <p className="text-xs text-brand-muted">{card.startupName}</p>
+            <p className="max-w-full break-words text-center text-[11px] text-brand-muted sm:text-xs">{card.startupName}</p>
           ) : null}
         </div>
 
         {/* Membership info + QR */}
-        <div className="mt-3 flex items-end justify-between gap-3 px-6">
-          <div className="flex flex-col gap-1.5 text-left">
+        <div className="mt-2 flex shrink-0 items-end justify-between gap-2 px-4 sm:mt-3 sm:gap-3 sm:px-6">
+          <div className="flex min-w-0 flex-col gap-1 text-left sm:gap-1.5">
             <div>
-              <p className="text-[10px] tracking-wide text-brand-muted uppercase">
+              <p className="text-[9px] tracking-wide text-brand-muted uppercase sm:text-[10px]">
                 Member number
               </p>
-              <p className="font-mono text-sm font-semibold text-brand-ink">
+              <p className="break-all font-mono text-xs font-semibold text-brand-ink sm:text-sm">
                 {card.memberNumber}
               </p>
             </div>
             <StatusBadge label={statusMeta.label} tone={statusMeta.tone} />
-            <p className="text-[11px] text-brand-muted">
+            <p className="text-[9px] leading-tight text-brand-muted sm:text-[11px]">
               Issued {formatEventDate(card.issuedAt)}
               {card.expiresAt ? ` · Expires ${formatEventDate(card.expiresAt)}` : ""}
             </p>
@@ -190,22 +190,22 @@ export function MemberIdCard({
           <div className="flex shrink-0 flex-col items-center gap-1">
             {qr ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={qr} alt="Membership QR code" className="size-20 rounded-md" />
+              <img src={qr} alt="Membership QR code" className="size-16 rounded-md sm:size-20" />
             ) : (
-              <span className="flex size-20 items-center justify-center rounded-md bg-brand-cloud">
+              <span className="flex size-16 items-center justify-center rounded-md bg-brand-cloud sm:size-20">
                 <Loader2 className="size-5 animate-spin text-brand-muted" />
               </span>
             )}
           </div>
         </div>
 
-        <p className="mt-2 px-6 text-center text-[10px] text-brand-muted">
+        <p className="mt-auto px-4 pt-1 pb-2 text-center text-[9px] leading-tight text-brand-muted sm:px-6 sm:text-[10px]">
           Present at eligible CSC community events.
         </p>
 
         {/* Footer */}
-        <div className="absolute inset-x-0 bottom-0 bg-brand-ink py-2 text-center">
-          <p className="font-serif text-sm font-medium text-brand-white">
+        <div className="shrink-0 bg-brand-ink py-1.5 text-center sm:py-2">
+          <p className="font-serif text-xs font-medium text-brand-white sm:text-sm">
             Connect. Build. Grow.
           </p>
         </div>

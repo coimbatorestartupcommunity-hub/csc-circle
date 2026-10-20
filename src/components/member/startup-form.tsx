@@ -10,14 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { startupSubmissionSchema, type StartupSubmissionValues } from "@/lib/validations/member";
 import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
+import { CheckCircle2, Clock3 } from "lucide-react";
+import Link from "next/link";
 
 export function StartupForm() {
-  const { register, handleSubmit, reset, setValue, formState: { isSubmitting, errors } } = useForm<StartupSubmissionValues>({
+  const { register, handleSubmit, setValue, formState: { isSubmitting, errors } } = useForm<StartupSubmissionValues>({
     resolver: zodResolver(startupSubmissionSchema),
     defaultValues: { name: "", slug: "", industry: "", description: "", website: "", consent: false },
   });
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
+  const [submitted, setSubmitted] = useState<{ id: string } | null>(null);
   const [slugWasEdited, setSlugWasEdited] = useState(false);
   const nameField = register("name");
   const slugField = register("slug");
@@ -32,9 +35,7 @@ export function StartupForm() {
       setMessageIsError(true);
       return;
     }
-    reset();
-    setSlugWasEdited(false);
-    setMessage("Your startup was submitted and is awaiting CSC administrator review.");
+    setSubmitted({ id: result.id ?? "" });
     notifySubmissionSuccess({ title: "Successfully submitted", message: "Your startup submission was received and is awaiting the review decision shown in your account.", reference: result.id });
   }, (invalidFields) => {
     setMessage("Please complete the highlighted fields before submitting.");
@@ -44,6 +45,27 @@ export function StartupForm() {
       requestAnimationFrame(() => document.getElementById(`startup-${firstInvalidField}`)?.focus());
     }
   });
+
+  if (submitted) {
+    return (
+      <section className="mx-auto w-full max-w-2xl rounded-3xl bg-white p-6 text-center shadow-sm ring-1 ring-brand-border sm:p-9" aria-live="polite">
+        <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+          <CheckCircle2 className="size-7" aria-hidden="true" />
+        </span>
+        <h2 className="mt-4 text-xl font-semibold text-brand-ink">Startup submitted</h2>
+        <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-brand-secondary">
+          Your startup details have been submitted and are under active CSC administrator review. The form is closed while your submission is being reviewed.
+        </p>
+        {submitted.id ? <p className="mt-3 font-mono text-xs text-brand-muted">Reference: {submitted.id}</p> : null}
+        <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-cloud px-4 py-2 text-sm font-medium text-brand-secondary">
+          <Clock3 className="size-4" aria-hidden="true" /> Awaiting CSC administrator review
+        </div>
+        <div className="mt-6">
+          <Button type="button" variant="outline" render={<Link href="/member/profile" />}>Back to profile</Button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <form

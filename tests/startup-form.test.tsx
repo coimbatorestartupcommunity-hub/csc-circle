@@ -44,6 +44,8 @@ describe("StartupForm", () => {
       consent: true,
     }));
     expect(await screen.findByText(/awaiting CSC administrator review/i)).toBeInTheDocument();
+    expect(screen.getByText("Startup submitted")).toBeInTheDocument();
+    expect(container.querySelector("form")).toBeNull();
     expect(successMock).toHaveBeenCalledWith(expect.objectContaining({ title: "Successfully submitted", reference: "startup-test-id" }));
   });
 

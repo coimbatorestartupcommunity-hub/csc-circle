@@ -7,7 +7,9 @@ import { MemberDirectoryPhotoUpload } from "@/components/member/member-directory
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
+import { createClient } from "@/lib/supabase/server";
 import { MemberUnavailable } from "@/components/member/member-unavailable";
+import { Clock3, ExternalLink } from "lucide-react";
 export const metadata = { title: "Submit a startup" };
 export default async function Page() {
   const ctx = await getMemberContext();
@@ -15,8 +17,46 @@ export default async function Page() {
   const result = await memberServices.getProfile();
   if (!result.ok) return <EmptyState icon={ImagePlus} title="Your profile could not be loaded." description={result.error.message} />;
   const profile = result.data;
+  const sb = await createClient();
+  const { data: existingStartup, error: startupLookupError } = await sb
+    .from("directory_startups")
+    .select("id,name,slug,status,updated_at")
+    .eq("user_id", ctx.user!.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
   const hasPublicConsent = profile.consent.directoryParticipation && profile.consent.displayNamePublicly && profile.consent.displayPhotoPublicly;
   const canSubmit = Boolean(profile.portraitPath && profile.directoryPhotoPath && hasPublicConsent && profile.displayName.trim());
+
+  if (startupLookupError) return <EmptyState icon={ImagePlus} title="Your startup submission could not be checked." description="Refresh the page to try again. Your saved startup data has not been changed." />;
+
+  if (existingStartup) {
+    const published = existingStartup.status === "published";
+    const statusLabel = published ? "Published in the Founder Directory" : existingStartup.status === "pending" ? "Awaiting CSC administrator review" : `Status: ${existingStartup.status}`;
+    return (
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+        <MemberPageHeader title="Startup directory submission" description="Your submission status and next steps." />
+        <section className="mx-auto w-full max-w-2xl rounded-3xl bg-white p-6 text-center shadow-sm ring-1 ring-brand-border sm:p-9">
+          <span className={`mx-auto flex size-14 items-center justify-center rounded-full ring-1 ${published ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-brand-purple text-brand-ink ring-brand-border"}`}>
+            {published ? <ExternalLink className="size-6" aria-hidden="true" /> : <Clock3 className="size-6" aria-hidden="true" />}
+          </span>
+          <h2 className="mt-4 text-xl font-semibold text-brand-ink">{published ? "Your startup is published" : "Startup submitted"}</h2>
+          <p className="mt-2 text-base font-medium text-brand-secondary">{existingStartup.name}</p>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-brand-secondary">
+            {published
+              ? "Your approved startup is visible in the CSC Founder Directory."
+              : existingStartup.status === "pending"
+                ? "Your startup details have been submitted and are under active CSC administrator review. The form is closed while your submission is being reviewed."
+                : "Your submission is saved. Please contact the CSC team if you need help with its current review status."}
+          </p>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-cloud px-4 py-2 text-sm font-medium text-brand-secondary">
+            <ShieldCheck className="size-4" aria-hidden="true" /> {statusLabel}
+          </div>
+          {published ? <Button render={<Link href={`/directory/${existingStartup.slug}`} />} className="mx-auto mt-6">View directory listing</Button> : null}
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
