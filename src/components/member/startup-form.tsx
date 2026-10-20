@@ -12,28 +12,65 @@ import { startupSubmissionSchema, type StartupSubmissionValues } from "@/lib/val
 import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 
 export function StartupForm() {
-  const { register, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<StartupSubmissionValues>({ resolver: zodResolver(startupSubmissionSchema) });
+  const { register, handleSubmit, reset, setValue, formState: { isSubmitting, errors } } = useForm<StartupSubmissionValues>({
+    resolver: zodResolver(startupSubmissionSchema),
+    defaultValues: { name: "", slug: "", industry: "", description: "", website: "", consent: false },
+  });
   const [message, setMessage] = useState("");
+  const [messageIsError, setMessageIsError] = useState(false);
+  const [slugWasEdited, setSlugWasEdited] = useState(false);
+  const nameField = register("name");
+  const slugField = register("slug");
+  const fieldErrors = Object.values(errors).filter(Boolean);
+
+  const submit = handleSubmit(async (values) => {
+    setMessage("");
+    setMessageIsError(false);
+    const result = await memberRequest("startup", values);
+    if (!result.ok) {
+      setMessage(result.error ?? "Your startup could not be submitted. Please check the details and try again.");
+      setMessageIsError(true);
+      return;
+    }
+    reset();
+    setSlugWasEdited(false);
+    setMessage("Your startup was submitted and is awaiting CSC administrator review.");
+    notifySubmissionSuccess({ title: "Successfully submitted", message: "Your startup submission was received and is awaiting the review decision shown in your account.", reference: result.id });
+  }, (invalidFields) => {
+    setMessage("Please complete the highlighted fields before submitting.");
+    setMessageIsError(true);
+    const firstInvalidField = Object.keys(invalidFields)[0];
+    if (firstInvalidField) {
+      requestAnimationFrame(() => document.getElementById(`startup-${firstInvalidField}`)?.focus());
+    }
+  });
 
   return (
     <form
       className="mx-auto flex w-full max-w-2xl flex-col gap-5 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:p-7"
-      onSubmit={handleSubmit(async (values) => {
-        const result = await memberRequest("startup", values);
-        setMessage(result.error ?? "");
-        if (result.ok) { reset(); notifySubmissionSuccess({ title: "Successfully submitted", message: "Your startup submission was received and is awaiting the review decision shown in your account.", reference: result.id }); }
-      })}
+      noValidate
+      onSubmit={submit}
     >
+      {fieldErrors.length > 0 ? <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800 ring-1 ring-red-200" role="alert">Please review the highlighted fields below.</p> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="startup-name">Startup name</Label>
-          <Input id="startup-name" {...register("name", { required: "Enter a startup name.", minLength: 2, maxLength: 120 })} aria-invalid={!!errors.name} />
+          <Input id="startup-name" {...nameField} onChange={(event) => {
+            nameField.onChange(event);
+            if (!slugWasEdited) {
+              const slug = event.currentTarget.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 120);
+              setValue("slug", slug, { shouldDirty: true, shouldValidate: true });
+            }
+          }} aria-invalid={!!errors.name} />
           {errors.name ? <p className="text-sm text-red-700">{errors.name.message}</p> : null}
         </div>
         <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="startup-slug">Directory slug</Label>
-          <Input id="startup-slug" {...register("slug", { required: "Enter a directory slug.", pattern: /^[a-z0-9-]{3,120}$/ })} aria-invalid={!!errors.slug} />
-          {errors.slug ? <p className="text-sm text-red-700">{errors.slug.message}</p> : null}
+          <Input id="startup-slug" {...slugField} onChange={(event) => {
+            setSlugWasEdited(true);
+            slugField.onChange(event);
+          }} aria-invalid={!!errors.slug} aria-describedby="startup-slug-help" />
+          {errors.slug ? <p className="text-sm text-red-700">{errors.slug.message}</p> : <p id="startup-slug-help" className="text-xs text-brand-muted">Generated from your startup name. You can edit it.</p>}
         </div>
       </div>
 
@@ -62,16 +99,16 @@ export function StartupForm() {
       </div>
 
       <label className="flex items-start gap-2 text-sm leading-relaxed text-brand-secondary">
-        <input type="checkbox" {...register("consent", { required: true })} required className="mt-1" />
+        <input id="startup-consent" type="checkbox" {...register("consent")} className="mt-1" aria-invalid={!!errors.consent} />
         <span>I consent to publication of these business details after CSC approval. Directory participation must also be enabled in my privacy settings.</span>
       </label>
       {errors.consent ? <p className="text-sm text-red-700">Please consent before submitting.</p> : null}
 
       <div className="flex flex-col items-center gap-2">
-        <Button disabled={isSubmitting} className="w-full sm:w-auto sm:min-w-52">
+        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto sm:min-w-52">
           {isSubmitting ? "Submitting…" : "Submit for review"}
         </Button>
-        <p role="status" aria-live="polite" className="text-center text-sm text-brand-muted">{message}</p>
+        <p role={messageIsError ? "alert" : "status"} aria-live={messageIsError ? "assertive" : "polite"} className={`text-center text-sm ${messageIsError ? "text-red-700" : "text-brand-muted"}`}>{message}</p>
       </div>
     </form>
   );

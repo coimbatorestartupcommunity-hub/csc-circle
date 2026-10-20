@@ -100,12 +100,12 @@ export const profileSchema = z.object({
 export type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export const startupSubmissionSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  slug: z.string().trim().regex(/^[a-z0-9-]{3,120}$/),
+  name: z.string().trim().min(2, "Enter a startup name.").max(120, "Startup name must be 120 characters or fewer."),
+  slug: z.string().trim().min(3, "The directory URL must be at least 3 characters.").max(120, "The directory URL must be 120 characters or fewer.").regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers and hyphens only."),
   industry: z.string().trim().min(2, "Enter an industry.").max(80),
-  description: z.string().trim().min(20).max(600),
-  website: z.string().url().refine((value) => /^https?:\/\//.test(value)).or(z.literal("")),
-  consent: z.literal(true),
+  description: z.string().trim().min(20, "Describe your startup in at least 20 characters.").max(600, "Description must be 600 characters or fewer."),
+  website: z.string().url("Enter a valid website URL, or leave this field blank.").refine((value) => /^https?:\/\//.test(value), "Website links must start with http:// or https://.").or(z.literal("")),
+  consent: z.boolean().refine((value) => value, "Please consent to sharing these startup details after CSC approval."),
 });
 
 export type StartupSubmissionValues = z.infer<typeof startupSubmissionSchema>;
