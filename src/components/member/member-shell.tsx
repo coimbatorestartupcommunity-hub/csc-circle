@@ -24,6 +24,7 @@ import { StatusBadge } from "@/components/member/status-badge";
 import { AccountAvatar } from "@/components/layout/account-avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { MemberNotificationMenu } from "@/components/member/member-notification-menu";
 
 const nav = [
   { href: "/member", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -83,6 +84,7 @@ export function MemberShell({
             <BrandLogo showWordmark={false} markSize={36} />
           </div>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <MemberNotificationMenu />
             <div className="hidden shrink-0 items-center gap-2 text-right lg:flex">
               <p className="whitespace-nowrap text-sm font-semibold text-brand-ink">{memberName}</p>
               <StatusBadge label={statusLabel} tone={statusTone} className="shrink-0 whitespace-nowrap" />

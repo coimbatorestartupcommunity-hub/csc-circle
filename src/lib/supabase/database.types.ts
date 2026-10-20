@@ -840,24 +840,29 @@ export type Database = {
       notifications: {
         Row: {
           accepted_at: string | null
+          action_url: string | null
           attempts: number
           audience: string
           available_at: string
           channel: string
           created_at: string
+          delivered_at: string | null
           dedupe_key: string | null
           id: string
           last_error: string | null
           lease_id: string | null
           locked_until: string | null
           max_attempts: number
+          message: string | null
           payload: Json | null
           recipient: string | null
           recipient_user_id: string | null
+          read_at: string | null
           related_record_id: string | null
           related_record_type: string | null
           sent_at: string | null
           status: string
+          title: string | null
           template_key: string | null
           template_version: number
           type: string
@@ -865,24 +870,29 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          action_url?: string | null
           attempts?: number
           audience?: string
           available_at?: string
           channel: string
           created_at?: string
+          delivered_at?: string | null
           dedupe_key?: string | null
           id?: string
           last_error?: string | null
           lease_id?: string | null
           locked_until?: string | null
           max_attempts?: number
+          message?: string | null
           payload?: Json | null
           recipient?: string | null
           recipient_user_id?: string | null
+          read_at?: string | null
           related_record_id?: string | null
           related_record_type?: string | null
           sent_at?: string | null
           status?: string
+          title?: string | null
           template_key?: string | null
           template_version?: number
           type: string
@@ -890,24 +900,29 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          action_url?: string | null
           attempts?: number
           audience?: string
           available_at?: string
           channel?: string
           created_at?: string
+          delivered_at?: string | null
           dedupe_key?: string | null
           id?: string
           last_error?: string | null
           lease_id?: string | null
           locked_until?: string | null
           max_attempts?: number
+          message?: string | null
           payload?: Json | null
           recipient?: string | null
           recipient_user_id?: string | null
+          read_at?: string | null
           related_record_id?: string | null
           related_record_type?: string | null
           sent_at?: string | null
           status?: string
+          title?: string | null
           template_key?: string | null
           template_version?: number
           type?: string
@@ -1178,24 +1193,29 @@ export type Database = {
         Args: { batch?: number; worker?: string }
         Returns: {
           accepted_at: string | null
+          action_url: string | null
           attempts: number
           audience: string
           available_at: string
           channel: string
           created_at: string
+          delivered_at: string | null
           dedupe_key: string | null
           id: string
           last_error: string | null
           lease_id: string | null
           locked_until: string | null
           max_attempts: number
+          message: string | null
           payload: Json | null
           recipient: string | null
           recipient_user_id: string | null
+          read_at: string | null
           related_record_id: string | null
           related_record_type: string | null
           sent_at: string | null
           status: string
+          title: string | null
           template_key: string | null
           template_version: number
           type: string

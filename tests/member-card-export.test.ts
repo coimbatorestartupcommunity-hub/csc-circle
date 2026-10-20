@@ -7,6 +7,7 @@ describe("membership card export", () => {
   it("renders the long edge at 4K resolution without adding a background", () => {
     expect(membershipCardCaptureOptions(480)).toEqual({ pixelRatio: 8, cacheBust: true });
     expect(membershipCardCaptureOptions(1200).pixelRatio).toBe(4);
+    expect(membershipCardCaptureOptions(360).pixelRatio).toBe(11);
   });
 
   it("decodes the captured PNG into a Safari-compatible downloadable Blob", async () => {

@@ -114,7 +114,7 @@ export async function dispatchNotifications(batch = 15) {
       if (rateLimited) { await finish("failed_retryable","EMAIL_RATE_DEFERRED"); deferred++; continue; }
       if (!job.template_key || !isTemplateKey(job.template_key)) { await finish("failed_permanent","UNKNOWN_TEMPLATE"); continue; }
       if (job.template_key === "ConsultationScheduled" && (!job.payload || typeof job.payload!=="object" || Array.isArray(job.payload) || !job.payload.scheduledAt)) { await finish("failed_permanent","MEETING_DETAILS_UNCONFIRMED"); continue; }
-      if (!await isCurrent(sb,job)) { await finish("failed_permanent","SUPERSEDED_BUSINESS_STATE"); continue; }
+      if (!await isCurrent(sb,job)) { await finish("superseded","SUPERSEDED_BUSINESS_STATE"); continue; }
       let recipients = job.audience === "admin" ? c.admins : [job.recipient ?? ""];
       if (job.audience !== "admin" && job.recipient_user_id) {
         const r = await sb.rpc("csc_notification_recipient", { member: job.recipient_user_id });

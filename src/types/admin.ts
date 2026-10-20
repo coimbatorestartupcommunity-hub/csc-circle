@@ -155,7 +155,7 @@ export interface MediaAsset {
   createdAt: string;
 }
 
-export type NotificationStatus = "queued" | "processing" | "sent" | "failed" | "retrying" | "failed_retryable" | "failed_permanent";
+export type NotificationStatus = "queued" | "processing" | "sent" | "available" | "superseded" | "failed" | "retrying" | "failed_retryable" | "failed_permanent";
 
 export interface NotificationRecord {
   id: string;
@@ -167,6 +167,7 @@ export interface NotificationRecord {
   lastError?: string;
   createdAt: string;
   sentAt?: string;
+  deliveredAt?: string;
 }
 
 export interface ContentBlock {

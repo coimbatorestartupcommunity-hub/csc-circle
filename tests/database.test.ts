@@ -265,6 +265,12 @@ describe("trusted operations and replay protection", () => {
     expect((await db.query(`select status,member_number,issued_at is not null as issued from memberships where user_id='${b}'`)).rows[0]).toMatchObject({ status: "active", issued: true });
     expect((await db.query<{ n: number }>("select count(*)::int as n from payments")).rows[0].n).toBe(0);
     expect((await db.query<{ action: string }>(`select action from audit_logs where target_id='${claim}' order by created_at`)).rows.map((row) => row.action)).toEqual(["claim.pending_verification", "claim.active"]);
+    expect((await db.query<{ type: string; status: string; recipient_user_id: string; title: string }>(
+      "select type,status,recipient_user_id,title from notifications where channel='in_app' and related_record_id=$1 order by type", [claim],
+    )).rows).toEqual([
+      { type: "claim.active", status: "available", recipient_user_id: b, title: "CSC membership is active" },
+      { type: "claim.pending_verification", status: "superseded", recipient_user_id: b, title: "Membership application received" },
+    ]);
   });
   it("registers idempotently without issuing a pass", async () => {
     const first = await asUser(a, `select csc_register_event('${event}','Networking') as result`);
@@ -364,6 +370,17 @@ describe("durable notification delivery",()=>{
 });
 
 describe("notification uncertainty and retry policy",()=>{
+ it("exposes only a member's available in-app notifications and limits updates to read state",async()=>{
+  const {rows}=await db.query<{id:string}>(
+   "insert into notifications(type,channel,recipient,recipient_user_id,audience,title,message,action_url,status,delivered_at) values ('review.approved','in_app',$1::uuid::text,$1::uuid,'member','Review approved','Your review is approved.','/member/reviews','available',now()),('review.approved','in_app',$2::uuid::text,$2::uuid,'member','Review approved','Private to B.','/member/reviews','available',now()) returning id",
+   [a,b]);
+  const own=await asUser(a,`select id,type,read_at from notifications where id='${rows[0].id}' and channel='in_app' and status='available'`);
+  expect(own[0].rows).toHaveLength(1);
+  expect((await asUser(b,`select id from notifications where id='${rows[0].id}'`))[0].rows).toHaveLength(0);
+  await asUser(a,`update notifications set read_at=now() where id='${rows[0].id}'`);
+  expect((await db.query("select read_at is not null as read from notifications where id=$1",[rows[0].id])).rows).toEqual([{read:true}]);
+  await expect(asUser(a,`update notifications set status='superseded' where id='${rows[0].id}'`)).rejects.toThrow();
+ });
  it("requires manual acknowledgement before replaying an uncertain SMTP attempt",async()=>{
   const {rows}=await db.query<{id:string}>("insert into notifications(type,template_key,channel,status,last_error) values('Test','OperationalAlert','email','failed_permanent','AMBIGUOUS_DELIVERY') returning id");
   await db.query("insert into notification_deliveries(notification_id,recipient_digest,status) values($1,'uncertain','ambiguous')",[rows[0].id]);

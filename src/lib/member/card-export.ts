@@ -1,9 +1,19 @@
 /** Render the long edge at 4K while keeping the browser canvas within a safe scale. */
 export function membershipCardCaptureOptions(cardHeightCssPx: number) {
   return {
-    pixelRatio: Math.min(10, Math.max(4, Math.ceil(3840 / Math.max(1, cardHeightCssPx)))),
+    pixelRatio: Math.min(12, Math.max(4, Math.ceil(3840 / Math.max(1, cardHeightCssPx)))),
     cacheBust: true,
   } as const;
+}
+
+/** Wait for the exact logo, portrait, QR and web fonts before rasterizing. */
+export async function waitForMembershipCardAssets(element: HTMLElement) {
+  if ("fonts" in document) await document.fonts.ready;
+  const images = Array.from(element.querySelectorAll("img"));
+  await Promise.all(images.map(async (image) => {
+    if (image.complete && image.naturalWidth > 0) return;
+    try { await image.decode(); } catch { /* Avatar has a text fallback; QR is checked by the caller. */ }
+  }));
 }
 
 /** Decode the generated PNG without a fetch(data:) request (Safari can reject those). */

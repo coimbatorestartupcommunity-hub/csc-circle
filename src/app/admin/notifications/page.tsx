@@ -17,7 +17,8 @@ const columns: Column[] = [
   { key: "attempts", header: "Attempts" },
   { key: "lastError", header: "Delivery issue" },
   { key: "createdAt", header: "Created", type: "date", sortable: true },
-  { key: "sentAt", header: "Sent", type: "date" },
+  { key: "sentAt", header: "SMTP accepted", type: "date" },
+  { key: "deliveredAt", header: "Inbox available", type: "date" },
 ];
 
 const facets: Facet[] = [
@@ -36,6 +37,8 @@ const facets: Facet[] = [
     options: [
       { label: "Queued", value: "queued" },
       { label: "Sent", value: "sent" },
+      { label: "Available in inbox", value: "available" },
+      { label: "Superseded", value: "superseded" },
       { label: "Processing", value: "processing" },
       { label: "Retry scheduled", value: "failed_retryable" },
       { label: "Needs review", value: "failed_permanent" },
@@ -55,7 +58,7 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
     <>
       <AdminPageHeader
         title="Notifications"
-        description="Email delivery queue for committed business events. SMTP acceptance does not prove inbox delivery. Uncertain outcomes require mailbox reconciliation before retrying."
+        description="Delivery status for email and in-app notifications. In-app availability is separate from a member's unread state; SMTP acceptance does not prove inbox delivery."
         isDemo={ctx.mode === "preview"}
       />
       <EventNoticeEditor isDemo={ctx.mode !== "live"} canPublish={can(ctx, "settings.manage") || can(ctx, "content.manage")} canEditEvents={can(ctx, "events.update")} initialEventId={eventId} />
