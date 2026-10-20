@@ -48,6 +48,11 @@ export function MemberIdCard({
     return iOSDevice;
   }
 
+  function isMobileBrowser() {
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
   React.useEffect(() => {
     let active = true;
     QRCode.toDataURL(buildMembershipQrPayload(card.verificationToken), {
@@ -81,7 +86,7 @@ export function MemberIdCard({
       if (!qr) throw new Error("The membership verification QR is not ready.");
       await waitForMembershipCardAssets(cardElement);
       const exportNode = await createMembershipCardExportNode(cardElement, {
-        normalizeMobileMediaEffects: appleMobile,
+        normalizeMobileMediaEffects: isMobileBrowser(),
       });
       let rawPng: Blob | null;
       try {
