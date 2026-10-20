@@ -470,6 +470,7 @@ export type Database = {
           name: string
           publication_consent: boolean
           publication_consent_at: string | null
+          revision_version: number
           slug: string
           status: Database["public"]["Enums"]["publication_status"]
           updated_at: string
@@ -489,6 +490,7 @@ export type Database = {
           name: string
           publication_consent?: boolean
           publication_consent_at?: string | null
+          revision_version?: number
           slug: string
           status?: Database["public"]["Enums"]["publication_status"]
           updated_at?: string
@@ -508,6 +510,7 @@ export type Database = {
           name?: string
           publication_consent?: boolean
           publication_consent_at?: string | null
+          revision_version?: number
           slug?: string
           status?: Database["public"]["Enums"]["publication_status"]
           updated_at?: string
@@ -520,6 +523,12 @@ export type Database = {
         Row: { created_at: string; details: Json; startup_id: string; updated_at: string; user_id: string }
         Insert: { created_at?: string; details?: Json; startup_id: string; updated_at?: string; user_id: string }
         Update: { created_at?: string; details?: Json; startup_id?: string; updated_at?: string; user_id?: string }
+        Relationships: []
+      }
+      directory_startup_revisions: {
+        Row: { base_version: number; created_at: string; id: string; proposed_data: Json; proposed_private_details: Json; review_reason: string | null; reviewed_at: string | null; reviewed_by: string | null; startup_id: string; status: string; submitted_at: string | null; submitted_by: string; updated_at: string }
+        Insert: { base_version: number; created_at?: string; id?: string; proposed_data: Json; proposed_private_details?: Json; review_reason?: string | null; reviewed_at?: string | null; reviewed_by?: string | null; startup_id: string; status?: string; submitted_at?: string | null; submitted_by: string; updated_at?: string }
+        Update: { base_version?: number; created_at?: string; id?: string; proposed_data?: Json; proposed_private_details?: Json; review_reason?: string | null; reviewed_at?: string | null; reviewed_by?: string | null; startup_id?: string; status?: string; submitted_at?: string | null; submitted_by?: string; updated_at?: string }
         Relationships: []
       }
       event_registrations: {
@@ -1168,7 +1177,14 @@ export type Database = {
       }
     }
     Functions: {
+      get_member_resume: { Args: never; Returns: Json }
+      save_member_resume: { Args: { p_resume_data: Json }; Returns: string }
       save_member_startup: { Args: { p_private_details?: Json; p_startup: Json }; Returns: string }
+      get_member_profile_sharing_state: { Args: never; Returns: Json }
+      set_member_profile_sharing: { Args: { p_enabled: boolean; p_preferences?: Json }; Returns: Json }
+      update_member_profile_preferences: { Args: { p_consent: Json }; Returns: undefined }
+      submit_startup_revision: { Args: { p_private_details: Json; p_proposed: Json; p_revision_id: string; p_startup_id: string; p_submit?: boolean }; Returns: string }
+      review_startup_revision: { Args: { p_decision: string; p_reason?: string; p_revision_id: string }; Returns: Json }
       list_discoverable_members: {
         Args: { p_limit?: number; p_offset?: number; p_search?: string }
         Returns: { about_me: string | null; city: string | null; designation: string | null; display_name: string; has_photo: boolean; member_id: string; skills: string[]; startup_name: string | null; whatsapp: string | null }[]

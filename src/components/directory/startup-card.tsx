@@ -1,4 +1,3 @@
-import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink, ArrowUpRight } from "lucide-react";
@@ -6,6 +5,7 @@ import { HoverLiftCard } from "@/components/motion";
 import { FixtureNotice } from "@/components/common/empty-state";
 import { industryLabel, collaborationLabels } from "@/lib/content/taxonomy";
 import { safeExternalUrl, displayHost, initials } from "@/lib/format";
+import { StartupCardName } from "@/components/directory/startup-card-name";
 import type { Startup } from "@/types";
 
 /** Directory startup card: logo/initials, founder, industry, tags, website. */
@@ -13,7 +13,6 @@ export function StartupCard({ startup }: { startup: Startup }) {
   const website = safeExternalUrl(startup.website);
   const host = displayHost(startup.website);
   const profile = safeExternalUrl(startup.founder.profileUrl);
-
   return (
     <HoverLiftCard>
       <article className="flex h-full min-w-0 w-full max-w-full flex-col gap-4 overflow-hidden rounded-3xl bg-brand-white p-6 ring-1 ring-brand-border">
@@ -36,9 +35,7 @@ export function StartupCard({ startup }: { startup: Startup }) {
               </span>
             )}
             <div className="flex min-w-0 flex-1 flex-col">
-              <h3 title={startup.name} className="truncate whitespace-nowrap text-lg leading-tight font-semibold text-brand-ink">
-                {startup.name}
-              </h3>
+              <StartupCardName name={startup.name} />
               <p className="truncate text-sm text-brand-muted" title={`${startup.founder.name}${startup.founder.role ? ` · ${startup.founder.role}` : ""}`}>
                 {startup.founder.name}
                 {startup.founder.role ? ` · ${startup.founder.role}` : ""}

@@ -9,6 +9,8 @@ const tags = z.array(z.string().trim().min(1).max(60)).max(20).default([]);
 export const memberStartupSchema = z.object({
   id: z.string().uuid(),
   existingId: z.string().uuid().optional(),
+  revisionId: z.string().uuid().optional(),
+  submitForApproval: z.boolean().default(true),
   name: z.string().trim().min(2, "Enter a startup name.").max(120),
   slug: z.string().trim().min(3).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   industry: z.string().trim().min(2, "Enter the startup industry.").max(80),

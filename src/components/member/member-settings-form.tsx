@@ -17,14 +17,6 @@ const consentFields: { key: ConsentKey; label: string; locked?: boolean }[] = [
   { key: "directoryParticipation", label: "Appear in the public founder directory" },
   { key: "displayNamePublicly", label: "Display my name publicly" },
   { key: "displayPhotoPublicly", label: "Display my photo publicly" },
-  { key: "communityProfileVisible", label: "Show my profile to active CSC members" },
-  { key: "showProfilePhotoToMembers", label: "Show my profile photo to CSC members" },
-  { key: "showCityToMembers", label: "Show my city to CSC members" },
-  { key: "showProfessionalRoleToMembers", label: "Show my professional role to CSC members" },
-  { key: "showAboutMeToMembers", label: "Show my introduction to CSC members" },
-  { key: "showSkillsToMembers", label: "Show my skills to CSC members" },
-  { key: "showStartupAffiliationsToMembers", label: "Show my startup affiliation to CSC members" },
-  { key: "shareWhatsappWithMembers", label: "Allow CSC members to contact me on WhatsApp" },
 ];
 
 export function MemberSettingsForm({
@@ -51,6 +43,7 @@ export function MemberSettingsForm({
   return (
     <section className="flex h-full flex-col rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
       <h2 className="text-sm font-semibold text-brand-ink">Privacy preferences</h2>
+      <p className="mt-2 text-sm text-brand-muted">CSC community profile sharing and contact visibility are managed from your Profile page.</p>
       <div className="mt-3 flex flex-col divide-y divide-brand-border">
         {consentFields.map((f) => (
           <label
