@@ -33,9 +33,13 @@ export async function POST(request: Request, context: { params: Promise<{ action
     if (action === "review") {
       const parsed = reviewSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your review and consent." }, 422);
-      const { data, error } = await sb.from("reviews").insert({ user_id: user.id, rating: parsed.data.rating, review: parsed.data.review, kind: "general", moderation: "submitted" }).select("id").single();
+      const { data: existing, error: lookupError } = await sb.from("reviews").select("id,moderation").eq("user_id", user.id).eq("kind", "general").is("event_id", null).maybeSingle();
+      if (lookupError) return authResponse({ error: "Review status could not be checked. Please try again." }, 503);
+      if (existing) return authResponse({ error: "You already have a community review. View its status in My Reviews." }, 409);
+      const { data, error } = await sb.from("reviews").insert({ user_id: user.id, rating: parsed.data.rating, review: parsed.data.review, kind: "general", moderation: "submitted", publication_consent: true, publication_consent_at: new Date().toISOString(), publication_consent_version: "csc-review-publication-v1" }).select("id,rating,review,moderation").single();
       if (!error) scheduleNotificationDelivery();
-      return error ? authResponse({ error: "Review was not saved. You may already have a review." }, 409) : authResponse({ ok: true, id: data.id });
+      if (error) return authResponse({ error: error.code === "23505" ? "You already have a community review. View its status in My Reviews." : "Review was not saved. Please try again." }, error.code === "23505" ? 409 : 503);
+      return authResponse({ ok: true, id: data.id, review: { id: data.id, rating: data.rating, review: data.review, moderation: data.moderation } });
     }
     if (action === "profile") {
       const parsed = profileSchema.safeParse(body);
@@ -131,4 +135,17 @@ export async function POST(request: Request, context: { params: Promise<{ action
     }
     return authResponse({ error: "Not found." }, 404);
   } catch { return authResponse({ error: "Could not save your information. Please try again." }, 503); }
+}
+
+export async function GET(_request: Request, context: { params: Promise<{ action: string }> }) {
+  try {
+    const { action } = await context.params;
+    if (action !== "review") return authResponse({ error: "Not found." }, 404);
+    const ctx = await getMemberContext();
+    if (ctx.mode !== "live") return authResponse({ error: "Sign in to continue." }, 401);
+    const sb = await createClient();
+    const { data, error } = await sb.from("reviews").select("id,rating,review,moderation").eq("user_id", ctx.user!.id).eq("kind", "general").is("event_id", null).maybeSingle();
+    if (error) return authResponse({ error: "Review status could not be loaded." }, 503);
+    return authResponse({ ok: true, review: data });
+  } catch { return authResponse({ error: "Review status could not be loaded." }, 503); }
 }

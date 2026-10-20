@@ -14,8 +14,8 @@ export function TestimonialEmptyState() {
           Be the first to share your CSC story.
         </h3>
         <p className="max-w-md text-sm leading-relaxed text-brand-muted">
-          As members connect and build together, their experiences will appear
-          here. When you join, you&apos;ll be able to add yours.
+          Approved member reviews will appear here. Share your experience with
+          the CSC community.
         </p>
       </div>
       <ReviewInvitation />

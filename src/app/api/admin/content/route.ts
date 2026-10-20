@@ -7,10 +7,16 @@ export async function POST(request: Request) {
   try {
     const ctx = await getAdminContext();
     if (ctx.mode !== "live" || !ctx.permissions.has("content.manage")) return authResponse({ error: "Permission denied." }, 403);
-    const parsed = z.object({ content_key: z.enum(["homepage.announcement", "community.introduction", "about.mission", "about.vision", "homepage.event_notice"]), content_value: z.string().max(4000), publish: z.boolean() }).safeParse(await readAuthBody(request));
+    const parsed = z.object({
+      action: z.enum(["save", "publish", "unpublish", "delete"]),
+      content_key: z.enum(["homepage.announcement", "community.introduction", "about.mission", "about.vision", "homepage.event_notice"]),
+      content_value: z.string().max(4000).default(""),
+      visible_from: z.union([z.string().datetime({ offset: true }), z.null()]).optional(),
+      visible_until: z.union([z.string().datetime({ offset: true }), z.null()]).optional(),
+    }).safeParse(await readAuthBody(request));
     if (!parsed.success) return authResponse({ error: "Invalid content." }, 422);
     const sb = await createClient();
-    const { error } = await sb.rpc("csc_save_content", parsed.data);
+    const { error } = await sb.rpc("csc_manage_content", parsed.data);
     if (error) {
       // Keep database details server-side; return an actionable permission message
       // without leaking SQL, row data, or other implementation details.
@@ -22,6 +28,6 @@ export async function POST(request: Request) {
     revalidateTag("content", { expire: 0 });
     revalidatePath("/");
     if (parsed.data.content_key.startsWith("about.")) revalidatePath("/about");
-    return authResponse({ ok: true, published: parsed.data.publish });
+    return authResponse({ ok: true, published: parsed.data.action === "publish", action: parsed.data.action });
   } catch { return authResponse({ error: "Content saving is unavailable." }, 503); }
 }

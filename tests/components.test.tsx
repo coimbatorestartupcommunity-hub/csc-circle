@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { RatingStars } from "@/components/testimonials/rating-stars";
 import { StatusBadge } from "@/components/member/status-badge";
 import { ReviewInvitation } from "@/components/testimonials/review-invitation";
@@ -30,12 +30,31 @@ describe("StatusBadge", () => {
 });
 
 describe("ReviewInvitation", () => {
-  it("keeps both review actions in a centered, width-constrained card column", () => {
-    render(<ReviewInvitation />);
-    const actions = screen.getByTestId("review-invitation-actions");
-    expect(actions).toHaveClass("w-full", "max-w-md", "min-w-0", "items-stretch");
-    expect(screen.getByRole("button", { name: "Check my review" })).toHaveClass("w-full", "whitespace-normal");
-    expect(screen.getByRole("button", { name: /Review submission opens with member accounts/ })).toHaveClass("w-full", "whitespace-normal");
+  it("activates the authenticated submission form and removes the old disabled placeholder", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ ok: true, review: null }) }));
+    const { container } = render(<ReviewInvitation />);
+    const submit = await screen.findByRole("button", { name: "Submit Review" });
+    expect(submit).toBeEnabled();
+    expect(screen.getByRole("radiogroup", { name: "Your rating" })).toBeInTheDocument();
+    expect(within(container).getByLabelText(/shown publicly after administrator approval/i)).toBeInTheDocument();
+    expect(screen.queryByText(/publishing activates in Phase 1/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Review submission opens with member accounts/i })).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it("submits the rating, review and explicit consent to the member review endpoint", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ ok: true, review: null }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ ok: true, id: "review-1", review: { id: "review-1", rating: 5, review: "A detailed review of my experience with CSC.", moderation: "submitted" } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const { container } = render(<ReviewInvitation />);
+    fireEvent.click(await within(container).findByRole("radio", { name: "5 stars" }));
+    fireEvent.change(within(container).getByPlaceholderText("What has your experience with CSC Circle been like?"), { target: { value: "A detailed review of my experience with CSC." } });
+    fireEvent.click(within(container).getByLabelText(/shown publicly after administrator approval/i));
+    fireEvent.click(within(container).getByRole("button", { name: "Submit Review" }));
+    expect(await screen.findByText(/waiting for CSC administrator review/i)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/member/review", expect.objectContaining({ method: "POST" }));
+    vi.unstubAllGlobals();
   });
 });
 

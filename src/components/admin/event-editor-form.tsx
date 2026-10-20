@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -47,13 +48,24 @@ export function EventEditorForm({
     register,
     handleSubmit,
     control,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<EventEditorValues>({
     resolver: zodResolver(eventEditorSchema),
     defaultValues: { ...eventEditorDefaults, ...initial },
   });
   const [saving, setSaving] = React.useState(false);
+  const [uploadingCover, setUploadingCover] = React.useState(false);
+  const [coverPreview, setCoverPreview] = React.useState(() => {
+    const value = initial?.coverImage ?? "";
+    return value.startsWith("event-covers/") && eventId ? `/api/admin/events/cover?event=${eventId}` : value;
+  });
+  const coverInput = React.useRef<HTMLInputElement>(null);
   const values = useWatch({ control }) as Partial<EventEditorValues>;
+  const coverImagePreview = values.coverImage?.startsWith("event-covers/")
+    ? coverPreview || (eventId ? `/api/admin/events/cover?event=${eventId}` : "")
+    : values.coverImage || undefined;
 
   const previewEvent: EventRecord = {
     id: "preview",
@@ -61,7 +73,7 @@ export function EventEditorForm({
     title: values.title || "Event title",
     category: (values.category as EventRecord["category"]) || "meetup",
     description: values.summary || values.description || "Event summary appears here.",
-    coverImage: values.coverImage || undefined,
+    coverImage: coverImagePreview || undefined,
     startsAt: toIso(values.date, values.startTime),
     endsAt: toIso(values.date, values.endTime),
     location: values.venueName || (values.format === "online" ? "Online" : "Coimbatore"),
@@ -72,6 +84,25 @@ export function EventEditorForm({
     registrationState: values.status === "published" ? "open" : "coming-soon",
     isFixture: false,
   };
+
+  async function uploadCover(file?: File) {
+    if (!file || isDemo) return;
+    setUploadingCover(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("alt", getValues("imageAlt")?.trim() || `${getValues("title")?.trim() || "CSC event"} event cover`);
+      const response = await fetch("/api/admin/events/cover", { method: "POST", body });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error ?? "Event image could not be uploaded.");
+      setValue("coverImage", result.path, { shouldDirty: true, shouldValidate: true });
+      setValue("imageAlt", result.alt, { shouldDirty: true });
+      setCoverPreview(result.previewUrl);
+      toast.success("4:3 event cover uploaded.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Event image could not be uploaded.");
+    } finally { setUploadingCover(false); }
+  }
 
   async function onSubmit(v: EventEditorValues) {
     if (isDemo) { toast.info("DEMO preview. No event was saved or published."); return; }
@@ -130,9 +161,16 @@ export function EventEditorForm({
         <Section title="B · Media">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="e-cover">Cover image URL</FieldLabel>
+              <FieldLabel htmlFor="e-cover">Event cover image (Optional)</FieldLabel>
               <Input id="e-cover" placeholder="https://" {...register("coverImage")} aria-invalid={!!errors.coverImage} />
               {errors.coverImage ? <FieldError>{errors.coverImage.message}</FieldError> : null}
+              <p className="text-xs text-brand-muted">Or upload a JPEG, PNG or WebP image. It will be safely prepared as a 4:3 banner.</p>
+              <input ref={coverInput} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => { void uploadCover(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" disabled={uploadingCover || isDemo} onClick={() => coverInput.current?.click()}>{uploadingCover ? <Loader2 className="size-4 animate-spin" /> : null}{uploadingCover ? "Uploading…" : coverPreview || values.coverImage ? "Replace uploaded image" : "Upload 4:3 image"}</Button>
+                {(coverPreview || values.coverImage) ? <Button type="button" variant="ghost" disabled={uploadingCover} onClick={() => { setValue("coverImage", "", { shouldDirty: true, shouldValidate: true }); setValue("imageAlt", "", { shouldDirty: true }); setCoverPreview(""); }}>Remove image</Button> : null}
+              </div>
+              {coverPreview ? <div className="relative mt-2 aspect-4/3 w-full max-w-sm overflow-hidden rounded-xl ring-1 ring-brand-border"><Image src={coverPreview} alt="Event cover preview" fill unoptimized sizes="(max-width: 640px) 100vw, 384px" className="object-cover" /></div> : null}
             </Field>
             <Field>
               <FieldLabel htmlFor="e-alt">Image alt text</FieldLabel>
@@ -256,7 +294,7 @@ export function EventEditorForm({
             </select>
           </Field>
           <div className="flex flex-col gap-2">
-            <Button type="submit" disabled={saving} className="h-11 gap-2 sm:w-fit sm:px-8">
+            <Button type="submit" disabled={saving || uploadingCover} className="h-11 gap-2 sm:w-fit sm:px-8">
               {saving ? <Loader2 className="size-4 animate-spin" /> : null}
               {mode === "create" ? "Create event" : "Save changes"}
             </Button>

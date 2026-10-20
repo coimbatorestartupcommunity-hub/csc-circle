@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Star, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
@@ -18,12 +19,14 @@ import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
  * it never fabricates a published review.
  */
 export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
+  const router = useRouter();
   const [rating, setRating] = React.useState(0);
   const [hover, setHover] = React.useState(0);
   const [review, setReview] = React.useState("");
   const [consent, setConsent] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [submitting, setSubmitting] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,15 +46,19 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
       const result = await memberRequest("review", { rating, review, consent });
       if (result.error) { toast.error(result.error); return; }
       notifySubmissionSuccess({ title: "Successfully submitted", message: "Thank you. Your review was received and is waiting for moderation." });
-      setReview("");
-      setRating(0);
-      setConsent(false);
+      setSubmitted(true);
+      router.refresh();
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
+    submitted ? <div role="status" className="flex flex-col items-center gap-3 rounded-2xl bg-emerald-50 p-6 text-center text-emerald-900 ring-1 ring-emerald-200">
+      <h2 className="font-semibold">Review submitted</h2>
+      <p className="text-sm">Your review is waiting for CSC administrator review. You can check its status here.</p>
+      <Button type="button" variant="outline" onClick={() => router.refresh()}>Refresh review status</Button>
+    </div> :
     <form
       onSubmit={onSubmit}
       className="flex flex-col items-center gap-5 rounded-2xl bg-brand-white p-6 text-center ring-1 ring-brand-border"

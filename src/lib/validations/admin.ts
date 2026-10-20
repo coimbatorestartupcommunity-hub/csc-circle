@@ -6,6 +6,11 @@ const urlOrEmpty = z
   .optional()
   .refine((v) => !v || /^https?:\/\/.+/.test(v), "Enter a valid URL.");
 
+const eventCoverImage = z.string().trim().optional().refine(
+  (value) => !value || /^https?:\/\/.+/.test(value) || /^event-covers\/[0-9a-f-]{36}\.webp$/i.test(value),
+  "Choose a valid URL or upload an event cover image.",
+);
+
 export const eventEditorSchema = z.object({
   // A. Basic
   title: z.string().trim().min(3, "Enter an event title.").max(140),
@@ -25,7 +30,7 @@ export const eventEditorSchema = z.object({
   ]),
   organizer: z.string().trim().max(120).optional(),
   // B. Media
-  coverImage: urlOrEmpty,
+  coverImage: eventCoverImage,
   imageAlt: z.string().trim().max(160).optional(),
   // C. Scheduling (Asia/Kolkata)
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a date."),

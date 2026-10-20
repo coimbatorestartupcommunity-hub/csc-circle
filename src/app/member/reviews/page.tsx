@@ -62,8 +62,7 @@ export default async function MemberReviewsPage() {
           <MemberReviewForm isDemo={ctx.mode === "preview"} />
         ) : (
           <div className="rounded-2xl bg-brand-cloud p-6 text-sm text-brand-secondary ring-1 ring-brand-border">
-            You already have a community review. Members may keep one general CSC
-            review; editing and revision controls will appear here.
+            Your current community review and moderation status are shown above. A member may maintain one general CSC review.
           </div>
         )}
       </div>

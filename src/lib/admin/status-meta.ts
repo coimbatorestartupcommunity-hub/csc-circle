@@ -25,5 +25,9 @@ export const publicationStatusMeta: Record<string, { label: string; tone: string
   pending: { label: "Pending", tone: "bg-brand-gold text-brand-ink" },
   published: { label: "Published", tone: "bg-green-100 text-green-700" },
   archived: { label: "Archived", tone: "bg-brand-cloud text-brand-muted" },
+  scheduled: { label: "Scheduled", tone: "bg-brand-blue text-brand-ink" },
+  expired: { label: "Expired", tone: "bg-brand-cloud text-brand-muted" },
+  unpublished: { label: "Unpublished", tone: "bg-brand-gold text-brand-ink" },
+  deleted: { label: "Deleted", tone: "bg-brand-red text-brand-ink" },
   cancelled: { label: "Cancelled", tone: "bg-brand-red text-brand-ink" },
 };

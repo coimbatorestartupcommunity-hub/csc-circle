@@ -419,25 +419,40 @@ export type Database = {
       }
       content_blocks: {
         Row: {
+          created_by: string | null
+          deleted_at: string | null
           key: string
           label: string
           status: Database["public"]["Enums"]["publication_status"]
           updated_at: string
+          updated_by: string | null
           value: string
+          visible_from: string | null
+          visible_until: string | null
         }
         Insert: {
+          created_by?: string | null
+          deleted_at?: string | null
           key: string
           label: string
           status?: Database["public"]["Enums"]["publication_status"]
           updated_at?: string
+          updated_by?: string | null
           value?: string
+          visible_from?: string | null
+          visible_until?: string | null
         }
         Update: {
+          created_by?: string | null
+          deleted_at?: string | null
           key?: string
           label?: string
           status?: Database["public"]["Enums"]["publication_status"]
           updated_at?: string
+          updated_by?: string | null
           value?: string
+          visible_from?: string | null
+          visible_until?: string | null
         }
         Relationships: []
       }
@@ -1023,6 +1038,9 @@ export type Database = {
           id: string
           kind: string
           moderation: Database["public"]["Enums"]["review_moderation_status"]
+          publication_consent: boolean
+          publication_consent_at: string | null
+          publication_consent_version: string | null
           rating: number
           review: string
           updated_at: string
@@ -1034,6 +1052,9 @@ export type Database = {
           id?: string
           kind?: string
           moderation?: Database["public"]["Enums"]["review_moderation_status"]
+          publication_consent?: boolean
+          publication_consent_at?: string | null
+          publication_consent_version?: string | null
           rating: number
           review: string
           updated_at?: string
@@ -1045,6 +1066,9 @@ export type Database = {
           id?: string
           kind?: string
           moderation?: Database["public"]["Enums"]["review_moderation_status"]
+          publication_consent?: boolean
+          publication_consent_at?: string | null
+          publication_consent_version?: string | null
           rating?: number
           review?: string
           updated_at?: string
@@ -1216,6 +1240,10 @@ export type Database = {
       csc_save_content: {
         Args: { content_key: string; content_value: string; publish: boolean }
         Returns: undefined
+      }
+      csc_manage_content: {
+        Args: { action: string; content_key: string; content_value: string; visible_from?: string | null; visible_until?: string | null }
+        Returns: Json
       }
       csc_save_event: {
         Args: { payload: Json; target?: string }

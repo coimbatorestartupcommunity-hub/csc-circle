@@ -13,9 +13,9 @@ import { FinalCta } from "@/components/home/final-cta";
 export default function HomePage() {
   return (
     <div className="min-w-0 overflow-x-clip">
-      <CommunityAnnouncement />
+      <Suspense fallback={null}><CommunityAnnouncement /></Suspense>
       <HeroSection />
-      <CommunityIntroduction />
+      <Suspense fallback={null}><CommunityIntroduction /></Suspense>
       <CommunityStats />
       <FeaturesGrid />
       <HowItWorks />
@@ -28,3 +28,4 @@ export default function HomePage() {
     </div>
   );
 }
+import { Suspense } from "react";

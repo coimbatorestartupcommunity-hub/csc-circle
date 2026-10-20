@@ -100,6 +100,11 @@ describe("event editor schema", () => {
   it("accepts a valid event", () => {
     expect(eventEditorSchema.safeParse(valid).success).toBe(true);
   });
+  it("allows a text-only event and a validated uploaded 4:3 cover reference", () => {
+    expect(eventEditorSchema.safeParse({ ...valid, coverImage: undefined }).success).toBe(true);
+    expect(eventEditorSchema.safeParse({ ...valid, coverImage: "event-covers/11111111-1111-4111-8111-111111111111.webp" }).success).toBe(true);
+    expect(eventEditorSchema.safeParse({ ...valid, coverImage: "javascript:alert(1)" }).success).toBe(false);
+  });
   it("rejects an invalid slug", () => {
     expect(eventEditorSchema.safeParse({ ...valid, slug: "Not A Slug" }).success).toBe(false);
   });

@@ -19,8 +19,8 @@ import type {
 /**
  * Cached live reads of PUBLISHED public content from Supabase. These power the
  * public site so admin-published events/startups/reviews appear automatically.
- * Cached with a short cacheLife and tagged so a publish can revalidate via
- * updateTag("events" | "directory" | "reviews") in Phase 1.
+ * Cached with a short cacheLife and tagged so authorized publish actions can
+ * invalidate the corresponding event, directory or review projection.
  */
 
 type Row = Record<string, unknown>;
@@ -32,7 +32,9 @@ function mapEvent(r: Row): EventRecord {
     title: (r.title as string) ?? "Event",
     category: (r.category as EventRecord["category"]) ?? "meetup",
     description: (r.description as string) ?? "",
-    coverImage: (r.cover_image as string) ?? undefined,
+    coverImage: typeof r.cover_image === "string" && /^event-covers\/[0-9a-f-]{36}\.webp$/i.test(r.cover_image)
+      ? `/api/admin/events/cover?event=${String(r.id)}`
+      : (r.cover_image as string) ?? undefined,
     startsAt: (r.starts_at as string) ?? new Date().toISOString(),
     endsAt: (r.ends_at as string) ?? new Date().toISOString(),
     location: (r.location as string) ?? "",

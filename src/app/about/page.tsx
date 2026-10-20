@@ -80,7 +80,7 @@ export default function AboutPage() {
         </div>
       </Section>
 
-      <MissionVision />
+      <Suspense fallback={null}><MissionVision /></Suspense>
 
       <LeadershipSection />
 
@@ -148,3 +148,4 @@ export default function AboutPage() {
     </>
   );
 }
+import { Suspense } from "react";
