@@ -24,7 +24,8 @@ describe("StartupCard", () => {
   it("keeps the company name on one line and wraps long industry text inside the card", () => {
     render(<StartupCard startup={startup} />);
     expect(screen.getByRole("heading", { name: startup.name })).toHaveClass("truncate", "whitespace-nowrap");
-    expect(screen.getByText(startup.industry)).toHaveClass("max-w-full", "whitespace-normal", "break-words");
+    expect(screen.getByText(startup.industry)).toHaveClass("min-w-0", "max-w-full", "whitespace-normal", "break-words");
+    expect(screen.getByText(startup.description)).toHaveClass("min-w-0", "max-w-full", "break-words");
     expect(screen.getByRole("img", { name: `${startup.name} logo` })).toHaveAttribute("src", "/brand/lit-logo.png");
   });
 });

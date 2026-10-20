@@ -38,7 +38,7 @@ export function DirectoryClient({ startups }: { startups: Startup[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-w-0 w-full max-w-full flex-col gap-8">
       <DirectoryFiltersBar
         filters={filters}
         onChange={setFilters}
@@ -48,7 +48,7 @@ export function DirectoryClient({ startups }: { startups: Startup[] }) {
       />
 
       {result.items.length > 0 ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid min-w-0 w-full max-w-full grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(3,minmax(0,1fr))]">
           {result.items.map((startup) => (
             <StartupCard key={startup.id} startup={startup} />
           ))}

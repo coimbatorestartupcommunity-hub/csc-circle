@@ -18,7 +18,7 @@ export function HoverLiftCard({
   const reduce = useReducedMotion();
   return (
     <motion.div
-      className={cn("h-full", className)}
+      className={cn("h-full min-w-0 w-full max-w-full", className)}
       whileHover={reduce ? undefined : { y: -lift }}
       transition={{ duration: 0.22, ease: "easeOut" }}
       {...props}

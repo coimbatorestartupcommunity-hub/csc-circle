@@ -16,8 +16,8 @@ export function StartupCard({ startup }: { startup: Startup }) {
 
   return (
     <HoverLiftCard>
-      <article className="flex h-full flex-col gap-4 rounded-3xl bg-brand-white p-6 ring-1 ring-brand-border">
-        {startup.founder.avatarUrl ? <div className="relative -mx-6 -mt-6 aspect-[4/3] overflow-hidden rounded-t-3xl bg-brand-cloud">
+      <article className="flex h-full min-w-0 w-full max-w-full flex-col gap-4 overflow-hidden rounded-3xl bg-brand-white p-6 ring-1 ring-brand-border">
+        {startup.founder.avatarUrl ? <div className="relative -mx-6 -mt-6 aspect-[4/3] min-w-0 max-w-full overflow-hidden rounded-t-3xl bg-brand-cloud">
           <Image src={startup.founder.avatarUrl} alt={`${startup.founder.name}, founder of ${startup.name}`} fill sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover" />
         </div> : null}
         <div className="flex min-w-0 items-center justify-between gap-3">
@@ -48,11 +48,11 @@ export function StartupCard({ startup }: { startup: Startup }) {
           {startup.isFixture ? <FixtureNotice /> : null}
         </div>
 
-        <span className="inline-flex w-fit max-w-full whitespace-normal break-words rounded-full bg-brand-cloud px-3 py-1 text-sm leading-snug text-brand-secondary">
+        <span className="inline-flex min-w-0 w-fit max-w-full whitespace-normal break-words [overflow-wrap:anywhere] rounded-full bg-brand-cloud px-3 py-1 text-sm leading-snug text-brand-secondary">
           {industryLabel(startup.industry)}
         </span>
 
-        <p className="flex-1 text-sm leading-relaxed text-brand-secondary">
+        <p className="min-w-0 max-w-full flex-1 break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-brand-secondary">
           {startup.description}
         </p>
 
@@ -75,7 +75,7 @@ export function StartupCard({ startup }: { startup: Startup }) {
                 href={website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-accent underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-md"
+                className="inline-flex min-w-0 max-w-full items-center gap-1.5 break-all text-sm font-medium text-brand-accent underline-offset-4 hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 rounded-md"
               >
                 <ExternalLink className="size-4" aria-hidden />
                 {host ?? "Website"}
