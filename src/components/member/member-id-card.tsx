@@ -88,7 +88,7 @@ export function MemberIdCard({
           membershipCardCaptureOptions(cardElement.getBoundingClientRect().height),
         );
       } finally {
-        exportNode.remove();
+        exportNode.parentElement?.remove();
       }
       if (!rawPng) throw new Error("Could not render the membership card image.");
       const computedStyle = window.getComputedStyle(cardElement);

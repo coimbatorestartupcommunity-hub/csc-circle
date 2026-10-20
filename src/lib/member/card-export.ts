@@ -40,10 +40,14 @@ export async function createMembershipCardExportNode(element: HTMLElement) {
   const clone = element.cloneNode(true) as HTMLElement;
   const cloneImages = Array.from(clone.querySelectorAll("img"));
   const bounds = element.getBoundingClientRect();
+  // Keep only the wrapper off-screen. A fixed-position card node with a large
+  // negative `left` is captured as an empty foreignObject by WebKit, producing
+  // a fully transparent PNG/PDF even though the on-screen card is visible.
+  const host = document.createElement("div");
   Object.assign(clone.style, {
-    position: "fixed",
-    top: "0",
-    left: "-10000px",
+    position: "relative",
+    top: "auto",
+    left: "auto",
     width: `${bounds.width}px`,
     height: `${bounds.height}px`,
     margin: "0",
@@ -52,8 +56,19 @@ export async function createMembershipCardExportNode(element: HTMLElement) {
     animation: "none",
     pointerEvents: "none",
   });
+  Object.assign(host.style, {
+    position: "fixed",
+    top: "0",
+    left: "-10000px",
+    width: `${bounds.width}px`,
+    height: `${bounds.height}px`,
+    overflow: "hidden",
+    pointerEvents: "none",
+    zIndex: "-1",
+  });
   clone.setAttribute("aria-hidden", "true");
-  document.body.appendChild(clone);
+  host.appendChild(clone);
+  document.body.appendChild(host);
 
   try {
     await Promise.all(sourceImages.map(async (source, index) => {
@@ -78,7 +93,7 @@ export async function createMembershipCardExportNode(element: HTMLElement) {
     await waitForMembershipCardAssets(clone);
     return clone;
   } catch (error) {
-    clone.remove();
+    host.remove();
     throw error;
   }
 }

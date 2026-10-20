@@ -26,6 +26,9 @@ describe("membership card export", () => {
       const clone = await createMembershipCardExportNode(source);
       const clonedImage = clone.querySelector("img");
       expect(clone).not.toBe(source);
+      expect(clone.style.position).toBe("relative");
+      expect(clone.style.left).toBe("auto");
+      expect(clone.parentElement?.style.left).toBe("-10000px");
       expect(clonedImage?.src).toMatch(/^data:image\/webp;base64,/);
       expect(clonedImage?.hasAttribute("srcset")).toBe(false);
       expect(image.getAttribute("src")).toBe("/api/member/portrait");
@@ -33,7 +36,7 @@ describe("membership card export", () => {
         credentials: "same-origin",
         cache: "no-store",
       });
-      clone.remove();
+      clone.parentElement?.remove();
     } finally {
       fetchSpy.mockRestore();
       source.remove();
