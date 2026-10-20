@@ -62,6 +62,7 @@ function mapStartup(r: Row): Startup {
       name: founder.name ?? "Founder",
       role: founder.role ?? "Founder",
       profileUrl: founder.profileUrl,
+      avatarUrl: typeof r.user_id === "string" ? `/api/directory/startups/${String(r.id)}/photo` : undefined,
     },
     status: "published",
   };
@@ -102,7 +103,10 @@ export async function getLivePublishedStartups(): Promise<Startup[]> {
   if (!sb) return [];
   const { data } = await sb
     .from("directory_startups")
-    .select("*")
+    // Keep the query explicit. user_id is consumed only server-side to decide
+    // whether a consent-gated founder image endpoint exists; it is discarded
+    // by mapStartup and never sent to the client.
+    .select("id,slug,name,logo_url,industry,description,collaboration,website,founder,status,user_id,updated_at")
     .eq("status", "published")
     .order("updated_at", { ascending: false });
   return (data ?? []).map((r) => mapStartup(r as Row));

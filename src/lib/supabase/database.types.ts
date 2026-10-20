@@ -957,6 +957,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           city: string | null
+          directory_photo_path: string | null
           consent: Json
           created_at: string
           designations: Database["public"]["Enums"]["member_designation"][]
@@ -977,6 +978,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           city?: string | null
+          directory_photo_path?: string | null
           consent?: Json
           created_at?: string
           designations?: Database["public"]["Enums"]["member_designation"][]
@@ -997,6 +999,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           city?: string | null
+          directory_photo_path?: string | null
           consent?: Json
           created_at?: string
           designations?: Database["public"]["Enums"]["member_designation"][]

@@ -1,5 +1,6 @@
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ExternalLink, ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { HoverLiftCard } from "@/components/motion";
@@ -17,6 +18,9 @@ export function StartupCard({ startup }: { startup: Startup }) {
   return (
     <HoverLiftCard>
       <article className="flex h-full flex-col gap-4 rounded-3xl bg-brand-white p-6 ring-1 ring-brand-border">
+        {startup.founder.avatarUrl ? <div className="relative -mx-6 -mt-6 aspect-[4/3] overflow-hidden rounded-t-3xl bg-brand-cloud">
+          <Image src={startup.founder.avatarUrl} alt={`${startup.founder.name}, founder of ${startup.name}`} fill sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover" />
+        </div> : null}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             {startup.logoUrl ? (
@@ -91,6 +95,9 @@ export function StartupCard({ startup }: { startup: Startup }) {
             ) : null}
           </div>
         )}
+        <Link href={`/directory/${encodeURIComponent(startup.slug)}`} className="mt-auto inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent">
+          View startup details
+        </Link>
       </article>
     </HoverLiftCard>
   );

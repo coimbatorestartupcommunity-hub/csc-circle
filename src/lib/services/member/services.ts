@@ -63,6 +63,8 @@ function mapProfile(p: Row, m: Row | null): MemberProfile {
     avatarUrl: (p.avatar_url as string) ?? undefined,
     portraitPath: (p.portrait_path as string) ?? undefined,
     portraitUrl: p.portrait_path ? "/api/member/portrait" : undefined,
+    directoryPhotoPath: (p.directory_photo_path as string) ?? undefined,
+    directoryPhotoUrl: p.directory_photo_path ? "/api/member/portrait?variant=directory" : undefined,
     portraitPublic: (p.portrait_public as boolean) ?? false,
     designations: (p.designations as MemberProfile["designations"]) ?? [],
     startup: (p.startup as MemberProfile["startup"]) ?? undefined,

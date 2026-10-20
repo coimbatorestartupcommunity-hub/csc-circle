@@ -1,4 +1,5 @@
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getMemberContext } from "@/lib/services/member/context";
@@ -39,6 +40,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       if (!parsed.success) return authResponse({ error: "Check your profile details." }, 422);
       const v = parsed.data;
       const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, skills: (v.skills ?? "").split(",").map(x => x.trim()).filter(Boolean), startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription } }).eq("id", user.id).select("id").single();
+      if (!error) revalidateTag("directory", { expire: 0 });
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Profile was not saved." }, 409) : authResponse({ ok: true, id: data.id });
     }
@@ -46,6 +48,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = consentSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your privacy preferences." }, 422);
       const { data, error } = await sb.from("profiles").update({ consent: parsed.data }).eq("id", user.id).select("id").single();
+      if (!error) revalidateTag("directory", { expire: 0 });
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Preferences were not saved." }, 409) : authResponse({ ok: true, id: data.id });
     }
@@ -55,6 +58,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const v = parsed.data;
       const { membershipTerms, operationalEmail, marketingEmail, directoryParticipation, displayNamePublicly, displayPhotoPublicly } = v;
       const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, designations: v.designations as Database["public"]["Enums"]["member_designation"][], goals: v.goals as Database["public"]["Enums"]["community_goal"][], startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription ?? v.description }, consent: { membershipTerms, operationalEmail, marketingEmail, directoryParticipation, displayNamePublicly, displayPhotoPublicly }, profile_completion: 100 }).eq("id", user.id).select("id").single();
+      if (!error) revalidateTag("directory", { expire: 0 });
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Onboarding was not saved." }, 409) : authResponse({ ok: true, id: data.id });
     }
@@ -62,10 +66,12 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = startupSubmissionSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your startup details and consent." }, 422);
       const v = parsed.data;
-      const { data: profile } = await sb.from("profiles").select("display_name,consent,portrait_path").eq("id", user.id).single();
-      if (!profile?.portrait_path) return authResponse({ error: "Upload a validated 4:5 profile portrait before submitting a startup.", action: "/member/profile#profile-portrait" }, 422);
-      if (!profile || !profile.consent || typeof profile.consent !== "object" || Array.isArray(profile.consent) || profile.consent.directoryParticipation !== true) return authResponse({ error: "Enable directory participation in your privacy preferences first." }, 422);
-      const { data, error } = await sb.from("directory_startups").insert({ user_id: user.id, name: v.name, slug: v.slug, industry: v.industry, description: v.description, website: v.website || null, founder: { name: profile.display_name ?? "CSC Founder" }, status: "pending" }).select("id").single();
+      const { data: profile } = await sb.from("profiles").select("display_name,consent,portrait_path,directory_photo_path").eq("id", user.id).single();
+      if (!profile?.portrait_path || !profile.directory_photo_path) return authResponse({ error: "Save both your 4:5 member portrait and 4:3 directory photo before submitting a startup.", action: "/member/profile#profile-portrait" }, 422);
+      const consent = profile.consent;
+      if (!consent || typeof consent !== "object" || Array.isArray(consent) || consent.directoryParticipation !== true || consent.displayNamePublicly !== true || consent.displayPhotoPublicly !== true) return authResponse({ error: "Enable directory participation and consent to showing your name and photo in your privacy settings first." }, 422);
+      if (!profile.display_name?.trim()) return authResponse({ error: "Add a public display name to your profile before submitting." }, 422);
+      const { data, error } = await sb.from("directory_startups").insert({ user_id: user.id, name: v.name, slug: v.slug, industry: v.industry, description: v.description, website: v.website || null, founder: { name: profile.display_name }, status: "pending" }).select("id").single();
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Startup was not saved. The slug may already be in use." }, 409) : authResponse({ ok: true, id: data.id });
     }

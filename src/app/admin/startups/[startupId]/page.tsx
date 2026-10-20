@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ActionButton } from "@/components/admin/action-button";
@@ -44,6 +45,11 @@ export default async function AdminStartupDetail({
       />
 
       <div className="flex flex-col gap-4 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
+        {ctx.mode === "live" ? (
+          <div className="relative mx-auto aspect-[4/3] w-full max-w-2xl overflow-hidden rounded-2xl bg-brand-cloud ring-1 ring-brand-border">
+            <Image src={`/api/admin/startups/${encodeURIComponent(startupId)}/photo`} alt={`Founder photo for ${s.name}`} fill unoptimized sizes="(max-width: 768px) 100vw, 672px" className="object-cover" />
+          </div>
+        ) : null}
         <dl className="grid gap-3 sm:grid-cols-2">
           <Field label="Industry" value={s.industry} />
           <Field label="Website" value={host ?? "—"} />
@@ -52,7 +58,7 @@ export default async function AdminStartupDetail({
         </dl>
         {can(ctx, "directory.manage") ? (
           <div className="flex flex-wrap gap-2 border-t border-brand-border pt-4">
-            <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "published" } : undefined} label="Approve & publish" message="Publishes to the public directory after persistence + approval (Phase 1)." />
+            <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "published" } : undefined} label="Approve & publish" message="This startup will appear in the Founder Directory after approval." />
             <ActionButton label="Edit details" />
             <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "archived" } : undefined} label="Unpublish" variant="destructive" confirm="Unpublish this listing from the public directory?" />
           </div>

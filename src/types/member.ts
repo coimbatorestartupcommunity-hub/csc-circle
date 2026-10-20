@@ -130,6 +130,9 @@ export interface MemberProfile {
   /** Private, server-validated 4:5 portrait used by the profile and eligible ID card. */
   portraitPath?: string;
   portraitUrl?: string;
+  /** Private 4:3 crop used only when directory name/photo publication is consented. */
+  directoryPhotoPath?: string;
+  directoryPhotoUrl?: string;
   portraitPublic?: boolean;
   designations: MemberDesignation[];
   startup?: {
