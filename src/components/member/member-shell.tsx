@@ -14,6 +14,7 @@ import {
   LogOut,
   FileText,
   Menu,
+  Home,
 } from "lucide-react";
 import { cn } from "cn";
 import { Container } from "@/components/common/container";
@@ -32,6 +33,7 @@ const nav = [
   { href: "/member/consultations", label: "Consultations", icon: MessagesSquare },
   { href: "/member/reviews", label: "Reviews", icon: Star },
   { href: "/member/settings", label: "Settings", icon: Settings },
+  { href: "/", label: "Back to Home Page", icon: Home },
 ];
 
 export interface MemberShellProps {
@@ -55,7 +57,7 @@ export function MemberShell({
 }: MemberShellProps) {
   const pathname = usePathname();
   const isActive = (href: string, exact?: boolean) =>
-    exact ? pathname === href : pathname.startsWith(href);
+    exact || href === "/" ? pathname === href : pathname.startsWith(href);
 
   return (
     <div className="bg-brand-cloud">

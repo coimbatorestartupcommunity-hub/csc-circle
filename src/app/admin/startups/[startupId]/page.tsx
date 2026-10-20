@@ -51,14 +51,39 @@ export default async function AdminStartupDetail({
           </div>
         ) : null}
         <dl className="grid gap-3 sm:grid-cols-2">
+          <Field label="Directory slug" value={s.slug || "—"} />
           <Field label="Industry" value={s.industry} />
           <Field label="Website" value={host ?? "—"} />
           <Field label="Collaboration" value={s.collaboration.join(", ") || "—"} />
+          <Field label="Public listing consent" value={s.publicationConsent ? "Confirmed at submission" : "Not recorded"} />
+          <Field label="Consent recorded" value={s.publicationConsentAt ? formatEventDate(s.publicationConsentAt) : "—"} />
+          <Field label="Submitted" value={s.submittedAt ? formatEventDate(s.submittedAt) : "—"} />
           <Field label="Updated" value={formatEventDate(s.updatedAt)} />
         </dl>
+        <section className="rounded-2xl bg-brand-cloud p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-brand-ink">Submitted description</h2>
+          <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-brand-secondary">{s.description || "No description was provided."}</p>
+        </section>
         {can(ctx, "directory.manage") ? (
           <div className="flex flex-wrap gap-2 border-t border-brand-border pt-4">
-            <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "published" } : undefined} label="Approve & publish" message="This startup will appear in the Founder Directory after approval." />
+            <ActionButton
+              operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "published" } : undefined}
+              label="Approve & publish"
+              message="Review the founder-submitted details below. Approval makes this listing visible in the public Founder Directory."
+              details={{
+                startupName: s.name,
+                founder: s.founder,
+                directorySlug: s.slug,
+                industry: s.industry,
+                description: s.description,
+                website: s.website ?? "Not provided",
+                collaboration: s.collaboration.length ? s.collaboration.join(", ") : "Not provided",
+                publicListingConsent: s.publicationConsent ? "Confirmed" : "Not recorded (older submission)",
+                consentRecorded: s.publicationConsentAt ? formatEventDate(s.publicationConsentAt) : "Not available",
+                submitted: s.submittedAt ? formatEventDate(s.submittedAt) : "Unknown",
+                currentStatus: meta.label,
+              }}
+            />
             <ActionButton label="Edit details" />
             <ActionButton operation={ctx.mode === "live" ? { kind: "startup", target: startupId, decision: "archived" } : undefined} label="Unpublish" variant="destructive" confirm="Unpublish this listing from the public directory?" />
           </div>

@@ -71,7 +71,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const consent = profile.consent;
       if (!consent || typeof consent !== "object" || Array.isArray(consent) || consent.directoryParticipation !== true || consent.displayNamePublicly !== true || consent.displayPhotoPublicly !== true) return authResponse({ error: "Enable directory participation and consent to showing your name and photo in your privacy settings first." }, 422);
       if (!profile.display_name?.trim()) return authResponse({ error: "Add a public display name to your profile before submitting." }, 422);
-      const { data, error } = await sb.from("directory_startups").insert({ user_id: user.id, name: v.name, slug: v.slug, industry: v.industry, description: v.description, website: v.website || null, founder: { name: profile.display_name }, status: "pending" }).select("id").single();
+      const { data, error } = await sb.from("directory_startups").insert({ user_id: user.id, name: v.name, slug: v.slug, industry: v.industry, description: v.description, website: v.website || null, founder: { name: profile.display_name }, publication_consent: true, publication_consent_at: new Date().toISOString(), status: "pending" }).select("id").single();
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Startup was not saved. The slug may already be in use." }, 409) : authResponse({ ok: true, id: data.id });
     }

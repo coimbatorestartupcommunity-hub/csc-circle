@@ -23,6 +23,7 @@ import {
   Handshake,
   Menu,
   LogOut,
+  Home,
 } from "lucide-react";
 import { cn } from "cn";
 import {
@@ -85,6 +86,10 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
       { href: "/admin/settings", label: "Settings", icon: Settings, perm: "settings.manage" },
     ],
   },
+  {
+    heading: "Website",
+    items: [{ href: "/", label: "Back to Home Page", icon: Home }],
+  },
 ];
 
 function NavList({
@@ -107,7 +112,7 @@ function NavList({
               {group.heading}
             </p>
             {items.map((item) => {
-              const active = isAdminRouteActive(pathname, item.href);
+              const active = item.href === "/" ? pathname === "/" : isAdminRouteActive(pathname, item.href);
               return (
                 <Link
                   key={item.href}

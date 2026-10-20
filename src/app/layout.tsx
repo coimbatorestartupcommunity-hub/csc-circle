@@ -63,11 +63,18 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
+    images: [{
+      url: "/brand/csc-homepage-banner.png",
+      width: 1200,
+      height: 630,
+      alt: "CSC Circle homepage — Connect. Build. Grow.",
+    }],
   },
   twitter: {
     card: "summary_large_image",
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
+    images: ["/brand/csc-homepage-banner.png"],
   },
   robots: {
     index: true,

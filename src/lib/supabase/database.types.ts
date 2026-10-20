@@ -451,6 +451,8 @@ export type Database = {
           industry: string
           logo_url: string | null
           name: string
+          publication_consent: boolean
+          publication_consent_at: string | null
           slug: string
           status: Database["public"]["Enums"]["publication_status"]
           updated_at: string
@@ -466,6 +468,8 @@ export type Database = {
           industry?: string
           logo_url?: string | null
           name: string
+          publication_consent?: boolean
+          publication_consent_at?: string | null
           slug: string
           status?: Database["public"]["Enums"]["publication_status"]
           updated_at?: string
@@ -481,6 +485,8 @@ export type Database = {
           industry?: string
           logo_url?: string | null
           name?: string
+          publication_consent?: boolean
+          publication_consent_at?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["publication_status"]
           updated_at?: string
