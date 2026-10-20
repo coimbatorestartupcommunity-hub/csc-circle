@@ -4,10 +4,14 @@ import { loginSchema, signupSchema, resetPasswordSchema } from "@/lib/validation
 
 describe("auth validation and safe redirects", () => {
   it.each(["https://evil.example", "//evil.example", "/\\evil.example", "/\nevil.example", "javascript:alert(1)"])("rejects external or browser-normalized destinations: %s", value => {
-    expect(safeNext(value)).toBe("/member");
+    expect(safeNext(value)).toBe("/member/profile");
   });
   it("preserves same-site paths and query strings", () => {
     expect(safeNext("/member/events?tab=upcoming")).toBe("/member/events?tab=upcoming");
+  });
+  it("rejects authentication-route redirects that could create a loop", () => {
+    expect(safeNext("/auth/complete")).toBe("/member/profile");
+    expect(safeNext("/login?next=%2Fmember")).toBe("/member/profile");
   });
   it("rejects empty login password and malformed email", () => {
     expect(loginSchema.safeParse({ email: "invalid", password: "x" }).success).toBe(false);

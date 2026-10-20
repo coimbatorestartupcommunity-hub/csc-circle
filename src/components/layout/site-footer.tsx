@@ -11,24 +11,20 @@ import { brandAssets, footerNav, routes, siteConfig } from "@/lib/content/site";
 function FooterLinkGroup({
   heading,
   links,
-  side,
 }: {
   heading: string;
   links: (typeof footerNav)[number]["links"];
-  side: "left" | "right";
 }) {
-  const isRight = side === "right";
-
   return (
     <nav
       aria-label={heading}
-      data-testid={isRight ? "footer-community" : "footer-get-involved"}
-      className={isRight ? "text-center lg:text-right" : "text-center lg:text-left"}
+      data-testid={heading === "Community" ? "footer-community" : "footer-get-involved"}
+      className="min-w-0 text-center"
     >
       <h2 className="text-[10px] font-semibold tracking-[0.12em] text-brand-ink uppercase sm:text-xs">
         {heading}
       </h2>
-      <ul className={`mt-2.5 flex flex-col items-center gap-1.5 sm:mt-4 sm:gap-2.5 ${isRight ? "lg:items-end" : "lg:items-start"}`}>
+      <ul className="mt-3 flex flex-col items-center gap-2 sm:mt-4 sm:gap-2.5">
         {links.map((link) => (
           <li key={`${heading}-${link.href}-${link.label}`}>
             <Link
@@ -40,17 +36,6 @@ function FooterLinkGroup({
           </li>
         ))}
       </ul>
-      {!isRight && (
-        <div className="mt-3 sm:mt-5">
-          <CtaLink
-            href={routes.join}
-            size="md"
-            className="mt-0.5 h-8 gap-1 px-2 text-[10px] sm:h-10 sm:gap-2 sm:px-5 sm:text-sm"
-          >
-            Join CSC Circle
-          </CtaLink>
-        </div>
-      )}
     </nav>
   );
 }
@@ -63,37 +48,27 @@ export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-brand-border bg-brand-cloud">
       <Container className="py-8 sm:py-10 lg:py-12">
-        <div className="grid grid-cols-2 items-start gap-x-3 gap-y-7 sm:gap-x-8 sm:gap-y-9 lg:grid-cols-[1fr_minmax(18rem,1.35fr)_1fr] lg:gap-10">
-          {getInvolved && (
-            <div className="order-2 lg:order-1">
-              <FooterLinkGroup
-                heading={getInvolved.heading}
-                links={getInvolved.links}
-                side="left"
-              />
-            </div>
-          )}
-
+        <div className="grid grid-cols-2 items-start gap-x-4 gap-y-7 sm:gap-x-8 sm:gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,1.15fr)_minmax(0,1fr)] lg:gap-10">
           <section
             aria-label="About CSC Circle"
             data-testid="footer-brand"
-            className="col-span-2 order-1 flex flex-col items-center text-center lg:col-span-1 lg:order-2"
+            className="col-span-2 order-1 flex min-w-0 flex-col items-center text-center lg:col-span-1 lg:col-start-2 lg:row-start-1"
           >
-            <BrandLogo className="justify-center" markSize={48} />
-            <p className="mt-3 max-w-sm text-xs leading-relaxed text-brand-muted sm:mt-4 sm:text-sm">
+            <BrandLogo className="justify-center" markSize={48} priority={false} />
+            <p className="mt-3 max-w-[26rem] text-xs leading-relaxed text-brand-muted sm:mt-4 sm:text-sm">
               {siteConfig.description}
             </p>
             <p className="mt-2 text-[10px] font-medium tracking-wide text-brand-muted sm:text-xs">
               {siteConfig.city}, {siteConfig.region} · estd {year}
             </p>
-            <ul className="mt-3 flex items-center justify-center gap-2 sm:mt-4 sm:gap-2.5">
+            <ul data-testid="footer-social" className="mt-4 flex items-center justify-center gap-3 sm:gap-3.5">
               <li>
                 <a
                   href={siteConfig.social.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="CSC Circle on Instagram"
-                  className="flex size-8 items-center justify-center rounded-full bg-brand-white text-brand-ink ring-1 ring-brand-border transition-colors hover:bg-brand-purple focus-visible:ring-3 focus-visible:ring-ring/50 sm:size-9"
+                  className="flex size-11 items-center justify-center rounded-full bg-brand-white text-brand-ink ring-1 ring-brand-border transition-colors hover:bg-brand-purple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink"
                 >
                   <InstagramIcon className="size-4" />
                 </a>
@@ -104,7 +79,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Join the CSC Circle WhatsApp community"
-                  className="flex size-8 items-center justify-center rounded-full bg-brand-white text-brand-ink ring-1 ring-brand-border transition-colors hover:bg-brand-purple focus-visible:ring-3 focus-visible:ring-ring/50 sm:size-9"
+                  className="flex size-11 items-center justify-center rounded-full bg-brand-white text-brand-ink ring-1 ring-brand-border transition-colors hover:bg-brand-purple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink"
                 >
                   <WhatsappIcon className="size-4" />
                 </a>
@@ -113,20 +88,35 @@ export function SiteFooter() {
                 <a
                   href={`mailto:${siteConfig.social.email}`}
                   aria-label="Email CSC Circle"
-                  className="flex size-8 items-center justify-center rounded-full bg-brand-white text-brand-ink ring-1 ring-brand-border transition-colors hover:bg-brand-purple focus-visible:ring-3 focus-visible:ring-ring/50 sm:size-9"
+                  className="flex size-11 items-center justify-center rounded-full bg-brand-white text-brand-ink ring-1 ring-brand-border transition-colors hover:bg-brand-purple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink"
                 >
                   <Mail className="size-4" />
                 </a>
               </li>
             </ul>
+            <CtaLink
+              href={routes.join}
+              size="md"
+              className="mt-4 h-11 rounded-xl px-6 text-sm"
+            >
+              Join CSC Circle
+            </CtaLink>
           </section>
 
           {community && (
-            <div className="order-3 lg:order-3">
+            <div className="order-2 min-w-0 lg:col-start-3 lg:row-start-1">
               <FooterLinkGroup
                 heading={community.heading}
                 links={community.links}
-                side="right"
+              />
+            </div>
+          )}
+
+          {getInvolved && (
+            <div className="order-3 min-w-0 lg:col-start-1 lg:row-start-1">
+              <FooterLinkGroup
+                heading={getInvolved.heading}
+                links={getInvolved.links}
               />
             </div>
           )}

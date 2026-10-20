@@ -46,6 +46,8 @@ export function LoginForm() {
     setNeedsConfirm(values.email);
     const result = await authRequest("login", { ...values, captchaToken });
     if (result.error) { setFormError(result.error); return; }
+    // The completion route verifies the cookie written by the auth API before
+    // it redirects to the success transition.
     router.push(`/auth/complete?next=${encodeURIComponent(next)}`);
     router.refresh();
   }

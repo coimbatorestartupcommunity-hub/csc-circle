@@ -14,6 +14,8 @@ import { primaryNav, routes } from "@/lib/content/site";
 /** Sticky, responsive site header with primary nav + Join / Login CTAs. */
 export function SiteHeader() {
   const pathname = usePathname();
+  const authenticationFlow = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth"]
+    .some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const [scrolled, setScrolled] = React.useState(false);
   const [account, setAccount] = React.useState<{
     authenticated: boolean; loading: boolean; name?: string; avatarUrl?: string | null;
@@ -22,6 +24,7 @@ export function SiteHeader() {
 
   React.useEffect(() => {
     let current = true;
+    if (authenticationFlow) return () => { current = false; };
     const loadAccount = async () => {
       try {
         const response = await fetch("/api/member/header", { cache: "no-store" });
@@ -34,16 +37,17 @@ export function SiteHeader() {
     void loadAccount();
     window.addEventListener("focus", loadAccount);
     return () => { current = false; window.removeEventListener("focus", loadAccount); };
-  }, [pathname]);
+  }, [pathname, authenticationFlow]);
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
+    if (authenticationFlow) return;
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [authenticationFlow]);
 
-  if (pathname === "/member" || pathname.startsWith("/member/") || pathname === "/admin" || pathname.startsWith("/admin/")) return null;
+  if (authenticationFlow || pathname === "/member" || pathname.startsWith("/member/") || pathname === "/admin" || pathname.startsWith("/admin/")) return null;
 
   return (
     <header

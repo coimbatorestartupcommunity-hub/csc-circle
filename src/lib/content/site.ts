@@ -86,8 +86,8 @@ export const routes = {
   directory: "/directory",
   events: "/events",
   collaborations: "/collaborations",
-  /** Join / Login entry point. Phase 3 implements the real portal here. */
-  join: "/login",
+  /** Joining starts with the authenticated CSC membership claim. */
+  join: "/member/claim",
   login: "/login",
 } as const;
 
@@ -107,9 +107,9 @@ export const footerNav: { heading: string; links: NavItem[] }[] = [
     heading: "Get involved",
     links: [
       { label: "Join the Community", href: routes.join },
-      { label: "Member Login", href: routes.login },
+      { label: "Member Login", href: "/member/profile" },
       { label: "Upcoming Events", href: routes.events },
-      { label: "Share Feedback", href: `${routes.home}#testimonials` },
+      { label: "Share Feedback", href: "/member/reviews" },
     ],
   },
 ];
