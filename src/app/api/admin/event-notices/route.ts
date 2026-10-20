@@ -20,7 +20,7 @@ const schema = z.object({
 });
 
 function canManage(ctx: Awaited<ReturnType<typeof getAdminContext>>) {
-  return ctx.mode === "live" && (ctx.permissions.has("content.manage") || ctx.permissions.has("settings.manage"));
+  return ctx.mode === "live" && ctx.permissions.has("events.publish");
 }
 
 export async function GET() {

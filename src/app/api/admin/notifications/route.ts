@@ -8,7 +8,7 @@ const schema=z.object({job:z.string().uuid(),reason:z.string().trim().min(5).max
 export async function POST(request:Request) {
   try {
     const ctx=await getAdminContext();
-    if(ctx.mode!=="live" || !ctx.permissions.has("settings.manage")) return authResponse({error:"Permission denied."},403);
+    if(ctx.mode!=="live" || !ctx.permissions.has("roles.manage")) return authResponse({error:"Permission denied."},403);
     if(!rateLimit(`notification-retry:${ctx.userId}`,5,60_000).allowed) return authResponse({error:"Try again later."},429);
     const parsed=schema.safeParse(await readAuthBody(request));
     if(!parsed.success) return authResponse({error:"Select a failed notification and provide a reason."},422);

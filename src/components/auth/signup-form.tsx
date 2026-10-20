@@ -14,8 +14,12 @@ import { PasswordField } from "@/components/auth/password-field";
 import { GoogleButton } from "@/components/auth/google-button";
 import { authRequest } from "@/lib/auth/request";
 import { signupSchema, type SignupValues } from "@/lib/validations/auth";
+import { useSearchParams } from "next/navigation";
+import { safeNext } from "@/lib/auth/redirects";
 
 export function SignupForm() {
+  const params = useSearchParams();
+  const next = safeNext(params.get("next"));
   const [captchaToken, setCaptchaToken] = React.useState("");
   const {
     register,
@@ -29,7 +33,7 @@ export function SignupForm() {
 
   async function onSubmit(values: SignupValues) {
     setFormError(null);
-    const result = await authRequest("signup", { ...values, captchaToken });
+    const result = await authRequest("signup", { ...values, captchaToken, next });
     if (result.error) { setFormError(result.error); return; }
     setSentTo(values.email);
   }
@@ -89,7 +93,7 @@ export function SignupForm() {
       <div className="flex items-center gap-3 text-xs text-brand-muted">
         <Separator className="flex-1" /> or <Separator className="flex-1" />
       </div>
-      <GoogleButton next="/member/onboarding" />
+      <GoogleButton next={next === "/member/profile" ? "/member/onboarding" : next} />
 
       <p className="text-sm text-brand-muted">
         Already have an account?{" "}

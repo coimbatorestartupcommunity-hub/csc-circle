@@ -8,7 +8,7 @@ import { rateLimit } from "@/lib/rate-limit";
 export async function POST(request: Request) {
   try {
     const ctx = await getAdminContext();
-    if (ctx.mode !== "live" || !ctx.userId || (!ctx.permissions.has("content.manage") && !ctx.permissions.has("settings.manage"))) {
+    if (ctx.mode !== "live" || !ctx.userId || !ctx.permissions.has("events.publish")) {
       return authResponse({ error: "Permission denied." }, 403);
     }
     if (request.headers.get("origin") !== new URL(request.url).origin) return authResponse({ error: "Invalid request." }, 403);

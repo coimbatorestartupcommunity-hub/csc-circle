@@ -8,7 +8,7 @@ import { rateLimit } from "@/lib/rate-limit";
 export async function POST() {
   try {
     const ctx = await getAdminContext();
-    if (ctx.mode !== "live" || !ctx.userId || !ctx.permissions.has("settings.manage")) {
+    if (ctx.mode !== "live" || !ctx.userId || !ctx.permissions.has("roles.manage")) {
       return authResponse({ error: "Permission denied." }, 403);
     }
     if (!rateLimit(`notification-email-check:${ctx.userId}`, 3, 60_000).allowed) {

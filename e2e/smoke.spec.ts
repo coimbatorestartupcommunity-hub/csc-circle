@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-for (const route of ["/", "/about", "/directory", "/events", "/collaborations", "/member/profile", "/member/startups", "/members", "/member/resume", "/admin", "/admin/startups", "/auth/success"]) {
+for (const route of ["/", "/about", "/directory", "/events", "/collaborations", "/member/profile", "/member/startups", "/members", "/member/resume", "/admin", "/admin/startups", "/admin/invitations", "/admin/roles", "/admin/accept-invitation", "/auth/success"]) {
   test(`${route} requires a verified session`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(route);
@@ -63,7 +63,7 @@ test("password visibility and signup validation", async ({ page }) => {
 });
 
 test("unauthorized admin APIs and recovery are denied", async ({ request }) => {
-  for (const route of ["actions", "events", "check-in", "collaborations", "collaboration-organizations"]) {
+  for (const route of ["actions", "events", "check-in", "collaborations", "collaboration-organizations", "invitations", "roles"]) {
     const response = await request.post(`/api/admin/${route}`, { data: {} });
     expect(response.status()).toBe(403);
   }
