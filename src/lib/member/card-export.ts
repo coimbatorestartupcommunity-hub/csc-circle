@@ -35,7 +35,10 @@ function blobToDataUrl(blob: Blob) {
  * serializes the DOM. This avoids losing authenticated portrait responses,
  * local Next.js assets, or the data-URL QR during foreignObject capture.
  */
-export async function createMembershipCardExportNode(element: HTMLElement) {
+export async function createMembershipCardExportNode(
+  element: HTMLElement,
+  options: { normalizeMobileMediaEffects?: boolean } = {},
+) {
   const sourceImages = Array.from(element.querySelectorAll("img"));
   const clone = element.cloneNode(true) as HTMLElement;
   const cloneImages = Array.from(clone.querySelectorAll("img"));
@@ -67,6 +70,21 @@ export async function createMembershipCardExportNode(element: HTMLElement) {
     zIndex: "-1",
   });
   clone.setAttribute("aria-hidden", "true");
+  if (options.normalizeMobileMediaEffects) {
+    // WebKit's foreignObject renderer can paint Tailwind's multi-layer media
+    // shadows as detached streaks in exported PNG/PDF files. Keep the images,
+    // borders and card silhouette intact while removing those flaky effects.
+    for (const image of cloneImages) {
+      image.style.boxShadow = "none";
+      image.style.filter = "none";
+      let ancestor = image.parentElement;
+      while (ancestor && ancestor !== clone) {
+        ancestor.style.boxShadow = "none";
+        ancestor.style.filter = "none";
+        ancestor = ancestor.parentElement;
+      }
+    }
+  }
   host.appendChild(clone);
   document.body.appendChild(host);
 
