@@ -98,3 +98,14 @@ export const profileSchema = z.object({
 });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
+
+export const startupSubmissionSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  slug: z.string().trim().regex(/^[a-z0-9-]{3,120}$/),
+  industry: z.string().trim().min(2, "Enter an industry.").max(80),
+  description: z.string().trim().min(20).max(600),
+  website: z.string().url().refine((value) => /^https?:\/\//.test(value)).or(z.literal("")),
+  consent: z.literal(true),
+});
+
+export type StartupSubmissionValues = z.infer<typeof startupSubmissionSchema>;

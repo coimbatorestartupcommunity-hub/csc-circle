@@ -9,6 +9,7 @@ export interface BrandLogoProps {
   /** Show the "CSC Circle" wordmark beside the mark. */
   showWordmark?: boolean;
   markSize?: number;
+  priority?: boolean;
   href?: string | null;
 }
 
@@ -22,6 +23,7 @@ export function BrandLogo({
   className,
   showWordmark = true,
   markSize = 40,
+  priority = true,
   href = "/",
 }: BrandLogoProps) {
   const content = (
@@ -32,7 +34,7 @@ export function BrandLogo({
         width={markSize}
         height={markSize}
         className="rounded-full ring-1 ring-brand-border"
-        priority
+        priority={priority}
       />
       {showWordmark ? (
         <span className="flex flex-col leading-none">

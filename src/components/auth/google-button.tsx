@@ -18,7 +18,7 @@ function GoogleMark({ className }: { className?: string }) {
   );
 }
 
-export function GoogleButton({ next = "/member" }: { next?: string }) {
+export function GoogleButton({ next = "/member/profile" }: { next?: string }) {
   const [loading, setLoading] = React.useState(false);
 
   async function onClick() {

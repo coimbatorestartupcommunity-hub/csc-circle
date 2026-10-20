@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { RatingStars } from "@/components/testimonials/rating-stars";
 import { StatusBadge } from "@/components/member/status-badge";
+import { ReviewInvitation } from "@/components/testimonials/review-invitation";
 
 describe("RatingStars", () => {
   it("renders the two-decimal value and an accessible label", () => {
@@ -21,5 +22,15 @@ describe("StatusBadge", () => {
   it("renders its label", () => {
     render(<StatusBadge label="Active member" tone="bg-green-100 text-green-700" />);
     expect(screen.getByText("Active member")).toBeInTheDocument();
+  });
+});
+
+describe("ReviewInvitation", () => {
+  it("keeps both review actions in a centered, width-constrained card column", () => {
+    render(<ReviewInvitation />);
+    const actions = screen.getByTestId("review-invitation-actions");
+    expect(actions).toHaveClass("w-full", "max-w-md", "min-w-0", "items-stretch");
+    expect(screen.getByRole("button", { name: "Check my review" })).toHaveClass("w-full", "whitespace-normal");
+    expect(screen.getByRole("button", { name: /Review submission opens with member accounts/ })).toHaveClass("w-full", "whitespace-normal");
   });
 });

@@ -13,7 +13,6 @@ import type {
   EventRecord,
   Startup,
   Testimonial,
-  IndustryCategory,
   CollaborationIntent,
 } from "@/types";
 
@@ -54,7 +53,7 @@ function mapStartup(r: Row): Startup {
     slug: (r.slug as string) ?? String(r.id),
     name: (r.name as string) ?? "",
     logoUrl: (r.logo_url as string) ?? undefined,
-    industry: (r.industry as IndustryCategory) ?? "other",
+    industry: (r.industry as string) ?? "other",
     description: (r.description as string) ?? "",
     collaboration: ((r.collaboration as string[]) ?? []) as CollaborationIntent[],
     website: (r.website as string) ?? undefined,

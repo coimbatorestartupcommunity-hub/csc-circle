@@ -10,8 +10,8 @@ export function MemberPageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div className="flex flex-col gap-1">
+    <div className="mb-6 flex w-full flex-col items-center gap-3 text-center">
+      <div className="flex max-w-3xl flex-col items-center gap-1">
         <h1 className="text-2xl font-bold tracking-tight text-brand-ink">
           {title}
         </h1>
@@ -19,7 +19,7 @@ export function MemberPageHeader({
           <p className="text-sm text-brand-muted">{description}</p>
         ) : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="flex shrink-0 justify-center">{action}</div> : null}
     </div>
   );
 }

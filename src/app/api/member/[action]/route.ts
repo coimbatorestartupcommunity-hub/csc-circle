@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMemberContext } from "@/lib/services/member/context";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
 import { rateLimit } from "@/lib/rate-limit";
-import { claimSchema, profileSchema, onboardingStep1Schema, onboardingStep2Schema, onboardingStep3Schema, onboardingStep4Schema, onboardingStep5Schema } from "@/lib/validations/member";
+import { claimSchema, profileSchema, startupSubmissionSchema, onboardingStep1Schema, onboardingStep2Schema, onboardingStep3Schema, onboardingStep4Schema, onboardingStep5Schema } from "@/lib/validations/member";
 import { reviewSchema } from "@/lib/validations/forms";
 import type { Database } from "@/lib/supabase/database.types";
 const consentSchema = onboardingStep5Schema;
@@ -59,8 +59,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       return error ? authResponse({ error: "Onboarding was not saved." }, 409) : authResponse({ ok: true, id: data.id });
     }
     if (action === "startup") {
-      const url = z.string().url().refine(v => /^https?:\/\//.test(v)).or(z.literal(""));
-      const parsed = z.object({ name: z.string().trim().min(2).max(120), slug: z.string().regex(/^[a-z0-9-]{3,120}$/), industry: z.enum(["ai", "saas", "d2c", "healthtech", "fintech", "marketing", "education", "other"]), description: z.string().trim().min(20).max(600), website: url, consent: z.literal(true) }).safeParse(body);
+      const parsed = startupSubmissionSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your startup details and consent." }, 422);
       const v = parsed.data;
       const { data: profile } = await sb.from("profiles").select("display_name,consent,portrait_path").eq("id", user.id).single();

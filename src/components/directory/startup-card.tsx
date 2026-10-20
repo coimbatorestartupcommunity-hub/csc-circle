@@ -4,7 +4,7 @@ import { ExternalLink, ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { HoverLiftCard } from "@/components/motion";
 import { FixtureNotice } from "@/components/common/empty-state";
-import { industryLabels, collaborationLabels } from "@/lib/content/taxonomy";
+import { industryLabel, collaborationLabels } from "@/lib/content/taxonomy";
 import { safeExternalUrl, displayHost, initials } from "@/lib/format";
 import type { Startup } from "@/types";
 
@@ -46,7 +46,7 @@ export function StartupCard({ startup }: { startup: Startup }) {
         </div>
 
         <Badge variant="secondary" className="w-fit bg-brand-cloud text-brand-secondary">
-          {industryLabels[startup.industry]}
+          {industryLabel(startup.industry)}
         </Badge>
 
         <p className="flex-1 text-sm leading-relaxed text-brand-secondary">
