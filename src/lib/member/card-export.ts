@@ -60,6 +60,8 @@ export async function createMembershipCardExportNode(element: HTMLElement) {
       const target = cloneImages[index];
       const sourceUrl = source.currentSrc || source.src;
       if (!target || !sourceUrl) throw new Error("A membership card image is missing.");
+      target.loading = "eager";
+      target.decoding = "sync";
       target.removeAttribute("srcset");
       target.removeAttribute("sizes");
       if (sourceUrl.startsWith("data:")) {
