@@ -80,7 +80,9 @@ export function MemberIdCard({
       const cardElement = cardRef.current;
       if (!qr) throw new Error("The membership verification QR is not ready.");
       await waitForMembershipCardAssets(cardElement);
-      const exportNode = await createMembershipCardExportNode(cardElement);
+      const exportNode = await createMembershipCardExportNode(cardElement, {
+        normalizeMobileMediaEffects: appleMobile,
+      });
       let rawPng: Blob | null;
       try {
         rawPng = await toBlob(

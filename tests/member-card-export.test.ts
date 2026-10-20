@@ -43,6 +43,26 @@ describe("membership card export", () => {
     }
   });
 
+  it("normalizes only image-related shadows for mobile WebKit exports", async () => {
+    const source = document.createElement("div");
+    const media = document.createElement("span");
+    const image = document.createElement("img");
+    media.className = "shadow-sm";
+    image.src = "data:image/png;base64,aGVsbG8=";
+    source.append(media);
+    media.append(image);
+    document.body.append(source);
+    try {
+      const clone = await createMembershipCardExportNode(source, { normalizeMobileMediaEffects: true });
+      expect(clone.querySelector("img")?.style.boxShadow).toBe("none");
+      expect(clone.querySelector("span")?.style.boxShadow).toBe("none");
+      expect(clone.parentElement?.style.left).toBe("-10000px");
+      clone.parentElement?.remove();
+    } finally {
+      source.remove();
+    }
+  });
+
   it("clips the captured bitmap to the card's rounded corners before exporting it", async () => {
     const order: string[] = [];
     const context = {
