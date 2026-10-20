@@ -19,9 +19,9 @@ export async function FounderPreview() {
       />
 
       {startups.length > 0 ? (
-        <StaggerContainer className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <StaggerContainer className="mt-12 grid min-w-0 w-full max-w-full grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-[repeat(2,minmax(0,1fr))] lg:grid-cols-[repeat(3,minmax(0,1fr))]">
           {startups.map((startup) => (
-            <StaggerItem key={startup.id} className="h-full">
+            <StaggerItem key={startup.id} className="h-full min-w-0 w-full max-w-full">
               <StartupCard startup={startup} />
             </StaggerItem>
           ))}

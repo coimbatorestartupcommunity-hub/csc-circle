@@ -17,7 +17,7 @@ export function StartupCard({ startup }: { startup: Startup }) {
   return (
     <HoverLiftCard>
       <article className="flex h-full min-w-0 w-full max-w-full flex-col gap-4 overflow-hidden rounded-3xl bg-brand-white p-6 ring-1 ring-brand-border">
-        {startup.founder.avatarUrl ? <div className="relative -mx-6 -mt-6 aspect-[4/3] min-w-0 max-w-full overflow-hidden rounded-t-3xl bg-brand-cloud">
+        {startup.founder.avatarUrl ? <div className="relative -mx-6 -mt-6 aspect-[4/3] min-w-0 w-[calc(100%+3rem)] max-w-none shrink-0 overflow-hidden rounded-t-3xl bg-brand-cloud">
           <Image src={startup.founder.avatarUrl} alt={`${startup.founder.name}, founder of ${startup.name}`} fill sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover" />
         </div> : null}
         <div className="flex min-w-0 items-center justify-between gap-3">
