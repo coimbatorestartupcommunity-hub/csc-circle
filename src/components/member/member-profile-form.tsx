@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ export function MemberProfileForm({
   profile: MemberProfile;
   isDemo: boolean;
 }) {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -35,8 +37,6 @@ export function MemberProfileForm({
       startupName: profile.startup?.name ?? "",
       startupWebsite: profile.startup?.website ?? "",
       startupDescription: profile.startup?.description ?? "",
-      skills: (profile.skills ?? []).join(", "),
-      aboutMe: profile.aboutMe ?? "",
     },
   });
   const [saving, setSaving] = React.useState(false);
@@ -47,6 +47,7 @@ export function MemberProfileForm({
       const result = await memberRequest("profile", values);
       if (result.error) { toast.error(result.error); return; }
       notifySubmissionSuccess({ title: "Profile saved", message: "Your profile information was successfully saved." });
+      router.refresh();
     } finally {
       setSaving(false);
     }
@@ -54,9 +55,9 @@ export function MemberProfileForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-      <fieldset className="flex flex-col gap-4 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
+      <fieldset className="flex flex-col gap-4 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:p-6">
         <legend className="px-1 text-sm font-semibold text-brand-ink">
-          Personal information
+          Personal Details
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>
@@ -81,9 +82,9 @@ export function MemberProfileForm({
         </div>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-4 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
+      <fieldset className="flex flex-col gap-4 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:p-6">
         <legend className="px-1 text-sm font-semibold text-brand-ink">
-          Startup & skills
+          Founder Profile
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field>
@@ -99,15 +100,6 @@ export function MemberProfileForm({
         <Field>
           <FieldLabel htmlFor="p-sdesc">Startup description</FieldLabel>
           <Textarea id="p-sdesc" rows={3} {...register("startupDescription")} />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="p-skills">Skills (comma separated)</FieldLabel>
-          <Input id="p-skills" placeholder="Product, Frontend, Marketing" {...register("skills")} />
-        </Field>
-        <Field>
-          <FieldLabel htmlFor="p-about">About me</FieldLabel>
-          <Textarea id="p-about" rows={4} placeholder="Share a short professional introduction." {...register("aboutMe")} />
-          {errors.aboutMe ? <FieldError>{errors.aboutMe.message}</FieldError> : null}
         </Field>
       </fieldset>
 
