@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StatCard } from "@/components/admin/stat-card";
 import { StatusBadge } from "@/components/member/status-badge";
-import { getAdminContext } from "@/lib/admin/gate";
+import { can, getAdminContext } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import {
   membershipStatusMeta,
@@ -91,6 +91,14 @@ export default async function AdminOverview() {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
+            {can(ctx, "directory.manage") ? (
+              <Panel title="Startup submissions awaiting review" href="/admin/startups">
+                <p className="text-sm leading-relaxed text-brand-secondary">Review each founder’s submitted startup details before publication. Only approved listings are visible in the public Founder Directory.</p>
+                <Link href="/admin/startups" className="inline-flex w-fit items-center gap-2 rounded-xl bg-brand-ink px-4 py-2.5 text-sm font-semibold text-brand-white transition hover:bg-brand-ink/90">
+                  Review startup submissions <ArrowRight className="size-4" />
+                </Link>
+              </Panel>
+            ) : null}
             <Panel title="Recent membership applications" href="/admin/membership-claims">
               {data.recentClaims.length ? (
                 <ul className="flex flex-col divide-y divide-brand-border">

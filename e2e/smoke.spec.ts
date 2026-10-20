@@ -27,6 +27,18 @@ test("login is a compact centered auth experience without the marketing shell", 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
 });
 
+test("social previews use the homepage screenshot banner", async ({ page, request }) => {
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/login\?/);
+  const ogImage = await page.locator('meta[property="og:image"]').getAttribute("content");
+  const twitterImage = await page.locator('meta[name="twitter:image"]').getAttribute("content");
+  expect(ogImage).toContain("/brand/csc-homepage-banner.png");
+  expect(twitterImage).toContain("/brand/csc-homepage-banner.png");
+  const imageResponse = await request.get("/brand/csc-homepage-banner.png");
+  expect(imageResponse.status()).toBe(200);
+  expect(imageResponse.headers()["content-type"]).toContain("image/png");
+});
+
 test("OAuth callback leaves the PKCE verifier cookie untouched", async ({ request }) => {
   const verifierCookie = "sb-mmsrtfktwcrbyrucjmzo-auth-token-flow-abcdef123456-code-verifier=pending-verifier";
   const response = await request.get("/auth/callback?next=%2Fmember%2Fprofile", {

@@ -72,7 +72,7 @@ async function guard<T>(
 
 export const adminServices = {
   getDashboard(): Promise<ServiceResult<AdminDashboardData>> {
-    return guard("members.read", demoDashboard, async () => {
+    return guard("members.read", demoDashboard, async (ctx) => {
       const sb = await createClient();
       const head = { count: "exact" as const, head: true };
       const n = (p: { count: number | null }) => p.count ?? 0;
@@ -86,6 +86,7 @@ export const adminServices = {
         confirmed,
         consults,
         reviews,
+        startups,
       ] = await Promise.all([
         sb.from("profiles").select("*", head),
         sb.from("memberships").select("*", head).eq("status", "active"),
@@ -95,9 +96,12 @@ export const adminServices = {
         sb.from("rsvp_submissions").select("*", head).eq("status", "confirmed"),
         sb.from("consultation_submissions").select("*", head).in("status", ["submitted", "under_review"]),
         sb.from("reviews").select("*", head).eq("moderation", "approved"),
+        ctx.permissions.has("directory.manage")
+          ? sb.from("directory_startups").select("*", head).eq("status", "pending")
+          : Promise.resolve({ count: 0, error: null }),
       ]);
 
-      if ([accounts, active, claims, events, rsvps, confirmed, consults, reviews].some(r => r.error)) return fail("unknown", "Dashboard data could not be loaded.");
+      if ([accounts, active, claims, events, rsvps, confirmed, consults, reviews, startups].some(r => r.error)) return fail("unknown", "Dashboard data could not be loaded.");
       const metrics = [
         { key: "accounts", label: "Website accounts", value: n(accounts), href: "/admin/members" },
         { key: "active", label: "Active memberships", value: n(active), href: "/admin/members" },
@@ -110,9 +114,13 @@ export const adminServices = {
         { key: "reviews", label: "Approved reviews", value: n(reviews), href: "/admin/reviews" },
         { key: "attendance", label: "Total check-ins", value: 0, href: "/admin/attendance" },
       ];
+      if (ctx.permissions.has("directory.manage")) {
+        metrics.splice(3, 0, { key: "startups", label: "Startup submissions to review", value: n(startups), href: "/admin/startups" });
+      }
 
       return ok<AdminDashboardData>({
         metrics,
+        pendingStartupCount: ctx.permissions.has("directory.manage") ? n(startups) : undefined,
         recentClaims: [],
         upcomingEvents: [],
         pendingRegistrations: [],
@@ -206,18 +214,24 @@ export const adminServices = {
   listStartups(): Promise<ServiceResult<AdminStartupRow[]>> {
     return guard("directory.manage", demoStartups, async () => {
       const sb = await createClient();
-      const { data } = await sb.from("directory_startups").select("*").order("updated_at", { ascending: false });
+      const { data, error } = await sb.from("directory_startups").select("*").order("updated_at", { ascending: false });
+      if (error) return fail("unknown", "Startup submissions could not be loaded.");
       const rows: AdminStartupRow[] = (data ?? []).map((s) => {
         const r = s as Row;
         const founder = r.founder as { name?: string } | null;
         return {
           id: String(r.id),
           name: (r.name as string) ?? "—",
+          slug: (r.slug as string) ?? "",
           founder: founder?.name ?? "—",
           industry: (r.industry as string) ?? "other",
+          description: (r.description as string) ?? "",
+          publicationConsent: r.publication_consent === true,
+          publicationConsentAt: (r.publication_consent_at as string) ?? undefined,
           website: (r.website as string) ?? undefined,
           collaboration: (r.collaboration as string[]) ?? [],
           status: (r.status as AdminStartupRow["status"]) ?? "draft",
+          submittedAt: (r.created_at as string) ?? "",
           updatedAt: (r.updated_at as string) ?? "",
         };
       });

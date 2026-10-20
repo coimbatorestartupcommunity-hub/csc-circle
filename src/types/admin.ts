@@ -45,11 +45,16 @@ export interface AdminClaimRow {
 export interface AdminStartupRow {
   id: string;
   name: string;
+  slug: string;
   founder: string;
   industry: string;
+  description: string;
+  publicationConsent: boolean;
+  publicationConsentAt?: string;
   website?: string;
   collaboration: string[];
   status: "draft" | "pending" | "published" | "archived";
+  submittedAt: string;
   updatedAt: string;
 }
 
@@ -183,6 +188,7 @@ export interface DashboardMetric {
 
 export interface AdminDashboardData {
   metrics: DashboardMetric[];
+  pendingStartupCount?: number;
   recentClaims: AdminClaimRow[];
   upcomingEvents: AdminEventRow[];
   pendingRegistrations: EventRegistration[];

@@ -38,8 +38,8 @@ export const demoClaims: AdminClaimRow[] = [
 ];
 
 export const demoStartups: AdminStartupRow[] = [
-  { id: "s1", name: "Sample AI Studio", founder: "Demo Founder A", industry: "Artificial Intelligence", website: "https://example.com", collaboration: ["Open to Collaboration"], status: "published", updatedAt: d(5) },
-  { id: "s2", name: "Sample SaaS Labs", founder: "Demo Founder B", industry: "SaaS", collaboration: ["Seeking Technology Support"], status: "pending", updatedAt: d(1) },
+  { id: "s1", name: "Sample AI Studio", slug: "sample-ai-studio", founder: "Demo Founder A", industry: "Artificial Intelligence", description: "A fictional sample startup used only to preview the CSC admin interface.", publicationConsent: true, publicationConsentAt: d(5), website: "https://example.com", collaboration: ["Open to Collaboration"], status: "published", submittedAt: d(5), updatedAt: d(5) },
+  { id: "s2", name: "Sample SaaS Labs", slug: "sample-saas-labs", founder: "Demo Founder B", industry: "SaaS", description: "A fictional sample startup used only to preview the CSC admin interface.", publicationConsent: true, publicationConsentAt: d(1), collaboration: ["Seeking Technology Support"], status: "pending", submittedAt: d(1), updatedAt: d(1) },
 ];
 
 export const demoEvents: AdminEventRow[] = [

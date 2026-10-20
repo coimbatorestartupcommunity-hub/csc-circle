@@ -53,7 +53,7 @@ describe("isolated PostgreSQL authorization regressions", () => {
   it("requires explicit name/photo consent and both validated portrait paths before publication", async () => {
     await expect(db.exec(`insert into directory_startups(user_id,slug,name,status) values ('${a}','blocked-photo-test','Blocked Photo Test','published')`)).rejects.toThrow(/directory profile/i);
     await db.exec(`update profiles set display_name='Test Founder', portrait_path='${a}/portrait.webp', directory_photo_path='${a}/directory.webp', consent='{"directoryParticipation":true,"displayNamePublicly":true,"displayPhotoPublicly":true}'::jsonb where id='${a}'`);
-    await db.exec(`insert into directory_startups(user_id,slug,name,status) values ('${a}','consented-photo-test','Consented Photo Test','published')`);
+    await db.exec(`insert into directory_startups(user_id,slug,name,status,publication_consent,publication_consent_at) values ('${a}','consented-photo-test','Consented Photo Test','published',true,now())`);
     expect((await db.query(`select status from directory_startups where slug='consented-photo-test'`)).rows).toEqual([{ status: "published" }]);
   });
   it("cannot use anonymous submission RPCs to bypass server validation", async () => {
@@ -126,6 +126,23 @@ describe("trusted operations and replay protection", () => {
       update memberships set status='active' where user_id in ('${a}','${b}');
       insert into events(id,slug,title,category,starts_at,ends_at,location,capacity,status,admission,registration_state)
       values ('${event}','isolated-event','Isolated Test Event','meetup',now()+interval '1 hour',now()+interval '3 hours','Test venue',1,'published','free','open');`);
+  });
+  it("keeps startup submissions private until an authorized admin approves them", async () => {
+    const startup = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+    await db.exec(`update profiles set display_name='Pending Test Founder', consent='{"directoryParticipation":true,"displayNamePublicly":true,"displayPhotoPublicly":true}'::jsonb where id='${a}';
+      insert into directory_startups(id,user_id,slug,name,industry,description,status,publication_consent,publication_consent_at,founder)
+      values ('${startup}','${a}','approval-workflow-test','Approval Workflow Test','Climate technology','A sufficiently detailed synthetic startup description for the review workflow.','pending',false,null,'{"name":"Pending Test Founder"}');`);
+    expect((await asUser(a, `select status from directory_startups where id='${startup}'`))[0].rows).toEqual([{ status: "pending" }]);
+    await expect(asUser(a, `select csc_admin_action('startup','${startup}','published','')`)).rejects.toThrow();
+    await expect(asUser(admin, `select csc_admin_action('startup','${startup}','published','Reviewed synthetic startup details')`)).rejects.toThrow(/publication consent/i);
+    await db.exec(`update directory_startups set publication_consent=true,publication_consent_at=now() where id='${startup}'`);
+    await asUser(admin, `select csc_admin_action('startup','${startup}','published','Reviewed synthetic startup details and consent')`);
+    expect((await db.query("select status,publication_consent from directory_startups where id=$1", [startup])).rows).toEqual([{ status: "published", publication_consent: true }]);
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query("select name,industry,description from directory_startups where id=$1", [startup])).rows).toEqual([{ name: "Approval Workflow Test", industry: "Climate technology", description: "A sufficiently detailed synthetic startup description for the review workflow." }]);
+    } finally { await db.exec("reset role;"); }
+    expect((await db.query("select action from audit_logs where target_id=$1", [startup])).rows).toEqual([{ action: "startup.published" }]);
   });
   it("registers idempotently without issuing a pass", async () => {
     const first = await asUser(a, `select csc_register_event('${event}','Networking') as result`);
