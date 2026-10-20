@@ -172,6 +172,9 @@ export async function POST(request: Request, context: { params: Promise<{ action
           if (msg.includes("duplicate key")) return authResponse({ error: "That directory URL is already in use. Change the startup slug and try again." }, 409);
           if (code === "40001") return authResponse({ error: "This startup changed after you opened the editor. Reload the latest version, then apply your changes again." }, 409);
           if (code === "42501") return authResponse({ error: "This startup is no longer available for editing in its current status. Refresh My Startups and try again." }, 409);
+          if (msg.includes("revision image missing")) return authResponse({ error: "The startup directory photo is not present in saved media. Upload it again, wait for the preview to finish, then submit." }, 422);
+          if (msg.includes("invalid revision image path")) return authResponse({ error: "The directory photo belongs to a different edit session. Refresh the editor and upload the photo again." }, 422);
+          if (msg.includes("revision logo missing") || msg.includes("invalid revision logo path")) return authResponse({ error: "The company logo could not be matched to this edit. Re-upload the logo or keep the currently approved logo." }, 422);
           if (code === "23514" || code === "22023") return authResponse({ error: "Some startup details or image references could not be verified. Check the directory image and required fields, then try again." }, 422);
           return authResponse({ error: "Startup changes could not be saved. Refresh and review the current startup status." }, 409);
         }

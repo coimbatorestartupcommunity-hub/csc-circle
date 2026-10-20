@@ -64,6 +64,9 @@ function mapStartup(r: Row): Startup {
       : /^https?:\/\//i.test(storedLogo)
         ? storedLogo
         : isLitCompany ? "/brand/lit-logo.png" : undefined,
+    directoryImageUrl: typeof r.user_id === "string" && typeof r.directory_image_path === "string"
+      ? `/api/directory/startups/${String(r.id)}/photo`
+      : undefined,
     industry: (r.industry as string) ?? "other",
     description: (r.description as string) ?? "",
     city: typeof details.city === "string" ? details.city : undefined,
@@ -78,7 +81,6 @@ function mapStartup(r: Row): Startup {
       name: founder.name ?? "Founder",
       role: founder.role ?? "Founder",
       profileUrl: founder.profileUrl,
-      avatarUrl: typeof r.user_id === "string" ? `/api/directory/startups/${String(r.id)}/photo` : undefined,
     },
     status: "published",
   };

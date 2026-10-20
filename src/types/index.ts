@@ -51,6 +51,8 @@ export interface Startup {
   name: string;
   /** Approved logo URL. Optional — initials are shown as a fallback. */
   logoUrl?: string;
+  /** Approved startup-specific 4:3 directory photograph. Separate from a founder's 4:5 portrait. */
+  directoryImageUrl?: string;
   /** Free-form industry name entered by the founder. */
   industry: string;
   /** Short approved description (2–4 lines). */
