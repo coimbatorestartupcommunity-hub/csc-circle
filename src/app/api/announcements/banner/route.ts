@@ -1,29 +1,21 @@
 import { createAnonClient } from "@/lib/supabase/anon";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { eventNoticeSchema, isEventNoticeActive } from "@/lib/announcements/event-notice";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const noticeId = new URL(request.url).searchParams.get("noticeId") ?? "";
+    if (!/^[0-9a-f-]{36}$/i.test(noticeId)) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
     const db = createAnonClient();
-    if (!db) return new Response(null, { status: 404 });
-    const { data, error } = await db.from("content_blocks").select("value").eq("key", "homepage.event_notice").eq("status", "published").maybeSingle();
-    if (error || !data?.value) return new Response(null, { status: 404 });
-    const parsed = eventNoticeSchema.safeParse(JSON.parse(data.value));
-    if (!parsed.success || !parsed.data.bannerPath || !isEventNoticeActive(parsed.data)) {
-      return new Response(null, { status: 404 });
-    }
+    if (!db) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
+    const { data: notice } = await (db as unknown as SupabaseClient).from("event_notices").select("banner_path").eq("id", noticeId).maybeSingle();
+    const path = typeof notice?.banner_path === "string" ? notice.banner_path : "";
+    if (!/^event-banners\/[0-9a-f-]{36}\.webp$/i.test(path)) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
     const admin = createAdminClient();
-    const { data: banner, error: downloadError } = await admin.storage.from("member-portraits").download(parsed.data.bannerPath);
-    if (downloadError || !banner) return new Response(null, { status: 404 });
-    return new Response(await banner.arrayBuffer(), {
-      headers: {
-        "Content-Type": "image/webp",
-        "Content-Length": String(banner.size),
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
+    const { data: image, error } = await admin.storage.from("member-portraits").download(path);
+    if (error || !image) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
+    return new Response(await image.arrayBuffer(), { headers: { "Content-Type": "image/webp", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
   } catch {
-    return new Response(null, { status: 404 });
+    return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
   }
 }

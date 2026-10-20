@@ -1,19 +1,16 @@
-import { z } from "zod";
+export type EventNoticeVisibility = {
+  status: string;
+  eventStatus: string;
+  deletedAt?: string | null;
+  startsAt?: string | null;
+  stopsAt?: string | null;
+};
 
-export const eventNoticeSchema = z.object({
-  title: z.string().trim().min(3).max(100),
-  message: z.string().trim().min(8).max(500),
-  actionLabel: z.string().trim().min(2).max(40),
-  eventPath: z.string().trim().max(180).regex(/^\/events(?:\/[a-z0-9-]+)?(?:\?[a-zA-Z0-9_=&%-]*)?$/, "Use an internal CSC event page path."),
-  bannerPath: z.string().regex(/^event-banners\/[0-9a-f-]{36}\.webp$/i).optional().default(""),
-  startsAt: z.string().datetime().nullable().optional(),
-  expiresAt: z.string().datetime().nullable().optional(),
-});
-
-export type EventNotice = z.infer<typeof eventNoticeSchema>;
-
-/** The same time-window predicate is used for the text notice and its banner. */
-export function isEventNoticeActive(notice: EventNotice, now = Date.now()) {
-  return (!notice.startsAt || Date.parse(notice.startsAt) <= now) &&
-    (!notice.expiresAt || Date.parse(notice.expiresAt) > now);
+/** Mirrors the database policy: the promotion window is start-inclusive/end-exclusive. */
+export function isEventNoticeActive(notice: EventNoticeVisibility, now = Date.now()) {
+  const start = notice.startsAt ? Date.parse(notice.startsAt) : null;
+  const stop = notice.stopsAt ? Date.parse(notice.stopsAt) : null;
+  return notice.status === "published" && notice.eventStatus === "published" && !notice.deletedAt &&
+    (!notice.startsAt || (start !== null && start <= now)) &&
+    (!notice.stopsAt || (stop !== null && stop > now));
 }

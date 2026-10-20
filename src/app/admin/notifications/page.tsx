@@ -45,7 +45,8 @@ const facets: Facet[] = [
   },
 ];
 
-export default async function AdminNotificationsPage() {
+export default async function AdminNotificationsPage({ searchParams }: { searchParams: Promise<{ eventId?: string }> }) {
+  const { eventId } = await searchParams;
   const ctx = await getAdminContext();
   const res = await adminServices.listNotifications();
   const rows = res.ok ? res.data : [];
@@ -57,7 +58,7 @@ export default async function AdminNotificationsPage() {
         description="Email delivery queue for committed business events. SMTP acceptance does not prove inbox delivery. Uncertain outcomes require mailbox reconciliation before retrying."
         isDemo={ctx.mode === "preview"}
       />
-      <EventNoticeEditor isDemo={ctx.mode !== "live"} canPublish={can(ctx, "settings.manage") || can(ctx, "content.manage")} />
+      <EventNoticeEditor isDemo={ctx.mode !== "live"} canPublish={can(ctx, "settings.manage") || can(ctx, "content.manage")} canEditEvents={can(ctx, "events.update")} initialEventId={eventId} />
       {ctx.mode === "live" && ctx.permissions.has("settings.manage") && <NotificationEmailCheck />}
       {ctx.mode === "live" && ctx.permissions.has("settings.manage") && <NotificationRetry jobs={rows.filter(r=>["failed_retryable","failed_permanent"].includes(r.status)).map(r=>({id:r.id,type:r.type}))} />}
       <DataTable

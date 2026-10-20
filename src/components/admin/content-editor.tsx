@@ -13,7 +13,6 @@ const contentOptions = [
   { key: "community.introduction", label: "Community introduction" },
   { key: "about.mission", label: "About · Mission" },
   { key: "about.vision", label: "About · Vision" },
-  { key: "homepage.event_notice", label: "Homepage event notice" },
 ] as const;
 type ContentKey = (typeof contentOptions)[number]["key"];
 type ContentAction = "save" | "publish" | "unpublish" | "delete";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Megaphone, Pencil } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StatusBadge } from "@/components/member/status-badge";
 import { getAdminContext, can } from "@/lib/admin/gate";
@@ -39,11 +39,15 @@ export default async function AdminEventDetail({
         description={`${e.category} · ${formatEventDate(e.startsAt)}`}
         isDemo={ctx.mode === "preview"}
         action={
-          can(ctx, "events.update") ? (
+          <div className="flex flex-wrap gap-2">
+          {(can(ctx, "content.manage") || can(ctx, "settings.manage")) ? <><Link href={`/admin/notifications?eventId=${e.id}`} className="inline-flex items-center gap-2 rounded-xl border border-brand-border bg-white px-3.5 py-2 text-sm font-medium text-brand-ink hover:bg-brand-cloud"><Megaphone className="size-4" />Promote This Event</Link><Link href="/admin/events" className="inline-flex items-center rounded-xl px-3.5 py-2 text-sm font-medium text-brand-muted hover:bg-brand-cloud">Skip For Now</Link></> : null}
+          {can(ctx, "events.update") ? (
             <Link href={`/admin/events/${e.id}/edit`} className="inline-flex items-center gap-2 rounded-xl bg-brand-ink px-3.5 py-2 text-sm font-medium text-brand-white hover:bg-brand-ink/90">
               <Pencil className="size-4" /> Edit
             </Link>
           ) : null
+          }
+          </div>
         }
       />
 
