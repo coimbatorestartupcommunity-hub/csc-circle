@@ -49,9 +49,9 @@ export default async function RegistrationDetail({
         </dl>
         {can(ctx, "registrations.approve") ? (
           <div className="flex flex-wrap gap-2 border-t border-brand-border pt-4">
-            <ActionButton operation={ctx.mode === "live" ? { kind: "registration", target: registrationId, decision: "confirmed" } : undefined} label="Approve" message="Capacity + payment verified atomically in Phase 1." />
-            <ActionButton operation={ctx.mode === "live" ? { kind: "registration", target: registrationId, decision: "waitlisted" } : undefined} label="Move to waitlist" />
-            <ActionButton operation={ctx.mode === "live" ? { kind: "registration", target: registrationId, decision: "cancelled" } : undefined} label="Cancel registration" variant="destructive" confirm="Cancel this registration?" />
+            {["pending", "pending_review", "waitlisted"].includes(reg.status) ? <ActionButton operation={ctx.mode === "live" ? { kind: "registration", target: registrationId, decision: "confirmed" } : undefined} label="Approve" message="Capacity and any paid-event verification are checked atomically." /> : null}
+            {["pending", "pending_review"].includes(reg.status) ? <ActionButton operation={ctx.mode === "live" ? { kind: "registration", target: registrationId, decision: "waitlisted" } : undefined} label="Move to waitlist" /> : null}
+            {["pending", "pending_review", "pending_payment", "payment_verification", "confirmed", "waitlisted"].includes(reg.status) ? <ActionButton operation={ctx.mode === "live" ? { kind: "registration", target: registrationId, decision: "cancelled" } : undefined} label="Cancel registration" variant="destructive" confirm="Cancel this registration?" /> : null}
           </div>
         ) : null}
       </div>

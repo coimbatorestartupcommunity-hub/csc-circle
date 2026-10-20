@@ -1,6 +1,6 @@
 import { ContentEditor } from "@/components/admin/content-editor";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { DataTable, type Column, type ActionDef } from "@/components/admin/data-table";
+import { DataTable, type Column } from "@/components/admin/data-table";
 import { getAdminContext, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
@@ -19,13 +19,6 @@ export default async function AdminContentPage() {
   const res = await adminServices.listContent();
   const rows = res.ok ? res.data.map((c) => ({ ...c, id: c.key })) : [];
 
-  const actions: ActionDef[] | undefined = can(ctx, "content.manage")
-    ? [
-        { label: "Edit", message: "Structured fields only (no raw HTML). Preview-before-publish + audit in Phase 1." },
-        { label: "Publish" },
-      ]
-    : undefined;
-
   return (
     <>
       <AdminPageHeader
@@ -37,7 +30,6 @@ export default async function AdminContentPage() {
         rows={rows}
         columns={columns}
         searchKeys={["label", "key"]}
-        actions={actions}
         emptyMessage={res.ok ? "No content blocks." : res.error.message}
       />
       {can(ctx, "content.manage") ? <ContentEditor isDemo={ctx.mode === "preview"} /> : null}

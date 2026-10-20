@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { ActionButton } from "@/components/admin/action-button";
 import { StatusBadge } from "@/components/member/status-badge";
 import { getAdminContext, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
@@ -56,13 +55,7 @@ export default async function AdminEventDetail({
             {e.capacity ? ` · capacity ${e.capacity}` : ""}
           </span>
         </div>
-        {can(ctx, "events.publish") ? (
-          <div className="flex flex-wrap gap-2 border-t border-brand-border pt-4">
-            <ActionButton label={e.status === "published" ? "Unpublish" : "Publish"} message="Publication is transactional + audited; the public site updates via cache revalidation (Phase 1)." />
-            <ActionButton label="Cancel event" variant="destructive" confirm="Cancel this event? Registrants would be notified." />
-            <ActionButton label="Archive" variant="outline" />
-          </div>
-        ) : null}
+        {can(ctx, "events.update") ? <p className="border-t border-brand-border pt-4 text-sm text-brand-secondary">To publish, unpublish, or cancel this event, open <Link className="font-semibold text-brand-ink underline underline-offset-2" href={`/admin/events/${e.id}/edit`}>Edit event</Link> and save the selected status. This uses the audited event-save workflow and notifies affected registrants where applicable.</p> : null}
       </div>
     </>
   );

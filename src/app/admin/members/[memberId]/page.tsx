@@ -59,12 +59,6 @@ export default async function AdminMemberDetail({
           </dl>
 
           <div className="flex flex-wrap gap-2 border-t border-brand-border pt-4">
-            {can(ctx, "members.approve") ? (
-              <ActionButton label="Approve claim" message="Approval triggers trusted membership issuance + audit in Phase 1." />
-            ) : null}
-            {can(ctx, "members.approve") ? (
-              <ActionButton label="Reject" variant="destructive" confirm="Reject this member's claim?" />
-            ) : null}
             {can(ctx, "members.suspend") ? (
               <ActionButton operation={ctx.mode === "live" ? { kind: "member", target: memberId, decision: "suspended" } : undefined} label="Suspend" variant="destructive" confirm="Suspend this membership?" />
             ) : null}

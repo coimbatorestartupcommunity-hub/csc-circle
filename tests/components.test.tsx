@@ -4,6 +4,7 @@ import { RatingStars } from "@/components/testimonials/rating-stars";
 import { StatusBadge } from "@/components/member/status-badge";
 import { ReviewInvitation } from "@/components/testimonials/review-invitation";
 import { ActionButton } from "@/components/admin/action-button";
+import { DataTable } from "@/components/admin/data-table";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
@@ -53,5 +54,22 @@ describe("membership approval dialog", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveClass("max-w-5xl", "sm:max-w-5xl", "overflow-hidden");
     expect(dialog).not.toHaveClass("overflow-y-auto");
+  });
+});
+
+describe("admin review table actions", () => {
+  it("shows the startup decision controls for pending rows and unpublish only for published rows", () => {
+    render(<DataTable
+      rows={[{ id: "pending-id", name: "Pending startup", status: "pending" }, { id: "published-id", name: "Live startup", status: "published" }]}
+      columns={[{ key: "name", header: "Startup" }, { key: "status", header: "Status" }]}
+      actions={[
+        { label: "Approve & publish", operation: { kind: "startup", decision: "published" }, visibleForStatuses: ["pending"] },
+        { label: "Cancel submission", operation: { kind: "startup", decision: "archived" }, visibleForStatuses: ["pending"] },
+        { label: "Unpublish", operation: { kind: "startup", decision: "archived" }, visibleForStatuses: ["published"] },
+      ]}
+    />);
+    expect(screen.getAllByRole("button", { name: "Approve & publish" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Cancel submission" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Unpublish" })).toHaveLength(1);
   });
 });
