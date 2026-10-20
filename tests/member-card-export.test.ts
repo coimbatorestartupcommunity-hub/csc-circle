@@ -1,21 +1,23 @@
 import { describe, expect, it, vi } from "vitest";
 import { PDFDocument } from "pdf-lib";
-import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
+import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions, membershipCardExportMatte } from "@/lib/member/card-export";
 
 describe("membership card export", () => {
-  it("leaves the PNG canvas transparent outside the rounded card", () => {
+  it("uses a non-white matte so rounded corners remain visible in white-background viewers", () => {
     expect(membershipCardCaptureOptions).toEqual({ pixelRatio: 3, cacheBust: true });
     expect(membershipCardCaptureOptions).not.toHaveProperty("backgroundColor");
+    expect(membershipCardExportMatte).not.toBe("#FFFFFF");
   });
 
   it("clips the captured bitmap to the card's rounded corners before exporting it", async () => {
     const order: string[] = [];
     const context = {
-      clearRect: vi.fn(() => order.push("clear")),
+      fillStyle: "",
+      fillRect: vi.fn(() => order.push("matte")),
       beginPath: vi.fn(() => order.push("path")),
       moveTo: vi.fn(),
       lineTo: vi.fn(),
-      quadraticCurveTo: vi.fn(),
+      bezierCurveTo: vi.fn(),
       closePath: vi.fn(),
       clip: vi.fn(() => order.push("clip")),
       drawImage: vi.fn(() => order.push("draw")),
@@ -43,7 +45,10 @@ describe("membership card export", () => {
       );
       expect(canvas.width).toBe(300);
       expect(canvas.height).toBe(375);
+      expect(context.fillStyle).toBe(membershipCardExportMatte);
+      expect(order.indexOf("matte")).toBeLessThan(order.indexOf("clip"));
       expect(context.moveTo).toHaveBeenCalledWith(60, 0);
+      expect(context.bezierCurveTo).toHaveBeenCalledTimes(4);
       expect(order.indexOf("clip")).toBeLessThan(order.indexOf("draw"));
       expect(canvas.toDataURL).toHaveBeenCalledWith("image/png");
     } finally {
@@ -61,5 +66,6 @@ describe("membership card export", () => {
     expect(pages).toHaveLength(1);
     expect(pages[0].getSize()).toEqual({ width: 288, height: 360 });
     expect(pages[0].node.Resources()).toBeTruthy();
+    expect(pages[0].node.Contents()).toBeTruthy();
   });
 });
