@@ -1,9 +1,18 @@
 /** Render the long edge at 4K while keeping the browser canvas within a safe scale. */
 export function membershipCardCaptureOptions(cardHeightCssPx: number) {
   return {
-  pixelRatio: Math.min(10, Math.max(4, Math.ceil(3840 / Math.max(1, cardHeightCssPx)))),
-  cacheBust: true,
+    pixelRatio: Math.min(10, Math.max(4, Math.ceil(3840 / Math.max(1, cardHeightCssPx)))),
+    cacheBust: true,
   } as const;
+}
+
+/** Decode the generated PNG without a fetch(data:) request (Safari can reject those). */
+export function pngDataUrlToBlob(dataUrl: string) {
+  const [metadata, encoded] = dataUrl.split(",", 2);
+  if (!metadata || !encoded) throw new Error("Could not prepare the membership card image.");
+  const type = metadata.match(/^data:(.*?);base64$/)?.[1] ?? "image/png";
+  const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+  return new Blob([bytes], { type });
 }
 
 const CIRCLE_HANDLE = 0.55228475;

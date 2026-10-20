@@ -15,7 +15,7 @@ import { formatEventDate } from "@/lib/format";
 import type { MemberCard } from "@/types/member";
 import Link from "next/link";
 import { AccountAvatar } from "@/components/layout/account-avatar";
-import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
+import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions, pngDataUrlToBlob } from "@/lib/member/card-export";
 
 export function MemberIdCard({
   card,
@@ -28,6 +28,13 @@ export function MemberIdCard({
   const [qr, setQr] = React.useState<string | null>(null);
   const [downloading, setDownloading] = React.useState<"png" | "pdf" | null>(null);
   const statusMeta = membershipStatusMeta[card.status];
+
+  function isAppleMobileBrowser() {
+    const userAgent = navigator.userAgent;
+    const iOSDevice = /iPhone|iPad|iPod/i.test(userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    return iOSDevice;
+  }
 
   React.useEffect(() => {
     let active = true;
@@ -47,6 +54,11 @@ export function MemberIdCard({
 
   async function download(format: "png" | "pdf") {
     if (!cardRef.current) return;
+    // iOS Safari may ignore `a[download]` for generated Blob URLs. Reserve a
+    // same-gesture tab before rendering so the resulting file can still open
+    // in Safari if the native Share sheet is unavailable.
+    const appleMobile = isAppleMobileBrowser();
+    const fallbackWindow = appleMobile ? window.open("about:blank", "_blank") : null;
     setDownloading(format);
     try {
       const cardElement = cardRef.current;
@@ -61,19 +73,58 @@ export function MemberIdCard({
         cornerRadiusCssPx,
         cardElement.getBoundingClientRect().width,
       );
-      const link = document.createElement("a");
       const suffix = isDemo ? "-DEMO" : "";
-      link.download = `CSC-Membership-${card.memberNumber}${suffix}.${format}`;
+      const filename = `CSC-Membership-${card.memberNumber}${suffix}.${format}`;
+      let fileBlob: Blob;
       if (format === "png") {
-        link.href = dataUrl;
+        fileBlob = pngDataUrlToBlob(dataUrl);
       } else {
         const pdfBytes = await createMembershipCardPdf(dataUrl);
-        const pdfBlob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
-        link.href = URL.createObjectURL(pdfBlob);
-        window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        fileBlob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
       }
+
+      if (appleMobile) {
+        const file = new File([fileBlob], filename, { type: fileBlob.type });
+        if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+          try {
+            await navigator.share({ files: [file], title: "CSC Circle membership card" });
+            fallbackWindow?.close();
+            return;
+          } catch (shareError) {
+            if (shareError instanceof DOMException && shareError.name === "AbortError") {
+              fallbackWindow?.close();
+              return;
+            }
+            // Continue to Safari's native file preview fallback below.
+          }
+        }
+
+        const objectUrl = URL.createObjectURL(fileBlob);
+        if (fallbackWindow && !fallbackWindow.closed) {
+          fallbackWindow.location.replace(objectUrl);
+        } else {
+          // Popup blocking should not make the export inaccessible on iOS.
+          window.location.assign(objectUrl);
+        }
+        toast.info(format === "pdf"
+          ? "Your card is open in Safari. Use Share, then Save to Files."
+          : "Your card image is open in Safari. Touch and hold it to save or share.");
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(fileBlob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
       link.click();
+      link.remove();
+      // Safari may consume Blob URLs after a download event has returned.
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     } catch {
+      fallbackWindow?.close();
       toast.error(`Could not download the membership card as ${format.toUpperCase()}. Please try again.`);
     } finally {
       setDownloading(null);

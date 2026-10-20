@@ -1,12 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 import sharp from "sharp";
 import { PDFDict, PDFDocument, PDFName } from "pdf-lib";
-import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions } from "@/lib/member/card-export";
+import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions, pngDataUrlToBlob } from "@/lib/member/card-export";
 
 describe("membership card export", () => {
   it("renders the long edge at 4K resolution without adding a background", () => {
     expect(membershipCardCaptureOptions(480)).toEqual({ pixelRatio: 8, cacheBust: true });
     expect(membershipCardCaptureOptions(1200).pixelRatio).toBe(4);
+  });
+
+  it("decodes the captured PNG into a Safari-compatible downloadable Blob", async () => {
+    const blob = pngDataUrlToBlob("data:image/png;base64,aGVsbG8=");
+    expect(blob.type).toBe("image/png");
+    expect(blob.size).toBe(5);
+    expect(() => pngDataUrlToBlob("invalid")).toThrow("Could not prepare the membership card image.");
   });
 
   it("clips the captured bitmap to the card's rounded corners before exporting it", async () => {
