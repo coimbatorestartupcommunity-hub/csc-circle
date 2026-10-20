@@ -4,6 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,7 +45,7 @@ export function MemberProfileForm({
     try {
       const result = await memberRequest("profile", values);
       if (result.error) { toast.error(result.error); return; }
-      toast.success("Profile updated.");
+      notifySubmissionSuccess({ title: "Profile saved", message: "Your profile information was successfully saved." });
     } finally {
       setSaving(false);
     }

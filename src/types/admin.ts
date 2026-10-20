@@ -31,9 +31,13 @@ export interface AdminClaimRow {
   id: string;
   reference: string;
   applicantName: string;
+  email?: string;
+  whatsapp?: string;
   applicantType: "existing_member" | "new_applicant";
+  designation?: string;
   submittedAt: string;
   startup?: string;
+  declarationAccurate?: boolean;
   status: MembershipStatus;
   reviewer?: string;
 }

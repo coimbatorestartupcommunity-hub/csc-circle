@@ -274,6 +274,7 @@ export function DataTable<T extends { id: string }>({
                               operation={a.operation ? { ...a.operation, target: row.id } : undefined}
                               message={a.message}
                               confirm={a.confirm}
+                              details={row as unknown as Record<string, unknown>}
                               variant={a.variant}
                               size="xs"
                             />

@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { AccountAvatar } from "@/components/layout/account-avatar";
 import type { Permission } from "@/lib/admin/permissions";
+import { isAdminRouteActive } from "@/lib/admin/navigation";
 
 interface NavItem {
   href: string;
@@ -106,10 +107,7 @@ function NavList({
               {group.heading}
             </p>
             {items.map((item) => {
-              const active =
-                item.href === "/admin"
-                  ? pathname === "/admin"
-                  : pathname.startsWith(item.href);
+              const active = isAdminRouteActive(pathname, item.href);
               return (
                 <Link
                   key={item.href}

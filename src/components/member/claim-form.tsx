@@ -20,6 +20,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { memberRequest } from "@/lib/services/member/request";
 import { claimSchema, type ClaimFormValues } from "@/lib/validations/member";
 import { designationOptions } from "@/lib/content/member-taxonomy";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 
 export function ClaimForm({ isDemo }: { isDemo: boolean }) {
   const router = useRouter();
@@ -48,7 +49,7 @@ export function ClaimForm({ isDemo }: { isDemo: boolean }) {
     try {
       const result = await memberRequest("claim", values);
       if (result.error) { toast.error(result.error); return; }
-      toast.success("Your membership claim was submitted for review.");
+      notifySubmissionSuccess({ title: "Successfully submitted", message: "Your membership claim has been sent to CSC for review." });
       router.refresh();
     } finally {
       setSubmitting(false);

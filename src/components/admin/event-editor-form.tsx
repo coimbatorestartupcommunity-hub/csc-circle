@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { Loader2, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,7 +80,7 @@ export function EventEditorForm({
       const res = await fetch("/api/admin/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: v, id: eventId }) });
       const data = await res.json();
       if (!res.ok || !data.ok) { toast.error(data.error ?? "Event was not saved."); return; }
-      toast.success(v.status === "published" ? "Event published." : "Draft saved.");
+      notifySubmissionSuccess({ title: v.status === "published" ? "Event published" : "Event draft saved", message: v.status === "published" ? "The event is now available on the CSC website." : "The event draft was saved." });
       router.push(`/admin/events/${data.id}`); router.refresh();
     } catch { toast.error("Could not save the event."); }
     finally { setSaving(false); }

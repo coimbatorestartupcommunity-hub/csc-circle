@@ -6,6 +6,7 @@ import { Providers } from "@/app/providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import { PublicFooterBoundary } from "@/components/layout/public-footer-boundary";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
+import { PublicEventNotice } from "@/components/layout/public-event-notice";
 import { siteConfig } from "@/lib/content/site";
 
 const poppins = localFont({
@@ -98,6 +99,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </main>
           <PublicFooterBoundary />
+          <PublicEventNotice />
           <ScrollToTop />
         </Providers>
       </body>

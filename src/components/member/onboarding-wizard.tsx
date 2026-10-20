@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "cn";
 import { Input } from "@/components/ui/input";
@@ -173,7 +174,7 @@ export function OnboardingWizard({ isDemo }: { isDemo: boolean }) {
     try {
       const result = await memberRequest("onboarding", data);
       if (result.error) { toast.error(result.error); return; }
-      toast.success("Welcome! Your profile is set up.");
+      notifySubmissionSuccess({ title: "Profile completed", message: "Welcome to CSC Circle. Your profile setup was saved." });
       router.push("/member/profile#profile-portrait");
     } finally {
       setSaving(false);

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { Button } from "@/components/ui/button";
 import { collaborationSaveSchema, type CollaborationSaveValues } from "@/lib/validations/collaboration";
 import type { z } from "zod";
@@ -76,7 +77,7 @@ export function CollaborationEditor({
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Could not save collaboration.");
-      toast.success(checked.publicationStatus === "published" ? "Collaboration published." : "Collaboration saved.");
+      notifySubmissionSuccess({ title: checked.publicationStatus === "published" ? "Collaboration published" : "Collaboration saved", message: checked.publicationStatus === "published" ? "The collaboration is now live on the CSC website." : "The collaboration draft was saved." });
       router.push(`/admin/collaborations/${result.id}/edit`);
       router.refresh();
     } catch (error) {
@@ -106,7 +107,7 @@ export function CollaborationEditor({
       setOrganizationOptions((current) => [...current, option].sort((a, b) => a.name.localeCompare(b.name)));
       form.setValue("partnerIds", [...(form.getValues("partnerIds") ?? []), option.id], { shouldValidate: true });
       setNewOrganization({ name: "", slug: "", organizationType: "community", description: "", logoPath: "", websiteUrl: "", publicationApproved: false });
-      toast.success("Approved partner organization added.");
+      notifySubmissionSuccess({ title: "Partner organization added", message: "The approved partner organization was saved." });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not add organization.");
     } finally {

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { ArrowDown, ArrowUp, Download, Eye, FileText, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,7 @@ export function MemberResumeBuilder({ initialData, isDemo }: { initialData: Resu
       const response = await fetch("/api/member/resume", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(parsed.data) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Could not save your resume.");
-      setDirty(false); setVersion((n) => n + 1); toast.success("Resume saved securely.");
+      setDirty(false); setVersion((n) => n + 1); notifySubmissionSuccess({ title: "Resume saved", message: "Your resume changes are saved securely." });
     } catch (error) { toast.error(error instanceof Error ? error.message : "Could not save your resume."); }
     finally { setSaving(false); }
   }

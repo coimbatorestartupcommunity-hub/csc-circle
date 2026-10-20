@@ -7,8 +7,11 @@ export const metadata = { title: "Membership claims" };
 
 const columns: Column[] = [
   { key: "applicantName", header: "Applicant", sortable: true },
+  { key: "email", header: "Account email" },
+  { key: "whatsapp", header: "WhatsApp" },
   { key: "reference", header: "Reference", type: "mono" },
   { key: "applicantType", header: "Type", type: "badge" },
+  { key: "designation", header: "Designation" },
   { key: "startup", header: "Startup" },
   { key: "submittedAt", header: "Submitted", type: "date", sortable: true },
   { key: "status", header: "Status", type: "statusMembership", sortable: true },

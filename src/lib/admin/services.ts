@@ -31,6 +31,7 @@ import type {
 import { getAdminContext, type AdminContext } from "@/lib/admin/gate";
 import type { Permission } from "@/lib/admin/permissions";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   demoAudit,
   demoClaims,
@@ -131,6 +132,15 @@ export const adminServices = {
         .from("profiles")
         .select("id, full_name, display_name, email, whatsapp, designations, startup, created_at, updated_at, memberships(status, member_number)")
         .order("created_at", { ascending: false });
+      const missingEmails = (data ?? []).some((p) => !(p as Row).email);
+      const authEmails = new Map<string, string>();
+      if (missingEmails) {
+        try {
+          const admin = createAdminClient();
+          const { data: authPage } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+          for (const authUser of authPage?.users ?? []) if (authUser.email) authEmails.set(authUser.id, authUser.email);
+        } catch { /* profile emails remain available as the non-privileged fallback */ }
+      }
       const rows: AdminMemberRow[] = (data ?? []).map((p) => {
         const r = p as Row;
         const m = (Array.isArray(r.memberships) ? r.memberships[0] : r.memberships) as Row | undefined;
@@ -140,7 +150,7 @@ export const adminServices = {
           id: String(r.id),
           memberNumber: (m?.member_number as string) ?? undefined,
           fullName: (r.full_name as string) ?? (r.display_name as string) ?? "—",
-          email: (r.email as string) ?? "",
+          email: (r.email as string) || authEmails.get(String(r.id)) || "Email unavailable",
           whatsapp: (r.whatsapp as string) ?? undefined,
           designation: desigs[0],
           startup: startup?.name,
@@ -179,9 +189,13 @@ export const adminServices = {
           id: String(r.id),
           reference: `CLM-${String(r.id).slice(0, 8)}`,
           applicantName: (r.full_name as string) ?? "—",
+          email: (r.linked_account_email as string) ?? undefined,
+          whatsapp: (r.whatsapp as string) ?? undefined,
           applicantType: (r.applicant_type as AdminClaimRow["applicantType"]) ?? "new_applicant",
+          designation: (r.designation as string) ?? undefined,
           submittedAt: (r.submitted_at as string) ?? "",
           startup: (r.startup_affiliation as string) ?? undefined,
+          declarationAccurate: Boolean(r.declaration_accurate),
           status: (r.status as AdminClaimRow["status"]) ?? "claim_submitted",
         };
       });

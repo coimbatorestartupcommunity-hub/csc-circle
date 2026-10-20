@@ -30,6 +30,7 @@ import {
   type ConsultationFormValues,
 } from "@/lib/validations/forms";
 import type { EventRecord } from "@/types";
+import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 
 function InfoBanner() {
   return (
@@ -107,7 +108,7 @@ export function RsvpForm({
         return;
       }
       setReference(json.reference);
-      toast.success("RSVP received — the CSC team will confirm your spot.");
+      notifySubmissionSuccess({ title: "Registration request submitted", message: "Your RSVP was received. The CSC team will confirm your place when the registration is approved.", reference: json.reference });
     } catch {
       toast.error("Network error. Please try again.");
     }
@@ -274,7 +275,7 @@ export function ConsultationForm() {
         return;
       }
       setReference(json.reference);
-      toast.success("Request received — the CSC team will be in touch.");
+      notifySubmissionSuccess({ title: "Consultation request submitted", message: "Your request has been received. The CSC team will contact you to schedule a consultation.", reference: json.reference });
     } catch {
       toast.error("Network error. Please try again.");
     }
