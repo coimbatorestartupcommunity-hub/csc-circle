@@ -1,9 +1,11 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StatCard } from "@/components/admin/stat-card";
-import { ActionButton } from "@/components/admin/action-button";
 import { DataTable, type Column } from "@/components/admin/data-table";
-import { getAdminContext } from "@/lib/admin/gate";
+import { Download } from "lucide-react";
+import Link from "next/link";
+import { getAdminContext, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
+import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 
 export const metadata = { title: "Attendance" };
 
@@ -16,6 +18,7 @@ const columns: Column[] = [
 
 export default async function AttendancePage() {
   const ctx = await getAdminContext();
+  if (!can(ctx, "registrations.read")) return <AdminUnavailable forbidden />;
   const res = await adminServices.listRegistrations();
   const regs = res.ok ? res.data : [];
   const checkedIn = regs.filter((r) => r.attendance === "checked_in").length;
@@ -26,9 +29,9 @@ export default async function AttendancePage() {
     <>
       <AdminPageHeader
         title="Attendance reports"
-        description="Check-in totals per event. CSV export uses authorized server-side access (Phase 1)."
+        description="Check-in totals per event and an access-controlled attendance export."
         isDemo={ctx.mode === "preview"}
-        action={<ActionButton label="Export CSV" message="CSV export uses authorized server-side data access in Phase 1 — never exposing private rows to the browser." />}
+        action={ctx.mode === "live" ? <Link href="/api/admin/attendance/export" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"><Download className="size-4" aria-hidden />Download CSV</Link> : null}
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -27,6 +27,17 @@ export interface AdminMemberRow {
   updatedAt: string;
 }
 
+export interface AdminMemberDetails {
+  portraitUrl?: string;
+  profileCompletion?: number;
+  lastSignInAt?: string;
+  claims: { id: string; status: string; submittedAt: string; applicantType: string; startup?: string }[];
+  startups: { id: string; name: string; slug: string; industry: string; status: string; updatedAt: string }[];
+  registrations: { id: string; eventTitle: string; startsAt: string; reference: string; status: string; payment: string; attendance: string; checkedInAt?: string; createdAt: string }[];
+  consultations: { id: string; title: string; status: string; scheduledAt?: string; submittedAt: string }[];
+  audit: { action: string; actorRole?: string; targetType?: string; createdAt: string }[];
+}
+
 export interface AdminClaimRow {
   id: string;
   reference: string;
