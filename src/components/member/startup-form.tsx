@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { memberRequest } from "@/lib/services/member/request";
@@ -10,33 +11,71 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { startupSubmissionSchema, type StartupSubmissionValues } from "@/lib/validations/member";
 import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
-import { CheckCircle2, Clock3 } from "lucide-react";
+import { CheckCircle2, Clock3, ImagePlus, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 
-export function StartupForm() {
+type StartupFormProps = {
+  startupId?: string;
+  initialValues?: Partial<StartupSubmissionValues>;
+  initialLogoUrl?: string;
+};
+
+export function StartupForm({ startupId, initialValues, initialLogoUrl }: StartupFormProps) {
   const { register, handleSubmit, setValue, formState: { isSubmitting, errors } } = useForm<StartupSubmissionValues>({
     resolver: zodResolver(startupSubmissionSchema),
-    defaultValues: { name: "", slug: "", industry: "", description: "", website: "", consent: false },
+    defaultValues: { name: "", slug: "", industry: "", description: "", website: "", logoPath: "", consent: false, ...initialValues },
   });
   const [message, setMessage] = useState("");
   const [messageIsError, setMessageIsError] = useState(false);
   const [submitted, setSubmitted] = useState<{ id: string } | null>(null);
   const [slugWasEdited, setSlugWasEdited] = useState(false);
+  const [logoPreview, setLogoPreview] = useState(initialLogoUrl ?? "");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState("");
+  const logoPathField = register("logoPath");
   const nameField = register("name");
   const slugField = register("slug");
   const fieldErrors = Object.values(errors).filter(Boolean);
 
+  useEffect(() => () => { if (logoPreview.startsWith("blob:")) URL.revokeObjectURL(logoPreview); }, [logoPreview]);
+
+  async function uploadLogo(file?: File) {
+    if (!file) return;
+    if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(file.type) || file.size > 8 * 1024 * 1024) {
+      setLogoError("Upload a JPEG, PNG or WebP company logo under 8 MB.");
+      return;
+    }
+    setUploadingLogo(true);
+    setLogoError("");
+    const preview = URL.createObjectURL(file);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch("/api/member/startup-logo", { method: "POST", body });
+      const data = await response.json();
+      if (!response.ok || !data.ok || typeof data.logoPath !== "string") throw new Error(data.error ?? "The company logo could not be uploaded.");
+      setValue("logoPath", data.logoPath, { shouldDirty: true, shouldValidate: true });
+      setLogoPreview(preview);
+    } catch (cause) {
+      URL.revokeObjectURL(preview);
+      setLogoError(cause instanceof Error ? cause.message : "The company logo could not be uploaded.");
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   const submit = handleSubmit(async (values) => {
     setMessage("");
     setMessageIsError(false);
-    const result = await memberRequest("startup", values);
+    const payload = startupId ? { ...values, startupId } : values;
+    const result = await memberRequest(startupId ? "startup-update" : "startup", payload);
     if (!result.ok) {
       setMessage(result.error ?? "Your startup could not be submitted. Please check the details and try again.");
       setMessageIsError(true);
       return;
     }
     setSubmitted({ id: result.id ?? "" });
-    notifySubmissionSuccess({ title: "Successfully submitted", message: "Your startup submission was received and is awaiting the review decision shown in your account.", reference: result.id });
+    notifySubmissionSuccess({ title: startupId ? "Startup details updated" : "Successfully submitted", message: "Your startup submission was received and is awaiting the review decision shown in your account.", reference: result.id });
   }, (invalidFields) => {
     setMessage("Please complete the highlighted fields before submitting.");
     setMessageIsError(true);
@@ -120,6 +159,21 @@ export function StartupForm() {
         {errors.website ? <p className="text-sm text-red-700">Enter a valid http(s) website URL.</p> : null}
       </div>
 
+      <div className="grid min-w-0 gap-3 rounded-2xl bg-brand-cloud p-4 ring-1 ring-brand-border sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <div className="min-w-0">
+          <Label htmlFor="startup-logo">Company logo <span className="font-normal text-brand-muted">(required)</span></Label>
+          <p className="mt-1 text-xs leading-5 text-brand-muted">Upload a clear square or landscape logo. We preserve its proportions and fit it into a clean card image.</p>
+          <input type="hidden" {...logoPathField} />
+        </div>
+        {logoPreview ? <div className="flex min-h-20 items-center justify-center rounded-xl bg-white p-3 ring-1 ring-brand-border sm:col-start-2 sm:row-span-2 sm:row-start-1"><Image src={logoPreview} alt="Company logo preview" width={192} height={80} unoptimized className="max-h-20 max-w-48 object-contain" /></div> : null}
+        <label htmlFor="startup-logo" className={`inline-flex min-h-11 w-fit cursor-pointer items-center justify-center gap-2 rounded-xl border border-brand-border bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-white/80 ${uploadingLogo || isSubmitting ? "pointer-events-none opacity-60" : ""}`}>
+          {uploadingLogo ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <ImagePlus className="size-4" aria-hidden="true" />}
+          {uploadingLogo ? "Uploading logo…" : logoPreview ? "Replace company logo" : "Upload company logo"}
+          <input id="startup-logo" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingLogo || isSubmitting} onChange={(event) => { void uploadLogo(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+        </label>
+        {logoError || errors.logoPath ? <p className="text-sm text-red-700 sm:col-span-2" role="alert">{logoError || errors.logoPath?.message}</p> : null}
+      </div>
+
       <label className="flex items-start gap-2 text-sm leading-relaxed text-brand-secondary">
         <input id="startup-consent" type="checkbox" {...register("consent")} className="mt-1" aria-invalid={!!errors.consent} />
         <span>I consent to publication of these business details after CSC approval. Directory participation must also be enabled in my privacy settings.</span>
@@ -127,8 +181,8 @@ export function StartupForm() {
       {errors.consent ? <p className="text-sm text-red-700">Please consent before submitting.</p> : null}
 
       <div className="flex flex-col items-center gap-2">
-        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto sm:min-w-52">
-          {isSubmitting ? "Submitting…" : "Submit for review"}
+        <Button type="submit" disabled={isSubmitting || uploadingLogo} className="w-full sm:w-auto sm:min-w-52">
+          {isSubmitting ? "Submitting…" : startupId ? "Save changes & resubmit" : "Submit for review"}
         </Button>
         <p role={messageIsError ? "alert" : "status"} aria-live={messageIsError ? "assertive" : "polite"} className={`text-center text-sm ${messageIsError ? "text-red-700" : "text-brand-muted"}`}>{message}</p>
       </div>

@@ -48,11 +48,18 @@ function mapEvent(r: Row): EventRecord {
 
 function mapStartup(r: Row): Startup {
   const founder = (r.founder as { id?: string; name?: string; role?: string; profileUrl?: string }) ?? {};
+  const storedLogo = typeof r.logo_url === "string" ? r.logo_url : "";
+  const isStoredStartupLogo = typeof r.user_id === "string" && /^[0-9a-f-]{36}\/[0-9a-f-]{36}-startup-logo\.webp$/i.test(storedLogo);
+  const isLitCompany = String(r.name ?? "").trim().toLowerCase() === "logic intelligence technologies";
   return {
     id: String(r.id),
     slug: (r.slug as string) ?? String(r.id),
     name: (r.name as string) ?? "",
-    logoUrl: (r.logo_url as string) ?? undefined,
+    logoUrl: isStoredStartupLogo
+      ? `/api/directory/startups/${String(r.id)}/logo`
+      : /^https?:\/\//i.test(storedLogo)
+        ? storedLogo
+        : isLitCompany ? "/brand/lit-logo.png" : undefined,
     industry: (r.industry as string) ?? "other",
     description: (r.description as string) ?? "",
     collaboration: ((r.collaboration as string[]) ?? []) as CollaborationIntent[],

@@ -2,7 +2,6 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink, ArrowUpRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { HoverLiftCard } from "@/components/motion";
 import { FixtureNotice } from "@/components/common/empty-state";
 import { industryLabel, collaborationLabels } from "@/lib/content/taxonomy";
@@ -21,26 +20,26 @@ export function StartupCard({ startup }: { startup: Startup }) {
         {startup.founder.avatarUrl ? <div className="relative -mx-6 -mt-6 aspect-[4/3] overflow-hidden rounded-t-3xl bg-brand-cloud">
           <Image src={startup.founder.avatarUrl} alt={`${startup.founder.name}, founder of ${startup.name}`} fill sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover" />
         </div> : null}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             {startup.logoUrl ? (
               <Image
                 src={startup.logoUrl}
                 alt={`${startup.name} logo`}
                 width={48}
                 height={48}
-                className="size-12 rounded-xl object-cover ring-1 ring-brand-border"
+                className="size-12 shrink-0 rounded-xl object-contain bg-white p-1 ring-1 ring-brand-border"
               />
             ) : (
-              <span className="flex size-12 items-center justify-center rounded-xl bg-brand-purple text-base font-bold text-brand-ink ring-1 ring-brand-border">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-purple text-base font-bold text-brand-ink ring-1 ring-brand-border">
                 {initials(startup.name)}
               </span>
             )}
-            <div className="flex flex-col">
-              <h3 className="text-lg leading-tight font-semibold text-brand-ink">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <h3 title={startup.name} className="truncate whitespace-nowrap text-lg leading-tight font-semibold text-brand-ink">
                 {startup.name}
               </h3>
-              <p className="text-sm text-brand-muted">
+              <p className="truncate text-sm text-brand-muted" title={`${startup.founder.name}${startup.founder.role ? ` · ${startup.founder.role}` : ""}`}>
                 {startup.founder.name}
                 {startup.founder.role ? ` · ${startup.founder.role}` : ""}
               </p>
@@ -49,9 +48,9 @@ export function StartupCard({ startup }: { startup: Startup }) {
           {startup.isFixture ? <FixtureNotice /> : null}
         </div>
 
-        <Badge variant="secondary" className="w-fit bg-brand-cloud text-brand-secondary">
+        <span className="inline-flex w-fit max-w-full whitespace-normal break-words rounded-full bg-brand-cloud px-3 py-1 text-sm leading-snug text-brand-secondary">
           {industryLabel(startup.industry)}
-        </Badge>
+        </span>
 
         <p className="flex-1 text-sm leading-relaxed text-brand-secondary">
           {startup.description}

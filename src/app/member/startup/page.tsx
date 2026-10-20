@@ -8,6 +8,7 @@ import { MemberPageHeader } from "@/components/member/member-page-header";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { MemberUnavailable } from "@/components/member/member-unavailable";
 import { Clock3, ExternalLink } from "lucide-react";
 export const metadata = { title: "Submit a startup" };
@@ -20,13 +21,21 @@ export default async function Page() {
   const sb = await createClient();
   const { data: existingStartup, error: startupLookupError } = await sb
     .from("directory_startups")
-    .select("id,name,slug,status,updated_at")
+    .select("id,name,slug,status,updated_at,industry,description,website,logo_url")
     .eq("user_id", ctx.user!.id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   const hasPublicConsent = profile.consent.directoryParticipation && profile.consent.displayNamePublicly && profile.consent.displayPhotoPublicly;
   const canSubmit = Boolean(profile.portraitPath && profile.directoryPhotoPath && hasPublicConsent && profile.displayName.trim());
+  const existingLogoPath = typeof existingStartup?.logo_url === "string" && new RegExp(`^${ctx.user!.id}/[0-9a-f-]{36}-startup-logo\\.webp$`, "i").test(existingStartup.logo_url) ? existingStartup.logo_url : "";
+  let existingLogoPreview = "";
+  if (existingLogoPath) {
+    try {
+      const { data } = await createAdminClient().storage.from("member-portraits").createSignedUrl(existingLogoPath, 60 * 60);
+      existingLogoPreview = data?.signedUrl ?? "";
+    } catch { existingLogoPreview = ""; }
+  }
 
   if (startupLookupError) return <EmptyState icon={ImagePlus} title="Your startup submission could not be checked." description="Refresh the page to try again. Your saved startup data has not been changed." />;
 
@@ -54,6 +63,25 @@ export default async function Page() {
           </div>
           {published ? <Button render={<Link href={`/directory/${existingStartup.slug}`} />} className="mx-auto mt-6">View directory listing</Button> : null}
         </section>
+        {(["draft", "pending"] as string[]).includes(existingStartup.status) ? <details className="mx-auto w-full max-w-3xl rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-6">
+          <summary className="cursor-pointer font-semibold text-brand-ink marker:text-brand-accent">Edit startup details</summary>
+          <p className="mt-2 text-sm leading-6 text-brand-secondary">Saving changes sends the listing back to CSC administrator review before it is displayed publicly.</p>
+          <div className="mt-5">
+            <StartupForm
+              startupId={existingStartup.id}
+              initialValues={{
+                name: existingStartup.name,
+                slug: existingStartup.slug,
+                industry: existingStartup.industry ?? "",
+                description: existingStartup.description ?? "",
+                website: existingStartup.website ?? "",
+                logoPath: existingLogoPath,
+                consent: true,
+              }}
+              initialLogoUrl={existingLogoPreview}
+            />
+          </div>
+        </details> : <p className="mx-auto max-w-2xl text-center text-sm text-brand-muted">Published or closed submissions can be edited by the CSC administrator. Contact the CSC team if a public detail needs correction.</p>}
       </div>
     );
   }

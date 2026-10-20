@@ -55,6 +55,7 @@ describe("startup submission schema", () => {
     industry: "Industrial automation and robotics",
     description: "Building automation systems for small manufacturers.",
     website: "https://northstar.example",
+    logoPath: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-startup-logo.webp",
     consent: true as const,
   };
 
@@ -64,6 +65,10 @@ describe("startup submission schema", () => {
 
   it("requires a readable industry value", () => {
     expect(startupSubmissionSchema.safeParse({ ...valid, industry: " " }).success).toBe(false);
+  });
+
+  it("requires a saved company logo", () => {
+    expect(startupSubmissionSchema.safeParse({ ...valid, logoPath: "" }).success).toBe(false);
   });
 });
 

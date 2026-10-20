@@ -105,6 +105,7 @@ export const startupSubmissionSchema = z.object({
   industry: z.string().trim().min(2, "Enter an industry.").max(80),
   description: z.string().trim().min(20, "Describe your startup in at least 20 characters.").max(600, "Description must be 600 characters or fewer."),
   website: z.string().url("Enter a valid website URL, or leave this field blank.").refine((value) => /^https?:\/\//.test(value), "Website links must start with http:// or https://.").or(z.literal("")),
+  logoPath: z.string().trim().min(1, "Upload your company logo before submitting.").max(240),
   consent: z.boolean().refine((value) => value, "Please consent to sharing these startup details after CSC approval."),
 });
 
