@@ -5,6 +5,7 @@ import { getAdminContext } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { EventNoticeEditor } from "@/components/admin/event-notice-editor";
 import { can } from "@/lib/admin/gate";
+import { NotificationEmailCheck } from "@/components/admin/notification-email-check";
 
 export const metadata = { title: "Notifications" };
 
@@ -57,6 +58,7 @@ export default async function AdminNotificationsPage() {
         isDemo={ctx.mode === "preview"}
       />
       <EventNoticeEditor isDemo={ctx.mode !== "live"} canPublish={can(ctx, "settings.manage") || can(ctx, "content.manage")} />
+      {ctx.mode === "live" && ctx.permissions.has("settings.manage") && <NotificationEmailCheck />}
       {ctx.mode === "live" && ctx.permissions.has("settings.manage") && <NotificationRetry jobs={rows.filter(r=>["failed_retryable","failed_permanent"].includes(r.status)).map(r=>({id:r.id,type:r.type}))} />}
       <DataTable
         rows={rows}
