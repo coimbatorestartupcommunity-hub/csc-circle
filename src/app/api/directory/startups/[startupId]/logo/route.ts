@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isStartupLogoPath } from "@/lib/startups/media-paths";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -17,7 +18,7 @@ export async function GET(_request: Request, context: { params: Promise<{ startu
     const { data: startup } = await admin.from("directory_startups").select("user_id,logo_url").eq("id", startupId).eq("status", "published").maybeSingle();
     const userId = startup?.user_id;
     const path = startup?.logo_url ?? "";
-    if (!userId || !uuidPattern.test(userId) || !new RegExp(`^${userId}/[0-9a-f-]{36}-startup-logo\\.webp$`, "i").test(path)) {
+    if (!userId || !uuidPattern.test(userId) || !isStartupLogoPath(path, userId, startupId)) {
       return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
     const { data: image, error } = await admin.storage.from("member-portraits").download(path);

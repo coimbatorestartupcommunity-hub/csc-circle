@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isSharedStartupDirectoryImagePath, isStartupDirectoryImagePath } from "@/lib/startups/media-paths";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function allowedPath(path: string, userId: string, startupId: string) {
-  const escapedUserId = userId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return path === `${userId}/${startupId}-directory-startup.webp` || new RegExp(`^${escapedUserId}/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}-directory\\.webp$`, "i").test(path);
-}
 
 export async function GET(_request: Request, context: { params: Promise<{ startupId: string }> }) {
   const { startupId } = await context.params;
@@ -29,8 +25,16 @@ export async function GET(_request: Request, context: { params: Promise<{ startu
     if (!profile?.display_name || !consent || typeof consent !== "object" || Array.isArray(consent) || consent.directoryParticipation !== true || consent.displayNamePublicly !== true) {
       return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     }
-    const imagePath = startup.directory_image_path || (consent.displayPhotoPublicly === true ? profile.directory_photo_path : null);
-    if (!imagePath || !allowedPath(imagePath, startup.user_id, startupId)) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
+    const startupImage = startup.directory_image_path;
+    const useStartupImage = !!startupImage && isStartupDirectoryImagePath(startupImage, startup.user_id, startupId);
+    const imagePath = useStartupImage
+      ? startupImage
+      : consent.displayPhotoPublicly === true
+        ? profile.directory_photo_path
+        : null;
+    if (!imagePath || !isSharedStartupDirectoryImagePath(imagePath, startup.user_id, startupId)) {
+      return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
+    }
     const { data: image, error } = await adminDb.storage.from("member-portraits").download(imagePath);
     if (error || !image) return new NextResponse(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     return new NextResponse(image, { headers: { "Content-Type": "image/webp", "Content-Length": String(image.size), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Content-Disposition": "inline; filename=founder-directory.webp" } });

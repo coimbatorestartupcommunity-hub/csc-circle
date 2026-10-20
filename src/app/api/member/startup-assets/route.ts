@@ -4,6 +4,7 @@ import { getMemberContext } from "@/lib/services/member/context";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authResponse } from "@/lib/auth/http";
 import { rateLimit } from "@/lib/rate-limit";
+import { isSupportedStartupImage, isSupportedStartupImageFormat } from "@/lib/startups/image-input";
 
 export async function POST(request: Request) {
   if (request.headers.get("origin") !== new URL(request.url).origin) return authResponse({ error: "Request origin could not be verified." }, 403);
@@ -18,13 +19,13 @@ export async function POST(request: Request) {
   if (!(file instanceof File) || !/^[0-9a-f-]{36}$/i.test(startupId) || !["logo", "directory"].includes(kind)) {
     return authResponse({ error: "Choose a startup image and try again." }, 400);
   }
-  if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(file.type) || file.size > 8 * 1024 * 1024) {
-    return authResponse({ error: "Use a JPEG, PNG or WebP image smaller than 8 MB." }, 422);
+  if (!isSupportedStartupImage(file) || file.size > 8 * 1024 * 1024) {
+    return authResponse({ error: "Use a valid JPG, JPEG, PNG, WebP, GIF, TIFF, AVIF or HEIC image smaller than 8 MB." }, 422);
   }
   try {
     const source = Buffer.from(await file.arrayBuffer());
     const meta = await sharp(source, { limitInputPixels: 24_000_000 }).metadata();
-    if (!meta.width || !meta.height || !["jpeg", "png", "webp"].includes(meta.format ?? "")) return authResponse({ error: "The selected file is not a valid image." }, 422);
+    if (!meta.width || !meta.height || !isSupportedStartupImageFormat(meta.format)) return authResponse({ error: "The selected file is not a supported image. Try JPG, PNG, WebP, GIF, TIFF, AVIF or HEIC." }, 422);
     const output = kind === "directory"
       ? await sharp(source).rotate().resize(1200, 900, { fit: "cover", position: sharp.strategy.attention }).webp({ quality: 88, effort: 5 }).toBuffer()
       : await sharp(source).rotate().resize(640, 640, { fit: "inside", withoutEnlargement: true }).webp({ quality: 90, effort: 5 }).toBuffer();

@@ -30,6 +30,6 @@ describe("StartupCard", () => {
     expect(screen.getByText(startup.industry)).toHaveClass("min-w-0", "max-w-full", "whitespace-normal", "break-words");
     expect(screen.getByText(startup.description)).toHaveClass("min-w-0", "max-w-full", "break-words");
     expect(screen.getByRole("img", { name: `${startup.name} logo` })).toHaveAttribute("src", "/brand/lit-logo.png");
-    expect(screen.getByRole("img", { name: `${startup.founder.name}, founder of ${startup.name}` }).parentElement).toHaveClass("w-[calc(100%+3rem)]", "max-w-none", "aspect-[4/3]");
+    expect(screen.getByRole("img", { name: `${startup.name} directory image` }).parentElement).toHaveClass("w-[calc(100%+3rem)]", "max-w-none", "aspect-[4/3]");
   });
 });

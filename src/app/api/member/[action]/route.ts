@@ -98,7 +98,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const expectedRevisionLogo = v.revisionId ? `${user.id}/${v.id}-revision-${v.revisionId}-startup-logo.webp` : "";
       const validLogoPath = !expectedLogo || expectedLogo === expectedLogoPath || (isPublishedEdit && (expectedLogo === existingStartup?.logo_url || expectedLogo === expectedRevisionLogo));
       if (!validLogoPath) return authResponse({ error: "The company logo could not be verified. Upload it again." }, 422);
-      if (expectedLogo) {
+      if (expectedLogo && !/^https?:\/\//i.test(expectedLogo)) {
         const { error: logoError } = await admin.storage.from("member-portraits").download(expectedLogo);
         if (logoError) return authResponse({ error: "The company logo could not be verified. Upload it again." }, 422);
       }
