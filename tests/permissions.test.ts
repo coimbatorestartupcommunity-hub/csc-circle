@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   ALL_PERMISSIONS,
   rolePermissions,
@@ -40,5 +42,23 @@ describe("admin RBAC", () => {
     expect(set.has("members.approve")).toBe(false);
     // registrations.read is in both roles — still appears once.
     expect([...set].filter((p) => p === "registrations.read").length).toBe(1);
+  });
+
+  it("keeps every TypeScript role permission exactly aligned with PostgreSQL authorization", () => {
+    const sql = readFileSync(resolve(process.cwd(), "supabase/migrations/20261019153828_security_hardening.sql"), "utf8");
+    const functionBody = sql.match(/create or replace function private\.has_permission\(permission text\)[\s\S]*?\$\$;/i)?.[0];
+    expect(functionBody).toBeTruthy();
+    for (const [role, permissions] of Object.entries(rolePermissions)) {
+      if (role === "super_admin") {
+        expect(functionBody).toContain("a.role='super_admin'");
+      } else if (role === "checkin_staff") {
+        expect(functionBody).toContain("when 'checkin_staff' then permission='attendance.scan'");
+      } else {
+        const clause = functionBody?.match(new RegExp(`when '${role}' then permission=any\\(array\\[([^\\]]*)\\]\\)`));
+        expect(clause, `missing SQL permission clause for ${role}`).toBeTruthy();
+        const sqlPermissions = (clause?.[1].match(/'[^']+'/g) ?? []).map((value) => value.slice(1, -1));
+        expect(sqlPermissions.sort(), `SQL permissions for ${role}`).toEqual([...permissions].sort());
+      }
+    }
   });
 });

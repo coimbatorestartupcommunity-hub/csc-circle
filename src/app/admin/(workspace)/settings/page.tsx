@@ -10,6 +10,8 @@ import {
   type AdminRole,
 } from "@/lib/admin/permissions";
 import { siteConfig } from "@/lib/content/site";
+import { can } from "@/lib/admin/gate";
+import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 
 export const metadata = { title: "Settings" };
 
@@ -17,6 +19,7 @@ const roles = Object.keys(rolePermissions) as AdminRole[];
 
 export default async function AdminSettingsPage() {
   const ctx = await getAdminContext();
+  if (!can(ctx, "settings.manage")) return <AdminUnavailable forbidden />;
 
   return (
     <>

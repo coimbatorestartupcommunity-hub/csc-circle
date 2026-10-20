@@ -4,6 +4,7 @@ import { hasRecovery, clearRecovery } from "@/lib/auth/recovery";
 import { loginSchema, signupSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from "@/lib/validations/auth";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { z } from "zod";
+import { safeNext } from "@/lib/auth/redirects";
 
 export async function POST(request: Request, context: { params: Promise<{ action: string }> }) {
   const { action } = await context.params;
@@ -30,7 +31,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       if (!parsed.success) return authResponse({ error: "Check your details and password requirements." }, 422);
       const v = parsed.data;
       const { error } = await sb.auth.signUp({ email: v.email, password: v.password, options: {
-        captchaToken, emailRedirectTo: `${origin}/auth/confirm`,
+        captchaToken, emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(safeNext(typeof body.next === "string" ? body.next : null))}`,
         data: { full_name: v.fullName, name: v.fullName, accepted_terms: true },
       } });
       if (error && error.code !== "user_already_exists") return authResponse({ error: "Unable to complete signup. Try again later or sign in if you already have an account." }, 400);

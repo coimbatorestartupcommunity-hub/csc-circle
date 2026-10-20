@@ -86,7 +86,7 @@ export const roleLabels: Record<AdminRole, string> = {
   super_admin: "Super Admin",
   community_admin: "Community Admin",
   event_manager: "Event Manager",
-  checkin_staff: "Check-in Staff",
+  checkin_staff: "Check-In Staff",
   finance_reviewer: "Finance Reviewer",
   content_manager: "Content Manager",
   tech_admin: "Technical Administrator",

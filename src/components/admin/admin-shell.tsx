@@ -21,6 +21,8 @@ import {
   ScrollText,
   Settings,
   Handshake,
+  UserPlus,
+  ShieldCheck,
   Menu,
   LogOut,
   Home,
@@ -43,6 +45,7 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   perm?: Permission;
+  anyPerm?: Permission[];
 }
 
 const navGroups: { heading: string; items: NavItem[] }[] = [
@@ -56,6 +59,7 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
       { href: "/admin/members", label: "Members", icon: Users, perm: "members.read" },
       { href: "/admin/membership-claims", label: "Claims", icon: FileCheck, perm: "members.approve" },
       { href: "/admin/startups", label: "Startups", icon: Building2, perm: "directory.manage" },
+      { href: "/admin/startups/revisions", label: "Startup Revisions", icon: FileCheck, perm: "directory.manage" },
       { href: "/admin/collaborations", label: "Collaborations", icon: Handshake, perm: "content.manage" },
     ],
   },
@@ -81,9 +85,11 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/content", label: "Content", icon: FileText, perm: "content.manage" },
       { href: "/admin/media", label: "Media", icon: ImageIcon, perm: "media.manage" },
-      { href: "/admin/notifications", label: "Notifications", icon: Bell, perm: "settings.manage" },
+      { href: "/admin/notifications", label: "Notifications", icon: Bell, anyPerm: ["roles.manage", "events.publish"] },
       { href: "/admin/audit-logs", label: "Audit logs", icon: ScrollText, perm: "audit.read" },
       { href: "/admin/settings", label: "Settings", icon: Settings, perm: "settings.manage" },
+      { href: "/admin/invitations", label: "Administrator Invitations", icon: UserPlus, perm: "roles.manage" },
+      { href: "/admin/roles", label: "Roles & Permissions", icon: ShieldCheck, perm: "roles.manage" },
     ],
   },
 ];
@@ -100,7 +106,7 @@ function NavList({
   return (
     <nav className="flex flex-col gap-4" aria-label="Admin">
       {navGroups.map((group) => {
-        const items = group.items.filter((i) => !i.perm || allowed.has(i.perm));
+        const items = group.items.filter((i) => (!i.perm || allowed.has(i.perm)) && (!i.anyPerm || i.anyPerm.some((permission) => allowed.has(permission))));
         if (items.length === 0) return null;
         return (
           <div key={group.heading} className="flex flex-col gap-1">

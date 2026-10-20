@@ -20,7 +20,7 @@ import { POST } from "@/app/api/admin/notifications/verify/route";
 describe("admin notification email check", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getAdminContext.mockResolvedValue({ mode: "live", userId: "admin-1", permissions: new Set(["settings.manage"]) });
+    mocks.getAdminContext.mockResolvedValue({ mode: "live", userId: "admin-1", permissions: new Set(["settings.manage", "roles.manage"]) });
     mocks.emailConfiguration.mockReturnValue({ enabled: true });
     mocks.verifyEmailTransport.mockResolvedValue(undefined);
     mocks.rateLimit.mockReturnValue({ allowed: true });
@@ -46,6 +46,16 @@ describe("admin notification email check", () => {
 
   it("denies non-admin users", async () => {
     mocks.getAdminContext.mockResolvedValue({ mode: "forbidden", userId: "member-1", permissions: new Set() });
+
+    const response = await POST();
+
+    expect(response.status).toBe(403);
+    expect(mocks.emailConfiguration).not.toHaveBeenCalled();
+    expect(mocks.scheduleNotificationDelivery).not.toHaveBeenCalled();
+  });
+
+  it("does not let settings access alone trigger transactional email processing", async () => {
+    mocks.getAdminContext.mockResolvedValue({ mode: "live", userId: "tech-admin", permissions: new Set(["settings.manage"]) });
 
     const response = await POST();
 
