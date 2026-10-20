@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20261020223000_admin_role_invitations_acceptance.sql"), "utf8");
+const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20261020182132_admin_role_invitations_acceptance.sql"), "utf8");
 
 describe("administrator invitation database boundary", () => {
   it("keeps invitation records inaccessible to ordinary authenticated clients", () => {
