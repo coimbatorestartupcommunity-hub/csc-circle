@@ -27,15 +27,23 @@ export function ChangePasswordForm() {
     reset(); setNonce("");
     setMessage(result.sessionsRevoked ? "Password updated. Sign in again with your new password." : "Password updated. Session revocation could not be confirmed; sign out of other devices.");
   }
-  return <section className="mt-6 flex flex-col gap-4 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
+  return <section className="flex w-full flex-col gap-5 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
     <h2 className="font-semibold">Account security</h2>
-    <p className="text-sm text-brand-secondary">Change your password or add one to your existing Google account. Your CSC identity and membership stay linked to the same account. Verify your email with a security code first.</p>
-    <Button type="button" variant="outline" onClick={sendCode} disabled={sending}>{sending ? "Sending…" : "Send security code"}</Button>
-    <form onSubmit={handleSubmit(submit)} className="flex max-w-md flex-col gap-4">
-      <Label htmlFor="security-code">Email security code</Label><Input id="security-code" autoComplete="one-time-code" inputMode="numeric" value={nonce} onChange={e => setNonce(e.target.value)} required />
+    <p className="max-w-4xl text-sm leading-relaxed text-brand-secondary">Change your password or add one to your existing Google account. Your CSC identity and membership stay linked to the same account. Verify your email with a security code first.</p>
+    <form onSubmit={handleSubmit(submit)} className="grid min-w-0 gap-5 sm:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-2">
+        <Label htmlFor="security-code">Email security code</Label>
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
+          <Input id="security-code" autoComplete="one-time-code" inputMode="numeric" value={nonce} onChange={e => setNonce(e.target.value)} required className="h-11 sm:flex-1" />
+          <Button type="button" variant="outline" onClick={sendCode} disabled={sending} className="h-11 shrink-0 sm:min-w-48">{sending ? "Sending…" : "Send security code"}</Button>
+        </div>
+      </div>
       <PasswordField id="change-password" label="New password" autoComplete="new-password" {...register("newPassword")} value={password} showStrength error={errors.newPassword?.message} />
       <PasswordField id="change-confirm" label="Confirm password" autoComplete="new-password" {...register("confirmPassword")} error={errors.confirmPassword?.message} />
-      <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Updating…" : "Update password"}</Button>
-    </form><p role="status" className="text-sm text-brand-secondary">{message}</p>
+      <div className="flex items-end sm:justify-end">
+        <Button type="submit" disabled={isSubmitting} className="h-11 w-full sm:w-auto sm:min-w-48">{isSubmitting ? "Updating…" : "Update password"}</Button>
+      </div>
+      <p role="status" className="text-sm text-brand-secondary sm:col-span-2" aria-live="polite">{message}</p>
+    </form>
   </section>;
 }
