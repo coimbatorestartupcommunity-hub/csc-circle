@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { toPng } from "html-to-image";
+import { toBlob } from "html-to-image";
 import { Download, RefreshCw, Ticket, Loader2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import type { MemberCard } from "@/types/member";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AccountAvatar } from "@/components/layout/account-avatar";
-import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions, pngDataUrlToBlob, waitForMembershipCardAssets } from "@/lib/member/card-export";
+import { clipMembershipCardPng, createMembershipCardPdf, membershipCardCaptureOptions, waitForMembershipCardAssets } from "@/lib/member/card-export";
 
 export function MemberIdCard({
   card,
@@ -67,13 +67,14 @@ export function MemberIdCard({
       const cardElement = cardRef.current;
       if (!qr) throw new Error("The membership verification QR is not ready.");
       await waitForMembershipCardAssets(cardElement);
-      const rawPng = await toPng(
+      const rawPng = await toBlob(
         cardElement,
         membershipCardCaptureOptions(cardElement.getBoundingClientRect().height),
       );
+      if (!rawPng) throw new Error("Could not render the membership card image.");
       const computedStyle = window.getComputedStyle(cardElement);
       const cornerRadiusCssPx = Number.parseFloat(computedStyle.borderTopLeftRadius) || 0;
-      const dataUrl = await clipMembershipCardPng(
+      const pngBlob = await clipMembershipCardPng(
         rawPng,
         cornerRadiusCssPx,
         cardElement.getBoundingClientRect().width,
@@ -82,9 +83,9 @@ export function MemberIdCard({
       const filename = `CSC-Membership-${card.memberNumber}${suffix}.${format}`;
       let fileBlob: Blob;
       if (format === "png") {
-        fileBlob = pngDataUrlToBlob(dataUrl);
+        fileBlob = pngBlob;
       } else {
-        const pdfBytes = await createMembershipCardPdf(dataUrl);
+        const pdfBytes = await createMembershipCardPdf(pngBlob);
         fileBlob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
       }
 

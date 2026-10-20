@@ -1,7 +1,11 @@
-/** Render the long edge at 4K while keeping the browser canvas within a safe scale. */
+/**
+ * Keep mobile canvas memory bounded while retaining print-sharp output.
+ * The card is rendered at about 1,440 px on its long edge (roughly 288 DPI
+ * when placed on the 4 × 5 inch PDF page).
+ */
 export function membershipCardCaptureOptions(cardHeightCssPx: number) {
   return {
-    pixelRatio: Math.min(12, Math.max(4, Math.ceil(3840 / Math.max(1, cardHeightCssPx)))),
+    pixelRatio: Math.min(4, Math.max(3, Math.ceil(1440 / Math.max(1, cardHeightCssPx)))),
     cacheBust: true,
   } as const;
 }
@@ -16,15 +20,6 @@ export async function waitForMembershipCardAssets(element: HTMLElement) {
   }));
 }
 
-/** Decode the generated PNG without a fetch(data:) request (Safari can reject those). */
-export function pngDataUrlToBlob(dataUrl: string) {
-  const [metadata, encoded] = dataUrl.split(",", 2);
-  if (!metadata || !encoded) throw new Error("Could not prepare the membership card image.");
-  const type = metadata.match(/^data:(.*?);base64$/)?.[1] ?? "image/png";
-  const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
-  return new Blob([bytes], { type });
-}
-
 const CIRCLE_HANDLE = 0.55228475;
 
 /**
@@ -33,16 +28,22 @@ const CIRCLE_HANDLE = 0.55228475;
  * here would bake a rectangle into both PNG and PDF exports.
  */
 export async function clipMembershipCardPng(
-  pngDataUrl: string,
+  pngBlob: Blob,
   cornerRadiusCssPx: number,
   cardWidthCssPx: number,
-): Promise<string> {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const source = new Image();
-    source.onload = () => resolve(source);
-    source.onerror = () => reject(new Error("Could not load the membership card image."));
-    source.src = pngDataUrl;
-  });
+): Promise<Blob> {
+  const sourceUrl = URL.createObjectURL(pngBlob);
+  let image: HTMLImageElement;
+  try {
+    image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const source = new Image();
+      source.onload = () => resolve(source);
+      source.onerror = () => reject(new Error("Could not load the membership card image."));
+      source.src = sourceUrl;
+    });
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
 
   const canvas = document.createElement("canvas");
   canvas.width = image.naturalWidth;
@@ -75,7 +76,12 @@ export async function clipMembershipCardPng(
   context.drawImage(image, 0, 0, width, height);
   context.restore();
 
-  return canvas.toDataURL("image/png");
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Could not prepare the membership card PNG."));
+    }, "image/png");
+  });
 }
 
 /**
@@ -83,13 +89,21 @@ export async function clipMembershipCardPng(
  * No page background is painted; the PNG's alpha mask supplies the curved
  * corners, leaving the page transparent outside the card in capable viewers.
  */
-export async function createMembershipCardPdf(pngDataUrl: string) {
+export async function createMembershipCardPdf(pngBlob: Blob) {
   const { PDFDocument } = await import("pdf-lib");
   const pdf = await PDFDocument.create();
   pdf.setTitle("CSC Circle Membership Card");
   pdf.setSubject("CSC Circle digital membership card");
 
-  const image = await pdf.embedPng(pngDataUrl);
+  const imageBytes = await new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => reader.result instanceof ArrayBuffer
+      ? resolve(reader.result)
+      : reject(new Error("Could not read the membership card image."));
+    reader.onerror = () => reject(new Error("Could not read the membership card image."));
+    reader.readAsArrayBuffer(pngBlob);
+  });
+  const image = await pdf.embedPng(new Uint8Array(imageBytes));
   const page = pdf.addPage([288, 360]);
   page.drawImage(image, { x: 0, y: 0, width: 288, height: 360 });
 
