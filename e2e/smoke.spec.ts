@@ -40,7 +40,7 @@ test("social previews use the homepage screenshot banner", async ({ page, reques
 });
 
 test("OAuth callback leaves the PKCE verifier cookie untouched", async ({ request }) => {
-  const verifierCookie = "sb-mmsrtfktwcrbyrucjmzo-auth-token-flow-abcdef123456-code-verifier=pending-verifier";
+  const verifierCookie = "csc-test-auth-token-flow-abcdef123456-code-verifier=pending-verifier";
   const response = await request.get("/auth/callback?next=%2Fmember%2Fprofile", {
     headers: { cookie: verifierCookie },
     maxRedirects: 0,

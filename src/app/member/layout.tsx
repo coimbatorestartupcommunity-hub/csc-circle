@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 import { MemberShell } from "@/components/member/member-shell";
@@ -20,6 +21,9 @@ export default async function MemberLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Supabase's cookie-backed session loader reads Date.now(); defer the
+  // authenticated shell until a request exists instead of prefetch-prerendering it.
+  await connection();
   const ctx = await getMemberContext();
 
   // Production, unauthenticated — never render member content.

@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
+    "test:e2e:local": "node scripts/run-local-e2e.mjs",
     "security:scan": "node scripts/security-scan.mjs"
   },
   "dependencies": {

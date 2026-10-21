@@ -30,3 +30,8 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+        env:
+          CSC_E2E_MODE: smoke
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_e2e_smoke_placeholder
+          NEXT_PUBLIC_SITE_URL: http://localhost:3107

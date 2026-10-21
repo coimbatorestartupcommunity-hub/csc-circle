@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -12,6 +13,7 @@ export const metadata = { title: "CSC Member Profile" };
 export const instant = false;
 type PublicMember = { member_id: string; display_name: string; city: string | null; designation: string | null; about_me: string | null; skills: string[]; startup_name: string | null; whatsapp: string | null; has_photo: boolean; startup_website: string | null };
 export default async function CommunityMemberPage({ params }: { params: Promise<{ slug: string }> }) {
+  await connection();
   const ctx = await getMemberContext();
   if (ctx.mode !== "live") return <MemberUnavailable />;
   const { slug } = await params;

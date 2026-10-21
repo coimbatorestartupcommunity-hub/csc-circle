@@ -54,20 +54,15 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // Read the cookie locally first, then verify any present access token with
-  // getClaims. With asymmetric signing keys Supabase verifies against cached
-  // JWKS; getUser would force a network round-trip for every page navigation.
-  // Sensitive account/role changes are still checked with getUser in layouts
-  // and service functions.
+  // getClaims verifies the identity and refreshes near-expiry sessions while
+  // writing rotated cookies through setAll. Avoid a separate getSession call:
+  // it loads the same cookie session a second time and its user object is not
+  // an authorization source. Sensitive account/role changes are checked with
+  // getUser in layouts and service functions.
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    let verificationError = sessionError;
-    let authenticated = false;
-    if (session && !sessionError) {
-      const verified = await supabase.auth.getClaims();
-      authenticated = Boolean(verified.data?.claims?.sub);
-      verificationError = verified.error;
-    }
+    const verified = await supabase.auth.getClaims();
+    const verificationError = verified.error;
+    const authenticated = Boolean(verified.data?.claims?.sub);
     const authenticationServiceUnavailable = verificationError &&
       (!verificationError.status || verificationError.status >= 500 || verificationError.status === 429);
     if (authenticationServiceUnavailable && !isAuthPublic) {
