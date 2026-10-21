@@ -2,13 +2,15 @@
 
 ## Release identity
 
-- Base branch/SHA: `main` / `75ef2414bf8d52e98dc789a80cc1d2671fadd22d`
-- Candidate branch: `audit/csc-a-to-z-production-review` (committed locally)
-- Existing Vercel production deployment: `dpl_3pmZeDYuNFmN62tGc9KXASaMcuUB` (Ready, same SHA)
-- Canonical host: `https://csc.logicintelligencetechnologies.in`
-- No PR or remote push was made, and no production deployment or migration was applied as part of this audit.
+- Base `main` SHA: `75ef2414bf8d52e98dc789a80cc1d2671fadd22d`
+- Reviewed PR: [#48](https://github.com/coimbatorestartupcommunity-hub/csc-circle/pull/48)
+- Merged `main` SHA: `7765db1588f7261e369cccc7fd737191ed07727b`
+- Preview deployment: `dpl_3iCj4PS1XdVNpC6ZHXM4FhGy7gqQ`, Ready, built from candidate SHA `c04e25e78dcbfddad06700134842d13d364ba773`
+- Production deployment: `dpl_BKkcFwJW3xxaJEUG3evTKwPosZgg`, Ready, built from merge SHA `7765db1588f7261e369cccc7fd737191ed07727b`
+- Production host: `https://csc.logicintelligencetechnologies.in`
+- Applied production migration: `20261021114330_restrict_notification_worker_state_access`
 
-## Baseline checks before local change
+## Baseline checks before change
 
 | Check | Result |
 |---|---|
@@ -20,25 +22,35 @@
 | `npm run test:e2e` | PASS — 32/32 unauthenticated smoke tests, 7.8 s |
 | `npm audit --omit=dev` | PASS — 0 reported production dependency vulnerabilities |
 
-## Checks after local change
+## Checks after code change
 
 | Check | Result |
 |---|---|
-| `npm run typecheck` | PASS (after React request-cache changes) |
-| `npm run lint` | PASS (after React request-cache changes) |
-| `npm test -- --reporter=dot` | PASS — 39 files, 208 tests (after changes) |
+| `npm run typecheck` | PASS |
+| `npm run lint` | PASS |
+| `npm test -- --reporter=dot` | PASS — 39 files, 208 tests |
+| `npm run security:scan` | PASS — 481 files, 0 heuristic secret findings |
+| `npm audit --omit=dev` | PASS — 0 reported production dependency vulnerabilities |
 | `npm run build` | PASS — 19.00 s measured wall time; 112 static pages generated |
 | `npm run test:e2e` | PASS — 32/32 unauthenticated smoke tests, 6.8 s |
-| `npm run security:scan` | PASS — 481 files, 0 heuristic secret findings |
-| `git diff --check` | PASS |
-| `npm audit --omit=dev` | PASS — 0 reported production dependency vulnerabilities |
+| GitHub Actions `verify` | PASS — typecheck, lint, unit tests, security scan, dependency audit, production build, Playwright |
+| Preview deploy | PASS — Vercel Ready; protected request accessed with linked CLI |
+| Supabase migration | PASS — production applied and role grants verified |
 
-The unit suite emits existing jsdom canvas-not-implemented messages, non-boolean test DOM-prop warnings, Base UI test button semantics warnings, and one expected diagnostic log for a deliberately missing directory image. No test failed. Build duration was 16.88 s at baseline and 19.00 s after changes on this host; the 2.12 s difference is a noisy single-run result, not evidence of a user-facing regression or improvement.
+The single local build comparison (16.88 s baseline vs 19.00 s after) is noisy and not evidence of a user-facing regression or improvement. The unit suite emits existing jsdom canvas, test DOM-prop, Base UI semantics, and deliberate missing-image diagnostic messages; no test failed.
 
-## Production verification
+## Production smoke verification
 
-Read-only Vercel inspection confirmed the current production deployment is Ready and its source SHA matches the audited `main` SHA. Production anonymous route probes returned expected public responses or 307 login redirects. No deployment was made, so production does not include the local request cache change or prepared migration. The user explicitly requires approval before production migration/deploy; do not mark this release live until approval and a post-deploy route verification.
+The production deployment is Ready, aliases the official custom domain, and was built from the merged SHA. Authenticated Vercel CLI requests returned:
 
-## Gate status
+- `/login`: 200, rendered by the CSC deployment.
+- `/`: 307 to `/login?next=%2F`.
+- `/directory`: 307 to `/login?next=%2Fdirectory`.
 
-**NO-GO for release until owner approval** of the pending production migration and deployment, Auth leaked-password setting change (if selected), and an authenticated preview validation window/test account. Code-level checks are passing; full production acceptance is not claimed.
+These redirects match the pre-release production behavior and are the application's sign-in flow, not Vercel deployment protection. This was an anonymous smoke test only; no account was used and no production business data was mutated.
+
+## Scope and remaining verification
+
+The release reduces repeated auth/member-context lookups within a single React server render and removes client-role privileges from the internal notification worker state table. It does not establish complete authenticated business-flow coverage. Preview environment variables include production Supabase configuration; therefore no authenticated writes, invitation emails, payment operations, or real notifications were exercised. Supabase Preview CI was skipped because an isolated preview database was not connected.
+
+Outstanding security/performance work is recorded in `CSC_SECURITY_FINDINGS.md` and `CSC_PERFORMANCE_BASELINE.md`: leaked-password protection is disabled in Supabase Auth; CSP and Permissions-Policy are absent on the production host; RLS advisor findings need policy-by-policy review; and no authenticated LCP/interaction benchmark or isolated-preview business E2E run was performed. These findings were not changed speculatively in this release.
