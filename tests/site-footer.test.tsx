@@ -9,7 +9,11 @@ vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: React.ComponentProps<"a"> & { href: string }) => <a href={href} {...props}>{children}</a>,
 }));
 vi.mock("next/image", () => ({
-  default: ({ alt, ...props }: React.ComponentProps<"img"> & { src: string }) => <span role="img" aria-label={alt} {...props} />,
+  default: (props: React.ComponentProps<"img"> & { src: string; priority?: boolean; fill?: boolean; unoptimized?: boolean }) => {
+    const { alt, priority, fill, unoptimized, ...imageProps } = props;
+    void priority; void fill; void unoptimized;
+    return <span role="img" aria-label={alt} {...imageProps} />;
+  },
 }));
 
 afterEach(cleanup);
