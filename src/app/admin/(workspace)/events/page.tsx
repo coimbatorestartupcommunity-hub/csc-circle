@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
 export const metadata = { title: "Events" };
@@ -41,7 +41,7 @@ const facets: Facet[] = [
 ];
 
 export default async function AdminEventsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission(["events.create", "events.update", "events.publish"]);
   const res = await adminServices.listEvents();
   const rows = res.ok ? res.data : [];
 

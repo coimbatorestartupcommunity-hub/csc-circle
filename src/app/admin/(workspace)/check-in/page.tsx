@@ -1,7 +1,7 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CheckInScanner } from "@/components/admin/check-in-scanner";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -9,7 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export const metadata = { title: "Check-in" };
 
 export default async function CheckInPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("attendance.scan");
   if (!can(ctx, "attendance.scan")) return <AdminUnavailable forbidden />;
 
   let events: { id: string; title: string; startsAt: string }[] = [];

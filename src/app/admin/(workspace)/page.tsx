@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, CreditCard, FileCheck, ScanLine, Star, Users, Building2, MessagesSquare, ClipboardList, FileText, Image as ImageIcon, ScrollText, Settings, ShieldCheck } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StatCard } from "@/components/admin/stat-card";
-import { can, getAdminContext } from "@/lib/admin/gate";
+import { can, requireAdminPage } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { roleLabels } from "@/lib/admin/permissions";
 
@@ -29,7 +29,7 @@ const modules = [
 ];
 
 export default async function AdminOverview() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPage();
   const isDemo = ctx.mode === "preview";
   const title = ctx.mode === "preview" ? "Super Admin Overview" : ctx.roles.map((role) => roleLabels[role]).join(" · ");
   const add = <T,>(permission: Parameters<typeof can>[1], run: () => Promise<T>) => can(ctx, permission) ? run() : Promise.resolve(null);

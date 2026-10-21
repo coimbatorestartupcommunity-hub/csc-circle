@@ -172,7 +172,7 @@ export function AdminShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-brand-border bg-brand-white/90 px-4 backdrop-blur-md">
+        <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center justify-between gap-3 border-b border-brand-border bg-brand-white/90 px-3 backdrop-blur-md sm:px-4">
           <div className="flex items-center gap-2">
             <Sheet>
               <SheetTrigger
@@ -210,7 +210,7 @@ export function AdminShell({
               <span className="hidden lg:inline">Back to Home Page</span>
               <span className="sr-only lg:hidden">Back to Home Page</span>
             </Link>
-            <div className="hidden shrink-0 items-center gap-2 text-right lg:flex">
+            <div className="hidden shrink-0 items-center gap-2 text-right xl:flex">
               <p className="whitespace-nowrap text-sm font-semibold text-brand-ink">{displayName}</p>
               <p className="whitespace-nowrap text-xs text-brand-muted">{roleLabel}</p>
             </div>

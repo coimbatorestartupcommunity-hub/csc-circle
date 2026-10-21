@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StartupRevisionActions } from "@/components/admin/startup-revision-actions";
-import { getAdminContext } from "@/lib/admin/gate";
+import { requireAdminPagePermission } from "@/lib/admin/gate";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata = { title: "Review Startup Changes" };
@@ -53,7 +53,7 @@ async function signedImage(admin: ReturnType<typeof createAdminClient>, path: un
 export default async function StartupRevisionDetailPage({ params }: { params: Promise<{ revisionId: string }> }) {
   const { revisionId } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(revisionId)) notFound();
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("directory.manage");
   if (ctx.mode !== "live" || !ctx.permissions.has("directory.manage")) {
     return <><AdminPageHeader title="Startup revision" /><p className="rounded-2xl border border-brand-border bg-white p-5 text-sm text-brand-muted">A live administrator with startup directory permission is required to view revisions.</p></>;
   }

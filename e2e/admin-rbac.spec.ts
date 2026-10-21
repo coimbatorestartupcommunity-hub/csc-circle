@@ -16,6 +16,16 @@ const expectedNavigation: Record<string, { visible: string[]; hidden: string[] }
   tech_admin: { visible: ["Dashboard", "Audit logs", "Settings"], hidden: ["Members", "Claims", "Events", "Registrations", "Check-in", "Payments", "Reviews", "Content", "Media", "Administrator Invitations", "Roles & Permissions"] },
 };
 
+const directRouteChecks: Record<string, { allowed: string; denied?: string; secondAllowed?: string }> = {
+  super_admin: { allowed: "/admin/payments", secondAllowed: "/admin/roles" },
+  community_admin: { allowed: "/admin/members", denied: "/admin/payments" },
+  event_manager: { allowed: "/admin/events", denied: "/admin/members" },
+  checkin_staff: { allowed: "/admin/check-in", denied: "/admin/payments" },
+  finance_reviewer: { allowed: "/admin/payments", denied: "/admin/events/new" },
+  content_manager: { allowed: "/admin/content", denied: "/admin/members" },
+  tech_admin: { allowed: "/admin/settings", denied: "/admin/roles" },
+};
+
 async function signInAsAdmin(page: import("@playwright/test").Page, account: Account) {
   // Use a distinct reserved TEST-NET source address per synthetic identity so
   // the application's intentional five-attempt/IP throttle is not tripped by
@@ -54,6 +64,22 @@ for (const [role, expected] of Object.entries(expectedNavigation)) {
     const nav = page.getByRole("navigation", { name: "Admin" }).first();
     for (const name of expected.visible) await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
     for (const name of expected.hidden) await expect(nav.getByRole("link", { name, exact: true })).toHaveCount(0);
+
+    const direct = directRouteChecks[role];
+    const allowedResponse = await page.goto(direct.allowed);
+    expect(allowedResponse?.status(), `${role} should render ${direct.allowed}`).toBe(200);
+    if (direct.secondAllowed) {
+      const secondResponse = await page.goto(direct.secondAllowed);
+      expect(secondResponse?.status(), `${role} should render ${direct.secondAllowed}`).toBe(200);
+    }
+    if (direct.denied) {
+      const deniedResponse = await page.goto(direct.denied);
+      // Next may have streamed the shared shell before the page-level guard
+      // throws notFound(); in that case the HTTP status remains 200, while the
+      // route renders the app's generic 404 boundary and no module content.
+      expect([200, 404]).toContain(deniedResponse?.status());
+      await expect(page.getByRole("heading", { name: "This page took a different path." })).toBeVisible();
+    }
   });
 }
 
@@ -61,8 +87,13 @@ test("Check-In Staff cannot open a prohibited finance route", async ({ page }) =
   test.skip(!fixtures, "Requires the isolated local Supabase fixture runner.");
   const account = fixtures!.accounts.checkin_staff;
   await signInAsAdmin(page, account);
-  await page.goto("/admin/payments");
-  await expect(page.getByText("You don't have permission for this.")).toBeVisible();
+  const paymentResponse = await page.goto("/admin/payments");
+  expect([200, 404]).toContain(paymentResponse?.status());
+  await expect(page.getByRole("heading", { name: "This page took a different path." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /payment review/i })).toHaveCount(0);
+  const eventCreationResponse = await page.goto("/admin/events/new");
+  expect([200, 404]).toContain(eventCreationResponse?.status());
+  await expect(page.getByRole("heading", { name: "This page took a different path." })).toBeVisible();
   await expect(page.getByText(/payment verification|pending payment/i)).toHaveCount(0);
 });
 

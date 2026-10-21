@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ActionButton } from "@/components/admin/action-button";
 import { StatusBadge } from "@/components/member/status-badge";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { publicationStatusMeta } from "@/lib/admin/status-meta";
 import { displayHost, formatEventDate } from "@/lib/format";
@@ -18,7 +18,7 @@ export default async function AdminStartupDetail({
   params: Promise<{ startupId: string }>;
 }) {
   const { startupId } = await params;
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("directory.manage");
   const res = await adminServices.getStartup(startupId);
 
   if (!res.ok) {

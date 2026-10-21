@@ -4,7 +4,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 import { CtaLink } from "@/components/common/cta-link";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Collaborations" };
@@ -42,7 +42,7 @@ const facets: Facet[] = [
 ];
 
 export default async function AdminCollaborationsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("content.manage");
   if (ctx.mode === "closed") return <AdminUnavailable />;
   if (ctx.mode === "forbidden" || !can(ctx, "content.manage")) {
     return <AdminUnavailable forbidden />;

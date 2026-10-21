@@ -2,7 +2,7 @@ import { ImageIcon, Upload } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { MediaUpload } from "@/components/admin/media-upload";
 import { EmptyState } from "@/components/common/empty-state";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
 export const metadata = { title: "Media" };
@@ -15,7 +15,7 @@ function formatSize(bytes?: number) {
 }
 
 export default async function AdminMediaPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("media.manage");
   const res = await adminServices.listMedia();
   const assets = res.ok ? res.data : [];
 

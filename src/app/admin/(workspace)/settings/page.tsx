@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { getAdminContext } from "@/lib/admin/gate";
+import { requireAdminPagePermission } from "@/lib/admin/gate";
 import {
   ALL_PERMISSIONS,
   roleHasPermission,
@@ -18,7 +18,7 @@ export const metadata = { title: "Settings" };
 const roles = Object.keys(rolePermissions) as AdminRole[];
 
 export default async function AdminSettingsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("settings.manage");
   if (!can(ctx, "settings.manage")) return <AdminUnavailable forbidden />;
 
   return (

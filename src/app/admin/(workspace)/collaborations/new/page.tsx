@@ -1,13 +1,13 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 import { CollaborationEditor } from "@/components/admin/collaboration-editor";
-import { can, getAdminContext } from "@/lib/admin/gate";
+import { can, requireAdminPagePermission } from "@/lib/admin/gate";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "New Collaboration" };
 
 export default async function NewCollaborationPage() {
-  const context = await getAdminContext();
+  const context = await requireAdminPagePermission("content.manage");
   if (context.mode === "closed") return <AdminUnavailable />;
   if (context.mode === "forbidden" || !can(context, "content.manage")) return <AdminUnavailable forbidden />;
 

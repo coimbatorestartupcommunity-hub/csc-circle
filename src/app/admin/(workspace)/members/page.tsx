@@ -1,6 +1,6 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
-import { can, getAdminContext } from "@/lib/admin/gate";
+import { can, requireAdminPagePermission } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { InviteMemberForm } from "@/components/admin/invite-member-form";
 
@@ -32,7 +32,7 @@ const facets: Facet[] = [
 ];
 
 export default async function AdminMembersPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("members.read");
   const res = await adminServices.listMembers();
   const rows = res.ok ? res.data : [];
 

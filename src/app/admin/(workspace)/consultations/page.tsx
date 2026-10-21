@@ -1,6 +1,6 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
-import { getAdminContext } from "@/lib/admin/gate";
+import { requireAdminPagePermission } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
 export const metadata = { title: "Consultations" };
@@ -32,7 +32,7 @@ const facets: Facet[] = [
 ];
 
 export default async function AdminConsultationsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("consultations.manage");
   const res = await adminServices.listConsultations();
   const rows = res.ok ? res.data : [];
 

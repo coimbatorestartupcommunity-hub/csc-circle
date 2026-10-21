@@ -79,8 +79,22 @@ export async function deleteLocalE2EFixtures(created) {
 
 async function deleteUsers(supabase, userIds) {
   if (userIds.length === 0) return;
-  // Notification rows intentionally retain a restrictive recipient FK in CSC.
-  // Remove only rows owned by these synthetic local test identities first.
+  // Notification rows and delivery attempts intentionally retain restrictive
+  // foreign keys. Remove only delivery rows belonging to notifications owned
+  // by these synthetic local test identities before deleting the notifications.
+  const ownedNotifications = await supabase
+    .from("notifications")
+    .select("id")
+    .in("recipient_user_id", userIds);
+  if (ownedNotifications.error) throw new Error("Could not inspect local synthetic notification rows.");
+  const notificationIds = (ownedNotifications.data ?? []).map((row) => row.id);
+  if (notificationIds.length) {
+    const deliveries = await supabase
+      .from("notification_deliveries")
+      .delete()
+      .in("notification_id", notificationIds);
+    if (deliveries.error) throw new Error("Could not clean local synthetic notification delivery rows.");
+  }
   const notifications = await supabase.from("notifications").delete().in("recipient_user_id", userIds);
   if (notifications.error) throw new Error("Could not clean local synthetic notification rows.");
   const results = await Promise.all(userIds.map((id) => supabase.auth.admin.deleteUser(id)));

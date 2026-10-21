@@ -3,12 +3,12 @@ import { ArrowLeft } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { EventEditorForm } from "@/components/admin/event-editor-form";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 
 export const metadata = { title: "New event" };
 
 export default async function NewEventPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("events.create");
   if (!can(ctx, "events.create")) return <AdminUnavailable forbidden />;
 
   return (

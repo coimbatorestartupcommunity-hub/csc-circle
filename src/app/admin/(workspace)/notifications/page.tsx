@@ -1,7 +1,7 @@
 import { NotificationRetry } from "@/components/admin/notification-retry";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
-import { getAdminContext } from "@/lib/admin/gate";
+import { requireAdminPagePermission } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { EventNoticeEditor } from "@/components/admin/event-notice-editor";
 import { can } from "@/lib/admin/gate";
@@ -51,7 +51,7 @@ const facets: Facet[] = [
 
 export default async function AdminNotificationsPage({ searchParams }: { searchParams: Promise<{ eventId?: string }> }) {
   const { eventId } = await searchParams;
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission(["roles.manage", "events.publish"]);
   const canDeliveryMonitor = ctx.permissions.has("roles.manage");
   const canPublishNotices = ctx.permissions.has("events.publish");
   if (!canDeliveryMonitor && !canPublishNotices) return <AdminUnavailable forbidden />;

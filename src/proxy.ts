@@ -11,18 +11,39 @@ import { safeNext } from "@/lib/auth/redirects";
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const pathname = request.nextUrl.pathname;
+  const isAuthPublic = [
+    "/login", "/signup", "/forgot-password", "/reset-password",
+    "/privacy", "/terms", "/security", "/auth/callback", "/auth/confirm", "/auth/signout",
+  ].some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) {
-    const path = request.nextUrl.pathname;
-    const isAuthPublic = ["/login", "/signup", "/forgot-password", "/reset-password", "/privacy", "/terms", "/security", "/auth/callback", "/auth/confirm", "/auth/signout"]
-      .some((item) => path === item || path.startsWith(`${item}/`));
-    if (isAuthPublic || path.startsWith("/api/")) return response;
+    if (isAuthPublic || pathname.startsWith("/api/")) return response;
     return new NextResponse("Authentication is not configured. Please contact CSC support.", {
       status: 503,
       headers: { "Cache-Control": "private, no-store" },
     });
+  }
+
+  // A request with no Supabase session cookie cannot have a session to verify
+  // or refresh. Avoid initializing Auth for unauthenticated requests; getClaims
+  // reads the current time internally and is meaningful only for a real cookie
+  // session. Layouts and data services still verify authenticated requests.
+  const hasSessionCookie = request.cookies.getAll().some(({ name }) =>
+    /^sb-.+-auth-token(?:\.\d+)?$/.test(name),
+  );
+  if (!hasSessionCookie) {
+    response.headers.set("Cache-Control", "private, no-store");
+    if (!isAuthPublic && !pathname.startsWith("/api/")) {
+      const login = new URL("/login", request.url);
+      login.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+      const redirect = NextResponse.redirect(login);
+      redirect.headers.set("Cache-Control", "private, no-store");
+      return redirect;
+    }
+    return response;
   }
 
   const supabase = createServerClient(url, key, {
@@ -41,18 +62,6 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-
-  const pathname = request.nextUrl.pathname;
-  const isAuthPublic = [
-    "/login", "/signup", "/forgot-password", "/reset-password",
-    "/privacy", "/terms", "/security", "/auth/callback", "/auth/confirm", "/auth/signout",
-  ].some((path) => pathname === path || pathname.startsWith(`${path}/`));
-
-  // OAuth/email-confirmation handlers must be able to exchange their one-time
-  // verifier before a session exists. They enforce their own callback checks.
-  if (pathname === "/auth/callback" || pathname === "/auth/confirm") {
-    return response;
-  }
 
   // getClaims verifies the identity and refreshes near-expiry sessions while
   // writing rotated cookies through setAll. Avoid a separate getSession call:
@@ -74,7 +83,9 @@ export async function proxy(request: NextRequest) {
     if (!authenticated && !isAuthPublic && !pathname.startsWith("/api/")) {
       const login = new URL("/login", request.url);
       login.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
-      return NextResponse.redirect(login);
+      const redirect = NextResponse.redirect(login);
+      redirect.headers.set("Cache-Control", "private, no-store");
+      return redirect;
     }
     if (authenticated && pathname === "/login") {
       const target = "/auth/complete";
@@ -82,6 +93,7 @@ export async function proxy(request: NextRequest) {
       if (pathname === "/login") destination.searchParams.set("next", safeNext(request.nextUrl.searchParams.get("next")));
       const redirect = NextResponse.redirect(destination);
       response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+      redirect.headers.set("Cache-Control", "private, no-store");
       return redirect;
     }
   } catch {

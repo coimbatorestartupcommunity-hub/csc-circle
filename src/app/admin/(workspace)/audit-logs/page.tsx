@@ -1,6 +1,6 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column } from "@/components/admin/data-table";
-import { getAdminContext } from "@/lib/admin/gate";
+import { requireAdminPagePermission } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
 export const metadata = { title: "Audit logs" };
@@ -14,7 +14,7 @@ const columns: Column[] = [
 ];
 
 export default async function AdminAuditLogsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("audit.read");
   const res = await adminServices.listAudit();
   const rows = res.ok ? res.data : [];
 

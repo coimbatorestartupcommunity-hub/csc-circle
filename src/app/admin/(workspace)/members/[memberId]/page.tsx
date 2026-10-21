@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ActionButton } from "@/components/admin/action-button";
 import { StatusBadge } from "@/components/member/status-badge";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { membershipStatusMeta } from "@/lib/content/member-taxonomy";
 import { formatEventDate } from "@/lib/format";
@@ -19,7 +19,7 @@ export default async function AdminMemberDetail({
   params: Promise<{ memberId: string }>;
 }) {
   const { memberId } = await params;
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("members.read");
   const [res, historyResult] = await Promise.all([
     adminServices.getMember(memberId),
     adminServices.getMemberDetails(memberId),

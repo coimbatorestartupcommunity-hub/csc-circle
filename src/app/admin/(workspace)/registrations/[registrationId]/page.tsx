@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ActionButton } from "@/components/admin/action-button";
 import { StatusBadge } from "@/components/member/status-badge";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { registrationStatusMeta } from "@/lib/content/member-taxonomy";
 import { isPassEligible } from "@/types/member";
@@ -17,7 +17,7 @@ export default async function RegistrationDetail({
   params: Promise<{ registrationId: string }>;
 }) {
   const { registrationId } = await params;
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("registrations.read");
   const list = await adminServices.listRegistrations();
   const reg = list.ok ? list.data.find((r) => r.id === registrationId) : null;
 

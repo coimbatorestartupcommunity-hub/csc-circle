@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { ArrowRight, Clock3 } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { getAdminContext } from "@/lib/admin/gate";
+import { requireAdminPagePermission } from "@/lib/admin/gate";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatEventDate } from "@/lib/format";
 
 export const metadata = { title: "Pending Startup Changes" };
 
 export default async function PendingStartupRevisionsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("directory.manage");
   if (ctx.mode !== "live" || !ctx.permissions.has("directory.manage")) {
     return <><AdminPageHeader title="Pending startup changes" /><p className="rounded-2xl border border-brand-border bg-white p-5 text-sm text-brand-muted">A live administrator with startup directory permission is required to view revisions.</p></>;
   }
