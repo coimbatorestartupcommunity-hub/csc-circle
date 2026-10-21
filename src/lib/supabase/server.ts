@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -35,7 +36,7 @@ export async function createClient() {
 }
 
 /** The currently authenticated user (verified against Supabase), or null. */
-export async function getAuthUser() {
+async function loadAuthUser() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) return null;
   const supabase = await createClient();
   const {
@@ -43,3 +44,10 @@ export async function getAuthUser() {
   } = await supabase.auth.getUser();
   return user?.email_confirmed_at ? user : null;
 }
+
+/**
+ * Reuse the verified identity during one Server Component render. React.cache
+ * is request-scoped, so an account or permission change is read on the next
+ * request and no user identity is shared between requests.
+ */
+export const getAuthUser = cache(loadAuthUser);
