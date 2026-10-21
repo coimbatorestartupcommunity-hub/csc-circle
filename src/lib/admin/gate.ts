@@ -1,7 +1,9 @@
 import "server-only";
 
+import { cache } from "react";
 import { getAuthUser } from "@/lib/supabase/server";
 import { createClient } from "@/lib/supabase/server";
+import { getMembershipAccess, isBlockedMembershipStatus } from "@/lib/services/member/membership-access";
 import {
   type AdminRole,
   type Permission,
@@ -36,16 +38,16 @@ function isAdminPreviewEnabled(): boolean {
   return false;
 }
 
-export async function getAdminContext(): Promise<AdminContext> {
+async function resolveAdminContext(): Promise<AdminContext> {
   const user = await getAuthUser();
 
   if (user) {
     try {
-      const supabase = await createClient();
-      const { data: membership, error: membershipError } = await supabase.from("memberships").select("status").eq("user_id", user.id).maybeSingle();
-      if (membershipError || (membership && ["suspended", "revoked", "rejected"].includes(membership.status))) {
+      const membership = await getMembershipAccess(user.id);
+      if (!membership.ok || isBlockedMembershipStatus(membership.status)) {
         return { mode: "forbidden", roles: [], permissions: new Set(), userId: user.id, displayName: "" };
       }
+      const supabase = await createClient();
       const { data } = await supabase
         .from("admin_roles")
         .select("role")
@@ -94,6 +96,9 @@ export async function getAdminContext(): Promise<AdminContext> {
     displayName: "",
   };
 }
+
+/** Request-scoped authorization context; permissions are reloaded next request. */
+export const getAdminContext = cache(resolveAdminContext);
 
 export function can(ctx: AdminContext, permission: Permission): boolean {
   return ctx.permissions.has(permission);
