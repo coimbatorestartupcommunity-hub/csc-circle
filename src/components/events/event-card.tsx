@@ -46,21 +46,30 @@ export function EventCard({
 
   const body = (
     <>
-      <div className="relative aspect-video w-full overflow-hidden rounded-t-3xl bg-gradient-to-br from-brand-purple via-brand-blue to-brand-pink">
+      <div className="group/cover relative isolate aspect-video w-full overflow-hidden rounded-t-3xl bg-gradient-to-br from-[#e8e5ff] via-[#e8f3ff] to-[#fcecf4]">
         {event.coverImage ? (
-          <Image
-            src={event.coverImage}
-            alt={`${event.title} cover`}
-            fill
-            sizes="(max-width: 768px) 100vw, 400px"
-            className="object-cover"
-          />
+          <>
+            <Image
+              src={event.coverImage}
+              alt={`${event.title} cover`}
+              fill
+              sizes="(max-width: 768px) 100vw, 400px"
+              className="object-cover transition-transform duration-500 group-hover/cover:scale-[1.03] motion-reduce:transition-none"
+            />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#111827]/25 via-transparent to-white/10" />
+          </>
         ) : (
-          <div className="flex size-full items-center justify-center">
-            <Calendar className="size-10 text-brand-ink/30" aria-hidden />
+          <div className="relative flex size-full items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_18%_12%,rgba(255,255,255,0.92),transparent_36%),radial-gradient(ellipse_at_82%_90%,rgba(236,197,224,0.48),transparent_34%),linear-gradient(135deg,#e9e6ff_0%,#e8f4ff_52%,#f9eaf3_100%)]">
+            <span aria-hidden="true" className="absolute -top-16 -left-10 size-52 rounded-full border border-white/60 bg-white/20 shadow-[inset_0_1px_20px_rgba(255,255,255,0.55)] backdrop-blur-md" />
+            <span aria-hidden="true" className="absolute -right-12 -bottom-24 size-64 rounded-full border border-white/55 bg-white/25 shadow-[inset_0_1px_24px_rgba(255,255,255,0.7)] backdrop-blur-md" />
+            <span aria-hidden="true" className="absolute top-1/2 left-1/2 h-px w-[72%] -translate-x-1/2 -translate-y-1/2 rotate-[-18deg] bg-gradient-to-r from-transparent via-white/80 to-transparent" />
+            <span className="relative flex size-20 items-center justify-center rounded-[1.7rem] border border-white/75 bg-white/55 shadow-[0_14px_38px_-18px_rgba(55,64,113,0.35),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-xl ring-1 ring-white/40 sm:size-[5.5rem]">
+              <Calendar className="size-9 text-[#66718b]/65 sm:size-10" strokeWidth={1.7} aria-hidden />
+            </span>
+            <span aria-hidden="true" className="absolute right-5 bottom-4 rounded-full border border-white/70 bg-white/45 px-3 py-1 text-[10px] font-semibold tracking-[0.18em] text-[#66718b]/75 uppercase shadow-sm backdrop-blur-lg">CSC · COMMUNITY</span>
           </div>
         )}
-        <div className="absolute top-3 left-3 flex flex-col items-center rounded-xl bg-brand-white px-3 py-1.5 text-center shadow-sm ring-1 ring-brand-border">
+        <div className="absolute top-3 left-3 flex flex-col items-center rounded-xl border border-white/80 bg-white/75 px-3 py-1.5 text-center shadow-[0_8px_22px_-12px_rgba(27,35,67,0.45)] ring-1 ring-white/55 backdrop-blur-xl">
           <span className="text-lg leading-none font-bold text-brand-ink">
             {day}
           </span>
@@ -75,9 +84,9 @@ export function EventCard({
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-6">
+      <div className="flex flex-1 flex-col gap-3 bg-gradient-to-b from-white/95 to-[#fbfbff]/90 p-6 backdrop-blur-xl">
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-brand-cloud text-brand-secondary">
+          <Badge variant="secondary" className="border border-white/80 bg-[#f3f4fb]/80 text-brand-secondary shadow-sm backdrop-blur-lg">
             {eventCategoryLabels[event.category]}
           </Badge>
           <span className="text-xs font-medium text-brand-muted">
@@ -103,7 +112,7 @@ export function EventCard({
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
           <span
             className={cn(
-              "inline-flex rounded-full px-2.5 py-1 text-xs font-medium",
+              "inline-flex rounded-full border border-white/75 px-2.5 py-1 text-xs font-medium shadow-sm backdrop-blur-lg",
               registrationTone[event.registrationState],
             )}
           >
@@ -120,8 +129,8 @@ export function EventCard({
   );
 
   const base = cn(
-    "flex h-full flex-col overflow-hidden rounded-3xl bg-brand-white text-left ring-1 transition-shadow",
-    selected ? "ring-2 ring-brand-accent" : "ring-brand-border",
+    "group flex h-full flex-col overflow-hidden rounded-3xl border border-white/75 bg-white/75 text-left shadow-[0_18px_48px_-32px_rgba(31,41,78,0.42)] ring-1 transition-[transform,box-shadow,ring-color] duration-300 backdrop-blur-xl motion-reduce:transition-none",
+    selected ? "-translate-y-0.5 ring-2 ring-brand-accent shadow-[0_22px_50px_-28px_rgba(92,74,190,0.35)]" : "ring-brand-border hover:-translate-y-0.5 hover:shadow-[0_24px_56px_-30px_rgba(31,41,78,0.4)]",
     className,
   );
 
