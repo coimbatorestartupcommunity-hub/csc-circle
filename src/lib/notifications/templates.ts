@@ -130,7 +130,7 @@ function htmlFooter(base: string, support: string, dark: boolean) {
   const muted = dark ? "#CBC4DC" : colors.muted;
   const social = [
     ["Instagram", `${base}/email-assets/reference/social-instagram.png`, "https://www.instagram.com/coimbatorestartupcommunity/"],
-    ["WhatsApp group", `${base}/email-assets/reference/social-whatsapp.png`, "https://chat.whatsapp.com/Bw3EVo9r4bV5BoeoZfRx1l?mode=gi_t"],
+    ["WhatsApp group", `${base}/email-assets/reference/social-whatsapp.png`, "https://chat.whatsapp.com/EMaSXe8j6cA9s94hGOCEqf?s=cl&p=a&mlu=4&ilr=4"],
     ["Email CSC", `${base}/email-assets/reference/social-email.png`, `mailto:${support}`],
     ["CSC website", `${base}/email-assets/reference/social-website.png`, base],
   ];
@@ -163,7 +163,7 @@ export function renderNotification(key: TemplateKey, payload: Record<string, unk
     ? `<div style="margin:22px auto;padding:18px;max-width:260px;border:1px solid ${colors.divider};border-radius:16px;text-align:center"><p style="margin:0 0 12px;color:${colors.ink};font-size:14px;font-weight:800">Your individual event pass QR</p><img src="cid:${escapeHtml(eventPassQrCid)}" width="220" height="220" alt="Unique QR code for your confirmed CSC event registration" style="display:block;width:220px;height:220px;margin:0 auto;border:0"><p style="margin:10px 0 0;color:${colors.muted};font-size:12px;line-height:18px">This QR is specific to your confirmed registration.</p></div>`
     : "";
   const buttonText = key === "EventPublishedBroadcast" ? (textValue(payload, "registrationState") === "open" ? "View event & register" : "View event details") : key === "MembershipApproved" ? "View my membership card" : key === "StartupApproved" ? "View directory listing" : key === "FirstLoginWelcome" ? "Explore my CSC profile" : "View in CSC Circle";
-  const text = `${heading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${key === "EventConfirmed" ? "\n\nYour individual event pass QR is attached to this email. You can also view and download it from your CSC account." : ""}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/Bw3EVo9r4bV5BoeoZfRx1l?mode=gi_t\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
+  const text = `${heading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${key === "EventConfirmed" ? "\n\nYour individual event pass QR is attached to this email. You can also view and download it from your CSC account." : ""}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/EMaSXe8j6cA9s94hGOCEqf?s=cl&p=a&mlu=4&ilr=4\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
   const isOrange = tone === "orange";
   const isSky = tone === "sky";
   const brandBg = isOrange ? colors.orangeHero : colors.white;
