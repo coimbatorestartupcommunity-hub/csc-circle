@@ -153,7 +153,7 @@ export default async function CollaborationDetail({
         <div className="bg-brand-white pb-4">
           <Container>
             <RevealOnScroll className="overflow-hidden rounded-[2rem] bg-brand-white p-2 shadow-sm ring-1 ring-brand-border">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-[1.6rem]">
+              <div className="relative aspect-[5/3] overflow-hidden rounded-[1.6rem]">
                 <Image
                   src={c.featuredImagePath}
                   alt={`${c.title} meetup`}
@@ -218,7 +218,7 @@ export default async function CollaborationDetail({
           <div className={c.media.length === 1 ? "mx-auto max-w-3xl" : "grid gap-4 sm:grid-cols-2"}>
             {c.media.map((m) => (
               <figure key={m.id} className="overflow-hidden rounded-3xl bg-brand-cloud ring-1 ring-brand-border">
-                <div className="relative aspect-[4/3] w-full">
+                <div className="relative aspect-[5/3] w-full">
                   <Image
                     src={m.path}
                     alt={m.alt ?? c.title}

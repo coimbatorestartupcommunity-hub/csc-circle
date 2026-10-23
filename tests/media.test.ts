@@ -13,11 +13,11 @@ it("rejects active content, MIME spoofing, and oversized files", async () => {
   await expect(sanitizeImage(Buffer.alloc(5*1024*1024+1), "image/png")).rejects.toThrow();
 });
 
-it("normalizes collaboration artwork to 4:3 and preserves rectangular logo artwork", async () => {
+it("normalizes collaboration artwork to 5:3 and preserves rectangular logo artwork", async () => {
   const landscape = await sharp({ create: { width: 800, height: 600, channels: 3, background: "#673ab7" } }).png().toBuffer();
   const collaboration = await sanitizeCollaborationImage(landscape, "image/png");
   expect(collaboration.width).toBe(1600);
-  expect(collaboration.height).toBe(1200);
+  expect(collaboration.height).toBe(960);
   expect((await sharp(collaboration.data).metadata()).format).toBe("webp");
 
   const rectangular = await sharp({ create: { width: 600, height: 300, channels: 4, background: "#ffffff" } }).png().toBuffer();

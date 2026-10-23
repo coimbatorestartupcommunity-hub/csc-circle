@@ -20,7 +20,7 @@ export function CollaborationCard({ collaboration: c }: { collaboration: Collabo
         href={`/collaborations/${c.slug}`}
         className="group flex h-full flex-col overflow-hidden rounded-3xl bg-brand-white ring-1 ring-brand-border focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-brand-cloud">
+        <div className="relative aspect-[5/3] w-full overflow-hidden bg-brand-cloud">
           {c.featuredImagePath ? (
             <Image
               src={c.featuredImagePath}

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     if (!(file instanceof File) || file.size < 1 || file.size > 5 * 1024 * 1024) return authResponse({ error: "Choose a JPEG, PNG, or WebP image under 5 MB." }, 422);
     let image: Awaited<ReturnType<typeof sanitizeCollaborationImage>>;
     try { image = await sanitizeCollaborationImage(Buffer.from(await file.arrayBuffer()), file.type); }
-    catch { return authResponse({ error: "Choose a single-frame JPEG, PNG, or WebP image at least 640 × 480 px. It will be safely normalized to 4:3." }, 422); }
+    catch { return authResponse({ error: "Choose a single-frame JPEG, PNG, or WebP image at least 640 × 384 px. It will be safely normalized to 5:3." }, 422); }
     const admin = createAdminClient();
     const path = `collaboration-featured/${randomUUID()}.webp`;
     const bucket = admin.storage.from(bucketName);

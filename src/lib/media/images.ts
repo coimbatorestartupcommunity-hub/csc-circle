@@ -26,9 +26,25 @@ export async function sanitizeLandscapeImage(bytes: Buffer, mime: string) {
   return { data, width: info.width, height: info.height, size: info.size };
 }
 
-/** Event banners and collaboration images share the same 4:3 processing contract. */
+/** Event banners keep the 4:3 landscape contract. */
 export const sanitizeEventBanner = sanitizeLandscapeImage;
-export const sanitizeCollaborationImage = sanitizeLandscapeImage;
+
+/** Normalize collaboration featured/gallery artwork to metadata-free 5:3 WebP (logos are handled separately). */
+export async function sanitizeCollaborationImage(bytes: Buffer, mime: string) {
+  if (bytes.length > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(mime)) throw new Error("Invalid image type or size.");
+  const image = sharp(bytes, { limitInputPixels: 16_000_000, failOn: "warning" });
+  const metadata = await image.metadata();
+  const expected: Record<string, string> = { "image/jpeg": "jpeg", "image/png": "png", "image/webp": "webp" };
+  if (metadata.format !== expected[mime] || (metadata.pages ?? 1) > 1 || !metadata.width || !metadata.height || metadata.width < 640 || metadata.height < 384) {
+    throw new Error("Choose a single-frame image at least 640 by 384 pixels.");
+  }
+  const { data, info } = await image
+    .rotate()
+    .resize(1600, 960, { fit: "cover", position: "attention" })
+    .webp({ quality: 88, effort: 4 })
+    .toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height, size: info.size };
+}
 
 /** Preserve the full partner mark inside a neutral square canvas for circular display. */
 export async function sanitizeCollaborationLogo(bytes: Buffer, mime: string) {

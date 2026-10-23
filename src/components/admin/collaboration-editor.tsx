@@ -90,7 +90,7 @@ export function CollaborationEditor({
       if (!response.ok || !result.ok) throw new Error(result.error ?? "Could not upload the image.");
       form.setValue("featuredImagePath", result.path, { shouldValidate: true });
       setFeaturedImagePreview(result.previewUrl);
-      setImageMessage(`Image saved as ${result.width} × ${result.height} (4:3).`);
+      setImageMessage(`Image saved as ${result.width} × ${result.height} (5:3).`);
     } catch (error) {
       setImageMessage(error instanceof Error ? error.message : "Could not upload the image.");
     } finally {
@@ -196,7 +196,7 @@ export function CollaborationEditor({
       } else {
         updateGalleryItem(replaceIndex, { media_path: result.path });
       }
-      setGalleryMessage(`Image normalized to ${result.width} × ${result.height} (4:3).`);
+      setGalleryMessage(`Image normalized to ${result.width} × ${result.height} (5:3).`);
     } catch (error) {
       setGalleryMessage(error instanceof Error ? error.message : "Could not upload gallery image.");
     } finally { setUploadingGalleryImage(false); }
@@ -317,14 +317,14 @@ export function CollaborationEditor({
       <section className="grid gap-4 rounded-2xl border border-brand-border bg-white p-4 sm:grid-cols-2 sm:p-6">
         <h2 className="text-base font-semibold text-brand-ink sm:col-span-2">Images and highlights</h2>
         <div className="grid gap-3 sm:col-span-2 sm:grid-cols-[minmax(10rem,14rem)_1fr] sm:items-center">
-          <div className="relative aspect-[4/3] w-full max-w-72 overflow-hidden rounded-2xl border border-brand-border bg-brand-cloud">
-            {featuredImagePreview ? <Image src={featuredImagePreview} alt="4:3 collaboration image preview" fill unoptimized sizes="288px" className="object-cover" /> : <div className="flex size-full flex-col items-center justify-center gap-2 text-sm text-brand-muted"><ImagePlus className="size-7" aria-hidden="true" />No image selected</div>}
+          <div className="relative aspect-[5/3] w-full max-w-72 overflow-hidden rounded-2xl border border-brand-border bg-brand-cloud">
+            {featuredImagePreview ? <Image src={featuredImagePreview} alt="5:3 collaboration image preview" fill unoptimized sizes="288px" className="object-cover" /> : <div className="flex size-full flex-col items-center justify-center gap-2 text-sm text-brand-muted"><ImagePlus className="size-7" aria-hidden="true" />No image selected</div>}
           </div>
           <div className="grid content-center justify-items-start gap-2">
-            <p className="text-sm font-semibold text-brand-ink">Featured collaboration image (4:3)</p>
+            <p className="text-sm font-semibold text-brand-ink">Featured collaboration image (5:3)</p>
             <p className="max-w-xl text-sm leading-6 text-brand-secondary">Upload a clear JPEG, PNG or WebP image up to 5 MB. CSC safely normalizes it to 1600 × 1200 for collaboration cards and pages. A featured image is required before publishing.</p>
             <label className={`inline-flex min-h-10 cursor-pointer items-center justify-center rounded-xl border border-brand-border bg-white px-4 py-2 text-sm font-semibold text-brand-ink hover:bg-brand-cloud ${uploadingImage || mode !== "live" ? "pointer-events-none opacity-60" : ""}`}>
-              {uploadingImage ? "Uploading image…" : featuredImagePreview ? "Replace featured image" : "Upload 4:3 image"}
+              {uploadingImage ? "Uploading image…" : featuredImagePreview ? "Replace featured image" : "Upload 5:3 image"}
               <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingImage || mode !== "live"} onChange={(event) => { void uploadFeaturedImage(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
             </label>
             {featuredImagePreview && <Button type="button" variant="ghost" disabled={saving || uploadingImage} onClick={() => { form.setValue("featuredImagePath", "", { shouldValidate: true }); setFeaturedImagePreview(""); }}>Remove image</Button>}
@@ -332,13 +332,13 @@ export function CollaborationEditor({
           </div>
         </div>
         <div className="grid gap-3 sm:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold text-brand-ink">4:3 collaboration gallery</h3><Button type="button" variant="outline" disabled={uploadingGalleryImage || mode !== "live" || galleryItems.length >= 20} onClick={() => { setGalleryReplaceIndex(null); galleryInputRef.current?.click(); }}>{uploadingGalleryImage ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}Add gallery image</Button><input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingGalleryImage || mode !== "live"} onChange={(event) => { const replaceIndex = galleryReplaceIndex; setGalleryReplaceIndex(null); void uploadGalleryImage(event.currentTarget.files?.[0], replaceIndex ?? undefined); event.currentTarget.value = ""; }} /></div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold text-brand-ink">5:3 collaboration gallery</h3><Button type="button" variant="outline" disabled={uploadingGalleryImage || mode !== "live" || galleryItems.length >= 20} onClick={() => { setGalleryReplaceIndex(null); galleryInputRef.current?.click(); }}>{uploadingGalleryImage ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}Add gallery image</Button><input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingGalleryImage || mode !== "live"} onChange={(event) => { const replaceIndex = galleryReplaceIndex; setGalleryReplaceIndex(null); void uploadGalleryImage(event.currentTarget.files?.[0], replaceIndex ?? undefined); event.currentTarget.value = ""; }} /></div>
           {galleryMessage ? <p role="status" aria-live="polite" className="text-xs text-brand-secondary">{galleryMessage}</p> : null}
           {galleryItems.length ? <div className="grid gap-3 sm:grid-cols-2">{galleryItems.map((item, index) => {
             const stored = item.media_path.match(/^collaboration-featured\/([0-9a-f-]{36})\.webp$/i);
             const src = stored ? `/api/admin/collaborations/featured-image?path=${encodeURIComponent(item.media_path)}` : item.media_path;
             return <article key={`${item.media_path}-${index}`} className="grid gap-3 rounded-xl border border-brand-border p-3">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-brand-cloud">{src ? <Image src={src} alt={item.alt_text || "Collaboration gallery preview"} fill unoptimized sizes="(max-width: 640px) 100vw, 400px" className="object-cover" /> : null}</div>
+              <div className="relative aspect-[5/3] overflow-hidden rounded-lg bg-brand-cloud">{src ? <Image src={src} alt={item.alt_text || "Collaboration gallery preview"} fill unoptimized sizes="(max-width: 640px) 100vw, 400px" className="object-cover" /> : null}</div>
               <label className={labelClass}>Alt text<input className={inputClass} value={item.alt_text} onChange={(event) => updateGalleryItem(index, { alt_text: event.target.value })} placeholder="Describe what is visible" /></label>
               <label className={labelClass}>Caption (optional)<input className={inputClass} value={item.caption} onChange={(event) => updateGalleryItem(index, { caption: event.target.value })} /></label>
               <div className="flex flex-wrap gap-2">
