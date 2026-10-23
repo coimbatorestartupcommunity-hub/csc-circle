@@ -132,10 +132,18 @@ export async function POST(request: Request) {
   if (input.role === "super_admin") {
     const sessionClient = await createClient();
     const { data: claims } = await sessionClient.auth.getClaims();
-    const authTime = Number(claims?.claims?.auth_time ?? 0);
-    const aal = claims?.claims?.aal;
-    if (aal !== "aal2" && (!authTime || Date.now() / 1000 - authTime > 10 * 60)) {
-      return authResponse({ error: "For Super Admin invitations, sign in again or complete MFA, then retry within 10 minutes." }, 403);
+    const rawClaims = (claims?.claims ?? {}) as Record<string, unknown>;
+    // Supabase does not issue an `auth_time` claim. The real last-authentication
+    // time is the latest `amr` timestamp (set at sign-in and preserved across
+    // token refreshes); fall back to the token `iat` if amr is unavailable.
+    const amr = rawClaims.amr;
+    const amrTimes = Array.isArray(amr)
+      ? amr.map((entry) => Number((entry as { timestamp?: unknown })?.timestamp ?? 0)).filter((value) => Number.isFinite(value) && value > 0)
+      : [];
+    const lastAuthTime = amrTimes.length ? Math.max(...amrTimes) : Number(rawClaims.iat ?? 0);
+    const aal = rawClaims.aal;
+    if (aal !== "aal2" && (!lastAuthTime || Date.now() / 1000 - lastAuthTime > 10 * 60)) {
+      return authResponse({ error: "For Super Admin invitations, sign in again and send within 10 minutes, or complete MFA." }, 403);
     }
   }
 
