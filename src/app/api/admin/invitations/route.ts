@@ -34,8 +34,10 @@ async function expireInvitations(db: SupabaseClient) {
 }
 
 async function sendInvitation(input: { id: string; email: string; role: AdminRole; token: string; expiresAt: Date; fullName: string; message: string }) {
+  let invitationUrl: string | null = null;
   try {
     const email = buildAdminInvitationEmail(input);
+    invitationUrl = email.invitationUrl;
     const result = await sendCommunityEmail({
       to: input.email,
       subject: email.subject,
@@ -43,9 +45,9 @@ async function sendInvitation(input: { id: string; email: string; role: AdminRol
       html: email.html,
       notificationId: input.id,
     });
-    return { accepted: true as const, messageId: result.messageId ?? null };
+    return { accepted: true as const, messageId: result.messageId ?? null, invitationUrl };
   } catch (error) {
-    return { accepted: false as const, category: classifyEmailFailure(error).code };
+    return { accepted: false as const, category: classifyEmailFailure(error).code, invitationUrl };
   }
 }
 
@@ -206,6 +208,6 @@ export async function POST(request: Request) {
     correlation_id: randomUUID(),
   });
   if (updateError) return authResponse({ error: "The invitation was created, but its delivery state could not be recorded. Refresh the invitation list before retrying." }, 503);
-  if (!delivery.accepted) return authResponse({ ok: false, invitationId: id, error: "The invitation is saved, but SMTP did not accept the email. Use Retry from the invitation list." }, 503);
-  return authResponse({ ok: true, invitationId: id, deliveryStatus: "smtp_accepted" }, 201);
+  if (!delivery.accepted) return authResponse({ ok: false, invitationId: id, invitationUrl: delivery.invitationUrl, error: "The invitation is saved, but SMTP did not accept the email. You can still copy the link below and share it manually, or use Retry from the invitation list." }, 503);
+  return authResponse({ ok: true, invitationId: id, deliveryStatus: "smtp_accepted", invitationUrl: delivery.invitationUrl }, 201);
 }

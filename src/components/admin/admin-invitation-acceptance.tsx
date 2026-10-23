@@ -90,7 +90,7 @@ export function AdminInvitationAcceptance() {
           <Link href={`/signup?next=${encodeURIComponent(`/admin/accept-invitation${invitationId ? `?invitationId=${invitationId}` : ""}`)}`} className={buttonVariants({ variant: "outline", className: "h-12" })}>Create verified account</Link>
         </div>}
       </> : null}
-      {accepted ? <><p className="text-brand-secondary">Your CSC administrator role has been activated successfully.</p><Link href="/admin" className={buttonVariants({ className: "h-12 w-full" })}>Open Admin Dashboard</Link></> : null}
+      {accepted ? <><p className="text-brand-secondary">Your CSC administrator role has been activated successfully. You can open your member profile or the admin dashboard.</p><Link href="/member/profile" className={buttonVariants({ variant: "outline", className: "h-12 w-full" })}>View my profile</Link><Link href="/admin" className={buttonVariants({ className: "h-12 w-full" })}>Open Admin Dashboard</Link></> : null}
       {error ? <div role="alert" className="w-full rounded-xl bg-red-50 px-4 py-3 text-left text-sm text-red-800">{error}<p className="mt-2"><Link className="font-semibold underline" href={`/login?next=${encodeURIComponent(`/admin/accept-invitation${invitationId ? `?invitationId=${invitationId}` : ""}`)}`}>Sign in with the invited verified account</Link></p></div> : null}
       <p className="text-xs text-brand-muted">Only accept if you recognize and trust the CSC inviter. Administrator access is activated only after secure invitation validation.</p>
     </div>
