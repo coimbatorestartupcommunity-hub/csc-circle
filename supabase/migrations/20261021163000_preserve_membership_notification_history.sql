@@ -3,6 +3,15 @@
 -- approval occurs before the email worker gets to it.
 begin;
 
+-- Durable, non-dispatchable hold state. The email worker, recovery cron and
+-- user-triggered drains only claim 'queued'/'failed_retryable' jobs, and the
+-- retry path refuses anything other than a failed job, so a 'held' row cannot
+-- be dispatched by any automatic or retry path. Adding it in this same
+-- transaction means historical jobs are never dispatchable for an instant.
+alter table public.notifications drop constraint if exists notifications_status_check;
+alter table public.notifications add constraint notifications_status_check
+  check (status in ('queued','processing','sent','available','superseded','held','failed_retryable','failed_permanent','failed','retrying'));
+
 create or replace function private.notification_copy(p_action text, p_kind text)
 returns table(title text, message text, action_url text)
 language sql immutable set search_path='' as $$
@@ -111,14 +120,20 @@ where n.channel='in_app'
   and n.recipient_user_id=c.user_id
   and c.status='active';
 
--- These status-update emails were skipped before SMTP began. Restore only
--- verified owners' active claims, and only when no per-recipient delivery
--- record exists, so an accepted/ambiguous send can never be replayed.
+-- These status-update emails were skipped before SMTP began. Preserve the job,
+-- its intended recipient and its claim relationship, but place it on an
+-- explicit hold instead of requeuing it: there is no verified prior SMTP
+-- acceptance for these historical recipients, so they must never dispatch
+-- automatically. Restore only verified owners' active claims, and only when no
+-- per-recipient delivery record exists. Releasing a held job is a separate,
+-- permissioned, audited action (public.csc_release_held_notification). The
+-- far-future available_at is defence-in-depth; the 'held' status is the
+-- authoritative guard.
 update public.notifications n
-set status='queued',
+set status='held',
     attempts=0,
-    available_at=now(),
-    last_error=null,
+    available_at='infinity'::timestamptz,
+    last_error='HISTORICAL_HOLD_PENDING_APPROVAL',
     lease_id=null,
     locked_until=null,
     updated_at=now()
@@ -136,5 +151,19 @@ where n.channel='email'
     select 1 from public.notification_deliveries d
     where d.notification_id=n.id
   );
+
+-- Record each hold so the preserved-but-withheld state is auditable.
+insert into public.audit_logs(action, target_type, target_id, after, correlation_id)
+select 'notification.held', 'notification', n.id::text,
+       jsonb_build_object(
+         'reason', 'historical membership email preserved pending release approval',
+         'template_key', n.template_key,
+         'recipient_user_id', n.recipient_user_id),
+       gen_random_uuid()::text
+from public.notifications n
+where n.channel='email'
+  and n.template_key='MembershipMoreInformation'
+  and n.status='held'
+  and n.last_error='HISTORICAL_HOLD_PENDING_APPROVAL';
 
 commit;

@@ -581,4 +581,33 @@ describe("notification uncertainty and retry policy",()=>{
   await db.query("select csc_finish_notification($1,$2,'failed_retryable','SMTP_TEMPORARY_REJECTION')",[rows[0].id,rows[0].lease_id]);
   expect((await db.query("select status from notifications where id=$1",[rows[0].id])).rows).toEqual([{status:'failed_permanent'}]);
  });
+ it("holds historical email jobs out of every dispatch path until explicitly released",async()=>{
+  // available_at=now() so the ONLY thing withholding the job is status='held'.
+  const {rows}=await db.query<{id:string}>("insert into notifications(type,template_key,channel,status,last_error,available_at,recipient_user_id) values('MembershipMoreInformation','MembershipMoreInformation','email','held','HISTORICAL_HOLD_PENDING_APPROVAL',now(),$1) returning id",[b]);
+  const held=rows[0].id;
+  await db.exec("set role service_role");
+  try {
+   // worker/cron/drain claim path must skip a held job even when it is due.
+   expect((await db.query<{id:string}>("select id from csc_claim_notifications(50,'33333333-3333-4333-8333-333333333333')")).rows.some((r)=>r.id===held)).toBe(false);
+   await db.query("select csc_release_notification_dispatch('33333333-3333-4333-8333-333333333333')");
+  } finally { await db.exec("reset role"); }
+  // the ordinary retry path refuses a held job (retries cannot circumvent the hold).
+  await expect(asUser(admin,`select csc_retry_notification('${held}','Attempting to retry a held job',true)`)).rejects.toThrow(/not retryable/);
+  // a member cannot release a hold.
+  await expect(asUser(b,`select csc_release_held_notification('${held}','Member must not release held jobs')`)).rejects.toThrow();
+  // an authorized release moves it to queued and writes an audit record.
+  await asUser(admin,`select csc_release_held_notification('${held}','Historical membership email approved for send')`);
+  expect((await db.query("select status,attempts from notifications where id=$1",[held])).rows).toEqual([{status:'queued',attempts:0}]);
+  expect((await db.query("select action from audit_logs where target_id=$1 and action='notification.release_hold'",[held])).rows).toHaveLength(1);
+ });
+ it("still dispatches ordinary queued transactional email jobs",async()=>{
+  // Earliest available_at so this job sorts first and is deterministically
+  // inside the capped claim batch regardless of other queued test rows.
+  const {rows}=await db.query<{id:string}>("insert into notifications(type,template_key,channel,status,available_at,recipient_user_id) values('OperationalAlert','OperationalAlert','email','queued',now()-interval '3650 days',$1) returning id",[b]);
+  await db.exec("set role service_role");
+  try {
+   expect((await db.query<{id:string}>("select id from csc_claim_notifications(5,'44444444-4444-4444-8444-444444444444')")).rows.some((r)=>r.id===rows[0].id)).toBe(true);
+   await db.query("select csc_release_notification_dispatch('44444444-4444-4444-8444-444444444444')");
+  } finally { await db.exec("reset role"); }
+ });
 });
