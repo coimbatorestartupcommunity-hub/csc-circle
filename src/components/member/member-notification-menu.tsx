@@ -169,8 +169,8 @@ export function MemberNotificationMenu() {
               return <div key={item.id} className={cn("flex gap-2 border-b border-brand-border px-4 py-3 last:border-0", !item.read_at && "bg-brand-purple/10")}>
                 <div className="flex min-w-0 flex-1 gap-3">{content}</div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
-                  {action ? <Link href={action.href} onClick={() => { if (!item.read_at) void markRead(item.id); setOpen(false); }} className="inline-flex min-h-9 items-center rounded-lg bg-brand-ink px-3 py-2 text-xs font-semibold text-white hover:bg-brand-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">{action.label}</Link> : null}
-                {!item.read_at ? <button type="button" aria-label="Mark as read" title="Mark as read" disabled={working} onClick={() => void markRead(item.id)} className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-brand-muted hover:bg-white hover:text-brand-accent disabled:opacity-50"><Check className="size-4" /></button> : null}
+                  {action ? <Link href={action.href} onClick={() => { if (!item.read_at) void markRead(item.id); setOpen(false); }} className="inline-flex items-center whitespace-nowrap rounded-md bg-brand-ink px-2.5 py-1 text-[11px] font-semibold leading-tight text-white hover:bg-brand-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">{action.label}</Link> : null}
+                {!item.read_at ? <button type="button" aria-label="Mark as read" title="Mark as read" disabled={working} onClick={() => void markRead(item.id)} className="flex size-7 shrink-0 items-center justify-center rounded-full text-brand-muted hover:bg-white hover:text-brand-accent disabled:opacity-50"><Check className="size-3.5" /></button> : null}
                 </div>
               </div>;
             }) : null}
