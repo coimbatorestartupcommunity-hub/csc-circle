@@ -54,9 +54,9 @@ export async function POST(request: Request, context: { params: Promise<{ invita
   const { data: rotated, error: rotateError } = await db.from("admin_role_invitations").update({ token_hash: hashToken(token), delivery_status: "sending", delivery_attempts: nextAttempts, last_delivery_error: null, expires_at: expiresAt.toISOString(), updated_at: now.toISOString() }).eq("id", invitationId).eq("status", "pending").eq("delivery_status", invitation.delivery_status).eq("updated_at", invitation.updated_at).select("id").maybeSingle();
   if (rotateError || !rotated) return authResponse({ error: "This invitation changed while you were working. Refresh the invitation list before trying again." }, 409);
 
-  const email = buildAdminInvitationEmail({ id: invitationId, token, role: invitation.role as AdminRole, expiresAt, fullName: (invitation.invitee_name as string | null) ?? "", message: (invitation.invitation_message as string | null) ?? "" });
   let delivery: { accepted: true } | { accepted: false; category: string };
   try {
+    const email = buildAdminInvitationEmail({ id: invitationId, token, role: invitation.role as AdminRole, expiresAt, fullName: (invitation.invitee_name as string | null) ?? "", message: (invitation.invitation_message as string | null) ?? "" });
     await sendCommunityEmail({ to: invitation.invitee_email as string, subject: email.subject, text: email.text, html: email.html, notificationId: invitationId });
     delivery = { accepted: true };
   } catch (cause) {

@@ -12,6 +12,9 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:local": "node scripts/run-local-e2e.mjs",
+    "test:email:local": "node scripts/run-local-notification-integration.mjs",
+    "benchmark:local": "node scripts/benchmark-local.mjs",
+    "test:concurrency:local": "node scripts/concurrency-local.mjs",
     "security:scan": "node scripts/security-scan.mjs"
   },
   "dependencies": {

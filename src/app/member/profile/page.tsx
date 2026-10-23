@@ -35,7 +35,7 @@ export default async function MemberProfilePage() {
   ].filter(Boolean).length;
   const completionPercent = Math.round(completion / 7 * 100);
   const identityEmail = ctx.user?.email || profile.email;
-  const emailVerified = Boolean(ctx.user?.email_confirmed_at);
+  const emailVerified = Boolean(ctx.user?.emailVerified);
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-5 sm:gap-6">

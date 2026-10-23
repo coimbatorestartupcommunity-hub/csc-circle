@@ -13,13 +13,15 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
     create schema auth; create table auth.users(id uuid primary key, email text, raw_user_meta_data jsonb default '{}', email_confirmed_at timestamptz, last_sign_in_at timestamptz);
+    create table auth.sessions(id uuid primary key, user_id uuid not null, not_after timestamptz);
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+    create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
     create schema storage;
     create table storage.buckets(id text primary key, name text not null, public boolean not null default false, file_size_limit bigint, allowed_mime_types text[]);
     create table storage.objects(id uuid primary key default gen_random_uuid(), bucket_id text not null, name text not null);
     create function storage.foldername(name text) returns text[] language sql immutable as $$select string_to_array(name,'/')$$;
     alter table storage.objects enable row level security;
-    grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;
+    grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated; grant execute on function auth.jwt() to anon,authenticated;
     grant usage on schema storage to anon,authenticated; grant execute on function storage.foldername(text) to anon,authenticated;
   `);
   for (const file of readdirSync("supabase/migrations").filter(f => f.endsWith(".sql")).sort()) {
@@ -29,6 +31,44 @@ beforeAll(async () => {
 }, 30_000);
 afterAll(async () => { await db?.close(); });
 describe("isolated PostgreSQL authorization regressions", () => {
+  it("accepts an in-app admin invitation only for its verified recipient and consumes it once", async () => {
+    const invitation = "c1000000-0000-4000-8000-000000000099";
+    await db.exec(`insert into public.admin_role_invitations(
+      id,invitee_email,normalized_email,role,token_hash,invited_by,status,delivery_status,expires_at
+    ) values ('${invitation}','b@example.test','b@example.test','event_manager',repeat('a',64),'${a}','pending','failed',now()+interval '1 day');
+    insert into notifications(type,channel,recipient,recipient_user_id,audience,related_record_type,related_record_id,title,message,action_url,dedupe_key,status,delivered_at)
+    values ('admin.invitation.received','in_app','b@example.test','${b}','member','admin_role_invitations','${invitation}',
+      'Administrator invitation received','Synthetic invitation','/admin/accept-invitation?invitationId=${invitation}',
+      'admin.invitation:${invitation}','available',now());`);
+
+    await expect(asUser(a, `select csc_accept_admin_role_invitation_in_app('${invitation}')`)).rejects.toThrow();
+    await asUser(b, `select csc_accept_admin_role_invitation_in_app('${invitation}')`);
+    expect((await db.query("select role from admin_roles where user_id=$1 and role='event_manager'", [b])).rows).toHaveLength(1);
+    expect((await db.query("select status,accepted_by from admin_role_invitations where id=$1", [invitation])).rows).toEqual([{ status: "accepted", accepted_by: b }]);
+    expect((await db.query("select title,action_url,read_at is not null as read from notifications where related_record_id=$1", [invitation])).rows).toEqual([{
+      title: "Administrator invitation accepted", action_url: "/admin", read: true,
+    }]);
+    await expect(asUser(b, `select csc_accept_admin_role_invitation_in_app('${invitation}')`)).rejects.toThrow();
+  });
+
+  it("commits expiration state instead of rolling it back with an exception", async () => {
+    const invitation = "c1000000-0000-4000-8000-000000000098";
+    await db.exec(`insert into public.admin_role_invitations(
+      id,invitee_email,normalized_email,role,token_hash,invited_by,status,expires_at
+    ) values ('${invitation}','b@example.test','b@example.test','checkin_staff',repeat('b',64),'${a}','pending',now()-interval '1 minute');
+    insert into notifications(type,channel,recipient,recipient_user_id,audience,related_record_type,related_record_id,title,message,action_url,dedupe_key,status,delivered_at)
+    values ('admin.invitation.received','in_app','${b}','${b}','member','admin_role_invitations','${invitation}',
+      'Administrator invitation received','Synthetic invitation','/admin/accept-invitation?invitationId=${invitation}',
+      'admin.invitation.expired:${invitation}','available',now());`);
+
+    const result = await asUser(b, `select csc_accept_admin_role_invitation_in_app('${invitation}') as result`);
+    expect(result[0].rows).toEqual([{ result: { ok: false, reason: "expired" } }]);
+    expect((await db.query("select status from admin_role_invitations where id=$1", [invitation])).rows).toEqual([{ status: "expired" }]);
+    expect((await db.query("select title,action_url,read_at is not null as read from notifications where related_record_id=$1", [invitation])).rows).toEqual([{
+      title: "Administrator invitation expired", action_url: null, read: true,
+    }]);
+  });
+
   it("bootstraps exactly one non-active membership and profile per Auth UUID", async () => {
     const result = await db.query("select count(*)::int as n from memberships where status='not_started'");
     expect(result.rows).toEqual([{ n: 2 }]);
@@ -153,18 +193,27 @@ describe("isolated PostgreSQL authorization regressions", () => {
     const organizationPayload = JSON.stringify({ name: "Approved Test Partner", slug: "approved-test-partner", organization_type: "startup", publication_approved: true, publication_status: "published" }).replaceAll("'", "''");
     const orgSaved = await asUser(a, `select public.csc_save_collaboration_organization('${organizationPayload}'::jsonb) as id`);
     expect((await db.query("select publication_status from collaboration_organizations where slug='approved-test-partner'")).rows).toEqual([{ publication_status: "published" }]);
-    expect((await db.query("select action from audit_logs where target_id=$1", [(orgSaved[0].rows[0] as { id: string }).id])).rows).toEqual([{ action: "collaboration.organization_saved" }]);
+    const organizationId = (orgSaved[0].rows[0] as { id: string }).id;
+    expect((await db.query("select action from audit_logs where target_id=$1", [organizationId])).rows).toEqual([{ action: "collaboration.organization_saved" }]);
+    const editOrganization = JSON.stringify({ id: organizationId, name: "Approved Test Partner Updated", slug: "approved-test-partner", organization_type: "startup", publication_approved: true, publication_status: "published", logo_path: "collaboration-logos/11111111-1111-4111-8111-111111111111.webp" }).replaceAll("'", "''");
+    const editedOrganization = await asUser(a, `select public.csc_save_collaboration_organization('${editOrganization}'::jsonb) as id`);
+    expect((editedOrganization[0].rows[0] as { id: string }).id).toBe(organizationId);
+    expect((await db.query("select name,logo_path from collaboration_organizations where id=$1", [organizationId])).rows).toEqual([{
+      name: "Approved Test Partner Updated", logo_path: "collaboration-logos/11111111-1111-4111-8111-111111111111.webp",
+    }]);
 
     const orgs = await db.query<{ id: string }>("select id from collaboration_organizations where slug in ('csc-circle','outlier') order by slug");
     const payload = JSON.stringify({
       slug: "permission-test", title: "Permission Test", tagline: "A safe test",
       summary: "An isolated database test.", story: "Synthetic test content.",
       category: "Community Meetup", status: "completed", publication_status: "draft",
+      featured_image_path: "collaboration-featured/22222222-2222-4222-8222-222222222222.webp",
       partner_ids: orgs.rows.map((org) => org.id), highlights: [], media: [],
     }).replaceAll("'", "''");
     const saved = await asUser(a, `select public.csc_save_collaboration('${payload}'::jsonb) as id`);
     const id = (saved[0].rows[0] as { id: string }).id;
     expect((await db.query("select publication_status from collaborations where id=$1", [id])).rows).toEqual([{ publication_status: "draft" }]);
+    expect((await db.query("select featured_image_path from collaborations where id=$1", [id])).rows).toEqual([{ featured_image_path: "collaboration-featured/22222222-2222-4222-8222-222222222222.webp" }]);
     expect((await db.query("select action from audit_logs where target_id=$1", [id])).rows).toEqual([{ action: "collaboration.saved" }]);
 
     await db.exec("set role anon;");
@@ -362,6 +411,7 @@ describe("trusted operations and replay protection", () => {
   });
   it("allows direct admin approval of a free membership claim and issues its card", async () => {
     const claim = "abababab-abab-4bab-8bab-abababababab";
+    const notificationStart = new Date().toISOString();
     await db.exec(`update memberships set status='not_started',member_number=null,issued_at=null where user_id='${b}';
       insert into membership_claims(id,user_id,full_name,linked_account_email,applicant_type,designation,whatsapp,status)
       values ('${claim}','${b}','Synthetic Member','b@example.test','new_applicant','student_entrepreneur','+15555550123','claim_submitted')`);
@@ -376,7 +426,35 @@ describe("trusted operations and replay protection", () => {
       "select type,status,recipient_user_id,title from notifications where channel='in_app' and related_record_id=$1 order by type", [claim],
     )).rows).toEqual([
       { type: "claim.active", status: "available", recipient_user_id: b, title: "CSC membership is active" },
-      { type: "claim.pending_verification", status: "superseded", recipient_user_id: b, title: "Membership application received" },
+      { type: "claim.pending_verification", status: "available", recipient_user_id: b, title: "Membership application received" },
+    ]);
+    const membershipId = (await db.query<{ id: string }>("select id from memberships where user_id=$1", [b])).rows[0].id;
+    expect((await db.query<{ template_key: string; status: string }>(
+      "select template_key,status from notifications where channel='email' and recipient_user_id=$1 and created_at >= $2 and ((template_key='MembershipApplicationReceived' and related_record_type='membership_claims' and related_record_id=$3) or (template_key='MembershipApproved' and related_record_type='memberships' and related_record_id=$4)) order by template_key",
+      [b, notificationStart, claim, membershipId],
+    )).rows).toEqual([
+      { template_key: "MembershipApplicationReceived", status: "queued" },
+      { template_key: "MembershipApproved", status: "queued" },
+    ]);
+  });
+  it("keeps the claim-submitted email queued when approval follows before dispatch", async () => {
+    const claim = "acacacac-acac-4cac-8cac-acacacacacac";
+    await db.exec(`update memberships set status='not_started',member_number=null,issued_at=null where user_id='${b}';
+      insert into membership_claims(id,user_id,full_name,linked_account_email,applicant_type,designation,whatsapp,status)
+      values ('${claim}','${b}','Synthetic Member','b@example.test','new_applicant','student_entrepreneur','+15555550123','claim_submitted');`);
+    await asUser(admin, `select csc_admin_action('claim','${claim}','pending_verification','Reviewed submitted membership ID')`);
+    await asUser(admin, `select csc_admin_action('claim','${claim}','active','Verified submitted membership ID')`);
+
+    expect((await db.query<{ type: string; status: string }>(
+      "select type,status from notifications where channel='email' and recipient_user_id=$1 and related_record_id=$2 and template_key='MembershipMoreInformation'",
+      [b, claim],
+    )).rows).toEqual([{ type: "MembershipMoreInformation", status: "queued" }]);
+    expect((await db.query<{ type: string; status: string; message: string }>(
+      "select type,status,message from notifications where channel='in_app' and recipient_user_id=$1 and related_record_id=$2 order by type",
+      [b, claim],
+    )).rows).toEqual([
+      { type: "claim.active", status: "available", message: "Your CSC membership is now active." },
+      { type: "claim.pending_verification", status: "available", message: "Your CSC Circle membership application has been submitted and is awaiting review." },
     ]);
   });
   it("registers idempotently without issuing a pass", async () => {

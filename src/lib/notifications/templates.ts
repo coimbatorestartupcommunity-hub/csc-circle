@@ -7,7 +7,7 @@ export const definitions = {
   MembershipAdminAlert: ["New Membership Application", "A membership application has been submitted and is ready for authorized review.", "/admin/membership-claims", "workspace", "light"],
   MembershipApproved: ["Your CSC Membership Card Is Ready", "Your free CSC membership has been approved. Sign in to view and download your digital membership card. No payment is required for the membership card.", "/member/id-card", "milestone", "light"],
   MembershipRejected: ["Membership Application Update", "There is an update to your membership application. Sign in to review the decision and any next steps.", "/member/claim", "support", "light"],
-  MembershipMoreInformation: ["Membership Verification Update", "Your membership claim is under review. Sign in to review the latest status and any requested information.", "/member/claim", "verification", "light"],
+  MembershipMoreInformation: ["CSC Membership Status Update", "Your CSC membership claim has been submitted for review. Sign in to see its current status and any next steps.", "/member/claim", "verification", "light"],
   MembershipStatusChanged: ["Membership Status Update", "Your CSC membership status has changed. Sign in to view the current status of your account and card.", "/member/id-card", "milestone", "light"],
   EventPublishedBroadcast: ["A new CSC event is open", "A new event has been published by Coimbatore Startup Community. Review the date, location, admission details, and registration information below.", "/events", "campaign", "orange"],
   EventRSVPReceived: ["Event Registration Received", "Your event registration was received. We will email you when its status changes. A received registration is not a seat confirmation.", "/member/events", "onboarding", "sky"],
@@ -109,7 +109,14 @@ const colors = {
 
 function safeAction(base: string, path: string) {
   const url = new URL(path, base);
-  if (url.protocol !== "https:" || url.origin !== base || url.username || url.password) throw new Error("Invalid CSC email action URL");
+  const origin = new URL(base);
+  const localCapture = process.env.CSC_LOCAL_EMAIL_CAPTURE === "true"
+    && process.env.VERCEL !== "1"
+    && !process.env.VERCEL_ENV
+    && origin.protocol === "http:"
+    && ["localhost", "127.0.0.1"].includes(origin.hostname)
+    && origin.port === "3107";
+  if ((!localCapture && origin.protocol !== "https:") || url.origin !== base || url.username || url.password) throw new Error("Invalid CSC email action URL");
   return url.href;
 }
 

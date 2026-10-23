@@ -7,7 +7,7 @@ const fixturePath = process.env.CSC_E2E_USERS_FILE;
 const fixtures: FixtureFile | null = fixturePath
   ? JSON.parse(readFileSync(fixturePath, "utf8")) as FixtureFile
   : null;
-const viewports = [320, 390, 768, 1024, 1440];
+const viewports = [320, 375, 430, 768, 1024, 1440];
 
 async function signIn(page: Page, account: Account, next: string, ip: string) {
   await page.setExtraHTTPHeaders({ "x-forwarded-for": ip });
@@ -99,7 +99,7 @@ test("authenticated member profile, ID and startup form fit mobile through deskt
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/member/profile");
   await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page).toHaveURL(/\/login\?next=%2F$/);
+  await expect(page).toHaveURL("http://localhost:3107/");
   expect((await page.context().cookies()).some(({ name }) => /^sb-.+-auth-token(?:\.\d+)?$/.test(name))).toBe(false);
   await page.goto("/member/profile");
   await expect(page).toHaveURL(/\/login\?next=%2Fmember%2Fprofile$/);

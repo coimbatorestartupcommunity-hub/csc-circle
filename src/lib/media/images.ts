@@ -9,8 +9,8 @@ export async function sanitizeImage(bytes: Buffer, mime: string) {
   return image.rotate().resize({ width: 2000, height: 2000, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer({ resolveWithObject: true });
 }
 
-/** Normalize public event artwork to a consistent, metadata-free 4:3 banner. */
-export async function sanitizeEventBanner(bytes: Buffer, mime: string) {
+/** Normalize public landscape artwork to consistent, metadata-free 4:3 WebP. */
+export async function sanitizeLandscapeImage(bytes: Buffer, mime: string) {
   if (bytes.length > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(mime)) throw new Error("Invalid image type or size.");
   const image = sharp(bytes, { limitInputPixels: 16_000_000, failOn: "warning" });
   const metadata = await image.metadata();
@@ -26,18 +26,22 @@ export async function sanitizeEventBanner(bytes: Buffer, mime: string) {
   return { data, width: info.width, height: info.height, size: info.size };
 }
 
-/** Normalize collaboration artwork to a clear 4:5 portrait crop. */
-export async function sanitizeCollaborationPortrait(bytes: Buffer, mime: string) {
+/** Event banners and collaboration images share the same 4:3 processing contract. */
+export const sanitizeEventBanner = sanitizeLandscapeImage;
+export const sanitizeCollaborationImage = sanitizeLandscapeImage;
+
+/** Preserve the full partner mark inside a neutral square canvas for circular display. */
+export async function sanitizeCollaborationLogo(bytes: Buffer, mime: string) {
   if (bytes.length > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(mime)) throw new Error("Invalid image type or size.");
   const image = sharp(bytes, { limitInputPixels: 16_000_000, failOn: "warning" });
   const metadata = await image.metadata();
   const expected: Record<string, string> = { "image/jpeg": "jpeg", "image/png": "png", "image/webp": "webp" };
-  if (metadata.format !== expected[mime] || (metadata.pages ?? 1) > 1 || !metadata.width || !metadata.height || metadata.width < 512 || metadata.height < 640) {
-    throw new Error("Choose a single-frame image at least 512 × 640 px.");
+  if (metadata.format !== expected[mime] || (metadata.pages ?? 1) > 1 || !metadata.width || !metadata.height || metadata.width < 48 || metadata.height < 48) {
+    throw new Error("Choose a single-frame logo at least 48 × 48 px.");
   }
   const { data, info } = await image
     .rotate()
-    .resize(1200, 1500, { fit: "cover", position: "attention" })
+    .resize(720, 720, { fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 0 } })
     .webp({ quality: 88, effort: 4 })
     .toBuffer({ resolveWithObject: true });
   return { data, width: info.width, height: info.height, size: info.size };

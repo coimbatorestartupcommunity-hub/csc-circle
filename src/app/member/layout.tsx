@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
+import { createClient } from "@/lib/supabase/server";
 import { MemberShell } from "@/components/member/member-shell";
 import { MemberUnavailable } from "@/components/member/member-unavailable";
 import { DemoBanner } from "@/components/member/demo-banner";
 import { membershipStatusMeta } from "@/lib/content/member-taxonomy";
-import { getAdminContext } from "@/lib/admin/gate";
 
 export const metadata: Metadata = {
   title: { default: "Member", template: "%s · CSC Circle Member" },
@@ -31,10 +31,17 @@ export default async function MemberLayout({
     return <MemberUnavailable />;
   }
 
-  const profileRes = await memberServices.getProfile();
+  const [profileRes, ownAdminRole] = await Promise.all([
+    memberServices.getProfile(),
+    ctx.mode === "live"
+      ? createClient().then((supabase) => supabase.from("admin_roles").select("role").eq("user_id", ctx.user!.id).limit(1).maybeSingle())
+      : Promise.resolve(null),
+  ]);
   const profile = profileRes.ok ? profileRes.data : null;
-  const adminContext = ctx.mode === "live" ? await getAdminContext() : null;
-  const isAdmin = adminContext?.mode === "live";
+  // This is only a convenience link. The self-read policy limits the query to
+  // the signed-in user's own role rows; all admin pages enforce their own
+  // server-side permission checks independently.
+  const isAdmin = ownAdminRole !== null && !ownAdminRole.error && Boolean(ownAdminRole.data);
   const status = profile?.membership.status ?? "not_started";
   const meta = membershipStatusMeta[status];
 

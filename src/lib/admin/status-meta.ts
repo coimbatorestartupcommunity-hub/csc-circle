@@ -22,6 +22,27 @@ export const notificationStatusMeta: Record<NotificationStatus, { label: string;
   retrying: { label: "Retrying", tone: "bg-brand-gold text-brand-ink" },
 };
 
+export function notificationIssueLabel(
+  status: NotificationStatus,
+  code?: string,
+  channel?: "in_app" | "email" | "whatsapp",
+  type?: string,
+): string | undefined {
+  if (!code) return undefined;
+  if (status === "superseded" && code === "SUPERSEDED_BUSINESS_STATE") {
+    const membershipNotice = type === "claim.pending_verification" || type?.startsWith("Membership") === true;
+    if (!membershipNotice) {
+      return channel === "email"
+        ? "The source record changed before dispatch; this email was not sent."
+        : "The source record changed; this notice was replaced by a newer update.";
+    }
+    return channel === "email"
+      ? "Claim status advanced before dispatch; this email was not sent."
+      : "Claim status advanced; this older inbox notice was replaced by the current status.";
+  }
+  return code;
+}
+
 export const publicationStatusMeta: Record<string, { label: string; tone: string }> = {
   draft: { label: "Draft", tone: "bg-brand-cloud text-brand-muted" },
   pending: { label: "Pending", tone: "bg-brand-gold text-brand-ink" },

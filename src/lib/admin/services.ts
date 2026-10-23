@@ -34,6 +34,7 @@ import { getAdminContext, type AdminContext } from "@/lib/admin/gate";
 import type { Permission } from "@/lib/admin/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notificationIssueLabel } from "@/lib/admin/status-meta";
 import {
   demoAudit,
   demoClaims,
@@ -534,7 +535,11 @@ export const adminServices = {
     return guard("roles.manage", demoNotifications, async () => {
       const sb = await createClient(); const { data, error } = await sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(200);
       if (error) return fail("unknown", "Could not load notifications.");
-      return ok((data ?? []).map(r => ({ id: r.id, type: r.type, channel: r.channel as NotificationRecord["channel"], recipient: r.audience === "admin" ? "Configured admin recipients" : r.channel === "in_app" ? "Authenticated member" : r.recipient ?? "Verified account email", attempts: r.attempts, lastError: r.last_error ?? undefined, status: r.status as NotificationRecord["status"], createdAt: r.created_at, sentAt: r.sent_at ?? undefined, deliveredAt: r.delivered_at ?? undefined })));
+      return ok((data ?? []).map(r => {
+        const status = r.status as NotificationRecord["status"];
+        const channel = r.channel as NotificationRecord["channel"];
+        return { id: r.id, type: r.type, channel, recipient: r.audience === "admin" ? "Configured admin recipients" : channel === "in_app" ? "Authenticated member" : r.recipient ?? "Verified account email", attempts: r.attempts, lastError: notificationIssueLabel(status, r.last_error ?? undefined, channel, r.type), status, createdAt: r.created_at, sentAt: r.sent_at ?? undefined, deliveredAt: r.delivered_at ?? undefined };
+      }));
     });
   },
 

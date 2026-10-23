@@ -39,6 +39,29 @@ it("keeps auth-public pages available without initializing Supabase Auth", async
   expect(mocks.createServerClient).not.toHaveBeenCalled();
 });
 
+it.each(["/", "/about", "/events", "/events/synthetic-event", "/directory", "/members", "/members/synthetic-profile", "/collaborations"]) (
+  "keeps public marketing route %s available without a session",
+  async (path) => {
+    configureLocalAuth();
+    const response = await proxy(new NextRequest(`http://localhost${path}`));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("location")).toBeNull();
+    expect(mocks.createServerClient).not.toHaveBeenCalled();
+  },
+);
+
+it("keeps the administrator invitation acceptance page public so email tokens survive the initial navigation", async () => {
+  configureLocalAuth();
+  const response = await proxy(new NextRequest("http://localhost/admin/accept-invitation#token=synthetic-invitation-token"));
+
+  expect(response.status).toBe(200);
+  expect(response.headers.get("cache-control")).toBe("private, no-store");
+  expect(response.headers.get("location")).toBeNull();
+  expect(mocks.createServerClient).not.toHaveBeenCalled();
+});
+
 it("verifies requests carrying a Supabase session cookie", async () => {
   configureLocalAuth();
   mocks.getClaims.mockResolvedValue({ data: { claims: { sub: "synthetic-user-id" } }, error: null });

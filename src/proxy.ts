@@ -13,9 +13,14 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const pathname = request.nextUrl.pathname;
   const isAuthPublic = [
+    "/about", "/collaborations", "/directory", "/events", "/members",
     "/login", "/signup", "/forgot-password", "/reset-password",
     "/privacy", "/terms", "/security", "/auth/callback", "/auth/confirm", "/auth/signout",
-  ].some((path) => pathname === path || pathname.startsWith(`${path}/`));
+    // Invitees do not have an admin role yet. This page must load so its
+    // client can exchange the email URL fragment for a short-lived HttpOnly
+    // cookie before the invitee signs in and accepts the invitation.
+    "/admin/accept-invitation",
+  ].some((path) => pathname === path || pathname.startsWith(`${path}/`)) || pathname === "/";
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

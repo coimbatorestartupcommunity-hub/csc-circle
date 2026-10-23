@@ -60,7 +60,10 @@ async function isCurrent(sb: Service, job: Job) {
     const { data, error } = await sb.from("membership_claims").select("status").eq("id", id).maybeSingle();
     if (error || !data) return false;
     if (key === "MembershipRejected") return data.status === "rejected";
-    if (key === "MembershipMoreInformation") return data.status === "pending_verification";
+    // This is a durable status-change event, not a reminder. The template
+    // tells the member to check the current claim status, so it remains valid
+    // if the claim is still under review or has advanced through approval.
+    if (key === "MembershipMoreInformation") return ["pending_verification", "approved", "active"].includes(data.status);
     return true;
   }
   if (job.related_record_type === "consultation_submissions" && key.startsWith("Consultation")) {

@@ -125,7 +125,7 @@ export const memberServices = {
         email: ctx.user!.email ?? "",
         displayName: (ctx.user!.user_metadata?.name as string) ?? undefined,
         avatarUrl: (ctx.user!.user_metadata?.avatar_url as string) ?? (ctx.user!.user_metadata?.picture as string) ?? undefined,
-        emailVerified: !!ctx.user!.email_confirmed_at,
+        emailVerified: ctx.user!.emailVerified,
         provider: (ctx.user!.app_metadata?.provider as "google" | "email") ?? "email",
       },
       expiresAt: "",

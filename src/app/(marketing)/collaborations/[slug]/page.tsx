@@ -153,15 +153,16 @@ export default async function CollaborationDetail({
         <div className="bg-brand-white pb-4">
           <Container>
             <RevealOnScroll className="overflow-hidden rounded-[2rem] bg-brand-white p-2 shadow-sm ring-1 ring-brand-border">
-              <Image
-                src={c.featuredImagePath}
-                alt={`${c.title} meetup`}
-                width={1619}
-                height={972}
-                className="h-auto w-full rounded-[1.6rem] object-cover"
-                sizes="(max-width: 1280px) 100vw, 1200px"
-                priority
-              />
+              <div className="relative aspect-[4/3] overflow-hidden rounded-[1.6rem]">
+                <Image
+                  src={c.featuredImagePath}
+                  alt={`${c.title} meetup`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1280px) 100vw, 1200px"
+                  priority
+                />
+              </div>
             </RevealOnScroll>
           </Container>
         </div>
@@ -217,14 +218,15 @@ export default async function CollaborationDetail({
           <div className={c.media.length === 1 ? "mx-auto max-w-3xl" : "grid gap-4 sm:grid-cols-2"}>
             {c.media.map((m) => (
               <figure key={m.id} className="overflow-hidden rounded-3xl bg-brand-cloud ring-1 ring-brand-border">
-                <Image
-                  src={m.path}
-                  alt={m.alt ?? c.title}
-                  width={1619}
-                  height={972}
-                  className="h-auto w-full object-cover"
-                  sizes="(max-width: 768px) 100vw, 600px"
-                />
+                <div className="relative aspect-[4/3] w-full">
+                  <Image
+                    src={m.path}
+                    alt={m.alt ?? c.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 600px"
+                  />
+                </div>
                 {m.caption ? (
                   <figcaption className="px-4 py-3 text-center text-sm text-brand-muted">{m.caption}</figcaption>
                 ) : null}

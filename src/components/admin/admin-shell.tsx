@@ -16,7 +16,6 @@ import {
   CreditCard,
   Star,
   FileText,
-  Image as ImageIcon,
   Bell,
   ScrollText,
   Settings,
@@ -84,7 +83,6 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
     heading: "Platform",
     items: [
       { href: "/admin/content", label: "Content", icon: FileText, perm: "content.manage" },
-      { href: "/admin/media", label: "Media", icon: ImageIcon, perm: "media.manage" },
       { href: "/admin/notifications", label: "Notifications", icon: Bell, anyPerm: ["roles.manage", "events.publish"] },
       { href: "/admin/audit-logs", label: "Audit logs", icon: ScrollText, perm: "audit.read" },
       { href: "/admin/settings", label: "Settings", icon: Settings, perm: "settings.manage" },

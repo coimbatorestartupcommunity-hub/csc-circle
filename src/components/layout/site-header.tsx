@@ -8,6 +8,7 @@ import { CtaLink } from "@/components/common/cta-link";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { AccountAvatar } from "@/components/layout/account-avatar";
+import { MemberNotificationMenu } from "@/components/member/member-notification-menu";
 import { primaryNav, routes } from "@/lib/content/site";
 
 /** Sticky, responsive site header with primary nav + Join / Login CTAs. */
@@ -108,6 +109,7 @@ export function SiteHeader() {
             </CtaLink>
           )}
           {!account.authenticated && !account.loading ? <CtaLink href={routes.join} size="md" arrow={false} className="hidden whitespace-nowrap 2xl:inline-flex">Join Community</CtaLink> : null}
+          {account.authenticated ? <MemberNotificationMenu /> : null}
           <MobileNavigation account={account} />
         </div>
       </div>

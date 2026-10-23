@@ -34,8 +34,8 @@ async function expireInvitations(db: SupabaseClient) {
 }
 
 async function sendInvitation(input: { id: string; email: string; role: AdminRole; token: string; expiresAt: Date; fullName: string; message: string }) {
-  const email = buildAdminInvitationEmail(input);
   try {
+    const email = buildAdminInvitationEmail(input);
     const result = await sendCommunityEmail({
       to: input.email,
       subject: email.subject,
@@ -47,6 +47,17 @@ async function sendInvitation(input: { id: string; email: string; role: AdminRol
   } catch (error) {
     return { accepted: false as const, category: classifyEmailFailure(error).code };
   }
+}
+
+async function findVerifiedAccount(admin: SupabaseClient, email: string) {
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) return null;
+    const match = data.users.find((user) => user.email?.toLowerCase() === email && Boolean(user.email_confirmed_at));
+    if (match) return match.id;
+    if (data.users.length < 1000) return null;
+  }
+  return null;
 }
 
 export async function GET() {
@@ -150,6 +161,34 @@ export async function POST(request: Request) {
   }).select("id").single();
   if (insertError || !row) {
     return authResponse({ error: insertError?.code === "23505" ? "A pending invitation already exists for this email. Review it below or revoke it first." : "The invitation could not be created." }, insertError?.code === "23505" ? 409 : 503);
+  }
+
+  const admin = createAdminClient() as unknown as SupabaseClient;
+  const inviteeId = await findVerifiedAccount(admin, email);
+  if (inviteeId) {
+    const { error: inboxError } = await db.from("notifications").insert({
+      type: "admin.invitation.received",
+      channel: "in_app",
+      recipient: email,
+      recipient_user_id: inviteeId,
+      audience: "member",
+      related_record_type: "admin_role_invitations",
+      related_record_id: id,
+      title: "Administrator invitation received",
+      message: `You have been invited to join the CSC Circle administration team as ${roleLabels[input.role]}. Review the role and accept using this verified account.`,
+      action_url: `/admin/accept-invitation?invitationId=${encodeURIComponent(id)}`,
+      payload: { role: input.role, expiresAt: expiresAt.toISOString() },
+      dedupe_key: `admin.invitation:${id}`,
+      status: "available",
+      delivered_at: new Date().toISOString(),
+    });
+    if (inboxError) {
+      await db.from("audit_logs").insert({
+        action: "admin.invitation.in_app_notification_failed", actor_id: context.userId,
+        actor_role: "super_admin", target_type: "admin_role_invitation", target_id: id,
+        after: { role: input.role, recipientAccountMatched: true }, correlation_id: randomUUID(),
+      });
+    }
   }
 
   const delivery = await sendInvitation({ id, email, role: input.role, token, expiresAt, fullName: input.fullName, message: input.message });

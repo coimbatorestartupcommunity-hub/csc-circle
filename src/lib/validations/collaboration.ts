@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const localAssetPath = z.string().regex(/^\/(images|brand)\/[A-Za-z0-9._/-]+$/).refine((path) => !path.includes(".."));
 const collaborationImagePath = localAssetPath.or(z.string().regex(/^collaboration-featured\/[0-9a-f-]{36}\.webp$/i));
+const collaborationLogoPath = localAssetPath.or(z.string().regex(/^collaboration-logos\/[0-9a-f-]{36}\.webp$/i));
 
 export const collaborationSaveSchema = z.object({
   id: z.string().uuid().optional(),
@@ -33,25 +34,26 @@ export const collaborationSaveSchema = z.object({
     body: z.string().trim().min(2).max(500),
   })).max(12),
   media: z.array(z.object({
-    media_path: localAssetPath,
+    media_path: collaborationImagePath,
     alt_text: z.string().trim().min(3).max(240),
     caption: z.string().max(240).default(""),
     display_order: z.number().int().min(0).max(19),
   })).max(20),
 }).superRefine((value, context) => {
   if (value.publicationStatus === "published" && !value.featuredImagePath) {
-    context.addIssue({ code: "custom", path: ["featuredImagePath"], message: "Upload a 4:5 featured image before publishing." });
+    context.addIssue({ code: "custom", path: ["featuredImagePath"], message: "Upload a 4:3 featured image before publishing." });
   }
 });
 
 export type CollaborationSaveValues = z.infer<typeof collaborationSaveSchema>;
 
 export const collaborationOrganizationSchema = z.object({
+  id: z.string().uuid().optional(),
   name: z.string().trim().min(2).max(120),
   slug: z.string().min(2).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   organizationType: z.enum(["community", "startup", "company", "college", "incubator", "accelerator", "other"]),
   description: z.string().max(800).default(""),
-  logoPath: localAssetPath.or(z.literal("")),
+  logoPath: collaborationLogoPath.or(z.literal("")),
   websiteUrl: z.string().url().refine((value) => value.startsWith("https://")).or(z.literal("")),
   publicationApproved: z.literal(true),
 });

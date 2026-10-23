@@ -8,8 +8,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ass
     const path = `collaboration-featured/${assetId}.webp`;
     const db = createAnonClient();
     if (!db) return new Response(null, { status: 404 });
-    const { data: visible, error: visibleError } = await db.from("collaborations").select("id").eq("featured_image_path", path).eq("publication_status", "published").maybeSingle();
-    if (visibleError || !visible) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
+    const [{ data: featured, error: featuredError }, { data: gallery, error: galleryError }] = await Promise.all([
+      db.from("collaborations").select("id").eq("featured_image_path", path).eq("publication_status", "published").maybeSingle(),
+      db.from("collaboration_media").select("collaboration_id, collaborations!inner(id)").eq("media_path", path).eq("collaborations.publication_status", "published").limit(1),
+    ]);
+    if ((featuredError && galleryError) || (!featured && !gallery?.length)) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
     const admin = createAdminClient();
     const { data: image, error } = await admin.storage.from("member-portraits").download(path);
     if (error || !image) return new Response(null, { status: 404 });
