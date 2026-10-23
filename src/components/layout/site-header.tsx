@@ -19,7 +19,7 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = React.useState(false);
   const [account, setAccount] = React.useState<{
     authenticated: boolean; loading: boolean; name?: string; avatarUrl?: string | null;
-    accountHref?: string; accountLabel?: string; membershipLabel?: string;
+    isAdmin?: boolean; accountHref?: string; accountLabel?: string; membershipLabel?: string;
   }>({ authenticated: false, loading: true });
 
   React.useEffect(() => {
@@ -99,6 +99,7 @@ export function SiteHeader() {
               <span className="whitespace-nowrap text-xs text-brand-muted">
                 {account.membershipLabel}
               </span>
+              {account.isAdmin ? <CtaLink href="/member/profile" variant="outline" size="md" arrow={false} className="h-9 px-3 text-xs 2xl:px-4 2xl:text-sm">Profile</CtaLink> : null}
               <CtaLink href={account.accountHref ?? "/member/profile"} size="md" arrow={false} className="h-9 px-3 text-xs 2xl:px-4 2xl:text-sm">
                 {account.accountLabel ?? "Profile"}
               </CtaLink>

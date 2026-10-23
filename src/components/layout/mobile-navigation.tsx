@@ -20,7 +20,7 @@ import { primaryNav, routes } from "@/lib/content/site";
 import { AccountAvatar } from "@/components/layout/account-avatar";
 
 /** Mobile navigation drawer. Keeps the Join CTA visible (not hidden). */
-export function MobileNavigation({ account }: { account: { authenticated: boolean; loading: boolean; name?: string; avatarUrl?: string | null; accountHref?: string; accountLabel?: string } }) {
+export function MobileNavigation({ account }: { account: { authenticated: boolean; loading: boolean; name?: string; avatarUrl?: string | null; isAdmin?: boolean; accountHref?: string; accountLabel?: string } }) {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
 
@@ -79,6 +79,7 @@ export function MobileNavigation({ account }: { account: { authenticated: boolea
                 <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-9" />
                 <span className="min-w-0 truncate text-sm font-medium text-brand-ink">{account.name}</span>
               </div>
+              {account.isAdmin ? <CtaLink href="/member/profile" variant="outline" arrow={false} className="w-full" onClick={() => setOpen(false)}>Profile</CtaLink> : null}
               <CtaLink href={account.accountHref ?? "/member/profile"} className="w-full" onClick={() => setOpen(false)} arrow={false}>
                 {account.accountLabel ?? "Profile"}
               </CtaLink>
