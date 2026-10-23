@@ -18,7 +18,8 @@ it("renders a single-use invitation CTA, role permissions, and escaped text", ()
   });
 
   expect(message.subject).toBe("CSC Circle — You're Invited to Join the Administration Team");
-  expect(message.invitationUrl).toBe(`https://csc.example.test/admin/accept-invitation#token=${"A".repeat(43)}`);
+  expect(message.invitationUrl).toBe(`https://csc.example.test/admin/accept-invitation?token=${"A".repeat(43)}`);
+  expect(message.html).toContain(`href="https://csc.example.test/admin/accept-invitation?token=${"A".repeat(43)}"`);
   expect(message.html).toContain("Accept Invitation");
   expect(message.html).toContain("Scan &amp; check in attendees");
   expect(message.html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");

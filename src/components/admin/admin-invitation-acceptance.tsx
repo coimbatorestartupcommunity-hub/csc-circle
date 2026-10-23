@@ -21,10 +21,15 @@ export function AdminInvitationAcceptance() {
 
   React.useEffect(() => {
     let active = true;
+    const query = new URLSearchParams(window.location.search);
     const fragment = new URLSearchParams(window.location.hash.slice(1));
-    const token = fragment.get("token");
-    const id = new URLSearchParams(window.location.search).get("invitationId");
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    const token = query.get("token") ?? fragment.get("token");
+    const id = query.get("invitationId");
+    // Strip the single-use token from the visible URL (query or hash) after reading,
+    // keeping invitationId, so it is not left in history, referrers, or shared links.
+    query.delete("token");
+    const cleanedSearch = query.toString();
+    window.history.replaceState(null, "", window.location.pathname + (cleanedSearch ? `?${cleanedSearch}` : ""));
     const load = async () => {
       try {
         if (token) {

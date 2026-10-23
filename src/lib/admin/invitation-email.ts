@@ -15,7 +15,7 @@ export function buildAdminInvitationEmail(input: {
   const config = emailConfiguration();
   const roleName = roleLabels[input.role];
   const greeting = input.fullName?.trim() ? `Hello ${input.fullName.trim()},` : "Hello,";
-  const invitationUrl = `${config.base}/admin/accept-invitation#token=${encodeURIComponent(input.token)}`;
+  const invitationUrl = `${config.base}/admin/accept-invitation?token=${encodeURIComponent(input.token)}`;
   const expiration = new Intl.DateTimeFormat("en-IN", {
     dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata",
   }).format(input.expiresAt) + " IST";
