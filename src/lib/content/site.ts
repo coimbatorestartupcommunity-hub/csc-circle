@@ -45,7 +45,7 @@ export const siteConfig = {
   social: {
     instagram: "https://www.instagram.com/coimbatorestartupcommunity/",
     whatsapp: "https://chat.whatsapp.com/EMaSXe8j6cA9s94hGOCEqf?s=cl&p=a&mlu=4&ilr=4",
-    email: "coimbatorestartupcommunity@gmail.com",
+    email: "coimbatorestartup.csc@gmail.com",
   },
 } as const;
 
