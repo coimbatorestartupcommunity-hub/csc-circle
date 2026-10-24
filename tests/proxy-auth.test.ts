@@ -39,7 +39,7 @@ it("keeps auth-public pages available without initializing Supabase Auth", async
   expect(mocks.createServerClient).not.toHaveBeenCalled();
 });
 
-it.each(["/", "/about", "/events", "/events/synthetic-event", "/directory", "/members", "/members/synthetic-profile", "/collaborations"]) (
+it.each(["/", "/about", "/events", "/events/synthetic-event", "/directory", "/members", "/members/synthetic-profile", "/collaborations", "/help", "/contact", "/community-guidelines"]) (
   "keeps public marketing route %s available without a session",
   async (path) => {
     configureLocalAuth();

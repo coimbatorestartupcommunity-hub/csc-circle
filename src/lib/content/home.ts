@@ -94,12 +94,12 @@ export const upcomingEventsSection = {
 export const memberExperience = {
   heading: "Your Community, Always Within Reach.",
   description:
-    "A member portal is on the way. Here's a preview of what CSC membership will bring — the experience is in active development.",
+    "CSC membership brings your account, profile, digital membership card, and event registration together in one place. Create an account to get started.",
   cards: [
     {
       icon: "IdCard",
       title: "Digital CSC Membership",
-      body: "A virtual membership identity that represents your place in the community. Planned for an upcoming release.",
+      body: "A digital membership card representing your place in the community, available in your account once your membership is approved.",
     },
     {
       icon: "UserCircle",
@@ -109,7 +109,7 @@ export const memberExperience = {
     {
       icon: "CalendarCheck",
       title: "Event Registrations",
-      body: "Register for meetups and pitch sessions, and keep track of what you've joined.",
+      body: "Register for meetups and pitch sessions, and track your registration status and event passes.",
     },
     {
       icon: "Network",

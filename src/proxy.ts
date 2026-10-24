@@ -15,7 +15,8 @@ export async function proxy(request: NextRequest) {
   const isAuthPublic = [
     "/about", "/collaborations", "/directory", "/events", "/members",
     "/login", "/signup", "/forgot-password", "/reset-password",
-    "/privacy", "/terms", "/security", "/auth/callback", "/auth/confirm", "/auth/signout",
+    "/privacy", "/terms", "/security", "/help", "/contact", "/community-guidelines",
+    "/auth/callback", "/auth/confirm", "/auth/signout",
     // Invitees do not have an admin role yet. This page must load so its
     // client can exchange the email URL fragment for a short-lived HttpOnly
     // cookie before the invitee signs in and accepts the invitation.
