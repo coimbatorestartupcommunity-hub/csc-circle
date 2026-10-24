@@ -9,6 +9,7 @@ import { CommunityCollaborations } from "@/components/home/community-collaborati
 import { MemberExperience } from "@/components/home/member-experience";
 import { TestimonialsSection } from "@/components/home/testimonials-section";
 import { FinalCta } from "@/components/home/final-cta";
+import { LatestUpdates } from "@/components/home/latest-updates";
 
 export default function HomePage() {
   return (
@@ -24,6 +25,7 @@ export default function HomePage() {
       <CommunityCollaborations />
       <MemberExperience />
       <TestimonialsSection />
+      <Suspense fallback={null}><LatestUpdates /></Suspense>
       <FinalCta />
     </div>
   );

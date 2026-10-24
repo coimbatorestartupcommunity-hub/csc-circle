@@ -3,6 +3,7 @@ import { rsvpSchema, reviewSchema } from "@/lib/validations/forms";
 import { claimSchema } from "@/lib/validations/member";
 import { memberStartupSchema } from "@/lib/validations/member-startup";
 import { eventEditorSchema } from "@/lib/validations/admin";
+import { communityUpdateSaveSchema } from "@/lib/validations/cms";
 
 describe("RSVP schema", () => {
   const valid = {
@@ -78,6 +79,22 @@ describe("member startup schema", () => {
 
   it("requires the owner to confirm publication consent", () => {
     expect(memberStartupSchema.safeParse({ ...valid, consent: false }).success).toBe(false);
+  });
+});
+
+describe("community update schema", () => {
+  const valid = {
+    slug: "community-builder-recap", title: "Community builder recap", category: "Event Highlights" as const,
+    summary: "A summary of an approved CSC event recap.", body: "A complete community article with approved details and useful context for members.",
+    publicationConsent: true, gallery: [{ path: "updates-media/11111111-1111-4111-8111-111111111111.webp", alt: "Founders at the community event" }],
+  };
+  it("accepts approved content and media metadata", () => {
+    expect(communityUpdateSaveSchema.safeParse(valid).success).toBe(true);
+  });
+  it("rejects invalid slugs, unsupported categories and images without alt text", () => {
+    expect(communityUpdateSaveSchema.safeParse({ ...valid, slug: "Unsafe slug" }).success).toBe(false);
+    expect(communityUpdateSaveSchema.safeParse({ ...valid, category: "Made up category" }).success).toBe(false);
+    expect(communityUpdateSaveSchema.safeParse({ ...valid, gallery: [{ path: valid.gallery[0].path, alt: "" }] }).success).toBe(false);
   });
 });
 

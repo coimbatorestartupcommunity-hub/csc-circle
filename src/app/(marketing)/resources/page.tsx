@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
-import { Lightbulb, Rocket, Presentation, Cpu, Briefcase, GraduationCap, Users } from "lucide-react";
+import Image from "next/image";
+import { Lightbulb, Rocket, Presentation, Cpu, Briefcase, GraduationCap, Users, FileText } from "lucide-react";
+import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
-import { AmbientPastelBackground, FadeIn } from "@/components/motion";
-import { CtaLink } from "@/components/common/cta-link";
+import { ComingSoon } from "@/components/cms/coming-soon";
+import { listPublishedResources, cmsImageUrl } from "@/lib/services/cms-public";
 
 export const metadata: Metadata = {
-  title: "Startup Resources — Coming Soon",
+  title: "Startup Resources",
   description:
-    "A curated collection of practical learning materials, founder guides, documents, and startup resources for the CSC Circle community is on the way.",
+    "Practical learning materials, founder guides, documents, and startup resources from the CSC Circle community.",
   alternates: { canonical: "/resources" },
 };
 
-const categories = [
+const previewCategories = [
   { icon: Lightbulb, title: "Startup Planning" },
   { icon: Rocket, title: "MVP & Product Development" },
   { icon: Presentation, title: "Pitching" },
@@ -22,53 +25,73 @@ const categories = [
   { icon: Users, title: "Community Resources" },
 ];
 
+async function ResourcesContent() {
+  const resources = await listPublishedResources();
+
+  if (resources === null) {
+    return <section className="py-20"><Container className="max-w-3xl"><div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm leading-6 text-red-900">Resources are temporarily unavailable. Please try again shortly.</div></Container></section>;
+  }
+
+  if (resources.length === 0) {
+    return (
+      <ComingSoon
+        title="Startup Resources"
+        description="We're preparing practical startup resources, founder guides, useful documents, and learning materials to support the CSC Circle community. Explore our events, founders, and other ways to connect while we prepare this collection."
+        categories={previewCategories}
+        iconBg="bg-brand-purple/40"
+        note="Resources will appear here as soon as they are published."
+        primary={{ href: "/membership", label: "Explore membership" }}
+        secondary={{ href: "/help", label: "Visit Help & FAQ" }}
+        contactPrompt="Have a resource to suggest?"
+      />
+    );
+  }
+
+  return (
+    <>
+      <PageHero
+        eyebrow="Startup Resources"
+        title="Resources for Founders & Builders"
+        description="Curated learning materials, guides, and documents shared by the CSC Circle community."
+      />
+      <section className="py-14">
+        <Container className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {resources.map((r) => {
+            const cover = cmsImageUrl(r.coverImagePath);
+            return (
+              <Link
+                key={r.id}
+                href={`/resources/${r.slug}`}
+                className="group flex h-full flex-col overflow-hidden rounded-2xl border border-brand-border bg-brand-white transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink"
+              >
+                <div className="relative aspect-[5/3] w-full overflow-hidden bg-brand-cloud">
+                  {cover ? (
+                    <Image src={cover} alt={r.title} fill unoptimized sizes="(max-width: 768px) 100vw, 360px" className="object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+                  ) : (
+                    <span className="flex size-full items-center justify-center text-brand-muted"><FileText className="size-10" aria-hidden /></span>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col gap-2 p-5">
+                  <span className="text-xs font-semibold text-brand-accent">{r.category}</span>
+                  <h2 className="text-base font-bold text-brand-ink">{r.title}</h2>
+                  {r.summary ? <p className="line-clamp-3 text-sm leading-relaxed text-brand-secondary">{r.summary}</p> : null}
+                  <span className="mt-auto inline-flex items-center gap-1 pt-2 text-sm font-semibold text-brand-accent">
+                    View details
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </Container>
+      </section>
+    </>
+  );
+}
+
 export default function ResourcesPage() {
   return (
-    <section className="relative overflow-hidden">
-      <AmbientPastelBackground intensity="subtle" />
-      <Container className="flex flex-col items-center py-20 text-center sm:py-28">
-        <FadeIn inView={false} direction="up">
-          <span className="inline-flex items-center gap-2 rounded-full border border-brand-border/60 bg-brand-white/60 px-4 py-1.5 font-mono text-xs font-semibold tracking-[0.18em] text-brand-accent uppercase backdrop-blur-sm">
-            Coming Soon
-          </span>
-        </FadeIn>
-        <FadeIn inView={false} delay={0.1} direction="up">
-          <h1 className="mt-6 max-w-3xl text-[length:var(--text-hero)] leading-[1.05] font-extrabold tracking-tight text-brand-ink">
-            Startup Resources
-          </h1>
-        </FadeIn>
-        <FadeIn inView={false} delay={0.2} direction="up">
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-brand-secondary sm:text-[17px]">
-            We&apos;re preparing a curated collection of practical learning materials, founder guides, documents, and
-            startup resources to support the CSC Circle community. Here&apos;s a preview of what&apos;s on the way.
-          </p>
-        </FadeIn>
-
-        <div className="mt-12 grid w-full max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((c, i) => (
-            <FadeIn key={c.title} inView delay={0.05 * i} direction="up">
-              <div className="flex h-full items-center gap-3 rounded-2xl border border-brand-white/60 bg-brand-white/55 p-5 text-left shadow-sm ring-1 ring-brand-border/40 backdrop-blur-md">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-purple/40 text-brand-ink">
-                  <c.icon className="size-5" aria-hidden="true" />
-                </span>
-                <span className="text-sm font-semibold text-brand-ink">{c.title}</span>
-              </div>
-            </FadeIn>
-          ))}
-        </div>
-
-        <p className="mt-10 max-w-md text-sm text-brand-muted">
-          Resources will be published once the library is ready. In the meantime, explore the community and connect with
-          other founders.
-        </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <CtaLink href="/membership" size="md">Explore membership</CtaLink>
-          <CtaLink href="/help" variant="outline" size="md" arrow={false}>Visit Help &amp; FAQ</CtaLink>
-        </div>
-        <p className="mt-8 text-xs text-brand-muted">
-          Have a resource to suggest? <Link href="/contact" className="font-semibold text-brand-accent underline underline-offset-2">Contact the community team</Link>.
-        </p>
-      </Container>
-    </section>
+    <Suspense fallback={<section aria-busy="true" className="py-20"><Container className="max-w-5xl"><p className="text-sm text-brand-muted">Loading resources…</p></Container></section>}>
+      <ResourcesContent />
+    </Suspense>
   );
 }

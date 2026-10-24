@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -99,7 +100,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           >
             Skip to content
           </a>
-          <SiteHeader />
+          <Suspense fallback={<div aria-hidden="true" className="h-16 shrink-0 lg:h-[4.5rem]" />}>
+            <SiteHeader />
+          </Suspense>
           <div id="main-content" className="flex flex-1 flex-col">
             {children}
           </div>

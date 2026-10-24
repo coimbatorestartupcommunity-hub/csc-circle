@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, CreditCard, FileCheck, ScanLine, Star, Users, Building2, MessagesSquare, ClipboardList, FileText, ScrollText, Settings, ShieldCheck } from "lucide-react";
+import { ArrowRight, CalendarDays, CreditCard, FileCheck, ScanLine, Star, Users, Building2, MessagesSquare, ClipboardList, FileText, ScrollText, Settings, ShieldCheck, BookOpen, Target, Newspaper } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StatCard } from "@/components/admin/stat-card";
 import { can, requireAdminPage } from "@/lib/admin/gate";
@@ -21,6 +21,9 @@ const modules = [
   { permission: "payments.verify" as const, label: "Payments", href: "/admin/payments", Icon: CreditCard, description: "Verify submitted event payments." },
   { permission: "reviews.moderate" as const, label: "Reviews", href: "/admin/reviews", Icon: Star, description: "Moderate member reviews." },
   { permission: "content.manage" as const, label: "Website Content", href: "/admin/content", Icon: FileText, description: "Manage approved editorial content." },
+  { permission: "content.manage" as const, label: "Updates & Highlights", href: "/admin/updates", Icon: Newspaper, description: "Prepare and publish verified community updates." },
+  { permission: "content.manage" as const, label: "Resources", href: "/admin/resources", Icon: BookOpen, description: "Manage founder guides and approved learning materials." },
+  { permission: "content.manage" as const, label: "Opportunities", href: "/admin/opportunities", Icon: Target, description: "Manage verified community and startup opportunities." },
   { permission: "content.manage" as const, label: "Collaborations", href: "/admin/collaborations", Icon: MessagesSquare, description: "Manage authorized collaboration listings." },
   { permission: "audit.read" as const, label: "Audit Logs", href: "/admin/audit-logs", Icon: ScrollText, description: "Inspect permitted administrative history." },
   { permission: "settings.manage" as const, label: "Settings", href: "/admin/settings", Icon: Settings, description: "Review CSC platform settings." },

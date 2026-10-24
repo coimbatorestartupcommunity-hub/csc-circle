@@ -611,3 +611,97 @@ describe("notification uncertainty and retry policy",()=>{
   } finally { await db.exec("reset role"); }
  });
 });
+
+describe("resources & opportunities CMS", () => {
+  const member = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"; // no content.manage
+  const mgr = "ffffffff-ffff-4fff-8fff-ffffffffffff";    // content manager
+  beforeAll(async () => {
+    await db.exec(`insert into auth.users(id,email,email_confirmed_at) values ('${member}','cm@example.test',now()),('${mgr}','mgr@example.test',now()) on conflict do nothing;
+      insert into public.admin_roles(user_id,role) values ('${mgr}','content_manager') on conflict do nothing;
+      insert into public.resources(slug,title,summary,description,publication_status,resource_type,document_path,document_mime,document_size,publication_consent,attribution)
+      values ('draft-res','Draft Resource','Draft summary','A sufficiently detailed description for this resource.', 'draft','document','resource-docs/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.pdf','application/pdf',123,true,'CSC'),
+      ('pub-res','Published Resource','Published summary','A sufficiently detailed description for this resource.', 'published','document','resource-docs/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.pdf','application/pdf',123,true,'CSC');
+      insert into public.opportunities(slug,title,summary,description,organization,source,organization_verified,publication_consent,application_url,publication_status,deadline)
+      values ('draft-opp','Draft Opp','Draft summary','A sufficiently detailed opportunity description.','Org','Verified source',true,true,'https://example.test/apply','draft',null),
+      ('pub-opp','Published Opp','Published summary','A sufficiently detailed opportunity description.','Org','Verified source',true,true,'https://example.test/apply','published',null),
+      ('exp-opp','Expired Opp','Expired summary','A sufficiently detailed opportunity description.','Org','Verified source',true,true,'https://example.test/apply','published',(current_date - 1));
+      insert into public.community_updates(slug,title,category,summary,body,publication_status,publication_consent)
+      values ('draft-story','Draft Story','Community News','Draft summary','A sufficiently detailed community story for the draft record.','draft',false),
+      ('published-story','Published Story','Event Highlights','Published summary','A sufficiently detailed community story for the published record.','published',true);`);
+  });
+
+  it("exposes only published records to the public and hides drafts", async () => {
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ slug: string }>("select slug from public.resources order by slug")).rows).toEqual([{ slug: "pub-res" }]);
+      expect((await db.query<{ slug: string }>("select slug from public.opportunities order by slug")).rows.map((r) => r.slug)).toEqual(["pub-opp"]);
+      expect((await db.query<{ slug: string }>("select slug from public.community_updates order by slug")).rows).toEqual([{ slug: "published-story" }]);
+      await expect(db.query("select created_by from public.resources")).rejects.toThrow();
+      // Active (non-expired) published opportunities = the public listing (Coming Soon when 0).
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.opportunities where publication_status='published' and (deadline is null or deadline>=current_date)")).rows).toEqual([{ n: 1 }]);
+    } finally { await db.exec("reset role;"); }
+  });
+
+  it("prevents non-content-managers from creating CMS content", async () => {
+    await expect(asUser(member, "insert into public.resources(slug,title) values ('member-res','Member Resource')")).rejects.toThrow();
+    await expect(asUser(member, "insert into public.opportunities(slug,title) values ('member-opp','Member Opp')")).rejects.toThrow();
+    await expect(asUser(member, "insert into public.community_updates(slug,title,category,summary,body) values ('member-story','Member Story','Community News','Story summary','A sufficiently detailed community story from a member.')")).rejects.toThrow();
+  });
+
+  it("publishes Updates through the same independent record-driven visibility rule", async () => {
+    await asUser(mgr, "insert into public.community_updates(slug,title,category,summary,body,publication_consent) values ('manager-story','Manager Story','Community News','Manager summary','A sufficiently detailed community story created by a content manager.',true)");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ slug: string }>("select slug from public.community_updates order by slug")).rows).toEqual([{ slug: "published-story" }]);
+    } finally { await db.exec("reset role;"); }
+    await asUser(mgr, "update public.community_updates set publication_status='published',published_at=now() where slug='manager-story'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ slug: string }>("select slug from public.community_updates order by slug")).rows).toEqual([{ slug: "manager-story" }, { slug: "published-story" }]);
+    } finally { await db.exec("reset role;"); }
+    await asUser(mgr, "update public.community_updates set publication_status='draft',published_at=null where slug='manager-story'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ slug: string }>("select slug from public.community_updates order by slug")).rows).toEqual([{ slug: "published-story" }]);
+    } finally { await db.exec("reset role;"); }
+  });
+
+  it("rejects direct publication when required content, permission or verification is missing", async () => {
+    await expect(asUser(mgr, "insert into public.resources(slug,title,publication_status) values ('invalid-res','Invalid Resource','published')")).rejects.toThrow(/required|permission|attribution/i);
+    await expect(asUser(mgr, "insert into public.opportunities(slug,title,publication_status) values ('invalid-opp','Invalid Opportunity','published')")).rejects.toThrow(/required|verification|permission/i);
+  });
+
+  it("lets a content manager publish and unpublish, flipping public visibility", async () => {
+    await db.exec("set role anon;");
+    const before = (await db.query<{ n: number }>("select count(*)::int n from public.resources where publication_status='published'")).rows[0].n;
+    await db.exec("reset role;");
+
+    await asUser(mgr, "insert into public.resources(slug,title,summary,description,publication_status,resource_type,document_path,document_mime,document_size,publication_consent,attribution,published_at) values ('mgr-res','Manager Resource','Manager summary','A sufficiently detailed description for this manager resource.','published','document','resource-docs/cccccccc-cccc-4ccc-8ccc-cccccccccccc.pdf','application/pdf',123,true,'CSC',now())");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.resources where publication_status='published'")).rows[0].n).toBe(before + 1);
+      expect((await db.query<{ title: string }>("select title from public.resources where slug='mgr-res'")).rows).toEqual([{ title: "Manager Resource" }]);
+    } finally { await db.exec("reset role;"); }
+
+    await asUser(mgr, "update public.resources set publication_status='draft', published_at=null where slug='mgr-res'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query("select title from public.resources where slug='mgr-res'")).rows).toHaveLength(0);
+    } finally { await db.exec("reset role;"); }
+  });
+
+  it("keeps Resources and Opportunities independent and returns each empty section to its empty state", async () => {
+    await asUser(mgr, "update public.resources set publication_status='draft', published_at=null where slug='pub-res'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.resources where publication_status='published'")).rows).toEqual([{ n: 0 }]);
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.opportunities where publication_status='published' and (deadline is null or deadline>=current_date)")).rows).toEqual([{ n: 1 }]);
+    } finally { await db.exec("reset role;"); }
+
+    await asUser(mgr, "update public.opportunities set publication_status='draft', published_at=null where publication_status='published'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.opportunities where publication_status='published' and (deadline is null or deadline>=current_date)")).rows).toEqual([{ n: 0 }]);
+    } finally { await db.exec("reset role;"); }
+  });
+});
