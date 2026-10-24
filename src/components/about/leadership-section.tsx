@@ -95,7 +95,7 @@ export function LeadershipSection() {
               </div>
 
               <div className="flex flex-1 flex-col gap-2 p-6">
-                <h3 className="text-xl font-bold text-brand-ink">
+                <h3 className="text-xl font-bold uppercase tracking-tight text-brand-ink">
                   {leader.name}
                 </h3>
                 <p className="text-sm font-medium text-brand-accent">

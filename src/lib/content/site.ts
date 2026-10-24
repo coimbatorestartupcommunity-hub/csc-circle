@@ -24,17 +24,17 @@ export const siteConfig = {
   people: {
     founder: {
       name: "Reyash",
-      role: "Founder — Coimbatore Startup Community",
+      role: "Founder — Coimbatore Startup Community (CSC)",
       belvoriaRole: "Founder — Belvoria",
       responsibility:
-        "Community leadership, founder engagement, events, partnerships, and community operations.",
+        "Leads the Coimbatore Startup Community (CSC) — shaping the community vision, founder engagement, events and programs, strategic partnerships, and day-to-day community operations.",
     },
     technicalPartner: {
       name: "Vikash Saravanan",
-      role: "Founder — Logic Intelligence Technologies",
-      communityRole: "Co-founder — Coimbatore Startup Community",
+      role: "Founder — Logic Intelligence Technologies (LIT)",
+      communityRole: "Chief Technology Officer (CTO) — Coimbatore Startup Community (CSC)",
       responsibility:
-        "CSC web platform architecture, digital experience, technical infrastructure, system integration, and technology direction.",
+        "As CTO, leads all technology for the Coimbatore Startup Community (CSC) — platform architecture and engineering, digital product and experience, security, technical infrastructure, system integration, and overall technology direction, delivered through Logic Intelligence Technologies (LIT).",
     },
   },
   technologyPartner: {
