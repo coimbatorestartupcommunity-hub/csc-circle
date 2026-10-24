@@ -90,12 +90,14 @@ export function SiteFooter() {
             </p>
           </section>
 
-          {/* RIGHT — CSC identity */}
-          <section data-testid="footer-brand" aria-label="CSC Circle identity" className="flex flex-col items-center text-center md:items-end md:text-right">
-            <BrandLogo className="justify-center md:justify-end" markSize={48} priority={false} />
-            <p className="mt-3 text-sm font-semibold text-brand-ink">{siteConfig.legalName}</p>
-            <p className="mt-1 text-xs text-brand-muted">{siteConfig.city}, {siteConfig.region}</p>
-            <p className="mt-1 text-[10px] font-medium tracking-wide text-brand-muted sm:text-xs">estd {year}</p>
+          {/* RIGHT — CSC identity (centered glassmorphism card) */}
+          <section data-testid="footer-brand" aria-label="CSC Circle identity" className="flex flex-col items-center text-center">
+            <div className="flex w-full max-w-xs flex-col items-center rounded-2xl border border-brand-white/60 bg-brand-white/55 p-5 text-center shadow-sm ring-1 ring-brand-border/40 backdrop-blur-md">
+              <BrandLogo className="justify-center" markSize={48} priority={false} />
+              <p className="mt-3 text-sm font-semibold text-brand-ink">{siteConfig.legalName}</p>
+              <p className="mt-1 text-xs text-brand-muted">{siteConfig.city}, {siteConfig.region}</p>
+              <p className="mt-1 text-[10px] font-medium tracking-wide text-brand-muted sm:text-xs">estd {year}</p>
+            </div>
           </section>
         </div>
 
