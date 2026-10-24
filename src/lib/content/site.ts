@@ -79,6 +79,9 @@ export const primaryNav: NavItem[] = [
   { label: "View CSC Profiles", href: "/members" },
   { label: "Events & Booking", href: "/events" },
   { label: "Collaborations", href: "/collaborations" },
+  { label: "Updates", href: "/updates" },
+  { label: "Resources", href: "/resources" },
+  { label: "Opportunities", href: "/opportunities" },
 ];
 
 export const routes = {

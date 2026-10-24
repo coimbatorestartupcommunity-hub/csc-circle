@@ -62,7 +62,7 @@ export function SiteHeader() {
         <BrandLogo className="shrink-0" />
 
         <nav
-          className="hidden min-w-0 flex-1 items-center justify-center gap-0 2xl:flex"
+          className="hidden min-w-0 flex-1 items-center justify-center gap-0 xl:flex"
           aria-label="Primary"
         >
           {primaryNav.map((item) => {
@@ -76,7 +76,7 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-lg px-2 py-2 text-[13px] font-medium whitespace-nowrap transition-colors",
+                  "rounded-lg px-1.5 py-2 text-xs font-medium whitespace-nowrap transition-colors 2xl:px-2 2xl:text-[13px]",
                   active
                     ? "text-brand-ink"
                     : "text-brand-secondary hover:text-brand-ink",
@@ -84,7 +84,7 @@ export function SiteHeader() {
               >
                 {item.label}
                 {active ? (
-                  <span className="mx-3 block h-0.5 rounded-full bg-brand-accent" />
+                  <span className="mx-1.5 block h-0.5 rounded-full bg-brand-accent" />
                 ) : null}
               </Link>
             );
@@ -93,23 +93,20 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           {account.loading ? <span className="hidden h-8 w-20 animate-pulse rounded-lg bg-brand-cloud xl:inline-flex" aria-label="Loading account" /> : account.authenticated ? (
-            <div className="hidden shrink-0 items-center gap-2 xl:flex 2xl:gap-2.5">
-              <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-8 shrink-0" />
-              <span className="whitespace-nowrap text-xs font-semibold text-brand-ink 2xl:text-sm">{account.name}</span>
-              <span className="whitespace-nowrap text-xs text-brand-muted">
-                {account.membershipLabel}
-              </span>
-              {account.isAdmin ? <CtaLink href="/member/profile" variant="outline" size="md" arrow={false} className="h-9 px-3 text-xs 2xl:px-4 2xl:text-sm">Profile</CtaLink> : null}
-              <CtaLink href={account.accountHref ?? "/member/profile"} size="md" arrow={false} className="h-9 px-3 text-xs 2xl:px-4 2xl:text-sm">
+            <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
+              <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-7 shrink-0" />
+              <span className="hidden max-w-28 truncate text-xs font-semibold text-brand-ink 2xl:inline">{account.name}</span>
+              {account.isAdmin ? <CtaLink href="/member/profile" variant="outline" size="md" arrow={false} className="h-8 px-2.5 text-[11px]">Profile</CtaLink> : null}
+              <CtaLink href={account.accountHref ?? "/member/profile"} size="md" arrow={false} className="h-8 px-2.5 text-[11px]">
                 {account.accountLabel ?? "Profile"}
               </CtaLink>
             </div>
           ) : (
-            <CtaLink href={routes.login} variant="ghost" size="md" arrow={false} className="hidden whitespace-nowrap 2xl:inline-flex">
+            <CtaLink href={routes.login} variant="ghost" size="md" arrow={false} className="hidden h-8 whitespace-nowrap px-2.5 text-xs xl:inline-flex">
               Log In
             </CtaLink>
           )}
-          {!account.authenticated && !account.loading ? <CtaLink href={routes.join} size="md" arrow={false} className="hidden whitespace-nowrap 2xl:inline-flex">Join Community</CtaLink> : null}
+          {!account.authenticated && !account.loading ? <CtaLink href={routes.join} size="md" arrow={false} className="hidden h-8 whitespace-nowrap px-3 text-xs xl:inline-flex">Join Community</CtaLink> : null}
           {account.authenticated ? <MemberNotificationMenu /> : null}
           <MobileNavigation account={account} />
         </div>
