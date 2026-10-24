@@ -23,7 +23,7 @@ const faq: { category: string; items: { q: string; a: React.ReactNode }[] }[] = 
       { q: "Who can join CSC?", a: "CSC welcomes startup founders, aspiring entrepreneurs, students, builders and creators, professionals, and mentors or ecosystem collaborators who want to take part in the community." },
       { q: "Is CSC Circle only for registered startup founders?", a: "No. You do not need a registered company to participate. The community is open to founders and to anyone building, learning, or contributing to Coimbatore's startup ecosystem." },
       { q: "How can a student or aspiring entrepreneur participate?", a: "Create an account, complete your profile, and explore the events and founder directory. You can take part in community activities while you build toward your own venture." },
-      { q: "Where can members find official CSC activities?", a: <>Upcoming activities are published on the <Link href="/events" className="font-semibold text-brand-accent underline underline-offset-2">Events</Link> page, and community work is showcased under <Link href="/collaborations" className="font-semibold text-brand-accent underline underline-offset-2">Collaborations</Link>.</> },
+      { q: "Where can members find official CSC activities?", a: <>Upcoming activities are published on the <Link href="/events" className="font-semibold text-brand-accent underline underline-offset-2">Events</Link> page, community work is showcased under <Link href="/collaborations" className="font-semibold text-brand-accent underline underline-offset-2">Collaborations</Link>, and community news is shared under <Link href="/updates" className="font-semibold text-brand-accent underline underline-offset-2">Updates</Link>. The <Link href="/resources" className="font-semibold text-brand-accent underline underline-offset-2">Resources</Link> and <Link href="/opportunities" className="font-semibold text-brand-accent underline underline-offset-2">Opportunities</Link> sections carry curated material the CSC team publishes.</> },
     ],
   },
   {
@@ -53,6 +53,16 @@ const faq: { category: string; items: { q: string; a: React.ReactNode }[] }[] = 
       { q: "What does waitlisted mean?", a: "If an event is full, you may be added to a waitlist. A place is not reserved unless CSC later confirms your registration." },
       { q: "Where do I find a confirmed event pass?", a: "When your registration is confirmed and a pass is available for the event, you can access it from your account under your events." },
       { q: "What happens if event information changes?", a: "If details change, the updated information is shown on the event and communicated through your account notifications where applicable. Review the latest details before attending." },
+    ],
+  },
+  {
+    category: "Updates, Resources & Opportunities",
+    items: [
+      { q: "What is the Updates section?", a: <><Link href="/updates" className="font-semibold text-brand-accent underline underline-offset-2">Updates</Link> is where the CSC team shares community news, announcements, and highlights. Posts appear there once they are published; until then the section shows a short placeholder.</> },
+      { q: "What will I find under Resources?", a: <><Link href="/resources" className="font-semibold text-brand-accent underline underline-offset-2">Resources</Link> is a curated library of material the CSC team publishes — guides, references, and downloadable documents. While the library is still being prepared, the page shows a &ldquo;coming soon&rdquo; message, and published resources appear there automatically once they go live.</> },
+      { q: "What are Opportunities?", a: <><Link href="/opportunities" className="font-semibold text-brand-accent underline underline-offset-2">Opportunities</Link> lists openings the CSC team shares with the community. Each listing can carry a deadline, and an opportunity is hidden automatically once its deadline has passed. Until the first ones are published, the page shows a &ldquo;coming soon&rdquo; message.</> },
+      { q: "Can members submit their own resources or opportunities?", a: <>These sections are published by the CSC team. If you have something you believe would help the community, email <a href={`mailto:${email}`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a> and the team can review it.</> },
+      { q: "Do I need to sign in to view them?", a: "No. Updates, Resources, and Opportunities are public — you can read whatever has been published without an account." },
     ],
   },
   {

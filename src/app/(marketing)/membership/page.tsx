@@ -33,6 +33,15 @@ const steps = [
   { icon: Compass, title: "Explore the community", body: "Browse the founder directory, register for events, and connect with other members." },
 ];
 
+const benefits = [
+  { title: "A member profile", body: "Your own profile within the community, which you keep current from your account." },
+  { title: "A digital membership card", body: "Issued after approval, viewable and downloadable any time you are signed in." },
+  { title: "The founder directory", body: "Browse and connect with other founders, builders, and members of the community." },
+  { title: "Event registration", body: "Register for CSC events and access your confirmed passes from your account." },
+  { title: "Community notifications", body: "Receive updates relevant to your account through the in-app notification inbox." },
+  { title: "Collaboration visibility", body: "See the community work and initiatives showcased under Collaborations." },
+];
+
 const responsibilities = [
   "Provide accurate information about yourself and your startup.",
   "Keep your account secure and do not share your login.",
@@ -77,6 +86,21 @@ export default function MembershipPage() {
             </ul>
           </div>
 
+          <div className="flex flex-col gap-3">
+            <h2 className="text-lg font-bold text-brand-ink">What your membership gives you</h2>
+            <p className="text-sm leading-relaxed text-brand-secondary">
+              Once your membership is approved, you unlock the member side of CSC Circle. Membership gives you:
+            </p>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {benefits.map((b) => (
+                <li key={b.title} className="rounded-2xl border border-brand-border bg-brand-white p-4">
+                  <h3 className="text-sm font-semibold text-brand-ink">{b.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-brand-secondary">{b.body}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-bold text-brand-ink">How registration works</h2>
             <ol className="grid gap-4 sm:grid-cols-2">
@@ -100,6 +124,27 @@ export default function MembershipPage() {
           </div>
 
           <div className="flex flex-col gap-3">
+            <h2 className="text-lg font-bold text-brand-ink">What your application status means</h2>
+            <ul className="flex flex-col gap-2">
+              <li className="flex gap-2 text-sm leading-relaxed text-brand-secondary">
+                <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-accent" />
+                <span><strong className="font-semibold text-brand-ink">Pending</strong> — your application has been received and is waiting to be reviewed by CSC administrators.</span>
+              </li>
+              <li className="flex gap-2 text-sm leading-relaxed text-brand-secondary">
+                <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-accent" />
+                <span><strong className="font-semibold text-brand-ink">Needs more information</strong> — the team has asked for additional or corrected details before the review can continue. Update what was requested and resubmit.</span>
+              </li>
+              <li className="flex gap-2 text-sm leading-relaxed text-brand-secondary">
+                <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-accent" />
+                <span><strong className="font-semibold text-brand-ink">Approved</strong> — your membership is active, your digital card is issued, and member features are unlocked.</span>
+              </li>
+            </ul>
+            <p className="text-xs text-brand-muted">
+              You can check your current status any time by signing in. Review is carried out by people, so it is not instant.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
             <h2 className="text-lg font-bold text-brand-ink">Your digital membership card</h2>
             <p className="text-sm leading-relaxed text-brand-secondary">
               After your membership is approved, a digital membership card becomes available in your account. It
@@ -119,6 +164,19 @@ export default function MembershipPage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <h2 className="text-lg font-bold text-brand-ink">Staying connected</h2>
+            <p className="text-sm leading-relaxed text-brand-secondary">
+              Beyond your member account, CSC Circle keeps the community informed through sections anyone can read:{" "}
+              <Link href="/updates" className="font-semibold text-brand-accent underline underline-offset-2">Updates</Link>{" "}
+              for community news and highlights,{" "}
+              <Link href="/resources" className="font-semibold text-brand-accent underline underline-offset-2">Resources</Link>{" "}
+              for curated material the CSC team publishes, and{" "}
+              <Link href="/opportunities" className="font-semibold text-brand-accent underline underline-offset-2">Opportunities</Link>{" "}
+              for openings shared with the community. New content appears in these sections as the team publishes it.
+            </p>
           </div>
 
           <div className="flex flex-col gap-3">

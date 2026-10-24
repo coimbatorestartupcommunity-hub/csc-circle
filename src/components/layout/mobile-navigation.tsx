@@ -43,7 +43,7 @@ export function MobileNavigation({ account }: { account: { authenticated: boolea
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <BrandLogo />
         </SheetHeader>
-        <nav className="flex flex-col gap-1 px-4" aria-label="Mobile">
+        <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-4 py-1" aria-label="Mobile">
           {primaryNav.map((item) => {
             const active =
               item.href === "/"
@@ -57,7 +57,7 @@ export function MobileNavigation({ account }: { account: { authenticated: boolea
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "rounded-lg px-3 py-3 text-[15px] font-medium transition-colors",
+                      "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       active
                         ? "bg-brand-purple text-brand-ink"
                         : "text-brand-secondary hover:bg-brand-cloud hover:text-brand-ink",
@@ -70,21 +70,21 @@ export function MobileNavigation({ account }: { account: { authenticated: boolea
             );
           })}
         </nav>
-        <div className="mt-auto flex flex-col gap-3 border-t border-brand-border p-4">
+        <div className="flex shrink-0 flex-col gap-2 border-t border-brand-border p-4">
           {account.loading ? (
             <p className="text-center text-sm text-brand-muted" aria-live="polite">Checking your account…</p>
           ) : account.authenticated ? (
             <>
-              <div className="flex items-center gap-3 px-1">
-                <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-9" />
+              <div className="flex items-center gap-2.5 px-1">
+                <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-8 shrink-0" />
                 <span className="min-w-0 truncate text-sm font-medium text-brand-ink">{account.name}</span>
               </div>
-              {account.isAdmin ? <CtaLink href="/member/profile" variant="outline" arrow={false} className="w-full" onClick={() => setOpen(false)}>Profile</CtaLink> : null}
-              <CtaLink href={account.accountHref ?? "/member/profile"} className="w-full" onClick={() => setOpen(false)} arrow={false}>
+              {account.isAdmin ? <CtaLink href="/member/profile" variant="outline" size="md" arrow={false} className="h-9 w-full text-[13px]" onClick={() => setOpen(false)}>Profile</CtaLink> : null}
+              <CtaLink href={account.accountHref ?? "/member/profile"} size="md" className="h-9 w-full text-[13px]" onClick={() => setOpen(false)} arrow={false}>
                 {account.accountLabel ?? "Profile"}
               </CtaLink>
               <form action="/auth/signout" method="post">
-                <button type="submit" className="w-full rounded-lg border border-brand-border px-4 py-2.5 text-sm font-medium text-brand-ink">Sign out</button>
+                <button type="submit" className="h-9 w-full rounded-lg border border-brand-border px-4 text-[13px] font-medium text-brand-ink">Sign out</button>
               </form>
             </>
           ) : (
