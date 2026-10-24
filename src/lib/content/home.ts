@@ -117,7 +117,7 @@ export const memberExperience = {
       body: "Discover and connect with founders and partners who match what you're building.",
     },
   ],
-  cta: { label: "Discover CSC Membership", href: "/login" },
+  cta: { label: "Discover CSC Membership", href: "/membership" },
 } as const;
 
 export const finalCta = {
