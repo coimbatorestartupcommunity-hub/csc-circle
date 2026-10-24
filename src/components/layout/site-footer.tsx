@@ -73,6 +73,15 @@ export function SiteFooter() {
             data-testid="footer-legal"
             className="flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-brand-border pt-4 text-xs sm:gap-x-6 sm:gap-y-2.5 sm:pt-5 sm:text-sm"
           >
+            <Link href="/help" className="font-semibold text-brand-ink underline decoration-brand-border decoration-1 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent">
+              Help &amp; FAQ
+            </Link>
+            <Link href="/contact" className="font-semibold text-brand-ink underline decoration-brand-border decoration-1 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent">
+              Contact
+            </Link>
+            <Link href="/community-guidelines" className="font-semibold text-brand-ink underline decoration-brand-border decoration-1 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent">
+              Community Guidelines
+            </Link>
             <Link href="/privacy" className="font-semibold text-brand-ink underline decoration-brand-border decoration-1 underline-offset-4 transition-colors hover:text-brand-accent hover:decoration-brand-accent">
               Privacy Policy
             </Link>
