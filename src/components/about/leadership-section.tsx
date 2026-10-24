@@ -12,7 +12,7 @@ function LeaderPortrait({ leader }: { leader: Leader }) {
     return (
       <Image
         src={leader.portrait}
-        alt={`${leader.name ?? "CSC leader"}, ${leader.role}`}
+        alt={`${leader.honorific ? `${leader.honorific} ` : ""}${leader.name ?? "CSC leader"}, ${leader.role}`}
         fill
         sizes="(max-width: 640px) 100vw, 320px"
         className="object-cover object-top"
@@ -69,6 +69,9 @@ export function LeadershipSection() {
                 <h3
                   className={`text-xl font-bold uppercase tracking-tight ${leader.name ? "text-brand-ink" : "text-brand-muted"}`}
                 >
+                  {leader.honorific && leader.name ? (
+                    <span className="normal-case">{leader.honorific} </span>
+                  ) : null}
                   {leader.name ?? "To be announced"}
                 </h3>
                 <p className="text-sm font-medium text-brand-accent">{leader.role}</p>
