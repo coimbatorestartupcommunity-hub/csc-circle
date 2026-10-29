@@ -40,6 +40,7 @@ export function ActionButton({
   const isMembershipApproval = operation?.kind === "claim" && operation.decision === "active";
   const reasonRequired = operation?.kind === "payment" || ["rejected", "suspended", "revoked", "cancelled"].includes(operation?.decision ?? "") || (operation?.kind === "startup" && operation.decision === "archived");
   const isStartupApproval = operation?.kind === "startup" && operation.decision === "published";
+  const isEventPassApproval = ["imported_registration", "paid_registration", "registration"].includes(operation?.kind ?? "") && operation?.decision === "confirmed";
   const displayDetails = Object.entries(details ?? {}).filter(([key, value]) =>
     value !== null && value !== undefined && value !== "" && !["id", "user_id", "owner_id"].includes(key),
   ).slice(0, 12);
@@ -74,8 +75,8 @@ export function ActionButton({
               <div className={`mb-1 flex size-12 items-center justify-center rounded-2xl ${result === "success" ? "bg-emerald-50 text-emerald-700" : result === "error" ? "bg-red-50 text-red-700" : "bg-brand-purple text-brand-ink"}`}>
                 {result === "success" ? <Check className="size-6" /> : result === "error" ? <CircleAlert className="size-6" /> : <CircleAlert className="size-6" />}
               </div>
-              <DialogTitle className="text-xl font-semibold">{result === "success" ? "Action recorded" : result === "error" ? "Action needs attention" : label}</DialogTitle>
-              <DialogDescription>{result === "success" ? "The decision was saved and the record has been updated." : result === "error" ? failureMessage || "The action could not be completed. Review the current record status and try again." : isMembershipApproval ? "Membership cards are free. Approving confirms this account and activates its CSC membership card; no payment is required." : isStartupApproval ? "Review the founder-submitted details below. Publishing makes this startup visible in the CSC Founder Directory." : confirm ?? message ?? "Review the submitted information before continuing."}</DialogDescription>
+              <DialogTitle className="text-xl font-semibold">{result === "success" ? isEventPassApproval ? "Registration approved" : "Action recorded" : result === "error" ? "Action needs attention" : label}</DialogTitle>
+              <DialogDescription>{result === "success" ? isEventPassApproval ? "Approval is saved. The attendee's event pass email is queued for delivery." : "The decision was saved and the record has been updated." : result === "error" ? failureMessage || "The action could not be completed. Review the current record status and try again." : isMembershipApproval ? "Membership cards are free. Approving confirms this account and activates its CSC membership card; no payment is required." : isStartupApproval ? "Review the founder-submitted details below. Publishing makes this startup visible in the CSC Founder Directory." : confirm ?? message ?? "Review the submitted information before continuing."}</DialogDescription>
             </DialogHeader>
             {result === null && <>
               {displayDetails.length > 0 && <dl className={`mt-5 grid gap-x-5 gap-y-3 rounded-2xl bg-brand-cloud p-4 ${isMembershipApproval || isStartupApproval ? "sm:grid-cols-3 xl:grid-cols-4" : "sm:grid-cols-2"}`}>
@@ -84,7 +85,7 @@ export function ActionButton({
               {operation && <div className="mt-4 grid gap-2"><label htmlFor="admin-action-reason" className="text-sm font-medium">{isMembershipApproval ? "Internal approval note" : operation.kind === "payment" ? "Independent settlement reference" : "Review reason"} {reasonRequired ? <span className="text-red-700">(required)</span> : <span className="font-normal text-brand-muted">(optional)</span>}</label><Textarea id="admin-action-reason" value={reason} onChange={(event) => setReason(event.target.value)} maxLength={1000} rows={isMembershipApproval ? 2 : 3} placeholder={reasonRequired ? "Enter at least 5 characters for the audit record…" : "Add an optional note for the audit record…"} aria-invalid={reasonRequired && reason.trim().length > 0 && reason.trim().length < 5} />{!isMembershipApproval && <p className="text-xs text-brand-muted">This note is attached to the privileged action for audit.</p>}</div>}
               {!operation && message && <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">{message}</p>}
             </>}
-            {result === "success" && <div className="mt-6 flex items-center gap-3 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900"><Check className="size-5 shrink-0" />Successfully submitted and confirmed.</div>}
+            {result === "success" && <div className="mt-6 flex items-center gap-3 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900"><Check className="size-5 shrink-0" />{isEventPassApproval ? "The pass is available in the member portal, and its confirmation email is queued." : "Successfully submitted and confirmed."}</div>}
             {saving && <div className="mt-4 flex items-center gap-2 text-sm text-brand-muted"><LoaderCircle className="size-4 animate-spin" />Recording your decision…</div>}
           </div>
           <DialogFooter className="rounded-b-3xl sm:flex-row">

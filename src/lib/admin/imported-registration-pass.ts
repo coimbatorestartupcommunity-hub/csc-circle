@@ -2,10 +2,17 @@ import { randomBytes, randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { parseAdditionalAttendeeNames } from "@/lib/validations/paid-registration";
+import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 
 export async function issueImportedRegistrationPasses(admin: SupabaseClient<Database>, registrationId: string) {
   const { data: lead, error } = await admin.from("event_registrations").select("id,event_id,user_id,attendee_name,reference,pass_token,status,source,source_email,source_timestamp").eq("id", registrationId).maybeSingle();
-  if (error || !lead || lead.source !== "google_form_import" || lead.status !== "pending_review") return { ok: false as const, error: "Imported registration is not pending review." };
+  if (error || !lead || lead.source !== "google_form_import") return { ok: false as const, error: "Imported registration could not be found." };
+  if (lead.status === "confirmed") {
+    const email = await ensureEventPassEmail(admin, lead.id);
+    if (!email.ok) return { ok: false as const, error: "Registration is approved, but its pass email could not be queued. Refresh and use Resend pass." };
+    return { ok: true as const, reference: lead.reference, passCount: 1 };
+  }
+  if (lead.status !== "pending_review") return { ok: false as const, error: `Imported registration is currently ${lead.status.replaceAll("_", " ")}.` };
   const [{ data: event }, { data: saved }] = await Promise.all([
     admin.from("events").select("status,ends_at,capacity,title").eq("id", lead.event_id).maybeSingle(),
     admin.from("event_registration_import_metadata").select("metadata").eq("registration_id", lead.id).maybeSingle(),
@@ -66,6 +73,9 @@ export async function issueImportedRegistrationPasses(admin: SupabaseClient<Data
       /* pass issuance already succeeded; the email remains the durable channel */
     }
   }
+
+  const email = await ensureEventPassEmail(admin, lead.id);
+  if (!email.ok) return { ok: false as const, error: "Pass was issued, but its confirmation email could not be queued. Refresh and use Resend pass." };
 
   return { ok: true as const, reference: lead.reference, passCount: names.length };
 }

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-for (const route of ["/member/profile", "/member/startups", "/member/resume", "/admin", "/admin/startups", "/admin/invitations", "/admin/roles", "/auth/success"]) {
+for (const route of ["/member/profile", "/member/startups", "/member/resume", "/admin", "/admin/startups", "/admin/invitations", "/admin/roles", "/auth/success", "/events"]) {
   test(`${route} requires a verified session`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(route);
@@ -11,7 +11,7 @@ for (const route of ["/member/profile", "/member/startups", "/member/resume", "/
   });
 }
 
-for (const route of ["/", "/about", "/directory", "/events", "/collaborations", "/members", "/admin/accept-invitation"]) {
+for (const route of ["/", "/about", "/directory", "/collaborations", "/members", "/admin/accept-invitation"]) {
   test(`${route} is available without an authenticated session`, async ({ page }) => {
     const response = await page.goto(route);
     expect(response?.status()).toBe(200);
