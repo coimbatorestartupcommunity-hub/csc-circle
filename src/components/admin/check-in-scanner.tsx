@@ -137,7 +137,7 @@ export function CheckInScanner({
           </select>
         </div>
 
-        <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-xl bg-brand-ink/90">
+        <div className="relative mx-auto flex aspect-square w-full max-w-sm items-center justify-center overflow-hidden rounded-xl bg-brand-ink/90">
           <video ref={videoRef} className="size-full object-cover" muted playsInline />
           {cameraState === "off" ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-brand-white/80">
