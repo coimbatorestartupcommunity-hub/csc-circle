@@ -57,7 +57,7 @@ export function EventDetailsPanel({
   return (
     <div className="flex flex-col gap-6 rounded-[2rem] bg-brand-cloud p-6 ring-1 ring-brand-border sm:p-8">
       {event.coverImage ? <div className="order-first overflow-hidden rounded-2xl bg-brand-white ring-1 ring-brand-border">
-        <Image src={event.coverImage} alt={`${event.title} event banner`} width={1600} height={1200} className="aspect-[4/3] w-full object-cover" unoptimized />
+        <Image src={event.coverImage} alt={`${event.title} event banner`} width={1600} height={900} className="aspect-video w-full object-cover" unoptimized />
       </div> : null}
 
       <div className="flex flex-col gap-3">
