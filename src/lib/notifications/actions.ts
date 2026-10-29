@@ -31,6 +31,7 @@ export function notificationAction(type: string, value: string | null) {
     && /^\/admin\/accept-invitation\?invitationId=[0-9a-f-]{36}$/i.test(value);
   const adminHomeAction = path === "/admin" && type === "admin.invitation.received";
   const safe = invitationAction || adminHomeAction || memberDestinations.has(path)
+    || /^\/member\/events\/[0-9a-f-]{36}$/i.test(path)
     || /^\/(events|directory|collaborations)\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(path)
     || path === "/events";
   if (!safe) return null;

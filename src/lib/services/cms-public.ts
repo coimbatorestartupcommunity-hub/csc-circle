@@ -26,11 +26,7 @@ const UPDATE_PUBLIC_FIELDS = "id,slug,title,category,summary,body,featured,cover
 
 /** Build the public serving URL for a CMS media object (image stored privately). */
 export function cmsImageUrl(path: string | null | undefined): string | null {
-  if (!path) return null;
-  // Static public assets (e.g. "/updates/foo.webp") are served directly;
-  // Supabase storage object paths go through the CMS image proxy.
-  if (path.startsWith("/")) return path;
-  return `/api/cms/image?path=${encodeURIComponent(path)}`;
+  return path ? `/api/cms/image?path=${encodeURIComponent(path)}` : null;
 }
 
 function mapResource(r: Row): ResourceRecord {
