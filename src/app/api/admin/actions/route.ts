@@ -42,8 +42,9 @@ export async function POST(request: Request) {
       if (!["confirmed", "rejected"].includes(parsed.data.decision) || (parsed.data.decision === "rejected" && parsed.data.reason.trim().length < 5)) return authResponse({ error: "Choose approve or reject and add a review note when rejecting." }, 422);
       const reviewStatus = parsed.data.decision === "confirmed" ? "confirmed" as const : "rejected" as const;
       const admin = createAdminClient();
-      const { data: current, error: readError } = await admin.from("paid_event_registrations").select("id,status,event_id,email,full_name,additional_attendee_names,user_id,member_registration_id,reference,pass_token").eq("id", parsed.data.target).maybeSingle();
-      if (readError || !current) return authResponse({ error: "This registration could not be found. Refresh the registrations list and try again." }, 404);
+      const { data: current, error: readError } = await admin.from("paid_event_registrations").select("id,status,event_id,email,full_name,additional_attendee_names,user_id,member_registration_id,reference").eq("id", parsed.data.target).maybeSingle();
+      if (readError) return authResponse({ error: "The registration could not be loaded for review. Refresh the page and try again." }, 503);
+      if (!current) return authResponse({ error: "This registration could not be found. Refresh the registrations list and try again." }, 404);
       if (current.status === "confirmed") {
         if (!current.member_registration_id) return authResponse({ error: "This registration is approved, but its pass record needs administrator repair." }, 409);
         const email = await ensureEventPassEmail(admin, current.member_registration_id);
@@ -55,7 +56,6 @@ export async function POST(request: Request) {
       let userId = current.user_id;
       let memberRegistrationId = current.member_registration_id;
       let reference = current.reference;
-      let passToken = current.pass_token;
       if (parsed.data.decision === "confirmed") {
         if (!userId) {
           for (let page = 1; page <= 10 && !userId; page += 1) {
@@ -88,10 +88,10 @@ export async function POST(request: Request) {
             if (error || !created) return authResponse({ error: "Pass issuance could not be completed; registration remains pending review." }, 503);
             if (attendeeName === current.full_name) memberRegistrationId = created.id;
           }
-          if (attendeeName === current.full_name) { reference = passReference; passToken = passTokenForAttendee; }
+          if (attendeeName === current.full_name) reference = passReference;
         }
       }
-      const { error: updateError } = await admin.from("paid_event_registrations").update({ status: reviewStatus, user_id: userId, member_registration_id: memberRegistrationId, reference, pass_token: passToken, reviewed_by: ctx.userId!, reviewed_at: new Date().toISOString(), review_note: parsed.data.reason.trim() || null }).eq("id", current.id).eq("status", "pending_verification");
+      const { error: updateError } = await admin.from("paid_event_registrations").update({ status: reviewStatus, user_id: userId, member_registration_id: memberRegistrationId, reference, reviewed_by: ctx.userId!, reviewed_at: new Date().toISOString(), review_note: parsed.data.reason.trim() || null }).eq("id", current.id).eq("status", "pending_verification");
       if (updateError) return authResponse({ error: "Registration review was not saved." }, 409);
       if (reviewStatus === "confirmed" && memberRegistrationId) {
         const email = await ensureEventPassEmail(admin, memberRegistrationId);
