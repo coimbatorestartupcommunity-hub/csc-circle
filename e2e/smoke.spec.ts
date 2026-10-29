@@ -80,6 +80,8 @@ test("unauthorized admin APIs and recovery are denied", async ({ request }) => {
   expect(await response.json()).toEqual({ ok: false });
   const attendanceExport = await request.get("/api/admin/attendance/export");
   expect(attendanceExport.status()).toBe(403);
+  const eventSurfaces = await request.post("/api/admin/events/00000000-0000-4000-8000-000000000001/publish-surfaces", { data: { publicationConsent: true } });
+  expect(eventSurfaces.status()).toBe(403);
 });
 
 for (const width of [320, 360, 375, 390, 430, 768, 820, 1024, 1280, 1440, 1920]) {

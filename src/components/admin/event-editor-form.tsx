@@ -38,11 +38,13 @@ export function EventEditorForm({
   mode,
   isDemo,
   eventId,
+  canPublishSurfaces,
 }: {
   initial?: Partial<EventEditorValues>;
   mode: "create" | "edit";
   isDemo: boolean;
   eventId?: string;
+  canPublishSurfaces: boolean;
 }) {
   const router = useRouter();
   const {
@@ -59,6 +61,7 @@ export function EventEditorForm({
   const [saving, setSaving] = React.useState(false);
   const [uploadingCover, setUploadingCover] = React.useState(false);
   const [uploadingQr, setUploadingQr] = React.useState(false);
+  const [publicationConsent, setPublicationConsent] = React.useState(false);
   const [coverPreview, setCoverPreview] = React.useState(() => {
     const value = initial?.coverImage ?? "";
     return value.startsWith("event-covers/") && eventId ? `/api/admin/events/cover?event=${eventId}` : value;
@@ -125,12 +128,26 @@ export function EventEditorForm({
 
   async function onSubmit(v: ParsedEventEditorValues) {
     if (isDemo) { toast.info("DEMO preview. No event was saved or published."); return; }
+    if (v.status === "published" && !canPublishSurfaces) { toast.error("You need event publishing and Updates permissions to publish across CSC."); return; }
+    if (v.status === "published" && !publicationConsent) { toast.error("Confirm that CSC may publish the event on the Updates surface."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/admin/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: v, id: eventId }) });
       const data = await res.json();
       if (!res.ok || !data.ok) { toast.error(data.error ?? "Event was not saved."); return; }
-      notifySubmissionSuccess({ title: v.status === "published" ? "Event published" : "Event draft saved", message: v.status === "published" ? "The event is now available on the CSC website." : "The event draft was saved." });
+      if (v.status === "published") {
+        const surfaces = await fetch(`/api/admin/events/${data.id}/publish-surfaces`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicationConsent: true }),
+        });
+        const surfacesResult = await surfaces.json();
+        if (!surfaces.ok || !surfacesResult.ok) {
+          toast.error(`The event was saved, but its Event Notice and Update were not published: ${surfacesResult.error ?? "Try again from Edit event."}`);
+          router.push(`/admin/events/${data.id}`); router.refresh();
+          return;
+        }
+      }
+      notifySubmissionSuccess({ title: v.status === "published" ? "Event published across CSC" : "Event draft saved", message: v.status === "published" ? "The event, Featured Event Notice and linked Update are now available from the same event content." : "The event draft was saved." });
       router.push(`/admin/events/${data.id}`); router.refresh();
     } catch { toast.error("Could not save the event."); }
     finally { setSaving(false); }
@@ -324,9 +341,14 @@ export function EventEditorForm({
             <FieldLabel htmlFor="e-status">Status</FieldLabel>
             <select id="e-status" className={selectClass} {...register("status")}>
               <option value="draft">Draft</option>
-              <option value="published">Published</option>
+              <option value="published" disabled={!canPublishSurfaces}>Published</option>
             </select>
           </Field>
+          {values.status === "published" ? <label className="flex items-start gap-2 rounded-xl bg-brand-cloud p-3 text-sm leading-5 text-brand-secondary">
+            <input type="checkbox" checked={publicationConsent} onChange={(event) => setPublicationConsent(event.target.checked)} className="mt-0.5 size-4 shrink-0 accent-[var(--brand-accent)]" />
+            <span>I confirm CSC may publish this event’s title, summary, description, date and venue on the Updates surface. The event cover will also be used for its Event Notice and Update.</span>
+          </label> : null}
+          {!canPublishSurfaces ? <p className="text-xs text-brand-muted">Publishing across Events, Event Notice and Updates requires event publishing and content management access.</p> : null}
           <div className="flex flex-col gap-2">
             <Button type="submit" disabled={saving || uploadingCover || uploadingQr} className="h-11 gap-2 sm:w-fit sm:px-8">
               {saving ? <Loader2 className="size-4 animate-spin" /> : null}
