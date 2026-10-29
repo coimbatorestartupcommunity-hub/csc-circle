@@ -133,7 +133,7 @@ export async function dispatchNotifications(batch = 15) {
       let payload: Record<string, unknown> = originalPayload;
       let attachments: { filename: string; content: Buffer; contentType: string; cid: string }[] | undefined;
       if (job.related_record_type === "paid_event_registrations" && job.related_record_id) {
-        const { data: registration } = await sb.from("paid_event_registrations").select("full_name,reference,status,review_note,event_id,member_registration_id,pass_token").eq("id", job.related_record_id).maybeSingle();
+        const { data: registration } = await sb.from("paid_event_registrations").select("full_name,reference,status,review_note,event_id,member_registration_id").eq("id", job.related_record_id).maybeSingle();
         if (registration) {
           const { data: event } = await sb.from("events").select("title,starts_at,ends_at,venue,location").eq("id", registration.event_id).maybeSingle();
           payload = { ...originalPayload, name: registration.full_name, reference: registration.reference, status: registration.status, reviewNote: registration.review_note ?? "", eventTitle: event?.title ?? "Event", startsAt: event?.starts_at, endsAt: event?.ends_at, venue: event?.venue, location: event?.location, memberRegistrationId: registration.member_registration_id };

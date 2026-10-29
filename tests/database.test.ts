@@ -31,6 +31,17 @@ beforeAll(async () => {
 }, 30_000);
 afterAll(async () => { await db?.close(); });
 describe("isolated PostgreSQL authorization regressions", () => {
+  it("keeps opaque pass tokens on event passes, not paid-registration submissions", async () => {
+    const paidColumns = await db.query<{ column_name: string }>(
+      "select column_name from information_schema.columns where table_schema='public' and table_name='paid_event_registrations'",
+    );
+    const passColumns = await db.query<{ column_name: string }>(
+      "select column_name from information_schema.columns where table_schema='public' and table_name='event_registrations'",
+    );
+    expect(paidColumns.rows.map((row) => row.column_name)).not.toContain("pass_token");
+    expect(passColumns.rows.map((row) => row.column_name)).toContain("pass_token");
+  });
+
   it("issues stable unique event pass UIDs and stores attendee names for imports", async () => {
     await db.exec("begin");
     try {
