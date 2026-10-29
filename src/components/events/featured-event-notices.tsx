@@ -47,9 +47,9 @@ export function FeaturedEventNotices() {
     <section aria-labelledby="featured-event-notices" className="w-full space-y-5">
       <div className="flex items-end justify-between gap-3"><div><p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-accent">Community announcements</p><h2 id="featured-event-notices" className="mt-1 text-2xl font-semibold text-brand-ink sm:text-3xl">Featured Event Notices</h2></div><span className="hidden rounded-full bg-brand-cloud px-3 py-1 text-xs font-medium text-brand-secondary sm:inline-flex">{notices.length} active {notices.length === 1 ? "notice" : "notices"}</span></div>
       <div className="grid gap-5 xl:grid-cols-2">
-        {notices.map((notice) => <article key={notice.id} className="grid min-w-0 overflow-hidden rounded-3xl bg-white ring-1 ring-brand-border sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-          {notice.bannerUrl ? <div className="relative aspect-[4/3] min-w-0 overflow-hidden bg-brand-cloud sm:aspect-auto sm:min-h-64"><Image src={notice.bannerUrl} alt={`${notice.title} banner`} fill sizes="(max-width: 640px) 100vw, (max-width: 1280px) 45vw, 480px" className="object-cover" unoptimized /></div> : null}
-          <div className={`flex min-w-0 flex-col p-5 sm:p-6 ${notice.bannerUrl ? "sm:col-start-2" : "sm:col-span-2"}`}>
+        {notices.map((notice) => <article key={notice.id} className="flex min-w-0 flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-brand-border">
+          {notice.bannerUrl ? <div className="relative aspect-[4/3] w-full min-w-0 overflow-hidden bg-brand-cloud"><Image src={notice.bannerUrl} alt={`${notice.title} banner`} fill sizes="(max-width: 1280px) 100vw, 600px" className="object-cover" unoptimized /></div> : null}
+          <div className="flex min-w-0 flex-col p-5 sm:p-6">
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-accent"><Megaphone className="size-4" />Event announcement</p>
             <h3 className="mt-3 break-words text-xl font-semibold leading-tight text-brand-ink sm:text-2xl">{notice.title}</h3>
             <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-brand-secondary">{notice.message}</p>
