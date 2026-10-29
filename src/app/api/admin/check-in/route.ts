@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     if (result.status === "valid" || result.status === "already") {
       try {
         const admin = createAdminClient();
-        const { data: registration } = await admin.from("event_registrations").select("user_id,reference,event_id").eq("pass_token", parsed.data.payload.ref).eq("event_id", parsed.data.event).maybeSingle();
+        const { data: registration } = await admin.from("event_registrations").select("user_id,reference,event_id,attendee_name").eq("pass_token", parsed.data.payload.ref).eq("event_id", parsed.data.event).maybeSingle();
         if (registration) {
           const [{ data: profile }, { data: membership }, { data: event }] = await Promise.all([
             admin.from("profiles").select("full_name,display_name,portrait_path,designations,startup").eq("id", registration.user_id).maybeSingle(),
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
           }
           const startup = profile?.startup && typeof profile.startup === "object" && !Array.isArray(profile.startup) ? profile.startup as Record<string, unknown> : null;
           return authResponse({ ...result, attendee: {
-            name: profile?.display_name || profile?.full_name || result.name || "CSC Member",
+            name: profile?.display_name || profile?.full_name || registration.attendee_name || result.name || "CSC Member",
             memberNumber: membership?.member_number ?? null,
             membershipStatus: membership?.status ?? null,
             designation: profile?.designations?.[0]?.replaceAll("_", " ") ?? null,
