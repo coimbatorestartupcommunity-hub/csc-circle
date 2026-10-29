@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { randomBytes, randomUUID } from "node:crypto";
 import type { Permission } from "@/lib/admin/permissions";
 import { issueImportedRegistrationPasses } from "@/lib/admin/imported-registration-pass";
+import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 const schema = z.object({ kind: z.enum(["claim", "member", "registration", "imported_registration", "paid_registration", "resend_event_pass", "payment", "review", "startup", "consultation"]), target: z.string().uuid(), decision: z.string().min(1).max(40), reason: z.string().max(1000).default("") });
 const permissions: Record<string, Permission> = { claim: "members.approve", member: "members.suspend", registration: "registrations.approve", imported_registration: "registrations.approve", paid_registration: "registrations.approve", resend_event_pass: "registrations.approve", payment: "payments.verify", review: "reviews.moderate", startup: "directory.manage", consultation: "consultations.manage" };
 export async function POST(request: Request) {
@@ -42,7 +43,15 @@ export async function POST(request: Request) {
       const reviewStatus = parsed.data.decision === "confirmed" ? "confirmed" as const : "rejected" as const;
       const admin = createAdminClient();
       const { data: current, error: readError } = await admin.from("paid_event_registrations").select("id,status,event_id,email,full_name,additional_attendee_names,user_id,member_registration_id,reference,pass_token").eq("id", parsed.data.target).maybeSingle();
-      if (readError || !current || current.status !== "pending_verification") return authResponse({ error: "This registration has already been reviewed or could not be found." }, 409);
+      if (readError || !current) return authResponse({ error: "This registration could not be found. Refresh the registrations list and try again." }, 404);
+      if (current.status === "confirmed") {
+        if (!current.member_registration_id) return authResponse({ error: "This registration is approved, but its pass record needs administrator repair." }, 409);
+        const email = await ensureEventPassEmail(admin, current.member_registration_id);
+        if (!email.ok) return authResponse({ error: "This registration is already approved, but the pass email could not be queued. Use Resend pass after refreshing." }, 503);
+        scheduleNotificationDelivery();
+        return authResponse({ ok: true, alreadyApproved: true, message: "Already approved. The pass is ready and its email is queued." });
+      }
+      if (current.status !== "pending_verification") return authResponse({ error: `This registration is currently ${current.status.replaceAll("_", " ")}. Refresh the list to review its latest status.` }, 409);
       let userId = current.user_id;
       let memberRegistrationId = current.member_registration_id;
       let reference = current.reference;
@@ -84,6 +93,10 @@ export async function POST(request: Request) {
       }
       const { error: updateError } = await admin.from("paid_event_registrations").update({ status: reviewStatus, user_id: userId, member_registration_id: memberRegistrationId, reference, pass_token: passToken, reviewed_by: ctx.userId!, reviewed_at: new Date().toISOString(), review_note: parsed.data.reason.trim() || null }).eq("id", current.id).eq("status", "pending_verification");
       if (updateError) return authResponse({ error: "Registration review was not saved." }, 409);
+      if (reviewStatus === "confirmed" && memberRegistrationId) {
+        const email = await ensureEventPassEmail(admin, memberRegistrationId);
+        if (!email.ok) return authResponse({ error: "Registration approved, but the pass email could not be queued. Refresh and use Resend pass." }, 503);
+      }
       scheduleNotificationDelivery();
       return authResponse({ ok: true });
     }

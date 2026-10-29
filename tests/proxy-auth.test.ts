@@ -39,7 +39,7 @@ it("keeps auth-public pages available without initializing Supabase Auth", async
   expect(mocks.createServerClient).not.toHaveBeenCalled();
 });
 
-it.each(["/", "/about", "/events", "/events/synthetic-event", "/directory", "/members", "/members/synthetic-profile", "/collaborations", "/help", "/contact", "/community-guidelines", "/membership", "/resources", "/opportunities", "/updates", "/updates/synthetic-update"]) (
+it.each(["/", "/about", "/events/synthetic-event", "/directory", "/members", "/members/synthetic-profile", "/collaborations", "/help", "/contact", "/community-guidelines", "/membership", "/resources", "/opportunities", "/updates", "/updates/synthetic-update"]) (
   "keeps public marketing route %s available without a session",
   async (path) => {
     configureLocalAuth();
@@ -51,6 +51,15 @@ it.each(["/", "/about", "/events", "/events/synthetic-event", "/directory", "/me
     expect(mocks.createServerClient).not.toHaveBeenCalled();
   },
 );
+
+it("requires sign-in for the Events & Booking listing while keeping shared event detail links public", async () => {
+  configureLocalAuth();
+  const response = await proxy(new NextRequest("http://localhost/events"));
+
+  expect(response.status).toBe(307);
+  expect(new URL(response.headers.get("location")!).pathname).toBe("/login");
+  expect(new URL(response.headers.get("location")!).searchParams.get("next")).toBe("/events");
+});
 
 it("keeps the administrator invitation acceptance page public so email tokens survive the initial navigation", async () => {
   configureLocalAuth();

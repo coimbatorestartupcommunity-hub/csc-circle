@@ -61,12 +61,21 @@ export function parseGoogleFormCsv(csv: string): GoogleFormResponse[] {
     rows[0].forEach((header, index) => { raw[header] = (cells[index] ?? "").trim(); });
     const get = (field: keyof Omit<GoogleFormResponse, "raw">) => indexes[field] < 0 ? "" : (cells[indexes[field]] ?? "").trim();
     const attendeeRaw = get("attendeeCount");
+    const additionalAttendeeNames = get("additionalAttendeeNames");
+    // Google Forms exports formatted number answers as e.g.
+    // "1 attendee — ₹180". Keep the numeric answer while ignoring its label.
+    // Some response sheets leave this field blank for a single-person entry;
+    // infer the count from the additional-name list when available, otherwise
+    // use one attendee (the form's single-registrant default).
+    const attendeeMatch = attendeeRaw.match(/^\s*(\d+)(?:\D|$)/);
+    const additionalNames = additionalAttendeeNames.split(/[\r\n;]/).map((name) => name.trim()).filter(Boolean);
+    const attendeeCount = attendeeMatch ? Number(attendeeMatch[1]) : Math.max(1, additionalNames.length + 1);
     const amountRaw = get("amountPaid").replace(/[₹,\s]/g, "");
     const amountParsed = Number(amountRaw);
     return {
       timestamp: get("timestamp"), email: get("email").toLowerCase(), fullName: get("fullName"), whatsapp: get("whatsapp"),
-      organization: get("organization"), role: get("role"), attendeeCount: /^\d+$/.test(attendeeRaw) ? Number(attendeeRaw) : 0,
-      additionalAttendeeNames: get("additionalAttendeeNames"), referralSource: get("referralSource"), amountPaid: amountRaw && Number.isFinite(amountParsed) ? amountParsed : null,
+      organization: get("organization"), role: get("role"), attendeeCount,
+      additionalAttendeeNames, referralSource: get("referralSource"), amountPaid: amountRaw && Number.isFinite(amountParsed) ? amountParsed : null,
       transactionRef: get("transactionRef"), paymentScreenshotUrl: get("paymentScreenshotUrl"), raw,
     };
   });

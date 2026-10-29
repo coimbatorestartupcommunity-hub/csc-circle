@@ -35,6 +35,6 @@ describe("authentication completion", () => {
     const response = await GET(new Request("https://csc.example/auth/complete"));
 
     expect(schedule).toHaveBeenCalledOnce();
-    expect(response.headers.get("location")).toBe("https://csc.example/auth/success?next=%2Fmember%2Fprofile");
+    expect(response.headers.get("location")).toBe("https://csc.example/auth/success?next=%2Fmember%2Fclaim");
   });
 });
