@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LayoutGrid, CalendarRange, CalendarX } from "lucide-react";
+import { LayoutGrid, CalendarRange, CalendarX, ArrowLeft } from "lucide-react";
 import { cn } from "cn";
 import { EventCard } from "@/components/events/event-card";
 import { EventCalendar } from "@/components/events/event-calendar";
@@ -19,8 +19,8 @@ export function EventsClient({ events }: { events: EventRecord[] }) {
   const [mode, setMode] = React.useState<Mode>("events");
   const [view, setView] = React.useState<View>("list");
   const [category, setCategory] = React.useState<EventCategory | "all">("all");
-  const [selectedId, setSelectedId] = React.useState<string | undefined>(
-    events[0]?.id,
+  const [registeringId, setRegisteringId] = React.useState<string | undefined>(
+    undefined,
   );
 
   const categories = React.useMemo(() => {
@@ -37,8 +37,9 @@ export function EventsClient({ events }: { events: EventRecord[] }) {
     [events, category],
   );
 
-  const selected =
-    events.find((e) => e.id === selectedId) ?? filtered[0] ?? events[0];
+  const registering = registeringId
+    ? events.find((e) => e.id === registeringId)
+    : undefined;
 
   if (events.length === 0) {
     return (
@@ -101,6 +102,17 @@ export function EventsClient({ events }: { events: EventRecord[] }) {
           </h3>
           <ConsultationForm />
         </div>
+      ) : registering ? (
+        <div className="mx-auto w-full max-w-3xl">
+          <button
+            type="button"
+            onClick={() => setRegisteringId(undefined)}
+            className="mb-5 inline-flex items-center gap-2 rounded-full bg-brand-cloud px-4 py-2 text-sm font-medium text-brand-ink ring-1 ring-brand-border transition hover:bg-brand-white focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <ArrowLeft className="size-4" aria-hidden /> Back to events
+          </button>
+          <EventDetailsPanel event={registering} events={events} />
+        </div>
       ) : (
         <>
           {/* Category filters + view toggle */}
@@ -141,43 +153,27 @@ export function EventsClient({ events }: { events: EventRecord[] }) {
             </div>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr] lg:items-start">
-            <div>
-              {filtered.length === 0 ? (
-                <EmptyState
-                  title="No events in this category."
-                  description="Try a different category to see more."
+          {filtered.length === 0 ? (
+            <EmptyState
+              title="No events in this category."
+              description="Try a different category to see more."
+            />
+          ) : view === "list" ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onSelect={(e) => setRegisteringId(e.id)}
                 />
-              ) : view === "list" ? (
-                <div className="grid gap-5 sm:grid-cols-2">
-                  {filtered.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      selected={event.id === selected?.id}
-                      onSelect={(e) => setSelectedId(e.id)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <EventCalendar
-                  events={filtered}
-                  selectedId={selected?.id}
-                  onSelect={(e) => setSelectedId(e.id)}
-                />
-              )}
+              ))}
             </div>
-
-            <div className="lg:sticky lg:top-24">
-              {selected ? (
-                <EventDetailsPanel
-                  event={selected}
-                  events={events}
-                  onEventChange={setSelectedId}
-                />
-              ) : null}
-            </div>
-          </div>
+          ) : (
+            <EventCalendar
+              events={filtered}
+              onSelect={(e) => setRegisteringId(e.id)}
+            />
+          )}
         </>
       )}
     </div>
