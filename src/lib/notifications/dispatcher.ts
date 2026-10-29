@@ -7,6 +7,7 @@ import { sendCommunityEmail } from "@/lib/notifications/email";
 import { classifyEmailFailure } from "@/lib/notifications/failures";
 import QRCode from "qrcode";
 import { buildEventPassQrPayload } from "@/lib/member/qr";
+import { chooseNotificationRecipient } from "@/lib/notifications/recipients";
 import type { Database } from "@/lib/supabase/database.types";
 type Job = Database["public"]["Tables"]["notifications"]["Row"];
 type Service = NonNullable<ReturnType<typeof createSubmissionClient>>;
@@ -123,12 +124,13 @@ export async function dispatchNotifications(batch = 15) {
       if (!job.template_key || !isTemplateKey(job.template_key)) { await finish("failed_permanent","UNKNOWN_TEMPLATE"); continue; }
       if (job.template_key === "ConsultationScheduled" && (!job.payload || typeof job.payload!=="object" || Array.isArray(job.payload) || !job.payload.scheduledAt)) { await finish("failed_permanent","MEETING_DETAILS_UNCONFIRMED"); continue; }
       if (!await isCurrent(sb,job)) { await finish("superseded","SUPERSEDED_BUSINESS_STATE"); continue; }
-      let recipients = job.audience === "admin" ? c.admins : [job.recipient ?? ""];
+      let resolvedMemberEmail = "";
+      let recordEmail = "";
       if (job.audience !== "admin" && job.recipient_user_id) {
         const r = await sb.rpc("csc_notification_recipient", { member: job.recipient_user_id });
-        recipients = r.error ? [] : [r.data ?? ""];
+        resolvedMemberEmail = r.error ? "" : r.data ?? "";
       }
-      if (!recipients.length || recipients.some(r=>!validEmail(r))) { await finish("failed_permanent","INVALID_RECIPIENT"); continue; }
+      let recipients = job.audience === "admin" ? c.admins : [chooseNotificationRecipient(resolvedMemberEmail, job.recipient)];
       const originalPayload = job.payload && typeof job.payload === "object" && !Array.isArray(job.payload) ? job.payload : {};
       let payload: Record<string, unknown> = originalPayload;
       let attachments: { filename: string; content: Buffer; contentType: string; cid: string }[] | undefined;
@@ -143,6 +145,7 @@ export async function dispatchNotifications(batch = 15) {
         payload = { ...originalPayload, registrationId: job.related_record_id };
         const { data: registration } = await sb.from("event_registrations").select("pass_token,reference,user_id,event_id,attendee_name,source,source_email,source_parent_registration_id,paid_registration_id").eq("id", job.related_record_id).maybeSingle();
         if (registration) {
+          recordEmail = registration.source_email ?? "";
           const [{ data: event }, { data: profile }, { data: paidRegistration }] = await Promise.all([
             sb.from("events").select("title,starts_at,ends_at,venue,location").eq("id", registration.event_id).maybeSingle(),
             sb.from("profiles").select("full_name,display_name,email,whatsapp").eq("id", registration.user_id).maybeSingle(),
@@ -167,6 +170,7 @@ export async function dispatchNotifications(batch = 15) {
             email: registration.source_email || paidRegistration?.email || profile?.email || recipients[0] || "",
             phone: paidRegistration?.whatsapp || (typeof importedContact?.whatsapp === "string" ? importedContact.whatsapp : "") || profile?.whatsapp || "",
           };
+          if (job.audience !== "admin") recipients = [chooseNotificationRecipient(resolvedMemberEmail, job.recipient, recordEmail)];
         }
         if (registration?.pass_token && /^[a-f0-9]{64}$/i.test(registration.pass_token)) {
           const cid = `csc-event-pass-${job.id}@csc`;
@@ -174,6 +178,7 @@ export async function dispatchNotifications(batch = 15) {
           attachments = [{ filename: `CSC-EventPass-${registration.reference}.png`, content: await QRCode.toBuffer(buildEventPassQrPayload(registration.pass_token), { type: "png", width: 440, margin: 2, color: { dark: "#121826", light: "#ffffff" } }), contentType: "image/png", cid }];
         }
       }
+      if (!recipients.length || recipients.some(r=>!validEmail(r))) { await finish("failed_permanent","INVALID_RECIPIENT"); continue; }
       const message = renderNotification(job.template_key,payload);
       let outcome = "sent", code = "";
       for (const recipient of recipients) {

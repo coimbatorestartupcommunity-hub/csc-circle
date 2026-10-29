@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { dispatchNotifications } from "@/lib/notifications/dispatcher";
 import { buildAdminInvitationEmail } from "@/lib/admin/invitation-email";
 import { sendCommunityEmail } from "@/lib/notifications/email";
+import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 
 const run = process.env.CSC_RUN_LOCAL_EMAIL_INTEGRATION === "true";
 const testIds: string[] = [];
@@ -13,6 +14,8 @@ const mailIds: string[] = [];
 const authUserIds: string[] = [];
 const invitationIds: string[] = [];
 const appNotificationIds: string[] = [];
+const eventRegistrationIds: string[] = [];
+const eventIds: string[] = [];
 function chunks<T>(values: T[], size: number) {
   const result: T[][] = [];
   for (let index = 0; index < values.length; index += size) result.push(values.slice(index, index + size));
@@ -48,6 +51,8 @@ afterAll(async () => {
     method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ IDs: mailIds }),
   });
   if (!supabase) return;
+  if (eventRegistrationIds.length) await supabase.from("event_registrations").delete().in("id", eventRegistrationIds);
+  if (eventIds.length) await supabase.from("events").delete().in("id", eventIds);
   if (appNotificationIds.length) await supabase.from("notifications").delete().in("id", appNotificationIds);
   if (invitationIds.length) {
     await supabase.from("audit_logs").delete().in("target_id", invitationIds);
@@ -286,7 +291,7 @@ it.skipIf(!run)("accepts every invited admin role atomically and denies wrong-ac
     expect(capturedInvitation.Subject).toBe("CSC Circle — You're Invited to Join the Administration Team");
     expect(capturedInvitation.Text).toContain("Synthetic CSC Invitee");
     expect(capturedInvitation.Text).toContain("Accept your invitation:");
-    expect(capturedInvitation.Text).toContain(`http://localhost:3107/admin/accept-invitation#token=${rawToken}`);
+    expect(capturedInvitation.Text).toContain(`http://localhost:3107/admin/accept-invitation?token=${rawToken}`);
     const deliveryAccepted = await supabase.from("admin_role_invitations").update({
       delivery_status: "smtp_accepted", sent_at: new Date().toISOString(), delivery_attempts: 1,
     }).eq("id", emailInvitationId).eq("status", "pending");
@@ -401,4 +406,70 @@ it.skipIf(!run)("claims a synthetic outbox job, sends to local SMTP capture, and
   expect(body.Text).toContain("Synthetic Member");
   expect(body.Text).toContain("http://localhost:3107/member/claim");
   expect(body.HTML).toContain("Membership Application Received");
+});
+
+it.skipIf(!run)("emails an imported attendee pass before the invited Auth account is confirmed", async () => {
+  if (!supabase) throw new Error("Local Supabase client is unavailable.");
+  const suffix = randomUUID().slice(0, 12);
+  const eventId = randomUUID();
+  eventIds.push(eventId);
+  const startsAt = new Date(Date.now() + 2 * 24 * 60 * 60_000);
+  const eventInsert = await supabase.from("events").insert({
+    id: eventId,
+    slug: `local-imported-pass-${suffix}`,
+    title: "Local Imported Pass Test",
+    category: "networking",
+    starts_at: startsAt.toISOString(),
+    ends_at: new Date(startsAt.getTime() + 3 * 60 * 60_000).toISOString(),
+    location: "Local Test Venue",
+    venue: "CSC Local Test Hall",
+    status: "published",
+    admission: "free",
+    registration_state: "open",
+    settings: { registrationMode: "rsvp", format: "offline", approvalMode: "automatic" },
+  });
+  expect(eventInsert.error).toBeNull();
+
+  const email = `csc-imported-pass-${suffix}@example.test`;
+  const invited = await supabase.auth.admin.createUser({ email, email_confirm: false });
+  expect(invited.error).toBeNull();
+  if (!invited.data.user) throw new Error("The synthetic imported attendee could not be created.");
+  authUserIds.push(invited.data.user.id);
+
+  const registrationId = randomUUID();
+  eventRegistrationIds.push(registrationId);
+  const reference = `CSC-EVT-${randomUUID().replaceAll("-", "").toUpperCase()}`;
+  const inserted = await supabase.from("event_registrations").insert({
+    id: registrationId,
+    event_id: eventId,
+    user_id: invited.data.user.id,
+    attendee_name: "Imported Test Attendee",
+    reference,
+    status: "confirmed",
+    payment: "paid",
+    pass_token: randomBytes(32).toString("hex"),
+    source: "google_form_import",
+    source_email: email,
+  });
+  expect(inserted.error).toBeNull();
+
+  const heldReceipts = await supabase.from("notifications").update({ available_at: "2099-01-01T00:00:00.000Z" })
+    .eq("related_record_id", registrationId).neq("template_key", "EventConfirmed").select("id");
+  expect(heldReceipts.error).toBeNull();
+  heldJobs.push(...(heldReceipts.data ?? []).map(({ id }) => id));
+
+  const queued = await ensureEventPassEmail(supabase, registrationId);
+  expect(queued).toMatchObject({ ok: true, queued: true });
+  const outbox = await supabase.from("notifications").select("id,recipient,status").eq("related_record_id", registrationId).eq("template_key", "EventConfirmed").single();
+  expect(outbox.error).toBeNull();
+  expect(outbox.data).toMatchObject({ recipient: email, status: "queued" });
+  if (outbox.data) testIds.push(outbox.data.id);
+
+  const result = await dispatchNotifications(1);
+  expect(result).toMatchObject({ state: "processed", claimed: 1, accepted: 1 });
+  const message = await captureFor(email);
+  expect(message.Subject).toContain("Event Registration Is Confirmed");
+  expect(message.Text).toContain(reference);
+  expect(message.Text).toContain("My Events");
+  expect(message.HTML).toContain("cid:csc-event-pass-");
 });

@@ -6,7 +6,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { issueImportedRegistrationPasses } from "@/lib/admin/imported-registration-pass";
+import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 import { parseGoogleFormCsv, validateGoogleFormResponse } from "@/lib/import/google-form-csv";
+import { indexRegistrationsByEmail, planGoogleFormImport } from "@/lib/import/registration-import-plan";
 
 const requestSchema = z.object({ csv: z.string().max(5 * 1024 * 1024).default(""), action: z.enum(["preview", "commit", "approve_all"]) });
 const mailKey = (value: string) => value.trim().toLowerCase();
@@ -58,6 +60,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
         if (result.ok) {
           approved += 1;
           passesIssued += result.passCount;
+          // Imported attendees are invited accounts that have not confirmed
+          // their email yet, so the status trigger's EventConfirmed email has no
+          // resolvable recipient and fails as INVALID_RECIPIENT. Point it at the
+          // known Google Form address so the confirmation + pass QR actually send.
+          await ensureEventPassEmail(admin, row.id);
           await admin.from("audit_logs").insert({ action: "event.imported_registration.confirmed", actor_id: ctx.userId, target_type: "event_registrations", target_id: row.id, after: { status: "confirmed", reference: result.reference, passCount: result.passCount } });
         } else if (result.error.includes("capacity")) { full = true; break; }
       }
@@ -73,30 +80,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
     if (responses.length > 5000) return authResponse({ error: "CSV is limited to 5,000 response rows." }, 413);
 
     const [{ data: registrations, error: registrationsError }, knownUsers] = await Promise.all([
-      admin.from("event_registrations").select("user_id,source_email").eq("event_id", eventId),
+      admin.from("event_registrations").select("id,user_id,source_email,source,status,payment,created_at,source_parent_registration_id").eq("event_id", eventId),
       listAllAuthUsers(admin),
     ]);
     if (registrationsError || knownUsers.error || !knownUsers.users) return authResponse({ error: "Existing registrations could not be checked safely." }, 503);
     const userEmailById = new Map(knownUsers.users.filter((user) => user.email).map((user) => [user.id, mailKey(user.email!)]));
-    const existingEmails = new Set((registrations ?? []).flatMap((row) => [row.source_email, userEmailById.get(row.user_id)]).filter((value): value is string => Boolean(value)).map(mailKey));
-    const seen = new Set<string>();
-    const reviewRows = responses.map((row, index) => {
+    const existingByEmail = indexRegistrationsByEmail(registrations ?? [], userEmailById);
+    const reviewRows = planGoogleFormImport(responses, existingByEmail, (row) => {
       const price = Number(event.price_per_attendee ?? Number(event.price_minor ?? 0) / 100);
-      const errors = validateGoogleFormResponse(row, { maxAttendees: event.max_attendees_per_registration ?? 10, pricePerAttendee: event.admission === "paid" && Number.isFinite(price) ? price : undefined });
-      const key = mailKey(row.email);
-      const duplicate = Boolean(key) && (existingEmails.has(key) || seen.has(key));
-      if (key) seen.add(key);
-      return { rowNumber: index + 2, fullName: row.fullName, email: row.email, amountPaid: row.amountPaid, attendeeCount: row.attendeeCount, status: errors.length ? "invalid" : duplicate ? "duplicate" : "new", errors };
+      return validateGoogleFormResponse(row, { maxAttendees: event.max_attendees_per_registration ?? 10, pricePerAttendee: event.admission === "paid" && Number.isFinite(price) ? price : undefined });
     });
     if (parsedBody.data.action === "preview") return authResponse({ ok: true, rows: reviewRows });
 
     const emails = new Map(knownUsers.users.filter((user) => user.email).map((user) => [mailKey(user.email!), user.id]));
     const results: Array<{ rowNumber: number; status: string }> = [];
+    let repairedPassEmails = 0;
     for (let index = 0; index < responses.length; index += 1) {
       const row = responses[index];
       const preview = reviewRows[index];
-      if (preview.status !== "new") { results.push({ rowNumber: preview.rowNumber, status: preview.status }); continue; }
+      if (preview.status === "invalid") { results.push({ rowNumber: preview.rowNumber, status: preview.status }); continue; }
+      const emailKey = mailKey(row.email);
+      const existing = existingByEmail.get(emailKey);
       let userId = emails.get(mailKey(row.email));
+      if (!userId && existing?.user_id) userId = existing.user_id;
       if (!userId) {
         const redirectTo = new URL("/auth/confirm?next=%2Fmember%2Fevents", new URL(request.url).origin).toString();
         const { data, error } = await admin.auth.admin.inviteUserByEmail(row.email, { redirectTo });
@@ -104,26 +110,59 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
         userId = data.user.id;
         emails.set(mailKey(row.email), userId);
       }
-      const registrationId = randomUUID();
-      const { error: insertError } = await admin.from("event_registrations").insert({
-        id: registrationId, user_id: userId, event_id: eventId, reference: `CSC-EVT-${randomUUID().replaceAll("-", "").toUpperCase()}`,
-        status: "pending_review", payment: "pending", attendee_name: row.fullName, source: "google_form_import", source_email: mailKey(row.email),
-        source_timestamp: timestamp(row.timestamp), goal: "Imported Google Form registration pending payment verification.",
-      });
-      if (insertError) { results.push({ rowNumber: preview.rowNumber, status: "insert_failed" }); continue; }
-      const { error: metadataError } = await admin.from("event_registration_import_metadata").insert({ registration_id: registrationId, metadata: {
+      const registrationId = existing?.id ?? randomUUID();
+      const metadata = {
         source: "google_form_import", timestamp: row.timestamp, whatsapp: row.whatsapp, organization: row.organization, role: row.role,
         attendeeCount: row.attendeeCount, additionalAttendeeNames: row.additionalAttendeeNames, referralSource: row.referralSource,
-        amountPaid: row.amountPaid, transactionRef: row.transactionRef, paymentScreenshotDriveUrl: safeDriveUrl(row.paymentScreenshotUrl), raw: row.raw,
-      } });
+        amountPaid: row.amountPaid, transactionRef: row.transactionRef, paymentScreenshotDriveUrl: safeDriveUrl(row.paymentScreenshotUrl), fullName: row.fullName, raw: row.raw,
+      };
+      if (!existing) {
+        const { error: insertError } = await admin.from("event_registrations").insert({
+          id: registrationId, user_id: userId, event_id: eventId, reference: `CSC-EVT-${randomUUID().replaceAll("-", "").toUpperCase()}`,
+          status: "pending_review", payment: "pending", attendee_name: row.fullName, source: "google_form_import", source_email: emailKey,
+          source_timestamp: timestamp(row.timestamp), goal: "Imported Google Form registration pending payment verification.",
+        });
+        if (insertError) { results.push({ rowNumber: preview.rowNumber, status: "insert_failed" }); continue; }
+      }
+      const { error: metadataError } = await admin.from("event_registration_import_metadata").upsert({ registration_id: registrationId, metadata }, { onConflict: "registration_id" });
       if (metadataError) {
-        await admin.from("event_registrations").delete().eq("id", registrationId);
+        if (!existing) await admin.from("event_registrations").delete().eq("id", registrationId);
         results.push({ rowNumber: preview.rowNumber, status: "metadata_failed" });
         continue;
       }
-      existingEmails.add(mailKey(row.email));
-      results.push({ rowNumber: preview.rowNumber, status: "imported" });
+      if (existing) {
+        const reviewed = ["confirmed", "checked_in"].includes(existing.status);
+        const { error: updateError } = await admin.from("event_registrations").update({
+          user_id: userId,
+          attendee_name: row.fullName,
+          source: "google_form_import",
+          source_email: emailKey,
+          source_timestamp: timestamp(row.timestamp),
+          status: reviewed ? existing.status : "pending_review",
+          payment: reviewed ? existing.payment : "pending",
+          goal: reviewed ? "Imported Google Form payment data attached to an existing event pass." : "Imported Google Form registration pending payment verification.",
+        }).eq("id", registrationId);
+        if (updateError) { results.push({ rowNumber: preview.rowNumber, status: "update_failed" }); continue; }
+        existing.source = "google_form_import";
+        existing.source_email = emailKey;
+        existing.user_id = userId;
+        if (reviewed) {
+          const email = await ensureEventPassEmail(admin, registrationId);
+          if (email.ok && email.queued) repairedPassEmails += 1;
+        }
+        results.push({ rowNumber: preview.rowNumber, status: "updated" });
+      } else {
+        existingByEmail.set(emailKey, {
+          id: registrationId, user_id: userId, source_email: emailKey, source: "google_form_import", status: "pending_review",
+          payment: "pending", created_at: new Date().toISOString(), source_parent_registration_id: null,
+        });
+        results.push({ rowNumber: preview.rowNumber, status: "imported" });
+      }
     }
-    return authResponse({ ok: true, results, imported: results.filter((row) => row.status === "imported").length });
+    const imported = results.filter((row) => row.status === "imported").length;
+    const updated = results.filter((row) => row.status === "updated").length;
+    const invalid = results.filter((row) => row.status === "invalid").length;
+    if (repairedPassEmails) scheduleNotificationDelivery();
+    return authResponse({ ok: true, results, imported, updated, invalid, processed: imported + updated, repairedPassEmails });
   } catch { return authResponse({ error: "Registration import is temporarily unavailable." }, 503); }
 }
