@@ -439,7 +439,10 @@ export const adminServices = {
       const rows: EventRegistration[] = (data ?? []).map(r => {
         const e = (events ?? []).find(e => e.id === r.event_id);
         const p = (profiles ?? []).find(p => p.id === r.user_id);
-        return { id: r.id, eventId: r.event_id, eventTitle: e?.title ?? "Event", startsAt: e?.starts_at ?? "", endsAt: e?.ends_at ?? "", location: e?.location ?? "", venue: e?.venue ?? undefined, reference: r.reference, status: r.status, payment: r.payment, attendance: r.attendance, memberName: p?.display_name ?? p?.full_name ?? "CSC member", createdAt: r.created_at };
+        const venue = e?.venue?.trim() ?? "";
+        const address = e?.location?.trim() ?? "";
+        const location = [venue, address].filter(Boolean).filter((value, index, values) => values.indexOf(value) === index).join(", ");
+        return { id: r.id, eventId: r.event_id, eventTitle: e?.title ?? "Event", startsAt: e?.starts_at ?? "", endsAt: e?.ends_at ?? "", location, venue: e?.venue ?? undefined, reference: r.reference || "UID pending", status: r.status, payment: r.payment, attendance: r.attendance, memberName: r.attendee_name?.trim() || p?.full_name?.trim() || p?.display_name?.trim() || "Name unavailable", createdAt: r.created_at };
       });
       return ok(rows);
     });

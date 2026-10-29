@@ -533,6 +533,7 @@ export type Database = {
       }
       event_registrations: {
         Row: {
+          attendee_name: string | null
           attendance: Database["public"]["Enums"]["attendance_status"]
           created_at: string
           event_id: string
@@ -546,6 +547,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attendee_name?: string | null
           attendance?: Database["public"]["Enums"]["attendance_status"]
           created_at?: string
           event_id: string
@@ -559,6 +561,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attendee_name?: string | null
           attendance?: Database["public"]["Enums"]["attendance_status"]
           created_at?: string
           event_id?: string
