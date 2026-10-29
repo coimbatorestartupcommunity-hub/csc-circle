@@ -68,17 +68,25 @@ it("renders the individual event pass in the confirmed registration email", () =
     endsAt: "2026-11-01T09:00:00.000Z",
     venue: "TICEL Bio Park",
     location: "12th Floor, Coimbatore",
+    email: "asha@example.test",
+    phone: "+91 98765 43210",
   });
   expect(message.html).toContain("cid:csc-event-pass-job@example.csc");
   expect(message.html).toContain("Your individual event pass QR");
   expect(message.text).toContain("Your individual event pass QR is attached");
-  expect(message.html).toContain("/member/events/123e4567-e89b-12d3-a456-426614174000");
+  expect(message.html).toContain("https://csc.logicintelligencetechnologies.in/member/events");
+  expect(message.html).not.toContain("/member/events/123e4567-e89b-12d3-a456-426614174000");
+  expect(message.text).toContain("Member → My Events");
+  expect(message.text).toContain("Digital ID");
+  expect(message.text).toContain("same email address used for registration");
   expect(message.html).toContain("Name");
   expect(message.html).toContain("Asha Rao");
   expect(message.html).toContain("UID");
   expect(message.html).toContain("EVT-TEST-123");
   expect(message.html).toContain("Location");
   expect(message.html).toContain("TICEL Bio Park, 12th Floor, Coimbatore");
+  expect(message.html).toContain("asha@example.test");
+  expect(message.html).toContain("+91 98765 43210");
   expect(message.text).toContain("Starts:");
   expect(message.text).toContain("IST");
 });

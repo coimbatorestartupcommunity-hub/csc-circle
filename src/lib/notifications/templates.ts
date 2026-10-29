@@ -12,7 +12,7 @@ export const definitions = {
   EventPublishedBroadcast: ["A new CSC event is open", "A new event has been published by Coimbatore Startup Community. Review the date, location, admission details, and registration information below.", "/events", "campaign", "orange"],
   EventRSVPReceived: ["Event Registration Received", "Your event registration was received. We will email you when its status changes. A received registration is not a seat confirmation.", "/member/events", "onboarding", "sky"],
   EventRSVPAdminAlert: ["New Event Registration", "A registration or event enquiry has been saved and is ready for authorized review.", "/admin/registrations", "workspace", "light"],
-  EventConfirmed: ["Your Event Registration Is Confirmed", "Your registration is confirmed. Review the event details and your current event pass in CSC Circle.", "/member/events", "milestone", "light"],
+  EventConfirmed: ["Your Event Registration Is Confirmed", "Your registration is confirmed.\n\nEvent pass: Sign in with the same email address used for registration. The View in CSC Circle button opens Member → My Events, where you can view and download your pass.\n\nMembership ID: To request a Coimbatore Startup Community membership card, choose Digital ID from the member menu, complete and submit the required information, and wait for the team to review it. We will notify you after approval; you can then view and download your Digital ID.", "/member/events", "milestone", "light"],
   EventRegistrationNotConfirmed: ["Event Registration Update", "We could not confirm your event registration. Review the note below or contact CSC Circle if you need help.", "/events", "support", "light"],
   PaidEventRegistrationReceived: ["Registration Received — Payment Verification Pending", "We received your CSC event registration and payment proof. Your place is not confirmed until an authorized CSC reviewer verifies the payment.", "/events", "payment", "light"],
   PaidEventRegistrationConfirmed: ["Your CSC Event Registration Is Confirmed", "Your payment has been verified and your event registration is confirmed. Keep this email for your event details.", "/events", "milestone", "light"],
@@ -93,6 +93,7 @@ const detailFields: Array<[string, string, number]> = [
   ["eventTitle", "Event", 180], ["eventCategory", "Event type", 100],
   ["startsAt", "Starts", 80], ["endsAt", "Ends", 80], ["previousStartsAt", "Previous time", 80],
   ["venue", "Venue", 160], ["location", "Location", 160], ["admission", "Admission", 80],
+  ["phone", "Phone", 40],
   ["registrationState", "Registration", 80], ["registrationDeadline", "Registration deadline", 80],
   ["priceMinor", "Event fee", 20],
   ["startupName", "Startup", 140], ["industry", "Industry", 100], ["startupStage", "Stage", 80],
@@ -168,8 +169,8 @@ export function renderNotification(key: TemplateKey, payload: Record<string, unk
   const slug = textValue(payload, "slug", 100);
   const targetPath = key === "EventPublishedBroadcast"
     ? (slug ? `/events/${encodeURIComponent(slug)}` : "/events")
-    : key === "EventConfirmed" && /^[0-9a-f-]{36}$/i.test(textValue(payload, "registrationId", 36))
-      ? `/member/events/${encodeURIComponent(textValue(payload, "registrationId", 36))}`
+    : key === "EventConfirmed"
+      ? "/member/events"
     : key === "StartupApproved"
       ? (slug ? `/directory/${encodeURIComponent(slug)}` : "/directory")
       : path;
@@ -181,8 +182,8 @@ export function renderNotification(key: TemplateKey, payload: Record<string, unk
   const buttonText = key === "EventPublishedBroadcast" ? (textValue(payload, "registrationState") === "open" ? "View event & register" : "View event details") : key === "MembershipApproved" ? "View my membership card" : key === "StartupApproved" ? "View directory listing" : key === "FirstLoginWelcome" ? "Explore my CSC profile" : "View in CSC Circle";
   const passText = key === "EventConfirmed"
     ? eventPassQrMarkup
-      ? "\n\nYour individual event pass QR is attached to this email. You can also view and download it from your CSC account."
-      : "\n\nYour event pass is available in your CSC account. Sign in to view and download it."
+      ? "\n\nYour individual event pass QR is attached to this email."
+      : ""
     : "";
   const text = `${heading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${passText}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/EMaSXe8j6cA9s94hGOCEqf?s=cl&p=a&mlu=4&ilr=4\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
   const isOrange = tone === "orange";

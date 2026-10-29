@@ -12,6 +12,8 @@ describe("event pass mandatory fields", () => {
       name: "Asha Rao",
       uid: "CSC-EVT-1234567890ABCDEF1234",
       location: "TICEL Bio Park, 12th Floor, Coimbatore",
+      email: "Email unavailable",
+      phone: "Phone unavailable",
     });
   });
 

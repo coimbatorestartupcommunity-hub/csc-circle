@@ -13,7 +13,7 @@ const actionLabels: Record<string, string> = {
   "attendance.checked_in": "View Attendance",
   MembershipApproved: "View Membership Card",
   MembershipStatusChanged: "View Membership",
-  EventConfirmed: "View Event Pass",
+  EventConfirmed: "Open My Events",
   EventWaitlisted: "View Registration",
   EventUpdated: "View Event Update",
   EventCancelled: "View Event Update",

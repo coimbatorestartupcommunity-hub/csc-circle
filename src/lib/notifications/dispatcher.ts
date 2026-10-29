@@ -141,12 +141,20 @@ export async function dispatchNotifications(batch = 15) {
       }
       if (job.template_key === "EventConfirmed" && job.related_record_type === "event_registrations" && job.related_record_id) {
         payload = { ...originalPayload, registrationId: job.related_record_id };
-        const { data: registration } = await sb.from("event_registrations").select("pass_token,reference,user_id,event_id,attendee_name").eq("id", job.related_record_id).maybeSingle();
+        const { data: registration } = await sb.from("event_registrations").select("pass_token,reference,user_id,event_id,attendee_name,source,source_email,source_parent_registration_id,paid_registration_id").eq("id", job.related_record_id).maybeSingle();
         if (registration) {
-          const [{ data: event }, { data: profile }] = await Promise.all([
+          const [{ data: event }, { data: profile }, { data: paidRegistration }] = await Promise.all([
             sb.from("events").select("title,starts_at,ends_at,venue,location").eq("id", registration.event_id).maybeSingle(),
-            sb.from("profiles").select("full_name,display_name").eq("id", registration.user_id).maybeSingle(),
+            sb.from("profiles").select("full_name,display_name,email,whatsapp").eq("id", registration.user_id).maybeSingle(),
+            registration.paid_registration_id
+              ? sb.from("paid_event_registrations").select("email,whatsapp").eq("id", registration.paid_registration_id).maybeSingle()
+              : Promise.resolve({ data: null }),
           ]);
+          let importedContact: Record<string, unknown> | null = null;
+          if (registration.source === "google_form_import" || registration.source_parent_registration_id) {
+            const { data } = await sb.from("event_registration_import_metadata").select("metadata").eq("registration_id", registration.source_parent_registration_id ?? job.related_record_id).maybeSingle();
+            importedContact = data?.metadata as Record<string, unknown> | null;
+          }
           payload = {
             ...payload,
             name: registration.attendee_name?.trim() || profile?.full_name?.trim() || profile?.display_name?.trim() || String(originalPayload.name ?? "Name unavailable"),
@@ -156,6 +164,8 @@ export async function dispatchNotifications(batch = 15) {
             endsAt: event?.ends_at ?? originalPayload.endsAt,
             venue: event?.venue ?? originalPayload.venue,
             location: event?.location ?? originalPayload.location,
+            email: registration.source_email || paidRegistration?.email || profile?.email || recipients[0] || "",
+            phone: paidRegistration?.whatsapp || (typeof importedContact?.whatsapp === "string" ? importedContact.whatsapp : "") || profile?.whatsapp || "",
           };
         }
         if (registration?.pass_token && /^[a-f0-9]{64}$/i.test(registration.pass_token)) {

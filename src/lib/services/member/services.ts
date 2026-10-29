@@ -30,6 +30,7 @@ import {
 } from "@/types/member";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { designationLabels } from "@/lib/content/member-taxonomy";
 import {
   demoCard,
@@ -235,14 +236,42 @@ export const memberServices = {
     }
     const ctx = await getMemberContext();
     let token: string | null = null;
+    let email: string | undefined;
+    let phone: string | undefined;
+    let avatarUrl: string | undefined;
     if (ctx.mode === "preview") token = "DEMO-PASS-NOT-VALID";
     if (ctx.mode === "live") {
       const sb = await createClient();
-      const { data } = await sb.from("event_registrations").select("pass_token, payment, user_id, reference").eq("id", reg.id).eq("user_id", ctx.user!.id).maybeSingle();
-      if (!data?.pass_token || !["paid", "not_required"].includes(data.payment) || new Date(reg.endsAt).getTime() <= Date.now()) return fail("forbidden", "This pass is unavailable or expired.");
-      if (!String(reg.memberName).trim() || !String(data.reference).trim() || !String(reg.location).trim() && !String(reg.venue ?? "").trim()) return fail("forbidden", "A pass requires an attendee name, UID, and event location.");
-      reg.reference = data.reference;
-      token = data.pass_token;
+      const { data: passData } = await sb.from("event_registrations").select("pass_token,payment,user_id,reference,source,source_email,paid_registration_id,source_parent_registration_id").eq("id", reg.id).eq("user_id", ctx.user!.id).maybeSingle();
+      if (!passData?.pass_token || !["paid", "not_required"].includes(passData.payment) || new Date(reg.endsAt).getTime() <= Date.now()) return fail("forbidden", "This pass is unavailable or expired.");
+      if (!String(reg.memberName).trim() || !String(passData.reference).trim() || !String(reg.location).trim() && !String(reg.venue ?? "").trim()) return fail("forbidden", "A pass requires an attendee name, UID, and event location.");
+      reg.reference = passData.reference;
+      token = passData.pass_token;
+
+      const metadataRegistrationId = passData.source_parent_registration_id ?? reg.id;
+      const [profileResult, paidResult] = await Promise.all([
+        sb.from("profiles").select("portrait_path,whatsapp").eq("id", ctx.user!.id).maybeSingle(),
+        passData.paid_registration_id
+          ? sb.from("paid_event_registrations").select("email,whatsapp").eq("id", passData.paid_registration_id).eq("user_id", ctx.user!.id).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+      // Import metadata is admin-only under RLS. The pass row above was first
+      // verified through the attendee's own session, so scope this service-role
+      // lookup to that exact linked registration and expose only contact data.
+      let importMetadata: Record<string, unknown> | null = null;
+      if (passData.source === "google_form_import" || passData.source_parent_registration_id) {
+        try {
+          const admin = createAdminClient();
+          const { data } = await admin.from("event_registration_import_metadata").select("metadata").eq("registration_id", metadataRegistrationId).maybeSingle();
+          importMetadata = data?.metadata as Record<string, unknown> | null;
+        } catch { /* The pass still works if optional imported contact metadata is unavailable. */ }
+      }
+      const googlePicture = ctx.user!.user_metadata?.avatar_url ?? ctx.user!.user_metadata?.picture;
+      email = passData.source_email ?? paidResult.data?.email ?? ctx.user!.email ?? undefined;
+      phone = paidResult.data?.whatsapp ?? (typeof importMetadata?.whatsapp === "string" ? importMetadata.whatsapp : undefined) ?? profileResult.data?.whatsapp ?? undefined;
+      avatarUrl = profileResult.data?.portrait_path
+        ? "/api/member/portrait"
+        : (typeof googlePicture === "string" && googlePicture ? "/api/member/avatar" : undefined);
     }
     if (!token) return unavailable();
     return ok({
@@ -253,6 +282,9 @@ export const memberServices = {
       venue: reg.venue,
       location: reg.location,
       memberName: reg.memberName,
+      avatarUrl,
+      email,
+      phone,
       reference: reg.reference,
       status: reg.status,
       verificationToken: token,
