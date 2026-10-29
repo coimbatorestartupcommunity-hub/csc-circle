@@ -38,9 +38,16 @@ export async function POST(request: Request) {
     if (value.attendeeCount > event.max_attendees_per_registration) return NextResponse.json({ ok: false, error: "The selected attendee count exceeds this event's limit." }, { status: 422 });
     const expectedAmount = Math.round(Number(event.price_per_attendee) * 100) * value.attendeeCount / 100;
     if (!isPaidRegistrationAmountValid(Number(event.price_per_attendee), value.attendeeCount, value.totalAmountPaid)) return NextResponse.json({ ok: false, error: "The amount must equal the event price multiplied by the attendee count." }, { status: 422 });
+    const admin = createAdminClient();
+    const [{ data: existing, error: existingError }, { data: imported, error: importedError }] = await Promise.all([
+      admin.from("paid_event_registrations").select("status").eq("event_id", event.id).eq("email", value.email.toLowerCase()).limit(10),
+      admin.from("event_registrations").select("status").eq("event_id", event.id).eq("source_email", value.email.toLowerCase()).limit(10),
+    ]);
+    if (existingError || importedError) return NextResponse.json({ ok: false, error: "Registration status could not be checked. Please try again." }, { status: 503 });
+    const activeStatuses = ["pending_verification", "pending_review", "pending_payment", "pending", "confirmed", "checked_in", "waitlisted"];
+    if (existing?.some((row) => activeStatuses.includes(row.status)) || imported?.some((row) => activeStatuses.includes(row.status))) return NextResponse.json({ ok: false, error: "You have already registered for this event." }, { status: 409 });
     const id = randomUUID();
     const storagePath = `payment-proofs/${event.id}/${id}.${format.ext}`;
-    const admin = createAdminClient();
     const { error: uploadError } = await admin.storage.from("payment-proofs").upload(storagePath, bytes, { contentType: proof.type, cacheControl: "0", upsert: false });
     if (uploadError) return NextResponse.json({ ok: false, error: "Payment proof could not be securely stored." }, { status: 503 });
     const { error: insertError } = await admin.from("paid_event_registrations").insert({

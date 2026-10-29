@@ -238,8 +238,6 @@ export const memberServices = {
     if (ctx.mode === "preview") token = "DEMO-PASS-NOT-VALID";
     if (ctx.mode === "live") {
       const sb = await createClient();
-      const { data: membership } = await sb.from("memberships").select("status,expires_at").eq("user_id", ctx.user!.id).maybeSingle();
-      if (membership?.status !== "active" || (membership.expires_at && new Date(membership.expires_at).getTime() <= Date.now())) return fail("forbidden", "An active membership is required for an event pass.");
       const { data } = await sb.from("event_registrations").select("pass_token, payment, user_id, reference").eq("id", reg.id).eq("user_id", ctx.user!.id).maybeSingle();
       if (!data?.pass_token || !["paid", "not_required"].includes(data.payment) || new Date(reg.endsAt).getTime() <= Date.now()) return fail("forbidden", "This pass is unavailable or expired.");
       if (!String(reg.memberName).trim() || !String(data.reference).trim() || !String(reg.location).trim() && !String(reg.venue ?? "").trim()) return fail("forbidden", "A pass requires an attendee name, UID, and event location.");

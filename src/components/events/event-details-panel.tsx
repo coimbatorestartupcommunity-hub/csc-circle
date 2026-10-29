@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import {
   CalendarDays,
   Clock,
@@ -12,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { FixtureNotice } from "@/components/common/empty-state";
 import { RsvpForm } from "@/components/events/rsvp-form";
-import { PaidRegistrationForm } from "@/components/events/paid-registration-form";
+import { PaidEventRegistration } from "@/components/events/paid-event-registration";
 import { eventCategoryLabels } from "@/lib/content/taxonomy";
 import {
   formatEventDate,
@@ -54,6 +55,10 @@ export function EventDetailsPanel({
 
   return (
     <div className="flex flex-col gap-6 rounded-[2rem] bg-brand-cloud p-6 ring-1 ring-brand-border sm:p-8">
+      {event.coverImage ? <div className="order-first overflow-hidden rounded-2xl bg-brand-white ring-1 ring-brand-border">
+        <Image src={event.coverImage} alt={`${event.title} event banner`} width={1600} height={1200} className="aspect-[4/3] w-full object-cover" unoptimized />
+      </div> : null}
+
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="bg-brand-white text-brand-secondary">
@@ -98,7 +103,7 @@ export function EventDetailsPanel({
       {event.registrationMode === "paid_upi" ? <div className="border-t border-brand-border pt-6">
         <h4 className="mb-2 text-lg font-semibold text-brand-ink">Register and submit payment proof</h4>
         <p className="mb-4 text-sm text-brand-secondary">Pay the exact total using any UPI app, then enter your transaction reference and upload the screenshot.</p>
-        <PaidRegistrationForm event={event} />
+        <PaidEventRegistration event={event} />
       </div> : <div className="border-t border-brand-border pt-6">
         <h4 className="mb-4 text-lg font-semibold text-brand-ink">Request your spot</h4>
         <RsvpForm events={events} selectedEventId={event.id} onEventChange={onEventChange} />
