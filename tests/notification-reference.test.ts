@@ -63,11 +63,24 @@ it("renders the individual event pass in the confirmed registration email", () =
     eventPassQrCid: "csc-event-pass-job@example.csc",
     reference: "EVT-TEST-123",
     eventTitle: "CSC Founder Meetup",
+    name: "Asha Rao",
+    startsAt: "2026-11-01T06:00:00.000Z",
+    endsAt: "2026-11-01T09:00:00.000Z",
+    venue: "TICEL Bio Park",
+    location: "12th Floor, Coimbatore",
   });
   expect(message.html).toContain("cid:csc-event-pass-job@example.csc");
   expect(message.html).toContain("Your individual event pass QR");
   expect(message.text).toContain("Your individual event pass QR is attached");
   expect(message.html).toContain("/member/events/123e4567-e89b-12d3-a456-426614174000");
+  expect(message.html).toContain("Name");
+  expect(message.html).toContain("Asha Rao");
+  expect(message.html).toContain("UID");
+  expect(message.html).toContain("EVT-TEST-123");
+  expect(message.html).toContain("Location");
+  expect(message.html).toContain("TICEL Bio Park, 12th Floor, Coimbatore");
+  expect(message.text).toContain("Starts:");
+  expect(message.text).toContain("IST");
 });
 
 it("keeps the production Supabase auth email templates on the CSC frame with native placeholders", () => {

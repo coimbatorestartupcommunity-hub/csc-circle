@@ -84,7 +84,7 @@ function detailValue(key: string, value: string) {
 }
 
 const detailFields: Array<[string, string, number]> = [
-  ["name", "Name", 100], ["reference", "Reference", 100], ["email", "Email", 180],
+  ["name", "Name", 100], ["reference", "UID", 100], ["email", "Email", 180],
   ["membershipNumber", "Membership number", 80], ["status", "Status", 80],
   ["eventTitle", "Event", 180], ["eventCategory", "Event type", 100],
   ["startsAt", "Starts", 80], ["endsAt", "Ends", 80], ["previousStartsAt", "Previous time", 80],
@@ -141,6 +141,18 @@ function htmlFooter(base: string, support: string, dark: boolean) {
 export function renderNotification(key: TemplateKey, payload: Record<string, unknown>) {
   const c = emailConfiguration();
   const [heading, body, path, artwork, tone] = definitions[key];
+  if (key === "EventConfirmed") {
+    const venue = textValue(payload, "venue", 160);
+    const address = textValue(payload, "location", 300);
+    payload = {
+      ...payload,
+      name: textValue(payload, "name", 100) || "Name unavailable",
+      reference: textValue(payload, "reference", 100) || "UID pending",
+      eventTitle: textValue(payload, "eventTitle", 180) || "Event",
+      location: [venue, address].filter(Boolean).filter((value, index, values) => values.indexOf(value) === index).join(", ") || "Location to be confirmed",
+      venue: "",
+    };
+  }
   const greetingName = textValue(payload, "name", 100);
   const greeting = greetingName ? `Hello ${greetingName},` : "Hello,";
   const rows: Array<[string, string]> = [];
@@ -163,7 +175,12 @@ export function renderNotification(key: TemplateKey, payload: Record<string, unk
     ? `<div style="margin:22px auto;padding:18px;max-width:260px;border:1px solid ${colors.divider};border-radius:16px;text-align:center"><p style="margin:0 0 12px;color:${colors.ink};font-size:14px;font-weight:800">Your individual event pass QR</p><img src="cid:${escapeHtml(eventPassQrCid)}" width="220" height="220" alt="Unique QR code for your confirmed CSC event registration" style="display:block;width:220px;height:220px;margin:0 auto;border:0"><p style="margin:10px 0 0;color:${colors.muted};font-size:12px;line-height:18px">This QR is specific to your confirmed registration.</p></div>`
     : "";
   const buttonText = key === "EventPublishedBroadcast" ? (textValue(payload, "registrationState") === "open" ? "View event & register" : "View event details") : key === "MembershipApproved" ? "View my membership card" : key === "StartupApproved" ? "View directory listing" : key === "FirstLoginWelcome" ? "Explore my CSC profile" : "View in CSC Circle";
-  const text = `${heading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${key === "EventConfirmed" ? "\n\nYour individual event pass QR is attached to this email. You can also view and download it from your CSC account." : ""}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/EMaSXe8j6cA9s94hGOCEqf?s=cl&p=a&mlu=4&ilr=4\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
+  const passText = key === "EventConfirmed"
+    ? eventPassQrMarkup
+      ? "\n\nYour individual event pass QR is attached to this email. You can also view and download it from your CSC account."
+      : "\n\nYour event pass is available in your CSC account. Sign in to view and download it."
+    : "";
+  const text = `${heading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${passText}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/EMaSXe8j6cA9s94hGOCEqf?s=cl&p=a&mlu=4&ilr=4\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
   const isOrange = tone === "orange";
   const isSky = tone === "sky";
   const brandBg = isOrange ? colors.orangeHero : colors.white;

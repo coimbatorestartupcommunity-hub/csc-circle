@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { registrationStatusMeta, registrationTabs } from "@/lib/content/member-taxonomy";
 import { formatEventDate, formatEventTime } from "@/lib/format";
 import { isPassEligible, type EventRegistration } from "@/types/member";
+import { eventPassViewModel } from "@/lib/member/event-pass-view-model";
 
 export function RegistrationsClient({
   registrations,
@@ -60,6 +61,7 @@ export function RegistrationsClient({
           {items.map((r) => {
             const meta = registrationStatusMeta[r.status];
             const eligible = isPassEligible(r.status);
+            const fields = eventPassViewModel(r);
             return (
               <li
                 key={r.id}
@@ -76,12 +78,13 @@ export function RegistrationsClient({
                   </li>
                   <li className="flex items-center gap-2">
                     <MapPin className="size-4" aria-hidden />
-                    {r.venue ? `${r.venue}, ${r.location}` : r.location}
+                    <span><span className="font-semibold text-brand-ink">Location:</span> {fields.location}</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Hash className="size-4" aria-hidden />
-                    <span className="font-mono text-xs">{r.reference}</span>
+                    <span><span className="font-semibold text-brand-ink">UID:</span> <span className="font-mono text-xs">{fields.uid}</span></span>
                   </li>
+                  <li><span className="font-semibold text-brand-ink">Name:</span> {fields.name}</li>
                 </ul>
                 <div className="mt-1 border-t border-brand-border pt-3">
                   {eligible ? (

@@ -6,9 +6,10 @@ import { adminServices } from "@/lib/admin/services";
 export const metadata = { title: "Registrations" };
 
 const columns: Column[] = [
-  { key: "reference", header: "Reference", type: "mono", sortable: true },
+  { key: "reference", header: "UID", type: "mono", sortable: true },
   { key: "eventTitle", header: "Event" },
-  { key: "memberName", header: "Attendee" },
+  { key: "memberName", header: "Name" },
+  { key: "location", header: "Location" },
   { key: "createdAt", header: "Submitted", type: "date", sortable: true },
   { key: "payment", header: "Payment", type: "badge" },
   { key: "status", header: "Status", type: "statusRegistration", sortable: true },

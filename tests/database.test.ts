@@ -31,6 +31,35 @@ beforeAll(async () => {
 }, 30_000);
 afterAll(async () => { await db?.close(); });
 describe("isolated PostgreSQL authorization regressions", () => {
+  it("issues stable unique event pass UIDs and stores attendee names for imports", async () => {
+    await db.exec("begin");
+    try {
+      await db.exec(`
+        update public.profiles set full_name='Imported Attendee' where id='${a}';
+        insert into public.events(slug,title,category,starts_at,ends_at,location)
+        values ('uid-integrity-test','UID Integrity Test','networking','2026-11-01T06:00:00Z','2026-11-01T09:00:00Z','TICEL Bio Park, Coimbatore');
+        insert into public.event_registrations(user_id,event_id)
+        select '${a}', id from public.events where slug='uid-integrity-test';
+        insert into public.event_registrations(user_id,event_id,attendee_name)
+        select '${b}', id, 'Second imported attendee' from public.events where slug='uid-integrity-test';
+      `);
+      const registrations = await db.query<{ id: string; reference: string; attendee_name: string | null; user_id: string }>(
+        `select id,reference,attendee_name,user_id from public.event_registrations where event_id=(select id from public.events where slug='uid-integrity-test') order by user_id`,
+      );
+      expect(registrations.rows).toHaveLength(2);
+      expect(registrations.rows[0].reference).toMatch(/^CSC-EVT-[A-F0-9]{32}$/);
+      expect(registrations.rows[1].reference).toMatch(/^CSC-EVT-[A-F0-9]{32}$/);
+      expect(registrations.rows[0].reference).not.toBe(registrations.rows[1].reference);
+      expect(registrations.rows.map((row) => row.attendee_name)).toEqual(["Imported Attendee", "Second imported attendee"]);
+
+      await db.exec(`update public.event_registrations set status='confirmed' where id='${registrations.rows[0].id}'`);
+      const reread = await db.query<{ reference: string }>("select reference from public.event_registrations where id=$1", [registrations.rows[0].id]);
+      expect(reread.rows[0].reference).toBe(registrations.rows[0].reference);
+    } finally {
+      await db.exec("rollback");
+    }
+  });
+
   it("accepts an in-app admin invitation only for its verified recipient and consumes it once", async () => {
     const invitation = "c1000000-0000-4000-8000-000000000099";
     await db.exec(`insert into public.admin_role_invitations(
