@@ -37,13 +37,14 @@ export async function issueImportedRegistrationPasses(admin: SupabaseClient<Data
     await admin.from("event_registration_import_metadata").insert({ registration_id: id, metadata: { ...metadata, attendeeName: name, groupRegistrationId: lead.id } });
   }
 
-  // Best-effort in-app (bell) notification for the attendee's account: confirms
-  // registration + pass approval and deep-links to the downloadable pass page.
-  // The confirmation email is enqueued separately by the registration_status_email
-  // DB trigger. Never let a notification failure block pass issuance.
+  // Best-effort in-app (bell) notification confirming registration + pass
+  // approval, deep-linked to the downloadable pass page. The dedupe key is keyed
+  // per (member, event) to stay idempotent with the registration_confirmed_inapp
+  // DB trigger, which also covers the paid and admin-RSVP approval paths. The
+  // EventConfirmed email is enqueued separately by the registration_status_email
+  // trigger. A notification failure must never block pass issuance.
   if (lead.user_id) {
     const eventTitle = typeof event.title === "string" && event.title.trim() ? event.title.trim() : "your CSC event";
-    const passes = names.length > 1 ? `your ${names.length} event passes are` : "your event pass is";
     try {
       await admin.from("notifications").insert({
         type: "EventConfirmed",
@@ -54,10 +55,10 @@ export async function issueImportedRegistrationPasses(admin: SupabaseClient<Data
         related_record_type: "event_registrations",
         related_record_id: lead.id,
         title: "You're registered — event pass approved",
-        message: `Your registration for ${eventTitle} is confirmed and ${passes} approved. Open your event pass to view the QR and download it.`,
+        message: `Your registration for ${eventTitle} is confirmed and your event pass is approved. Open your event pass to view the QR and download it.`,
         action_url: `/member/events/${lead.id}`,
         payload: { reference: lead.reference, passCount: names.length },
-        dedupe_key: `event.confirmed.inapp:${lead.id}`,
+        dedupe_key: `event.confirmed.inapp:${lead.user_id}:${lead.event_id}`,
         status: "available",
         delivered_at: new Date().toISOString(),
       });
