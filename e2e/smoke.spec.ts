@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-for (const route of ["/", "/about", "/directory", "/events", "/collaborations", "/member/profile", "/member/startups", "/members", "/member/resume", "/admin", "/admin/startups", "/admin/invitations", "/admin/roles", "/admin/accept-invitation", "/auth/success"]) {
+for (const route of ["/member/profile", "/member/startups", "/member/resume", "/admin", "/admin/startups", "/admin/invitations", "/admin/roles", "/auth/success"]) {
   test(`${route} requires a verified session`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto(route);
@@ -8,6 +8,15 @@ for (const route of ["/", "/about", "/directory", "/events", "/collaborations", 
     await expect(page.getByRole("heading", { name: "Welcome to CSC Circle" })).toBeVisible();
     await expect(page.locator("footer")).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  });
+}
+
+for (const route of ["/", "/about", "/directory", "/events", "/collaborations", "/members", "/admin/accept-invitation"]) {
+  test(`${route} is available without an authenticated session`, async ({ page }) => {
+    const response = await page.goto(route);
+    expect(response?.status()).toBe(200);
+    await expect(page).not.toHaveURL(/\/login\?/);
+    await expect(page.getByRole("button", { name: /^Notifications(?:, \d+ unread)?$/ })).toHaveCount(0);
   });
 }
 
@@ -29,7 +38,7 @@ test("login is a compact centered auth experience without the marketing shell", 
 
 test("social previews use the homepage screenshot banner", async ({ page, request }) => {
   await page.goto("/");
-  await expect(page).toHaveURL(/\/login\?/);
+  await expect(page).toHaveURL(/\/$/);
   const ogImage = await page.locator('meta[property="og:image"]').getAttribute("content");
   const twitterImage = await page.locator('meta[name="twitter:image"]').getAttribute("content");
   expect(ogImage).toContain("/brand/csc-homepage-banner.png");
@@ -40,7 +49,7 @@ test("social previews use the homepage screenshot banner", async ({ page, reques
 });
 
 test("OAuth callback leaves the PKCE verifier cookie untouched", async ({ request }) => {
-  const verifierCookie = "sb-mmsrtfktwcrbyrucjmzo-auth-token-flow-abcdef123456-code-verifier=pending-verifier";
+  const verifierCookie = "csc-test-auth-token-flow-abcdef123456-code-verifier=pending-verifier";
   const response = await request.get("/auth/callback?next=%2Fmember%2Fprofile", {
     headers: { cookie: verifierCookie },
     maxRedirects: 0,
@@ -76,8 +85,8 @@ test("unauthorized admin APIs and recovery are denied", async ({ request }) => {
 for (const width of [320, 360, 375, 390, 430, 768, 820, 1024, 1280, 1440, 1920]) {
   test(`login experience stays within the ${width}px viewport`, async ({ page }) => {
     await page.setViewportSize({ width, height: 812 });
-    await page.goto("/");
-    await expect(page).toHaveURL(/\/login\?/);
+    await page.goto("/login");
+    await expect(page.getByRole("heading", { name: "Welcome to CSC Circle" })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await page.evaluate(() => document.fonts.ready);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

@@ -3,7 +3,7 @@ import { StatCard } from "@/components/admin/stat-card";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { Download } from "lucide-react";
 import Link from "next/link";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 
@@ -17,7 +17,7 @@ const columns: Column[] = [
 ];
 
 export default async function AttendancePage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("registrations.read");
   if (!can(ctx, "registrations.read")) return <AdminUnavailable forbidden />;
   const res = await adminServices.listRegistrations();
   const regs = res.ok ? res.data : [];

@@ -60,7 +60,10 @@ async function isCurrent(sb: Service, job: Job) {
     const { data, error } = await sb.from("membership_claims").select("status").eq("id", id).maybeSingle();
     if (error || !data) return false;
     if (key === "MembershipRejected") return data.status === "rejected";
-    if (key === "MembershipMoreInformation") return data.status === "pending_verification";
+    // This is a durable status-change event, not a reminder. The template
+    // tells the member to check the current claim status, so it remains valid
+    // if the claim is still under review or has advanced through approval.
+    if (key === "MembershipMoreInformation") return ["pending_verification", "approved", "active"].includes(data.status);
     return true;
   }
   if (job.related_record_type === "consultation_submissions" && key.startsWith("Consultation")) {
@@ -126,7 +129,23 @@ export async function dispatchNotifications(batch = 15) {
       let attachments: { filename: string; content: Buffer; contentType: string; cid: string }[] | undefined;
       if (job.template_key === "EventConfirmed" && job.related_record_type === "event_registrations" && job.related_record_id) {
         payload = { ...originalPayload, registrationId: job.related_record_id };
-        const { data: registration } = await sb.from("event_registrations").select("pass_token,reference").eq("id", job.related_record_id).maybeSingle();
+        const { data: registration } = await sb.from("event_registrations").select("pass_token,reference,user_id,event_id,attendee_name").eq("id", job.related_record_id).maybeSingle();
+        if (registration) {
+          const [{ data: event }, { data: profile }] = await Promise.all([
+            sb.from("events").select("title,starts_at,ends_at,venue,location").eq("id", registration.event_id).maybeSingle(),
+            sb.from("profiles").select("full_name,display_name").eq("id", registration.user_id).maybeSingle(),
+          ]);
+          payload = {
+            ...payload,
+            name: registration.attendee_name?.trim() || profile?.full_name?.trim() || profile?.display_name?.trim() || String(originalPayload.name ?? "Name unavailable"),
+            reference: registration.reference || String(originalPayload.reference ?? "UID pending"),
+            eventTitle: event?.title || String(originalPayload.eventTitle ?? "Event"),
+            startsAt: event?.starts_at ?? originalPayload.startsAt,
+            endsAt: event?.ends_at ?? originalPayload.endsAt,
+            venue: event?.venue ?? originalPayload.venue,
+            location: event?.location ?? originalPayload.location,
+          };
+        }
         if (registration?.pass_token && /^[a-f0-9]{64}$/i.test(registration.pass_token)) {
           const cid = `csc-event-pass-${job.id}@csc`;
           payload = { ...payload, eventPassQrCid: cid, reference: registration.reference };

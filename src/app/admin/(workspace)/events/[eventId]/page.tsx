@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Megaphone, Pencil } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StatusBadge } from "@/components/member/status-badge";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { publicationStatusMeta } from "@/lib/admin/status-meta";
 import { formatEventDate } from "@/lib/format";
@@ -15,7 +15,7 @@ export default async function AdminEventDetail({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission(["events.update", "events.publish"]);
   const res = await adminServices.getEvent(eventId);
 
   if (!res.ok) {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { FlaskConical } from "lucide-react";
 import { getAdminContext } from "@/lib/admin/gate";
 import { roleLabels } from "@/lib/admin/permissions";
@@ -18,6 +19,9 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Admin identity and permissions are request-specific. Supabase Auth also
+  // reads the current time while loading its cookie session.
+  await connection();
   const ctx = await getAdminContext();
 
   if (ctx.mode === "closed") return <AdminUnavailable />;

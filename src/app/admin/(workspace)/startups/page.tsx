@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type ActionDef, type Column, type Facet } from "@/components/admin/data-table";
-import { can, getAdminContext } from "@/lib/admin/gate";
+import { can, requireAdminPagePermission } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -30,7 +30,7 @@ const facets: Facet[] = [
 ];
 
 export default async function AdminStartupsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("directory.manage");
   const res = await adminServices.listStartups();
   const rows = res.ok ? res.data : [];
   const { count: pendingRevisionCount } = ctx.mode === "live" && can(ctx, "directory.manage")

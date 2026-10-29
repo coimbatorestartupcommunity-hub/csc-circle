@@ -193,6 +193,14 @@ export async function getPublicTestimonials(): Promise<Testimonial[]> {
 const COLLAB_SELECT =
   "*, collaboration_partners(participation_role, display_order, collaboration_organizations(*)), collaboration_media(*)";
 
+function publicCollaborationAsset(path: string): string {
+  const logo = path.match(/^collaboration-logos\/([0-9a-f-]{36})\.webp$/i);
+  if (logo) return `/api/collaborations/logo/${logo[1]}`;
+  const image = path.match(/^collaboration-featured\/([0-9a-f-]{36})\.webp$/i);
+  if (image) return `/api/collaborations/media/${image[1]}`;
+  return path;
+}
+
 function mapCollaboration(r: Row): Collaboration {
   const partners = ((r.collaboration_partners as Row[]) ?? [])
     .map((p) => {
@@ -206,7 +214,7 @@ function mapCollaboration(r: Row): Collaboration {
           slug: (org.slug as string) ?? "",
           organizationType: (org.organization_type as string) ?? "community",
           description: (org.description as string) ?? undefined,
-          logoPath: (org.logo_path as string) ?? undefined,
+          logoPath: org.logo_path ? publicCollaborationAsset(String(org.logo_path)) : undefined,
           websiteUrl: (org.website_url as string) ?? undefined,
         },
       };
@@ -216,7 +224,7 @@ function mapCollaboration(r: Row): Collaboration {
   const media = ((r.collaboration_media as Row[]) ?? [])
     .map((m) => ({
       id: String(m.id),
-      path: (m.media_path as string) ?? "",
+      path: publicCollaborationAsset(String(m.media_path ?? "")),
       type: (m.media_type as string) ?? "image",
       alt: (m.alt_text as string) ?? undefined,
       caption: (m.caption as string) ?? undefined,
@@ -233,11 +241,7 @@ function mapCollaboration(r: Row): Collaboration {
     story: (r.story as string) ?? undefined,
     category: (r.category as string) ?? "Collaboration",
     status: (r.status as Collaboration["status"]) ?? "completed",
-    featuredImagePath: (() => {
-      const path = (r.featured_image_path as string) ?? "";
-      const stored = path.match(/^collaboration-featured\/([0-9a-f-]{36})\.webp$/i);
-      return stored ? `/api/collaborations/media/${stored[1]}` : path || undefined;
-    })(),
+    featuredImagePath: r.featured_image_path ? publicCollaborationAsset(String(r.featured_image_path)) : undefined,
     highlights: (r.highlights as Collaboration["highlights"]) ?? [],
     eventId: (r.event_id as string) ?? undefined,
     eventDate: (r.event_date as string) ?? undefined,

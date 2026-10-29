@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 import { CollaborationEditor } from "@/components/admin/collaboration-editor";
-import { can, getAdminContext } from "@/lib/admin/gate";
+import { can, requireAdminPagePermission } from "@/lib/admin/gate";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Edit Collaboration" };
@@ -11,7 +11,7 @@ type Row = Record<string, unknown>;
 
 export default async function EditCollaborationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const context = await getAdminContext();
+  const context = await requireAdminPagePermission("content.manage");
   if (context.mode === "closed") return <AdminUnavailable />;
   if (context.mode === "forbidden" || !can(context, "content.manage")) return <AdminUnavailable forbidden />;
   if (context.mode !== "live") return <AdminUnavailable />;
@@ -19,7 +19,7 @@ export default async function EditCollaborationPage({ params }: { params: Promis
   const supabase = await createClient();
   const [collabResult, orgResult, eventResult] = await Promise.all([
     supabase.from("collaborations").select("*, collaboration_partners(organization_id), collaboration_media(*)").eq("id", id).maybeSingle(),
-    supabase.from("collaboration_organizations").select("id,name,slug,logo_path").eq("publication_status", "published").order("name"),
+    supabase.from("collaboration_organizations").select("id,name,slug,logo_path,organization_type,description,website_url").eq("publication_status", "published").order("name"),
     supabase.from("events").select("id,title,starts_at").eq("status", "published").order("starts_at", { ascending: false }).limit(100),
   ]);
   if (collabResult.error || orgResult.error || eventResult.error) return <AdminUnavailable />;
@@ -66,7 +66,7 @@ export default async function EditCollaborationPage({ params }: { params: Promis
     <AdminPageHeader title={`Edit ${initial.title}`} description="Changes persist to the CSC database and update the published collaboration after cache revalidation." />
     <CollaborationEditor
       initial={initial}
-      organizations={(orgResult.data ?? []).map((org) => ({ id: org.id, name: org.name, slug: org.slug, logoPath: org.logo_path }))}
+      organizations={(orgResult.data ?? []).map((org) => ({ id: org.id, name: org.name, slug: org.slug, logoPath: org.logo_path, organizationType: org.organization_type, description: org.description, websiteUrl: org.website_url }))}
       events={(eventResult.data ?? []).map((event) => ({ id: event.id, title: event.title, startsAt: event.starts_at }))}
       mode="live"
     />

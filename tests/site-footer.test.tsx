@@ -9,30 +9,49 @@ vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: React.ComponentProps<"a"> & { href: string }) => <a href={href} {...props}>{children}</a>,
 }));
 vi.mock("next/image", () => ({
-  default: ({ alt, ...props }: React.ComponentProps<"img"> & { src: string }) => <span role="img" aria-label={alt} {...props} />,
+  default: (props: React.ComponentProps<"img"> & { src: string; priority?: boolean; fill?: boolean; unoptimized?: boolean }) => {
+    const { alt, priority, fill, unoptimized, ...imageProps } = props;
+    void priority; void fill; void unoptimized;
+    return <span role="img" aria-label={alt} {...imageProps} />;
+  },
 }));
 
 afterEach(cleanup);
 
 describe("SiteFooter", () => {
-  it("keeps the footer focused on centered branding, social links and the join action", () => {
+  it("renders a balanced three-column footer with connect, info and identity sections", () => {
     render(<SiteFooter />);
+    const connect = screen.getByTestId("footer-connect");
+    const info = screen.getByTestId("footer-info");
     const brand = screen.getByTestId("footer-brand");
     const social = screen.getByTestId("footer-social");
     const join = screen.getByRole("link", { name: "Join CSC Circle" });
 
-    expect(brand.className).toContain("items-center");
+    expect(connect).toBeInTheDocument();
+    expect(info).toBeInTheDocument();
+    expect(brand).toBeInTheDocument();
     expect(screen.queryByTestId("footer-community")).not.toBeInTheDocument();
     expect(screen.queryByTestId("footer-get-involved")).not.toBeInTheDocument();
+    // Social links and the Join action live together in the Stay Connected column.
+    expect(join.parentElement).toBe(connect);
     expect(social.compareDocumentPosition(join) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(join.parentElement).toBe(brand);
     expect(join).toHaveAttribute("href", "/member/claim");
   });
 
-  it("removes the Community and Get Involved link columns while retaining legal and social links", () => {
+  it("exposes the help and legal links above the columns and keeps social icon sizing", () => {
     render(<SiteFooter />);
-    expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy");
-    expect(screen.getByRole("link", { name: "Terms and Conditions" })).toHaveAttribute("href", "/terms");
+    const expected: [string, string][] = [
+      ["Help & FAQ", "/help"],
+      ["Contact", "/contact"],
+      ["Community Guidelines", "/community-guidelines"],
+      ["Membership Guide", "/membership"],
+      ["Privacy Policy", "/privacy"],
+      ["Terms and Conditions", "/terms"],
+      ["Security", "/security"],
+    ];
+    for (const [label, href] of expected) {
+      expect(screen.getByRole("link", { name: label })).toHaveAttribute("href", href);
+    }
     expect(screen.queryByRole("link", { name: "Collaborations" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Member Login" })).not.toBeInTheDocument();
     for (const label of ["CSC Circle on Instagram", "Join the CSC Circle WhatsApp community", "Email CSC Circle"]) {

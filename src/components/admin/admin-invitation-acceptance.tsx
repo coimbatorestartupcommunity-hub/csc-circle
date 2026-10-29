@@ -4,10 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
-type Invitation = { role: string; roleLabel: string; expiresAt: string };
+type Invitation = { role: string; roleLabel: string; expiresAt: string; invitationId?: string; acceptanceMethod?: "email" | "in_app" };
 
 export function AdminInvitationAcceptance() {
   const router = useRouter();
@@ -17,12 +17,19 @@ export function AdminInvitationAcceptance() {
   const [accepting, setAccepting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [accepted, setAccepted] = React.useState(false);
+  const [invitationId, setInvitationId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let active = true;
+    const query = new URLSearchParams(window.location.search);
     const fragment = new URLSearchParams(window.location.hash.slice(1));
-    const token = fragment.get("token");
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    const token = query.get("token") ?? fragment.get("token");
+    const id = query.get("invitationId");
+    // Strip the single-use token from the visible URL (query or hash) after reading,
+    // keeping invitationId, so it is not left in history, referrers, or shared links.
+    query.delete("token");
+    const cleanedSearch = query.toString();
+    window.history.replaceState(null, "", window.location.pathname + (cleanedSearch ? `?${cleanedSearch}` : ""));
     const load = async () => {
       try {
         if (token) {
@@ -32,10 +39,15 @@ export function AdminInvitationAcceptance() {
           const payload = await response.json();
           if (!response.ok) throw new Error(payload.error ?? "Invitation could not be verified.");
         }
-        const response = await fetch("/api/admin/invitations/accept", { cache: "no-store" });
+        const lookup = id && /^[0-9a-f-]{36}$/i.test(id) ? `?invitationId=${encodeURIComponent(id)}` : "";
+        const response = await fetch(`/api/admin/invitations/accept${lookup}`, { cache: "no-store" });
         const payload = await response.json();
+        if (active && id && /^[0-9a-f-]{36}$/i.test(id)) setInvitationId(id);
         if (!response.ok || !payload.invitation) throw new Error("This invitation is unavailable, expired, revoked, or has already been used.");
-        if (active) { setInvitation(payload.invitation); setAuthenticated(payload.authenticated); }
+        if (active) {
+          setInvitation(payload.invitation);
+          setAuthenticated(payload.authenticated);
+        }
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : "Invitation could not be loaded.");
       } finally { if (active) setLoading(false); }
@@ -47,7 +59,10 @@ export function AdminInvitationAcceptance() {
   async function accept() {
     setAccepting(true); setError(null);
     try {
-      const response = await fetch("/api/admin/invitations/accept", { method: "POST", cache: "no-store" });
+      const response = await fetch("/api/admin/invitations/accept", {
+        method: "POST", cache: "no-store",
+        ...(invitationId ? { headers: { "content-type": "application/json" }, body: JSON.stringify({ invitationId }) } : {}),
+      });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Invitation could not be accepted.");
       setAccepted(true);
@@ -71,12 +86,12 @@ export function AdminInvitationAcceptance() {
           <p className="mt-3 text-sm text-brand-muted">This invitation expires {expiration}. It can only be accepted by signing in to the intended verified email account.</p>
         </div>
         {authenticated ? <Button className="h-12 w-full" onClick={accept} disabled={accepting}>{accepting ? <Loader2 className="size-4 animate-spin" /> : null}Accept Invitation</Button> : <div className="grid w-full gap-3 sm:grid-cols-2">
-          <Button render={<Link href="/login?next=%2Fadmin%2Faccept-invitation" />} nativeButton={false} variant="default" className="h-12">Sign in to accept</Button>
-          <Button render={<Link href="/signup?next=%2Fadmin%2Faccept-invitation" />} nativeButton={false} variant="outline" className="h-12">Create verified account</Button>
+          <Link href={`/login?next=${encodeURIComponent(`/admin/accept-invitation${invitationId ? `?invitationId=${invitationId}` : ""}`)}`} className={buttonVariants({ variant: "default", className: "h-12" })}>Sign in to accept</Link>
+          <Link href={`/signup?next=${encodeURIComponent(`/admin/accept-invitation${invitationId ? `?invitationId=${invitationId}` : ""}`)}`} className={buttonVariants({ variant: "outline", className: "h-12" })}>Create verified account</Link>
         </div>}
       </> : null}
-      {accepted ? <><p className="text-brand-secondary">Your CSC administrator role has been activated successfully.</p><Button render={<Link href="/admin" />} nativeButton={false} className="h-12 w-full">Open Admin Dashboard</Button></> : null}
-      {error ? <div role="alert" className="w-full rounded-xl bg-red-50 px-4 py-3 text-left text-sm text-red-800">{error}<p className="mt-2"><Link className="font-semibold underline" href="/login?next=%2Fadmin%2Faccept-invitation">Sign in with the invited verified account</Link></p></div> : null}
+      {accepted ? <><p className="text-brand-secondary">Your CSC administrator role has been activated successfully. You can open your member profile or the admin dashboard.</p><Link href="/member/profile" className={buttonVariants({ variant: "outline", className: "h-12 w-full" })}>View my profile</Link><Link href="/admin" className={buttonVariants({ className: "h-12 w-full" })}>Open Admin Dashboard</Link></> : null}
+      {error ? <div role="alert" className="w-full rounded-xl bg-red-50 px-4 py-3 text-left text-sm text-red-800">{error}<p className="mt-2"><Link className="font-semibold underline" href={`/login?next=${encodeURIComponent(`/admin/accept-invitation${invitationId ? `?invitationId=${invitationId}` : ""}`)}`}>Sign in with the invited verified account</Link></p></div> : null}
       <p className="text-xs text-brand-muted">Only accept if you recognize and trust the CSC inviter. Administrator access is activated only after secure invitation validation.</p>
     </div>
   </section>;

@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { EventEditorForm } from "@/components/admin/event-editor-form";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
 export const metadata = { title: "Edit event" };
@@ -16,7 +16,7 @@ export default async function EditEventPage({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = await params;
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("events.update");
   if (!can(ctx, "events.update")) return <AdminUnavailable forbidden />;
 
   const res = await adminServices.getEvent(eventId);

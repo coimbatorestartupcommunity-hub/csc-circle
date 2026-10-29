@@ -1,7 +1,7 @@
 import { ContentEditor } from "@/components/admin/content-editor";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column } from "@/components/admin/data-table";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
 export const metadata = { title: "Content" };
@@ -15,7 +15,7 @@ const columns: Column[] = [
 ];
 
 export default async function AdminContentPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("content.manage");
   const res = await adminServices.listContent();
   const rows = res.ok ? res.data.map((c) => ({ ...c, id: c.key })) : [];
 

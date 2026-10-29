@@ -1,5 +1,7 @@
 # CSC Gmail notification release evidence
 
+> **Release-gate status (2026-10-23):** The configuration and delivery statements below are historical notes from 2026-10-20, not current production verification. In the latest release review, production SMTP and Supabase Auth settings/recipient delivery were not independently verified, and no live message was sent. Do not treat the historical controlled-test sentence below as current release evidence.
+
 Updated 2026-10-20. Canonical production target: https://csc.logicintelligencetechnologies.in. The legacy `csc-circle-lake.vercel.app` alias currently returns Vercel `404 DEPLOYMENT_NOT_FOUND`.
 
 ## Implemented in this branch
@@ -8,7 +10,7 @@ The existing `notifications` table remains the authoritative outbox. A versioned
 
 Gmail uses Nodemailer over validated TLS on port 465 (explicit STARTTLS 587 also supported). Credentials are server-only; host, recipients, headers, origins and template fields are validated. User content is escaped. Predefined templates control subjects, recipients and links. No public arbitrary-mail endpoint exists. Administrative recipients come only from trusted environment configuration. Authentication emails remain owned by Supabase Auth.
 
-The dispatcher uses a global lease, job leases, five-attempt bounded exponential backoff, maximum three jobs per invocation, sequential sending and conservative persistent caps of 20 SMTP acceptances/hour and 100/day. These are application caps, not a claim about Google's account quota. Accepted recipients are skipped on replay. Unknown outcomes after SMTP DATA are quarantined for manual mailbox reconciliation; SMTP cannot guarantee exactly-once inbox delivery. Authorized `settings.manage` staff can request an audited retry with a reason and explicit uncertainty acknowledgement.
+The dispatcher uses a global lease, job leases, five-attempt bounded exponential backoff, batches of at most 15 jobs per dispatch, sequential sending and persistent application caps of 100 SMTP acceptances/hour and 400/day. A user-triggered drain can run up to six bounded batches; the daily recovery cron is not a high-throughput worker. These are application limits, not verified provider quotas or inbox-delivery guarantees. Accepted recipients are skipped on replay. Unknown outcomes after SMTP DATA are quarantined for manual mailbox reconciliation; SMTP cannot guarantee exactly-once inbox delivery. Authorized `settings.manage` staff can request an audited retry with a reason and explicit uncertainty acknowledgement.
 
 Daily Hobby cron is a safety net, not a high-throughput worker or precise reminder SLA. A quiet-site backlog can exceed its small batch capacity. Review backlog and sending requirements before a public rollout; no paid scheduling service was provisioned.
 
@@ -40,6 +42,10 @@ Supabase project `mmsrtfktwcrbyrucjmzo` has custom SMTP configured and read back
 Local TypeScript, ESLint and production build pass; 95 automated tests and 13 Chromium smoke tests passed. Automated coverage includes SMTP configuration/header validation, template injection, unauthenticated dispatcher rejection, temporary/permanent/ambiguous SMTP classification, outbox triggers, service-only dispatch, admin retry permissions, exclusive leases, accepted-recipient deduplication, rate deferral and retry exhaustion. Disposable PGlite tests apply all migrations; they do not prove multiconnection concurrency or live Supabase RLS behavior. Chromium smoke tests cover public/auth routes, mobile width and protected APIs.
 
 Production dependency audit: zero advisories. Full audit retains five high-severity development-tool advisories in ESLint's dependency chain; no forced breaking audit fix was used. Source/reachable-history secret scan found no matching credentials. This is not proof that previously shared management tokens have been revoked.
+
+## 2026-10-23 send-cap correction
+
+The current local migration `20261020024739_csc_email_reference_first_login_event_broadcast.sql` sets application-level caps to 100 SMTP acceptances per rolling hour and 400 per rolling day, and limits each queue claim/dispatch batch to 15 jobs. A user-triggered drain can make up to six bounded dispatch rounds. These controls are not provider quotas and do not prove SMTP or inbox delivery. This supersedes the older 20/hour and 100/day figures in the historical notes above. Production's applied schema history stops before this migration, so these local limits must not be described as the live production limits.
 
 ## Deployment and database gates
 

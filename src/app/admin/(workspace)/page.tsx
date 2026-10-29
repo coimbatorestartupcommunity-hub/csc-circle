@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, CreditCard, FileCheck, ScanLine, Star, Users, Building2, MessagesSquare, ClipboardList, FileText, Image as ImageIcon, ScrollText, Settings, ShieldCheck } from "lucide-react";
+import { ArrowRight, CalendarDays, CreditCard, FileCheck, ScanLine, Star, Users, Building2, MessagesSquare, ClipboardList, FileText, ScrollText, Settings, ShieldCheck, BookOpen, Target, Newspaper } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StatCard } from "@/components/admin/stat-card";
-import { can, getAdminContext } from "@/lib/admin/gate";
+import { can, requireAdminPage } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { roleLabels } from "@/lib/admin/permissions";
 
@@ -21,7 +21,9 @@ const modules = [
   { permission: "payments.verify" as const, label: "Payments", href: "/admin/payments", Icon: CreditCard, description: "Verify submitted event payments." },
   { permission: "reviews.moderate" as const, label: "Reviews", href: "/admin/reviews", Icon: Star, description: "Moderate member reviews." },
   { permission: "content.manage" as const, label: "Website Content", href: "/admin/content", Icon: FileText, description: "Manage approved editorial content." },
-  { permission: "media.manage" as const, label: "Media Library", href: "/admin/media", Icon: ImageIcon, description: "Manage authorized website media." },
+  { permission: "content.manage" as const, label: "Updates & Highlights", href: "/admin/updates", Icon: Newspaper, description: "Prepare and publish verified community updates." },
+  { permission: "content.manage" as const, label: "Resources", href: "/admin/resources", Icon: BookOpen, description: "Manage founder guides and approved learning materials." },
+  { permission: "content.manage" as const, label: "Opportunities", href: "/admin/opportunities", Icon: Target, description: "Manage verified community and startup opportunities." },
   { permission: "content.manage" as const, label: "Collaborations", href: "/admin/collaborations", Icon: MessagesSquare, description: "Manage authorized collaboration listings." },
   { permission: "audit.read" as const, label: "Audit Logs", href: "/admin/audit-logs", Icon: ScrollText, description: "Inspect permitted administrative history." },
   { permission: "settings.manage" as const, label: "Settings", href: "/admin/settings", Icon: Settings, description: "Review CSC platform settings." },
@@ -29,11 +31,11 @@ const modules = [
 ];
 
 export default async function AdminOverview() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPage();
   const isDemo = ctx.mode === "preview";
   const title = ctx.mode === "preview" ? "Super Admin Overview" : ctx.roles.map((role) => roleLabels[role]).join(" · ");
   const add = <T,>(permission: Parameters<typeof can>[1], run: () => Promise<T>) => can(ctx, permission) ? run() : Promise.resolve(null);
-  const [claims, startups, events, registrations, consultations, payments, reviews, content, media, audit] = await Promise.all([
+  const [claims, startups, events, registrations, consultations, payments, reviews, content, audit] = await Promise.all([
     add("members.approve", () => adminServices.listClaims()),
     add("directory.manage", () => adminServices.listStartups()),
     add("events.update", () => adminServices.listEvents()),
@@ -42,7 +44,6 @@ export default async function AdminOverview() {
     add("payments.verify", () => adminServices.listPayments()),
     add("reviews.moderate", () => adminServices.listReviews()),
     add("content.manage", () => adminServices.listContent()),
-    add("media.manage", () => adminServices.listMedia()),
     add("audit.read", () => adminServices.listAudit()),
   ]);
   const metric = (key: string, label: string, value: number | string, href: string) => ({ key, label, value, href });
@@ -55,7 +56,6 @@ export default async function AdminOverview() {
     payments && metric("payments", "Payments to verify", payments.ok ? payments.data.filter((row) => row.status === "pending_verification").length : "—", "/admin/payments"),
     reviews && metric("reviews", "Reviews to moderate", reviews.ok ? reviews.data.filter((row) => row.status === "submitted").length : "—", "/admin/reviews"),
     content && metric("content", "Editorial items", content.ok ? content.data.length : "—", "/admin/content"),
-    media && metric("media", "Media assets", media.ok ? media.data.length : "—", "/admin/media"),
     audit && metric("audit", "Recent audit records", audit.ok ? audit.data.length : "—", "/admin/audit-logs"),
   ].filter((value): value is NonNullable<typeof value> => Boolean(value));
   const allowedModules = modules.filter((item) => can(ctx, item.permission));

@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: id, error } = await supabase.rpc("csc_save_collaboration_organization", {
     payload: {
+      id: parsed.data.id ?? null,
       name: parsed.data.name,
       slug: parsed.data.slug,
       organization_type: parsed.data.organizationType,
@@ -31,5 +32,5 @@ export async function POST(request: Request) {
     const forbidden = error?.code === "42501";
     return NextResponse.json({ error: forbidden ? "You are not authorized to manage partner organizations." : "The organization could not be saved. The slug may already exist." }, { status: forbidden ? 403 : 422 });
   }
-  return NextResponse.json({ id, ...parsed.data });
+  return NextResponse.json({ ...parsed.data, id });
 }

@@ -1,14 +1,15 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet, type ActionDef } from "@/components/admin/data-table";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
 export const metadata = { title: "Registrations" };
 
 const columns: Column[] = [
-  { key: "reference", header: "Reference", type: "mono", sortable: true },
+  { key: "reference", header: "UID", type: "mono", sortable: true },
   { key: "eventTitle", header: "Event" },
-  { key: "memberName", header: "Attendee" },
+  { key: "memberName", header: "Name" },
+  { key: "location", header: "Location" },
   { key: "createdAt", header: "Submitted", type: "date", sortable: true },
   { key: "payment", header: "Payment", type: "badge" },
   { key: "status", header: "Status", type: "statusRegistration", sortable: true },
@@ -32,7 +33,7 @@ const facets: Facet[] = [
 ];
 
 export default async function AdminRegistrationsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("registrations.read");
   const res = await adminServices.listRegistrations();
   const rows = res.ok ? res.data : [];
   const enquiries = await adminServices.listEnquiries();

@@ -1,6 +1,6 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet, type ActionDef } from "@/components/admin/data-table";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
 export const metadata = { title: "Payments" };
@@ -31,7 +31,7 @@ const facets: Facet[] = [
 ];
 
 export default async function AdminPaymentsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("payments.verify");
   const res = await adminServices.listPayments();
   const rows = res.ok ? res.data : [];
 

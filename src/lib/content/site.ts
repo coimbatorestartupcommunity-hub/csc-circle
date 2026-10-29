@@ -24,17 +24,17 @@ export const siteConfig = {
   people: {
     founder: {
       name: "Reyash",
-      role: "Founder — Coimbatore Startup Community",
+      role: "Founder — Coimbatore Startup Community (CSC)",
       belvoriaRole: "Founder — Belvoria",
       responsibility:
-        "Community leadership, founder engagement, events, partnerships, and community operations.",
+        "Leads the Coimbatore Startup Community (CSC) — shaping the community vision, founder engagement, events and programs, strategic partnerships, and day-to-day community operations.",
     },
     technicalPartner: {
       name: "Vikash Saravanan",
-      role: "Founder — Logic Intelligence Technologies",
-      communityRole: "Co-founder — Coimbatore Startup Community",
+      role: "Founder — Logic Intelligence Technologies (LIT)",
+      communityRole: "Chief Technology Officer (CTO) — Coimbatore Startup Community (CSC)",
       responsibility:
-        "CSC web platform architecture, digital experience, technical infrastructure, system integration, and technology direction.",
+        "As CTO, leads all technology for the Coimbatore Startup Community (CSC) — platform architecture and engineering, digital product and experience, security, technical infrastructure, system integration, and overall technology direction, delivered through Logic Intelligence Technologies (LIT).",
     },
   },
   technologyPartner: {
@@ -44,8 +44,8 @@ export const siteConfig = {
   },
   social: {
     instagram: "https://www.instagram.com/coimbatorestartupcommunity/",
-    whatsapp: "https://chat.whatsapp.com/Bw3EVo9r4bV5BoeoZfRx1l?mode=gi_t",
-    email: "coimbatorestartupcommunity@gmail.com",
+    whatsapp: "https://chat.whatsapp.com/EMaSXe8j6cA9s94hGOCEqf?s=cl&p=a&mlu=4&ilr=4",
+    email: "coimbatorestartup.csc@gmail.com",
   },
 } as const;
 
@@ -79,6 +79,9 @@ export const primaryNav: NavItem[] = [
   { label: "View CSC Profiles", href: "/members" },
   { label: "Events & Booking", href: "/events" },
   { label: "Collaborations", href: "/collaborations" },
+  { label: "Updates", href: "/updates" },
+  { label: "Resources", href: "/resources" },
+  { label: "Opportunities", href: "/opportunities" },
 ];
 
 export const routes = {

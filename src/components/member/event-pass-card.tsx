@@ -4,12 +4,13 @@ import * as React from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
-import { Download, Loader2, MapPin, CalendarDays } from "lucide-react";
+import { Check, Copy, Download, Loader2, MapPin, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/member/status-badge";
 import { brandAssets, siteConfig } from "@/lib/content/site";
 import { registrationStatusMeta } from "@/lib/content/member-taxonomy";
 import { buildEventPassQrPayload } from "@/lib/member/qr";
+import { eventPassViewModel } from "@/lib/member/event-pass-view-model";
 import { formatEventRange } from "@/lib/format";
 import type { EventPass } from "@/types/member";
 
@@ -17,7 +18,9 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
   const ref = React.useRef<HTMLDivElement>(null);
   const [qr, setQr] = React.useState<string | null>(null);
   const [downloading, setDownloading] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
   const meta = registrationStatusMeta[pass.status];
+  const fields = eventPassViewModel(pass);
 
   React.useEffect(() => {
     let active = true;
@@ -43,11 +46,21 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
         backgroundColor: "#ffffff",
       });
       const link = document.createElement("a");
-      link.download = `CSC-EventPass-${pass.reference}${isDemo ? "-DEMO" : ""}.png`;
+      link.download = `CSC-EventPass-${fields.uid}${isDemo ? "-DEMO" : ""}.png`;
       link.href = dataUrl;
       link.click();
     } finally {
       setDownloading(false);
+    }
+  }
+
+  async function copyUid() {
+    try {
+      await navigator.clipboard.writeText(fields.uid);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
     }
   }
 
@@ -84,9 +97,9 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
               <CalendarDays className="size-4" aria-hidden />
               {formatEventRange(pass.startsAt, pass.endsAt)}
             </p>
-            <p className="flex items-center gap-2 text-sm text-brand-muted">
+            <p className="flex items-start gap-2 text-sm text-brand-muted">
               <MapPin className="size-4" aria-hidden />
-              {pass.venue ? `${pass.venue}, ${pass.location}` : pass.location}
+              <span><span className="font-semibold text-brand-ink">Location:</span> {fields.location}</span>
             </p>
           </div>
 
@@ -94,18 +107,18 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
             <div className="flex flex-col gap-1.5">
               <div>
                 <p className="text-[10px] tracking-wide text-brand-muted uppercase">
-                  Attendee
+                  Name
                 </p>
                 <p className="text-sm font-semibold text-brand-ink">
-                  {pass.memberName || "CSC Member"}
+                  {fields.name}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] tracking-wide text-brand-muted uppercase">
-                  Reference
+                  UID
                 </p>
                 <p className="font-mono text-sm font-semibold text-brand-ink">
-                  {pass.reference}
+                  {fields.uid}
                 </p>
               </div>
               <StatusBadge label={meta.label} tone={meta.tone} />
@@ -134,6 +147,10 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
         ) : null}
       </div>
 
+      <Button type="button" variant="ghost" size="sm" onClick={copyUid} className="h-8 gap-2" aria-label="Copy UID">
+        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+        {copied ? "Copied" : "Copy UID"}
+      </Button>
       <Button onClick={download} disabled={downloading} className="h-11 w-full max-w-md gap-2">
         {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
         Download pass as PNG

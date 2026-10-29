@@ -91,7 +91,7 @@ function mapProfile(p: Row, m: Row | null): MemberProfile {
   };
 }
 
-function mapRegistration(r: Row): EventRegistration {
+function mapRegistration(r: Row, memberName = ""): EventRegistration {
   const ev = (r.events as Row) ?? {};
   return {
     id: String(r.id),
@@ -106,7 +106,7 @@ function mapRegistration(r: Row): EventRegistration {
     status: (r.status as RegistrationStatus) ?? "pending",
     payment: (r.payment as EventRegistration["payment"]) ?? "not_required",
     attendance: (r.attendance as EventRegistration["attendance"]) ?? "not_attended",
-    memberName: "",
+    memberName: String(r.attendee_name ?? "").trim() || memberName.trim() || String(r.full_name ?? r.member_name ?? "").trim() || "Name unavailable",
     createdAt: (r.created_at as string) ?? new Date().toISOString(),
   };
 }
@@ -125,7 +125,7 @@ export const memberServices = {
         email: ctx.user!.email ?? "",
         displayName: (ctx.user!.user_metadata?.name as string) ?? undefined,
         avatarUrl: (ctx.user!.user_metadata?.avatar_url as string) ?? (ctx.user!.user_metadata?.picture as string) ?? undefined,
-        emailVerified: !!ctx.user!.email_confirmed_at,
+        emailVerified: ctx.user!.emailVerified,
         provider: (ctx.user!.app_metadata?.provider as "google" | "email") ?? "email",
       },
       expiresAt: "",
@@ -201,12 +201,16 @@ export const memberServices = {
     if (ctx.mode === "preview") return ok(demoRegistrations);
     try {
       const sb = await createClient();
-      const { data } = await sb
-        .from("event_registrations")
-        .select("*, events(title, cover_image, starts_at, ends_at, venue, location)")
-        .eq("user_id", ctx.user!.id)
-        .order("created_at", { ascending: false });
-      return ok((data ?? []).map((r) => mapRegistration(r as Row)));
+      const [{ data }, { data: profile }] = await Promise.all([
+        sb.from("event_registrations")
+          .select("*, events(title, cover_image, starts_at, ends_at, venue, location)")
+          .eq("user_id", ctx.user!.id)
+          .order("created_at", { ascending: false }),
+        sb.from("profiles").select("full_name, display_name").eq("id", ctx.user!.id).maybeSingle(),
+      ]);
+      const metadataName = String(ctx.user!.user_metadata?.full_name ?? ctx.user!.user_metadata?.name ?? "");
+      const memberName = String(profile?.full_name ?? "").trim() || String(profile?.display_name ?? "").trim() || metadataName.trim();
+      return ok((data ?? []).map((r) => mapRegistration(r as Row, memberName)));
     } catch {
       return fail("unknown", "Could not load your registrations.");
     }
@@ -236,8 +240,10 @@ export const memberServices = {
       const sb = await createClient();
       const { data: membership } = await sb.from("memberships").select("status,expires_at").eq("user_id", ctx.user!.id).maybeSingle();
       if (membership?.status !== "active" || (membership.expires_at && new Date(membership.expires_at).getTime() <= Date.now())) return fail("forbidden", "An active membership is required for an event pass.");
-      const { data } = await sb.from("event_registrations").select("pass_token, payment, user_id").eq("id", reg.id).eq("user_id", ctx.user!.id).maybeSingle();
+      const { data } = await sb.from("event_registrations").select("pass_token, payment, user_id, reference").eq("id", reg.id).eq("user_id", ctx.user!.id).maybeSingle();
       if (!data?.pass_token || !["paid", "not_required"].includes(data.payment) || new Date(reg.endsAt).getTime() <= Date.now()) return fail("forbidden", "This pass is unavailable or expired.");
+      if (!String(reg.memberName).trim() || !String(data.reference).trim() || !String(reg.location).trim() && !String(reg.venue ?? "").trim()) return fail("forbidden", "A pass requires an attendee name, UID, and event location.");
+      reg.reference = data.reference;
       token = data.pass_token;
     }
     if (!token) return unavailable();

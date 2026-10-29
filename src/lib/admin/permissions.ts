@@ -106,7 +106,7 @@ export const permissionLabels: Record<Permission, string> = {
   "consultations.manage": "Manage consultations",
   "payments.verify": "Verify payments",
   "reviews.moderate": "Moderate reviews",
-  "content.manage": "Manage website content",
+  "content.manage": "Manage content — Website, Updates, Resources, Opportunities & Collaborations",
   "media.manage": "Manage media library",
   "roles.manage": "Manage roles & permissions",
   "audit.read": "Read audit logs",

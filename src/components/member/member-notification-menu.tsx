@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Bell, Check, CheckCheck, Loader2 } from "lucide-react";
 import { cn } from "cn";
+import { notificationAction } from "@/lib/notifications/actions";
 
 type InboxItem = {
   id: string;
@@ -156,18 +157,22 @@ export function MemberNotificationMenu() {
             {loading ? <div className="flex justify-center px-4 py-8"><Loader2 className="size-5 animate-spin text-brand-muted" aria-label="Loading notifications" /></div> : null}
             {!loading && !error && items.length === 0 ? <p className="px-4 py-8 text-center text-sm text-brand-muted">You have no notifications yet.</p> : null}
             {!loading ? items.map((item) => {
-              const href = item.action_url?.startsWith("/member/") ? item.action_url : null;
-              const content = <>
-                <span className={cn("mt-1 size-2 shrink-0 rounded-full", item.read_at ? "bg-transparent" : "bg-brand-accent")} aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-brand-ink">{item.title || "CSC account update"}</span>
-                  <span className="mt-0.5 block text-sm leading-5 text-brand-secondary">{item.message}</span>
-                  <span className="mt-1.5 block text-xs text-brand-muted">{displayDate(item.delivered_at ?? item.created_at)}</span>
-                </span>
-              </>;
-              return <div key={item.id} className={cn("flex gap-2 border-b border-brand-border px-4 py-3 last:border-0", !item.read_at && "bg-brand-purple/10")}>
-                {href ? <Link href={href} onClick={() => { if (!item.read_at) void markRead(item.id); setOpen(false); }} className="flex min-w-0 flex-1 gap-3">{content}</Link> : <div className="flex min-w-0 flex-1 gap-3">{content}</div>}
-                {!item.read_at ? <button type="button" aria-label="Mark as read" title="Mark as read" disabled={working} onClick={() => void markRead(item.id)} className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-brand-muted hover:bg-white hover:text-brand-accent disabled:opacity-50"><Check className="size-4" /></button> : null}
+              const action = notificationAction(item.type, item.action_url);
+              return <div key={item.id} className={cn("border-b border-brand-border px-4 py-3 last:border-0", !item.read_at && "bg-brand-purple/10")}>
+                <div className="flex items-start gap-2">
+                  <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", item.read_at ? "bg-transparent" : "bg-brand-accent")} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-semibold text-brand-ink">{item.title || "CSC account update"}</span>
+                      {!item.read_at ? <button type="button" aria-label="Mark as read" title="Mark as read" disabled={working} onClick={() => void markRead(item.id)} className="-mr-1 -mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-brand-muted hover:bg-white hover:text-brand-accent disabled:opacity-50"><Check className="size-3.5" /></button> : null}
+                    </div>
+                    <p className="mt-0.5 text-sm leading-5 text-brand-secondary">{item.message}</p>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <span className="text-xs text-brand-muted">{displayDate(item.delivered_at ?? item.created_at)}</span>
+                      {action ? <Link href={action.href} onClick={() => { if (!item.read_at) void markRead(item.id); setOpen(false); }} className="inline-flex shrink-0 items-center whitespace-nowrap rounded-md bg-brand-ink px-3 py-1.5 text-[11px] font-semibold leading-tight text-white hover:bg-brand-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">{action.label}</Link> : null}
+                    </div>
+                  </div>
+                </div>
               </div>;
             }) : null}
           </div>

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { LoginSuccessTransition } from "@/components/auth/login-success-transition";
 import { safeNext } from "@/lib/auth/redirects";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
@@ -12,6 +13,7 @@ export default async function AuthSuccessPage({
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
+  await connection();
   const user = await getAuthUser();
   if (!user?.email_confirmed_at) redirect("/login");
   const { next } = await searchParams;

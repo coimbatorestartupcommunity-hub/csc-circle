@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { getAdminContext } from "@/lib/admin/gate";
+import { requireAdminPagePermission } from "@/lib/admin/gate";
 import {
   ALL_PERMISSIONS,
   roleHasPermission,
@@ -17,8 +17,29 @@ export const metadata = { title: "Settings" };
 
 const roles = Object.keys(rolePermissions) as AdminRole[];
 
+/** Admin workspaces grouped by the permission that governs access to each. */
+const workspaceAccess: { permission: (typeof ALL_PERMISSIONS)[number]; sections: string[] }[] = [
+  { permission: "content.manage", sections: ["Website Content", "Updates & Highlights", "Resources", "Opportunities", "Collaborations"] },
+  { permission: "members.read", sections: ["Members"] },
+  { permission: "members.approve", sections: ["Membership Claims"] },
+  { permission: "directory.manage", sections: ["Founder Directory", "Startup Revisions"] },
+  { permission: "events.update", sections: ["Events"] },
+  { permission: "registrations.read", sections: ["Registrations", "Attendance Records"] },
+  { permission: "attendance.scan", sections: ["Event Check-In"] },
+  { permission: "payments.verify", sections: ["Payments"] },
+  { permission: "reviews.moderate", sections: ["Reviews"] },
+  { permission: "audit.read", sections: ["Audit Logs"] },
+  { permission: "settings.manage", sections: ["Settings"] },
+  { permission: "roles.manage", sections: ["Roles & Invitations"] },
+];
+
+/** Human-readable list of the roles that currently hold a permission. */
+function rolesWith(permission: (typeof ALL_PERMISSIONS)[number]): string {
+  return roles.filter((r) => roleHasPermission(r, permission)).map((r) => roleLabels[r]).join(", ");
+}
+
 export default async function AdminSettingsPage() {
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("settings.manage");
   if (!can(ctx, "settings.manage")) return <AdminUnavailable forbidden />;
 
   return (
@@ -79,6 +100,43 @@ export default async function AdminSettingsPage() {
           <p className="text-xs text-brand-muted">
             The backend independently enforces every permission via Supabase RLS
             and privileged operations. A matching email is never authority.
+          </p>
+        </section>
+
+        <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
+          <h2 className="text-sm font-semibold text-brand-ink">Workspace access by section</h2>
+          <p className="text-sm leading-relaxed text-brand-secondary">
+            Each admin workspace is governed by one permission. The public{" "}
+            <strong className="font-semibold text-brand-ink">Updates &amp; Highlights</strong>,{" "}
+            <strong className="font-semibold text-brand-ink">Resources</strong>, and{" "}
+            <strong className="font-semibold text-brand-ink">Opportunities</strong> sections are all
+            governed by the single <span className="font-mono text-xs">content.manage</span> permission —
+            roles that hold it can create, edit, publish, and unpublish those items, and publishing is what
+            makes content appear on the public site.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-brand-border text-left">
+                  <th className="px-3 py-2 text-xs font-semibold tracking-wide text-brand-muted uppercase">Admin section</th>
+                  <th className="px-3 py-2 text-xs font-semibold tracking-wide text-brand-muted uppercase">Governing permission</th>
+                  <th className="px-3 py-2 text-xs font-semibold tracking-wide text-brand-muted uppercase">Roles with access</th>
+                </tr>
+              </thead>
+              <tbody>
+                {workspaceAccess.map((row) => (
+                  <tr key={row.permission} className="border-b border-brand-border/60 align-top last:border-0">
+                    <td className="px-3 py-2 text-brand-ink">{row.sections.join(", ")}</td>
+                    <td className="px-3 py-2"><span className="font-mono text-xs text-brand-muted">{row.permission}</span></td>
+                    <td className="px-3 py-2 text-brand-secondary">{rolesWith(row.permission)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-brand-muted">
+            Super Admin holds every permission. Content sections (Updates, Resources, Opportunities,
+            Website Content, Collaborations) are reachable by Super Admin and Content Manager.
           </p>
         </section>
       </div>

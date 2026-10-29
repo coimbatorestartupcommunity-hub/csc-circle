@@ -5,6 +5,7 @@ import { MemberUnavailable } from "@/components/member/member-unavailable";
 export const metadata = { title: "View CSC Profiles" };
 export const instant = false;
 export default async function MembersPage() {
+  await connection();
   const ctx = await getMemberContext();
   if (ctx.mode !== "live") return <MemberUnavailable />;
   return <div className="mx-auto flex w-full min-w-0 flex-col gap-5 py-2 sm:gap-6">
@@ -16,3 +17,4 @@ export default async function MembersPage() {
 import Link from "next/link";
 import { ArrowRight, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { connection } from "next/server";

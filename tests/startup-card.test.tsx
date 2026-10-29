@@ -5,7 +5,11 @@ import { StartupCard } from "@/components/directory/startup-card";
 import type { Startup } from "@/types";
 
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: React.ComponentProps<"a"> & { href: string }) => <a href={href} {...props}>{children}</a> }));
-vi.mock("next/image", () => ({ default: ({ alt, ...props }: React.ComponentProps<"img"> & { src: string }) => <img alt={alt} {...props} /> }));
+vi.mock("next/image", () => ({ default: (props: React.ComponentProps<"img"> & { src: string; priority?: boolean; fill?: boolean; unoptimized?: boolean }) => {
+  const { alt, priority, fill, unoptimized, ...imageProps } = props;
+  void priority; void fill; void unoptimized;
+  return <img alt={alt} {...imageProps} />;
+} }));
 vi.mock("@/components/motion", () => ({ HoverLiftCard: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 afterEach(cleanup);
 

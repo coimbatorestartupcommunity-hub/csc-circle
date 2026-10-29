@@ -16,7 +16,6 @@ import {
   CreditCard,
   Star,
   FileText,
-  Image as ImageIcon,
   Bell,
   ScrollText,
   Settings,
@@ -26,6 +25,10 @@ import {
   Menu,
   LogOut,
   Home,
+  UserRound,
+  BookOpen,
+  Target,
+  Newspaper,
 } from "lucide-react";
 import { cn } from "cn";
 import {
@@ -84,7 +87,9 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
     heading: "Platform",
     items: [
       { href: "/admin/content", label: "Content", icon: FileText, perm: "content.manage" },
-      { href: "/admin/media", label: "Media", icon: ImageIcon, perm: "media.manage" },
+      { href: "/admin/updates", label: "Updates & Highlights", icon: Newspaper, perm: "content.manage" },
+      { href: "/admin/resources", label: "Resources", icon: BookOpen, perm: "content.manage" },
+      { href: "/admin/opportunities", label: "Opportunities", icon: Target, perm: "content.manage" },
       { href: "/admin/notifications", label: "Notifications", icon: Bell, anyPerm: ["roles.manage", "events.publish"] },
       { href: "/admin/audit-logs", label: "Audit logs", icon: ScrollText, perm: "audit.read" },
       { href: "/admin/settings", label: "Settings", icon: Settings, perm: "settings.manage" },
@@ -172,7 +177,7 @@ export function AdminShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-brand-border bg-brand-white/90 px-4 backdrop-blur-md">
+        <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center justify-between gap-3 border-b border-brand-border bg-brand-white/90 px-3 backdrop-blur-md sm:px-4">
           <div className="flex items-center gap-2">
             <Sheet>
               <SheetTrigger
@@ -210,11 +215,16 @@ export function AdminShell({
               <span className="hidden lg:inline">Back to Home Page</span>
               <span className="sr-only lg:hidden">Back to Home Page</span>
             </Link>
-            <div className="hidden shrink-0 items-center gap-2 text-right lg:flex">
+            <div className="hidden shrink-0 items-center gap-2 text-right xl:flex">
               <p className="whitespace-nowrap text-sm font-semibold text-brand-ink">{displayName}</p>
               <p className="whitespace-nowrap text-xs text-brand-muted">{roleLabel}</p>
             </div>
             <AccountAvatar name={displayName} src={avatarUrl} className="hidden size-8 shrink-0 sm:block" />
+            <Link href="/member/profile" aria-current={pathname === "/member/profile" ? "page" : undefined} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-brand-border bg-brand-white px-2.5 text-xs font-semibold whitespace-nowrap text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3">
+              <UserRound className="size-4" aria-hidden="true" />
+              <span className="hidden lg:inline">Profile</span>
+              <span className="sr-only lg:hidden">Profile</span>
+            </Link>
             <Link href="/admin" aria-current={pathname === "/admin" ? "page" : undefined} className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-brand-ink px-2.5 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3">
               Admin Dashboard
             </Link>

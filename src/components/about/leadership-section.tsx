@@ -1,80 +1,51 @@
 import * as React from "react";
 import Image from "next/image";
+import { UserRound } from "lucide-react";
 import { Section, SectionHeading } from "@/components/common/section";
 import { StaggerContainer, StaggerItem } from "@/components/motion";
-import { brandAssets, siteConfig } from "@/lib/content/site";
-import { initials } from "@/lib/format";
-import { leadership } from "@/lib/content/about";
+import { leaders, leadershipSection, type Leader } from "@/lib/content/leadership";
 
-interface Leader {
-  name: string;
-  role: string;
-  additionalRole?: string;
-  responsibility: string;
-  surface: string;
-  photo?: string;
-  org?: { name: string; logo: string; url: string };
-  profileUrl?: string;
+/** 4:5 portrait: the verified photo where supplied, otherwise an intentional
+ *  blank placeholder — no stock photo, no fictional portrait, no fake initials. */
+function LeaderPortrait({ leader }: { leader: Leader }) {
+  if (leader.portrait) {
+    return (
+      <Image
+        src={leader.portrait}
+        alt={`${leader.honorific ? `${leader.honorific} ` : ""}${leader.name ?? "CSC leader"}, ${leader.role}`}
+        fill
+        sizes="(max-width: 640px) 100vw, 320px"
+        className="object-cover object-top"
+      />
+    );
+  }
+  return (
+    <div
+      aria-hidden="true"
+      className="flex size-full items-center justify-center bg-gradient-to-br from-brand-purple/40 via-brand-lilac/30 to-brand-blue/30"
+    >
+      <span className="flex size-20 items-center justify-center rounded-full bg-brand-white/70 text-brand-muted ring-1 ring-brand-border backdrop-blur-sm">
+        <UserRound className="size-10" aria-hidden="true" />
+      </span>
+    </div>
+  );
 }
 
 export function LeadershipSection() {
-  const leaders: Leader[] = [
-    {
-      name: siteConfig.people.founder.name,
-      role: siteConfig.people.founder.role,
-      additionalRole: siteConfig.people.founder.belvoriaRole,
-      responsibility: siteConfig.people.founder.responsibility,
-      surface: "from-brand-purple to-brand-pink",
-      photo: brandAssets.reyashPortrait,
-      org: {
-        name: "Belvoria",
-        logo: brandAssets.belvoriaLogo,
-        url: "https://belvoria.vercel.app/",
-      },
-    },
-    {
-      name: siteConfig.people.technicalPartner.name,
-      role: siteConfig.people.technicalPartner.role,
-      additionalRole: siteConfig.people.technicalPartner.communityRole,
-      responsibility: siteConfig.people.technicalPartner.responsibility,
-      surface: "from-brand-blue to-brand-lilac",
-      photo: brandAssets.vikashPortrait,
-      org: {
-        name: siteConfig.technologyPartner.name,
-        logo: brandAssets.litLogo,
-        url: siteConfig.technologyPartner.url,
-      },
-    },
-  ];
-
+  const ordered = [...leaders].sort((a, b) => a.order - b.order);
   return (
     <Section className="bg-brand-white">
       <SectionHeading
-        eyebrow="Leadership"
-        title={leadership.heading}
-        description={leadership.description}
+        eyebrow={leadershipSection.eyebrow}
+        title={leadershipSection.heading}
+        description={leadershipSection.description}
       />
-      <StaggerContainer className="mx-auto mt-12 grid max-w-4xl gap-6 md:grid-cols-2">
-        {leaders.map((leader) => (
-          <StaggerItem key={leader.name} className="h-full">
+      <StaggerContainer className="mx-auto mt-12 flex max-w-5xl flex-wrap justify-center gap-6">
+        {ordered.map((leader) => (
+          <StaggerItem key={leader.id} className="w-full sm:w-[320px]">
             <article className="flex h-full flex-col overflow-hidden rounded-[2rem] bg-brand-white ring-1 ring-brand-border">
-              {/* 4:5 portrait frame — approved photo where supplied, initials otherwise */}
-              <div
-                className={`relative flex aspect-4/5 items-center justify-center overflow-hidden bg-gradient-to-br ${leader.surface}`}
-              >
-                {leader.photo ? (
-                  <Image
-                    src={leader.photo}
-                    alt={`${leader.name}, ${leader.role}`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 360px"
-                    className="object-cover object-top"
-                  />
-                ) : (
-                  <span className="flex size-28 items-center justify-center rounded-full bg-brand-white/80 text-3xl font-bold text-brand-ink shadow-md ring-1 ring-brand-border backdrop-blur-sm">
-                    {initials(leader.name)}
-                  </span>
-                )}
+              <div className="relative aspect-4/5 overflow-hidden bg-brand-cloud">
+                <LeaderPortrait leader={leader} />
                 {leader.org ? (
                   <a
                     href={leader.org.url}
@@ -95,16 +66,15 @@ export function LeadershipSection() {
               </div>
 
               <div className="flex flex-1 flex-col gap-2 p-6">
-                <h3 className="text-xl font-bold text-brand-ink">
-                  {leader.name}
+                <h3
+                  className={`text-xl font-bold tracking-tight ${leader.name ? "text-brand-ink" : "text-brand-muted"}`}
+                >
+                  {leader.honorific && leader.name ? `${leader.honorific} ` : ""}
+                  {leader.name ?? "To be announced"}
                 </h3>
-                <p className="text-sm font-medium text-brand-accent">
-                  {leader.role}
-                </p>
+                <p className="text-sm font-medium text-brand-accent">{leader.role}</p>
                 {leader.additionalRole ? (
-                  <p className="text-sm font-medium text-brand-accent">
-                    {leader.additionalRole}
-                  </p>
+                  <p className="text-sm font-medium text-brand-accent">{leader.additionalRole}</p>
                 ) : null}
                 <p className="mt-1 text-sm leading-relaxed text-brand-secondary">
                   {leader.responsibility}

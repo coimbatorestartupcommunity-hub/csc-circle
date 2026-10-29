@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ActionButton } from "@/components/admin/action-button";
 import { StatusBadge } from "@/components/member/status-badge";
-import { getAdminContext, can } from "@/lib/admin/gate";
+import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { registrationStatusMeta } from "@/lib/content/member-taxonomy";
 import { isPassEligible } from "@/types/member";
@@ -17,7 +17,7 @@ export default async function RegistrationDetail({
   params: Promise<{ registrationId: string }>;
 }) {
   const { registrationId } = await params;
-  const ctx = await getAdminContext();
+  const ctx = await requireAdminPagePermission("registrations.read");
   const list = await adminServices.listRegistrations();
   const reg = list.ok ? list.data.find((r) => r.id === registrationId) : null;
 
@@ -36,12 +36,13 @@ export default async function RegistrationDetail({
       <Link href="/admin/registrations" className="mb-3 inline-flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-ink">
         <ArrowLeft className="size-4" /> Back to registrations
       </Link>
-      <AdminPageHeader title={reg.eventTitle} description={reg.reference} isDemo={ctx.mode === "preview"} action={<StatusBadge label={meta.label} tone={meta.tone} />} />
+      <AdminPageHeader title={reg.eventTitle} description={`UID: ${reg.reference}`} isDemo={ctx.mode === "preview"} action={<StatusBadge label={meta.label} tone={meta.tone} />} />
 
       <div className="flex flex-col gap-4 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
         <dl className="grid gap-3 sm:grid-cols-2 text-sm">
-          <Field label="Attendee" value={reg.memberName || "—"} />
-          <Field label="Reference" value={reg.reference} mono />
+          <Field label="Name" value={reg.memberName || "Name unavailable"} />
+          <Field label="UID" value={reg.reference || "UID pending"} mono />
+          <Field label="Location" value={reg.location || reg.venue || "Location to be confirmed"} />
           <Field label="When" value={formatEventRange(reg.startsAt, reg.endsAt)} />
           <Field label="Payment" value={reg.payment} />
           <Field label="Attendance" value={reg.attendance} />

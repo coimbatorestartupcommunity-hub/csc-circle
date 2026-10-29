@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { AuthCard } from "@/components/auth/auth-card";
 import { LoginForm } from "@/components/auth/login-form";
 import { safeNext } from "@/lib/auth/redirects";
@@ -21,6 +22,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
+  await connection();
   // Already signed in → go to the member area.
   const { next } = await searchParams;
   const user = await getAuthUser();

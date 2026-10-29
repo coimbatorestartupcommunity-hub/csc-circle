@@ -165,7 +165,7 @@ export function EventEditorForm({
               <Input id="e-cover" placeholder="https://" {...register("coverImage")} aria-invalid={!!errors.coverImage} />
               {errors.coverImage ? <FieldError>{errors.coverImage.message}</FieldError> : null}
               <p className="text-xs text-brand-muted">Or upload a JPEG, PNG or WebP image. It will be safely prepared as a 4:3 banner.</p>
-              <input ref={coverInput} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => { void uploadCover(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+              <input ref={coverInput} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => { void uploadCover(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" disabled={uploadingCover || isDemo} onClick={() => coverInput.current?.click()}>{uploadingCover ? <Loader2 className="size-4 animate-spin" /> : null}{uploadingCover ? "Uploading…" : coverPreview || values.coverImage ? "Replace uploaded image" : "Upload 4:3 image"}</Button>
                 {(coverPreview || values.coverImage) ? <Button type="button" variant="ghost" disabled={uploadingCover} onClick={() => { setValue("coverImage", "", { shouldDirty: true, shouldValidate: true }); setValue("imageAlt", "", { shouldDirty: true }); setCoverPreview(""); }}>Remove image</Button> : null}

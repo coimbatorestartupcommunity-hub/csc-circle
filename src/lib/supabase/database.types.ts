@@ -533,6 +533,7 @@ export type Database = {
       }
       event_registrations: {
         Row: {
+          attendee_name: string | null
           attendance: Database["public"]["Enums"]["attendance_status"]
           created_at: string
           event_id: string
@@ -546,6 +547,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attendee_name?: string | null
           attendance?: Database["public"]["Enums"]["attendance_status"]
           created_at?: string
           event_id: string
@@ -559,6 +561,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attendee_name?: string | null
           attendance?: Database["public"]["Enums"]["attendance_status"]
           created_at?: string
           event_id?: string
@@ -1196,6 +1199,7 @@ export type Database = {
       get_directory_startup_contacts: { Args: { p_startup_id: string }; Returns: Json }
       csc_save_collaboration_organization: { Args: { payload: Json }; Returns: string }
       csc_save_collaboration: { Args: { payload: Json }; Returns: string }
+      csc_accept_admin_role_invitation_in_app: { Args: { p_invitation_id: string }; Returns: Json }
       csc_admin_action: {
         Args: { decision: string; kind: string; reason: string; target: string }
         Returns: Json
@@ -1287,6 +1291,8 @@ export type Database = {
       }
       csc_schedule_event_reminders: { Args: never; Returns: number }
       csc_verify_membership: { Args: { token: string }; Returns: boolean }
+      csc_validate_member_session: { Args: never; Returns: boolean }
+      csc_member_notification_inbox: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       next_member_number: { Args: never; Returns: string }
       submit_consultation: {

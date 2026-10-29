@@ -4,34 +4,53 @@ import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
-  const ctx = await getMemberContext();
-  if (ctx.mode !== "live" || !ctx.user) {
-    return NextResponse.json({ error: "Sign in to view notifications." }, { status: 401 });
-  }
+  const requestStarted = performance.now();
+  const timings: Record<string, number> = {};
+  const send = (body: object, status: number, includeMetrics = false) => {
+    const headers = new Headers({ "Cache-Control": "private, no-store" });
+    if (process.env.CSC_PERF_DIAGNOSTICS === "true") {
+      headers.set("Server-Timing", [
+        ...Object.entries(timings).map(([name, duration]) => `${name};dur=${duration.toFixed(2)}`),
+        ...(includeMetrics ? [`request;dur=${(performance.now() - requestStarted).toFixed(2)}`] : []),
+      ].join(", "));
+    }
+    return NextResponse.json(body, { status, headers });
+  };
 
+  const clientStarted = performance.now();
   const sb = await createClient();
-  const [itemsResult, unreadResult] = await Promise.all([
-    sb.from("notifications")
-      .select("id,type,title,message,action_url,read_at,created_at,delivered_at")
-      .eq("channel", "in_app")
-      .eq("status", "available")
-      .eq("recipient_user_id", ctx.user.id)
-      .order("delivered_at", { ascending: false })
-      .limit(30),
-    sb.from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("channel", "in_app")
-      .eq("status", "available")
-      .eq("recipient_user_id", ctx.user.id)
-      .is("read_at", null),
-  ]);
+  timings["client-init"] = performance.now() - clientStarted;
 
-  if (itemsResult.error || unreadResult.error) {
-    return NextResponse.json({ error: "Notifications are temporarily unavailable." }, { status: 503 });
+  // Verify the JWT signature/expiry with Supabase, then check current session
+  // revocation, email verification and membership state in PostgreSQL. The
+  // subject is taken only from verified claims; browser-supplied IDs are never
+  // used. RLS remains authoritative for each inbox query below.
+  const authStarted = performance.now();
+  const { data: claimsResult, error: claimsError } = await sb.auth.getClaims();
+  const claims = claimsResult?.claims;
+  timings["auth-claims"] = performance.now() - authStarted;
+  const userId = typeof claims?.sub === "string" ? claims.sub : null;
+  if (claimsError || !userId) {
+    return send({ error: "Sign in to view notifications." }, 401, true);
   }
-  return NextResponse.json({ items: itemsResult.data ?? [], unreadCount: unreadResult.count ?? 0 }, {
-    headers: { "Cache-Control": "private, no-store" },
-  });
+
+  const inboxStarted = performance.now();
+  // This invoker RPC combines session validation, the RLS-filtered inbox and
+  // unread count into one PostgREST round trip.
+  const { data: inbox, error: inboxError } = await sb.rpc("csc_member_notification_inbox");
+  timings["inbox-queries"] = performance.now() - inboxStarted;
+
+  if (inboxError) {
+    return send({ error: "Notifications are temporarily unavailable." }, 503, true);
+  }
+  if (!inbox || typeof inbox !== "object" || Array.isArray(inbox)) {
+    return send({ error: "Sign in to view notifications." }, 401, true);
+  }
+  const inboxObject = inbox as { items?: unknown; unreadCount?: unknown };
+  if (!Array.isArray(inboxObject.items) || typeof inboxObject.unreadCount !== "number") {
+    return send({ error: "Sign in to view notifications." }, 401, true);
+  }
+  return send({ items: inboxObject.items, unreadCount: inboxObject.unreadCount }, 200, true);
 }
 
 const actionSchema = z.discriminatedUnion("action", [

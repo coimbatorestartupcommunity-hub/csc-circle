@@ -34,6 +34,7 @@ import { getAdminContext, type AdminContext } from "@/lib/admin/gate";
 import type { Permission } from "@/lib/admin/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notificationIssueLabel } from "@/lib/admin/status-meta";
 import {
   demoAudit,
   demoClaims,
@@ -438,7 +439,10 @@ export const adminServices = {
       const rows: EventRegistration[] = (data ?? []).map(r => {
         const e = (events ?? []).find(e => e.id === r.event_id);
         const p = (profiles ?? []).find(p => p.id === r.user_id);
-        return { id: r.id, eventId: r.event_id, eventTitle: e?.title ?? "Event", startsAt: e?.starts_at ?? "", endsAt: e?.ends_at ?? "", location: e?.location ?? "", venue: e?.venue ?? undefined, reference: r.reference, status: r.status, payment: r.payment, attendance: r.attendance, memberName: p?.display_name ?? p?.full_name ?? "CSC member", createdAt: r.created_at };
+        const venue = e?.venue?.trim() ?? "";
+        const address = e?.location?.trim() ?? "";
+        const location = [venue, address].filter(Boolean).filter((value, index, values) => values.indexOf(value) === index).join(", ");
+        return { id: r.id, eventId: r.event_id, eventTitle: e?.title ?? "Event", startsAt: e?.starts_at ?? "", endsAt: e?.ends_at ?? "", location, venue: e?.venue ?? undefined, reference: r.reference || "UID pending", status: r.status, payment: r.payment, attendance: r.attendance, memberName: r.attendee_name?.trim() || p?.full_name?.trim() || p?.display_name?.trim() || "Name unavailable", createdAt: r.created_at };
       });
       return ok(rows);
     });
@@ -534,7 +538,11 @@ export const adminServices = {
     return guard("roles.manage", demoNotifications, async () => {
       const sb = await createClient(); const { data, error } = await sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(200);
       if (error) return fail("unknown", "Could not load notifications.");
-      return ok((data ?? []).map(r => ({ id: r.id, type: r.type, channel: r.channel as NotificationRecord["channel"], recipient: r.audience === "admin" ? "Configured admin recipients" : r.channel === "in_app" ? "Authenticated member" : r.recipient ?? "Verified account email", attempts: r.attempts, lastError: r.last_error ?? undefined, status: r.status as NotificationRecord["status"], createdAt: r.created_at, sentAt: r.sent_at ?? undefined, deliveredAt: r.delivered_at ?? undefined })));
+      return ok((data ?? []).map(r => {
+        const status = r.status as NotificationRecord["status"];
+        const channel = r.channel as NotificationRecord["channel"];
+        return { id: r.id, type: r.type, channel, recipient: r.audience === "admin" ? "Configured admin recipients" : channel === "in_app" ? "Authenticated member" : r.recipient ?? "Verified account email", attempts: r.attempts, lastError: notificationIssueLabel(status, r.last_error ?? undefined, channel, r.type), status, createdAt: r.created_at, sentAt: r.sent_at ?? undefined, deliveredAt: r.delivered_at ?? undefined };
+      }));
     });
   },
 

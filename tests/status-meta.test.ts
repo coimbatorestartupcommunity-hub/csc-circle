@@ -5,7 +5,7 @@ import {
   consultationStatusMeta,
   reviewModerationMeta,
 } from "@/lib/content/member-taxonomy";
-import { paymentStatusMeta, notificationStatusMeta } from "@/lib/admin/status-meta";
+import { paymentStatusMeta, notificationStatusMeta, notificationIssueLabel } from "@/lib/admin/status-meta";
 import { membershipTransitions } from "@/types/member";
 import type {
   RegistrationStatus,
@@ -53,7 +53,16 @@ describe("status meta completeness", () => {
   });
 
   it("covers every notification status", () => {
-    const all: NotificationStatus[] = ["queued", "processing", "sent", "failed", "retrying", "failed_retryable", "failed_permanent"];
+    const all: NotificationStatus[] = ["queued", "processing", "sent", "available", "superseded", "failed", "retrying", "failed_retryable", "failed_permanent"];
     for (const s of all) expect(notificationStatusMeta[s]).toBeDefined();
+  });
+
+  it("explains a superseded membership notice without exposing an internal code", () => {
+    expect(notificationIssueLabel("superseded", "SUPERSEDED_BUSINESS_STATE", "email", "MembershipMoreInformation")).toBe(
+      "Claim status advanced before dispatch; this email was not sent.",
+    );
+    expect(notificationIssueLabel("superseded", "SUPERSEDED_BUSINESS_STATE", "in_app", "claim.pending_verification")).toMatch(/older inbox notice was replaced/);
+    expect(notificationIssueLabel("superseded", "SUPERSEDED_BUSINESS_STATE", "email", "EventUpdated")).toMatch(/source record changed/);
+    expect(notificationIssueLabel("failed_permanent", "INVALID_RECIPIENT")).toBe("INVALID_RECIPIENT");
   });
 });

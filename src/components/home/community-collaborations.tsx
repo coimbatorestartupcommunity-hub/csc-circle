@@ -21,7 +21,7 @@ export async function CommunityCollaborations() {
 
       <RevealOnScroll className="mt-10">
         <div className="grid items-center gap-8 overflow-hidden rounded-[2rem] bg-brand-white ring-1 ring-brand-border lg:grid-cols-2">
-          <div className="relative aspect-video w-full lg:aspect-auto lg:h-full lg:min-h-80">
+          <div className="relative aspect-[5/3] w-full">
             {featured.featuredImagePath ? (
               <Image
                 src={featured.featuredImagePath}

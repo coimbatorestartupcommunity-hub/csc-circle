@@ -10,7 +10,7 @@ export function MemberExperience() {
     <Section className="bg-brand-ink text-brand-white">
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
         <span className="inline-flex items-center gap-2 rounded-full bg-brand-white/10 px-3 py-1 font-mono text-xs tracking-[0.18em] text-brand-white/80 uppercase">
-          Member experience · in development
+          Member experience · now live
         </span>
         <h2 className="text-[length:var(--text-section)] leading-[1.08] font-bold tracking-tight text-balance">
           {memberExperience.heading}

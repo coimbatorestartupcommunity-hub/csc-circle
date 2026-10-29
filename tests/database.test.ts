@@ -13,13 +13,15 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
     create schema auth; create table auth.users(id uuid primary key, email text, raw_user_meta_data jsonb default '{}', email_confirmed_at timestamptz, last_sign_in_at timestamptz);
+    create table auth.sessions(id uuid primary key, user_id uuid not null, not_after timestamptz);
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+    create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
     create schema storage;
     create table storage.buckets(id text primary key, name text not null, public boolean not null default false, file_size_limit bigint, allowed_mime_types text[]);
     create table storage.objects(id uuid primary key default gen_random_uuid(), bucket_id text not null, name text not null);
     create function storage.foldername(name text) returns text[] language sql immutable as $$select string_to_array(name,'/')$$;
     alter table storage.objects enable row level security;
-    grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;
+    grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated; grant execute on function auth.jwt() to anon,authenticated;
     grant usage on schema storage to anon,authenticated; grant execute on function storage.foldername(text) to anon,authenticated;
   `);
   for (const file of readdirSync("supabase/migrations").filter(f => f.endsWith(".sql")).sort()) {
@@ -29,6 +31,73 @@ beforeAll(async () => {
 }, 30_000);
 afterAll(async () => { await db?.close(); });
 describe("isolated PostgreSQL authorization regressions", () => {
+  it("issues stable unique event pass UIDs and stores attendee names for imports", async () => {
+    await db.exec("begin");
+    try {
+      await db.exec(`
+        update public.profiles set full_name='Imported Attendee' where id='${a}';
+        insert into public.events(slug,title,category,starts_at,ends_at,location)
+        values ('uid-integrity-test','UID Integrity Test','networking','2026-11-01T06:00:00Z','2026-11-01T09:00:00Z','TICEL Bio Park, Coimbatore');
+        insert into public.event_registrations(user_id,event_id)
+        select '${a}', id from public.events where slug='uid-integrity-test';
+        insert into public.event_registrations(user_id,event_id,attendee_name)
+        select '${b}', id, 'Second imported attendee' from public.events where slug='uid-integrity-test';
+      `);
+      const registrations = await db.query<{ id: string; reference: string; attendee_name: string | null; user_id: string }>(
+        `select id,reference,attendee_name,user_id from public.event_registrations where event_id=(select id from public.events where slug='uid-integrity-test') order by user_id`,
+      );
+      expect(registrations.rows).toHaveLength(2);
+      expect(registrations.rows[0].reference).toMatch(/^CSC-EVT-[A-F0-9]{32}$/);
+      expect(registrations.rows[1].reference).toMatch(/^CSC-EVT-[A-F0-9]{32}$/);
+      expect(registrations.rows[0].reference).not.toBe(registrations.rows[1].reference);
+      expect(registrations.rows.map((row) => row.attendee_name)).toEqual(["Imported Attendee", "Second imported attendee"]);
+
+      await db.exec(`update public.event_registrations set status='confirmed' where id='${registrations.rows[0].id}'`);
+      const reread = await db.query<{ reference: string }>("select reference from public.event_registrations where id=$1", [registrations.rows[0].id]);
+      expect(reread.rows[0].reference).toBe(registrations.rows[0].reference);
+    } finally {
+      await db.exec("rollback");
+    }
+  });
+
+  it("accepts an in-app admin invitation only for its verified recipient and consumes it once", async () => {
+    const invitation = "c1000000-0000-4000-8000-000000000099";
+    await db.exec(`insert into public.admin_role_invitations(
+      id,invitee_email,normalized_email,role,token_hash,invited_by,status,delivery_status,expires_at
+    ) values ('${invitation}','b@example.test','b@example.test','event_manager',repeat('a',64),'${a}','pending','failed',now()+interval '1 day');
+    insert into notifications(type,channel,recipient,recipient_user_id,audience,related_record_type,related_record_id,title,message,action_url,dedupe_key,status,delivered_at)
+    values ('admin.invitation.received','in_app','b@example.test','${b}','member','admin_role_invitations','${invitation}',
+      'Administrator invitation received','Synthetic invitation','/admin/accept-invitation?invitationId=${invitation}',
+      'admin.invitation:${invitation}','available',now());`);
+
+    await expect(asUser(a, `select csc_accept_admin_role_invitation_in_app('${invitation}')`)).rejects.toThrow();
+    await asUser(b, `select csc_accept_admin_role_invitation_in_app('${invitation}')`);
+    expect((await db.query("select role from admin_roles where user_id=$1 and role='event_manager'", [b])).rows).toHaveLength(1);
+    expect((await db.query("select status,accepted_by from admin_role_invitations where id=$1", [invitation])).rows).toEqual([{ status: "accepted", accepted_by: b }]);
+    expect((await db.query("select title,action_url,read_at is not null as read from notifications where related_record_id=$1", [invitation])).rows).toEqual([{
+      title: "Administrator invitation accepted", action_url: "/admin", read: true,
+    }]);
+    await expect(asUser(b, `select csc_accept_admin_role_invitation_in_app('${invitation}')`)).rejects.toThrow();
+  });
+
+  it("commits expiration state instead of rolling it back with an exception", async () => {
+    const invitation = "c1000000-0000-4000-8000-000000000098";
+    await db.exec(`insert into public.admin_role_invitations(
+      id,invitee_email,normalized_email,role,token_hash,invited_by,status,expires_at
+    ) values ('${invitation}','b@example.test','b@example.test','checkin_staff',repeat('b',64),'${a}','pending',now()-interval '1 minute');
+    insert into notifications(type,channel,recipient,recipient_user_id,audience,related_record_type,related_record_id,title,message,action_url,dedupe_key,status,delivered_at)
+    values ('admin.invitation.received','in_app','${b}','${b}','member','admin_role_invitations','${invitation}',
+      'Administrator invitation received','Synthetic invitation','/admin/accept-invitation?invitationId=${invitation}',
+      'admin.invitation.expired:${invitation}','available',now());`);
+
+    const result = await asUser(b, `select csc_accept_admin_role_invitation_in_app('${invitation}') as result`);
+    expect(result[0].rows).toEqual([{ result: { ok: false, reason: "expired" } }]);
+    expect((await db.query("select status from admin_role_invitations where id=$1", [invitation])).rows).toEqual([{ status: "expired" }]);
+    expect((await db.query("select title,action_url,read_at is not null as read from notifications where related_record_id=$1", [invitation])).rows).toEqual([{
+      title: "Administrator invitation expired", action_url: null, read: true,
+    }]);
+  });
+
   it("bootstraps exactly one non-active membership and profile per Auth UUID", async () => {
     const result = await db.query("select count(*)::int as n from memberships where status='not_started'");
     expect(result.rows).toEqual([{ n: 2 }]);
@@ -153,18 +222,27 @@ describe("isolated PostgreSQL authorization regressions", () => {
     const organizationPayload = JSON.stringify({ name: "Approved Test Partner", slug: "approved-test-partner", organization_type: "startup", publication_approved: true, publication_status: "published" }).replaceAll("'", "''");
     const orgSaved = await asUser(a, `select public.csc_save_collaboration_organization('${organizationPayload}'::jsonb) as id`);
     expect((await db.query("select publication_status from collaboration_organizations where slug='approved-test-partner'")).rows).toEqual([{ publication_status: "published" }]);
-    expect((await db.query("select action from audit_logs where target_id=$1", [(orgSaved[0].rows[0] as { id: string }).id])).rows).toEqual([{ action: "collaboration.organization_saved" }]);
+    const organizationId = (orgSaved[0].rows[0] as { id: string }).id;
+    expect((await db.query("select action from audit_logs where target_id=$1", [organizationId])).rows).toEqual([{ action: "collaboration.organization_saved" }]);
+    const editOrganization = JSON.stringify({ id: organizationId, name: "Approved Test Partner Updated", slug: "approved-test-partner", organization_type: "startup", publication_approved: true, publication_status: "published", logo_path: "collaboration-logos/11111111-1111-4111-8111-111111111111.webp" }).replaceAll("'", "''");
+    const editedOrganization = await asUser(a, `select public.csc_save_collaboration_organization('${editOrganization}'::jsonb) as id`);
+    expect((editedOrganization[0].rows[0] as { id: string }).id).toBe(organizationId);
+    expect((await db.query("select name,logo_path from collaboration_organizations where id=$1", [organizationId])).rows).toEqual([{
+      name: "Approved Test Partner Updated", logo_path: "collaboration-logos/11111111-1111-4111-8111-111111111111.webp",
+    }]);
 
     const orgs = await db.query<{ id: string }>("select id from collaboration_organizations where slug in ('csc-circle','outlier') order by slug");
     const payload = JSON.stringify({
       slug: "permission-test", title: "Permission Test", tagline: "A safe test",
       summary: "An isolated database test.", story: "Synthetic test content.",
       category: "Community Meetup", status: "completed", publication_status: "draft",
+      featured_image_path: "collaboration-featured/22222222-2222-4222-8222-222222222222.webp",
       partner_ids: orgs.rows.map((org) => org.id), highlights: [], media: [],
     }).replaceAll("'", "''");
     const saved = await asUser(a, `select public.csc_save_collaboration('${payload}'::jsonb) as id`);
     const id = (saved[0].rows[0] as { id: string }).id;
     expect((await db.query("select publication_status from collaborations where id=$1", [id])).rows).toEqual([{ publication_status: "draft" }]);
+    expect((await db.query("select featured_image_path from collaborations where id=$1", [id])).rows).toEqual([{ featured_image_path: "collaboration-featured/22222222-2222-4222-8222-222222222222.webp" }]);
     expect((await db.query("select action from audit_logs where target_id=$1", [id])).rows).toEqual([{ action: "collaboration.saved" }]);
 
     await db.exec("set role anon;");
@@ -362,6 +440,7 @@ describe("trusted operations and replay protection", () => {
   });
   it("allows direct admin approval of a free membership claim and issues its card", async () => {
     const claim = "abababab-abab-4bab-8bab-abababababab";
+    const notificationStart = new Date().toISOString();
     await db.exec(`update memberships set status='not_started',member_number=null,issued_at=null where user_id='${b}';
       insert into membership_claims(id,user_id,full_name,linked_account_email,applicant_type,designation,whatsapp,status)
       values ('${claim}','${b}','Synthetic Member','b@example.test','new_applicant','student_entrepreneur','+15555550123','claim_submitted')`);
@@ -376,7 +455,35 @@ describe("trusted operations and replay protection", () => {
       "select type,status,recipient_user_id,title from notifications where channel='in_app' and related_record_id=$1 order by type", [claim],
     )).rows).toEqual([
       { type: "claim.active", status: "available", recipient_user_id: b, title: "CSC membership is active" },
-      { type: "claim.pending_verification", status: "superseded", recipient_user_id: b, title: "Membership application received" },
+      { type: "claim.pending_verification", status: "available", recipient_user_id: b, title: "Membership application received" },
+    ]);
+    const membershipId = (await db.query<{ id: string }>("select id from memberships where user_id=$1", [b])).rows[0].id;
+    expect((await db.query<{ template_key: string; status: string }>(
+      "select template_key,status from notifications where channel='email' and recipient_user_id=$1 and created_at >= $2 and ((template_key='MembershipApplicationReceived' and related_record_type='membership_claims' and related_record_id=$3) or (template_key='MembershipApproved' and related_record_type='memberships' and related_record_id=$4)) order by template_key",
+      [b, notificationStart, claim, membershipId],
+    )).rows).toEqual([
+      { template_key: "MembershipApplicationReceived", status: "queued" },
+      { template_key: "MembershipApproved", status: "queued" },
+    ]);
+  });
+  it("keeps the claim-submitted email queued when approval follows before dispatch", async () => {
+    const claim = "acacacac-acac-4cac-8cac-acacacacacac";
+    await db.exec(`update memberships set status='not_started',member_number=null,issued_at=null where user_id='${b}';
+      insert into membership_claims(id,user_id,full_name,linked_account_email,applicant_type,designation,whatsapp,status)
+      values ('${claim}','${b}','Synthetic Member','b@example.test','new_applicant','student_entrepreneur','+15555550123','claim_submitted');`);
+    await asUser(admin, `select csc_admin_action('claim','${claim}','pending_verification','Reviewed submitted membership ID')`);
+    await asUser(admin, `select csc_admin_action('claim','${claim}','active','Verified submitted membership ID')`);
+
+    expect((await db.query<{ type: string; status: string }>(
+      "select type,status from notifications where channel='email' and recipient_user_id=$1 and related_record_id=$2 and template_key='MembershipMoreInformation'",
+      [b, claim],
+    )).rows).toEqual([{ type: "MembershipMoreInformation", status: "queued" }]);
+    expect((await db.query<{ type: string; status: string; message: string }>(
+      "select type,status,message from notifications where channel='in_app' and recipient_user_id=$1 and related_record_id=$2 order by type",
+      [b, claim],
+    )).rows).toEqual([
+      { type: "claim.active", status: "available", message: "Your CSC membership is now active." },
+      { type: "claim.pending_verification", status: "available", message: "Your CSC Circle membership application has been submitted and is awaiting review." },
     ]);
   });
   it("registers idempotently without issuing a pass", async () => {
@@ -503,4 +610,127 @@ describe("notification uncertainty and retry policy",()=>{
   await db.query("select csc_finish_notification($1,$2,'failed_retryable','SMTP_TEMPORARY_REJECTION')",[rows[0].id,rows[0].lease_id]);
   expect((await db.query("select status from notifications where id=$1",[rows[0].id])).rows).toEqual([{status:'failed_permanent'}]);
  });
+ it("holds historical email jobs out of every dispatch path until explicitly released",async()=>{
+  // available_at=now() so the ONLY thing withholding the job is status='held'.
+  const {rows}=await db.query<{id:string}>("insert into notifications(type,template_key,channel,status,last_error,available_at,recipient_user_id) values('MembershipMoreInformation','MembershipMoreInformation','email','held','HISTORICAL_HOLD_PENDING_APPROVAL',now(),$1) returning id",[b]);
+  const held=rows[0].id;
+  await db.exec("set role service_role");
+  try {
+   // worker/cron/drain claim path must skip a held job even when it is due.
+   expect((await db.query<{id:string}>("select id from csc_claim_notifications(50,'33333333-3333-4333-8333-333333333333')")).rows.some((r)=>r.id===held)).toBe(false);
+   await db.query("select csc_release_notification_dispatch('33333333-3333-4333-8333-333333333333')");
+  } finally { await db.exec("reset role"); }
+  // the ordinary retry path refuses a held job (retries cannot circumvent the hold).
+  await expect(asUser(admin,`select csc_retry_notification('${held}','Attempting to retry a held job',true)`)).rejects.toThrow(/not retryable/);
+  // a member cannot release a hold.
+  await expect(asUser(b,`select csc_release_held_notification('${held}','Member must not release held jobs')`)).rejects.toThrow();
+  // an authorized release moves it to queued and writes an audit record.
+  await asUser(admin,`select csc_release_held_notification('${held}','Historical membership email approved for send')`);
+  expect((await db.query("select status,attempts from notifications where id=$1",[held])).rows).toEqual([{status:'queued',attempts:0}]);
+  expect((await db.query("select action from audit_logs where target_id=$1 and action='notification.release_hold'",[held])).rows).toHaveLength(1);
+ });
+ it("still dispatches ordinary queued transactional email jobs",async()=>{
+  // Earliest available_at so this job sorts first and is deterministically
+  // inside the capped claim batch regardless of other queued test rows.
+  const {rows}=await db.query<{id:string}>("insert into notifications(type,template_key,channel,status,available_at,recipient_user_id) values('OperationalAlert','OperationalAlert','email','queued',now()-interval '3650 days',$1) returning id",[b]);
+  await db.exec("set role service_role");
+  try {
+   expect((await db.query<{id:string}>("select id from csc_claim_notifications(5,'44444444-4444-4444-8444-444444444444')")).rows.some((r)=>r.id===rows[0].id)).toBe(true);
+   await db.query("select csc_release_notification_dispatch('44444444-4444-4444-8444-444444444444')");
+  } finally { await db.exec("reset role"); }
+ });
+});
+
+describe("resources & opportunities CMS", () => {
+  const member = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"; // no content.manage
+  const mgr = "ffffffff-ffff-4fff-8fff-ffffffffffff";    // content manager
+  beforeAll(async () => {
+    await db.exec(`insert into auth.users(id,email,email_confirmed_at) values ('${member}','cm@example.test',now()),('${mgr}','mgr@example.test',now()) on conflict do nothing;
+      insert into public.admin_roles(user_id,role) values ('${mgr}','content_manager') on conflict do nothing;
+      insert into public.resources(slug,title,summary,description,publication_status,resource_type,document_path,document_mime,document_size,publication_consent,attribution)
+      values ('draft-res','Draft Resource','Draft summary','A sufficiently detailed description for this resource.', 'draft','document','resource-docs/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.pdf','application/pdf',123,true,'CSC'),
+      ('pub-res','Published Resource','Published summary','A sufficiently detailed description for this resource.', 'published','document','resource-docs/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.pdf','application/pdf',123,true,'CSC');
+      insert into public.opportunities(slug,title,summary,description,organization,source,organization_verified,publication_consent,application_url,publication_status,deadline)
+      values ('draft-opp','Draft Opp','Draft summary','A sufficiently detailed opportunity description.','Org','Verified source',true,true,'https://example.test/apply','draft',null),
+      ('pub-opp','Published Opp','Published summary','A sufficiently detailed opportunity description.','Org','Verified source',true,true,'https://example.test/apply','published',null),
+      ('exp-opp','Expired Opp','Expired summary','A sufficiently detailed opportunity description.','Org','Verified source',true,true,'https://example.test/apply','published',(current_date - 1));
+      insert into public.community_updates(slug,title,category,summary,body,publication_status,publication_consent)
+      values ('draft-story','Draft Story','Community News','Draft summary','A sufficiently detailed community story for the draft record.','draft',false),
+      ('published-story','Published Story','Event Highlights','Published summary','A sufficiently detailed community story for the published record.','published',true);`);
+  });
+
+  it("exposes only published records to the public and hides drafts", async () => {
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ slug: string }>("select slug from public.resources order by slug")).rows).toEqual([{ slug: "pub-res" }]);
+      expect((await db.query<{ slug: string }>("select slug from public.opportunities order by slug")).rows.map((r) => r.slug)).toEqual(["pub-opp"]);
+      expect((await db.query<{ slug: string }>("select slug from public.community_updates order by slug")).rows).toEqual([{ slug: "published-story" }]);
+      await expect(db.query("select created_by from public.resources")).rejects.toThrow();
+      // Active (non-expired) published opportunities = the public listing (Coming Soon when 0).
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.opportunities where publication_status='published' and (deadline is null or deadline>=current_date)")).rows).toEqual([{ n: 1 }]);
+    } finally { await db.exec("reset role;"); }
+  });
+
+  it("prevents non-content-managers from creating CMS content", async () => {
+    await expect(asUser(member, "insert into public.resources(slug,title) values ('member-res','Member Resource')")).rejects.toThrow();
+    await expect(asUser(member, "insert into public.opportunities(slug,title) values ('member-opp','Member Opp')")).rejects.toThrow();
+    await expect(asUser(member, "insert into public.community_updates(slug,title,category,summary,body) values ('member-story','Member Story','Community News','Story summary','A sufficiently detailed community story from a member.')")).rejects.toThrow();
+  });
+
+  it("publishes Updates through the same independent record-driven visibility rule", async () => {
+    await asUser(mgr, "insert into public.community_updates(slug,title,category,summary,body,publication_consent) values ('manager-story','Manager Story','Community News','Manager summary','A sufficiently detailed community story created by a content manager.',true)");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ slug: string }>("select slug from public.community_updates order by slug")).rows).toEqual([{ slug: "published-story" }]);
+    } finally { await db.exec("reset role;"); }
+    await asUser(mgr, "update public.community_updates set publication_status='published',published_at=now() where slug='manager-story'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ slug: string }>("select slug from public.community_updates order by slug")).rows).toEqual([{ slug: "manager-story" }, { slug: "published-story" }]);
+    } finally { await db.exec("reset role;"); }
+    await asUser(mgr, "update public.community_updates set publication_status='draft',published_at=null where slug='manager-story'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ slug: string }>("select slug from public.community_updates order by slug")).rows).toEqual([{ slug: "published-story" }]);
+    } finally { await db.exec("reset role;"); }
+  });
+
+  it("rejects direct publication when required content, permission or verification is missing", async () => {
+    await expect(asUser(mgr, "insert into public.resources(slug,title,publication_status) values ('invalid-res','Invalid Resource','published')")).rejects.toThrow(/required|permission|attribution/i);
+    await expect(asUser(mgr, "insert into public.opportunities(slug,title,publication_status) values ('invalid-opp','Invalid Opportunity','published')")).rejects.toThrow(/required|verification|permission/i);
+  });
+
+  it("lets a content manager publish and unpublish, flipping public visibility", async () => {
+    await db.exec("set role anon;");
+    const before = (await db.query<{ n: number }>("select count(*)::int n from public.resources where publication_status='published'")).rows[0].n;
+    await db.exec("reset role;");
+
+    await asUser(mgr, "insert into public.resources(slug,title,summary,description,publication_status,resource_type,document_path,document_mime,document_size,publication_consent,attribution,published_at) values ('mgr-res','Manager Resource','Manager summary','A sufficiently detailed description for this manager resource.','published','document','resource-docs/cccccccc-cccc-4ccc-8ccc-cccccccccccc.pdf','application/pdf',123,true,'CSC',now())");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.resources where publication_status='published'")).rows[0].n).toBe(before + 1);
+      expect((await db.query<{ title: string }>("select title from public.resources where slug='mgr-res'")).rows).toEqual([{ title: "Manager Resource" }]);
+    } finally { await db.exec("reset role;"); }
+
+    await asUser(mgr, "update public.resources set publication_status='draft', published_at=null where slug='mgr-res'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query("select title from public.resources where slug='mgr-res'")).rows).toHaveLength(0);
+    } finally { await db.exec("reset role;"); }
+  });
+
+  it("keeps Resources and Opportunities independent and returns each empty section to its empty state", async () => {
+    await asUser(mgr, "update public.resources set publication_status='draft', published_at=null where slug='pub-res'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.resources where publication_status='published'")).rows).toEqual([{ n: 0 }]);
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.opportunities where publication_status='published' and (deadline is null or deadline>=current_date)")).rows).toEqual([{ n: 1 }]);
+    } finally { await db.exec("reset role;"); }
+
+    await asUser(mgr, "update public.opportunities set publication_status='draft', published_at=null where publication_status='published'");
+    await db.exec("set role anon;");
+    try {
+      expect((await db.query<{ n: number }>("select count(*)::int n from public.opportunities where publication_status='published' and (deadline is null or deadline>=current_date)")).rows).toEqual([{ n: 0 }]);
+    } finally { await db.exec("reset role;"); }
+  });
 });

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { notFound } from "next/navigation";
 import { getAuthUser } from "@/lib/supabase/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMembershipAccess, isBlockedMembershipStatus } from "@/lib/services/member/membership-access";
@@ -102,4 +103,27 @@ export const getAdminContext = cache(resolveAdminContext);
 
 export function can(ctx: AdminContext, permission: Permission): boolean {
   return ctx.permissions.has(permission);
+}
+
+/**
+ * Authorize a workspace page before it loads or renders module data.
+ * A 404 avoids disclosing which restricted admin modules exist.
+ */
+export async function requireAdminPagePermission(
+  required: Permission | readonly Permission[],
+): Promise<AdminContext> {
+  const context = await getAdminContext();
+  const requiredPermissions = typeof required === "string" ? [required] : required;
+  const allowed = context.mode === "preview" || (
+    context.mode === "live" && requiredPermissions.some((permission) => can(context, permission))
+  );
+  if (!allowed) notFound();
+  return context;
+}
+
+/** Guard for the role-specific overview, which is available to any admin. */
+export async function requireAdminPage(): Promise<AdminContext> {
+  const context = await getAdminContext();
+  if (context.mode !== "preview" && (context.mode !== "live" || context.roles.length === 0)) notFound();
+  return context;
 }

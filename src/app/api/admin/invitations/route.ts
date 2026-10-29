@@ -34,8 +34,10 @@ async function expireInvitations(db: SupabaseClient) {
 }
 
 async function sendInvitation(input: { id: string; email: string; role: AdminRole; token: string; expiresAt: Date; fullName: string; message: string }) {
-  const email = buildAdminInvitationEmail(input);
+  let invitationUrl: string | null = null;
   try {
+    const email = buildAdminInvitationEmail(input);
+    invitationUrl = email.invitationUrl;
     const result = await sendCommunityEmail({
       to: input.email,
       subject: email.subject,
@@ -43,10 +45,21 @@ async function sendInvitation(input: { id: string; email: string; role: AdminRol
       html: email.html,
       notificationId: input.id,
     });
-    return { accepted: true as const, messageId: result.messageId ?? null };
+    return { accepted: true as const, messageId: result.messageId ?? null, invitationUrl };
   } catch (error) {
-    return { accepted: false as const, category: classifyEmailFailure(error).code };
+    return { accepted: false as const, category: classifyEmailFailure(error).code, invitationUrl };
   }
+}
+
+async function findVerifiedAccount(admin: SupabaseClient, email: string) {
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) return null;
+    const match = data.users.find((user) => user.email?.toLowerCase() === email && Boolean(user.email_confirmed_at));
+    if (match) return match.id;
+    if (data.users.length < 1000) return null;
+  }
+  return null;
 }
 
 export async function GET() {
@@ -119,10 +132,18 @@ export async function POST(request: Request) {
   if (input.role === "super_admin") {
     const sessionClient = await createClient();
     const { data: claims } = await sessionClient.auth.getClaims();
-    const authTime = Number(claims?.claims?.auth_time ?? 0);
-    const aal = claims?.claims?.aal;
-    if (aal !== "aal2" && (!authTime || Date.now() / 1000 - authTime > 10 * 60)) {
-      return authResponse({ error: "For Super Admin invitations, sign in again or complete MFA, then retry within 10 minutes." }, 403);
+    const rawClaims = (claims?.claims ?? {}) as Record<string, unknown>;
+    // Supabase does not issue an `auth_time` claim. The real last-authentication
+    // time is the latest `amr` timestamp (set at sign-in and preserved across
+    // token refreshes); fall back to the token `iat` if amr is unavailable.
+    const amr = rawClaims.amr;
+    const amrTimes = Array.isArray(amr)
+      ? amr.map((entry) => Number((entry as { timestamp?: unknown })?.timestamp ?? 0)).filter((value) => Number.isFinite(value) && value > 0)
+      : [];
+    const lastAuthTime = amrTimes.length ? Math.max(...amrTimes) : Number(rawClaims.iat ?? 0);
+    const aal = rawClaims.aal;
+    if (aal !== "aal2" && (!lastAuthTime || Date.now() / 1000 - lastAuthTime > 10 * 60)) {
+      return authResponse({ error: "For Super Admin invitations, sign in again and send within 10 minutes, or complete MFA." }, 403);
     }
   }
 
@@ -152,6 +173,34 @@ export async function POST(request: Request) {
     return authResponse({ error: insertError?.code === "23505" ? "A pending invitation already exists for this email. Review it below or revoke it first." : "The invitation could not be created." }, insertError?.code === "23505" ? 409 : 503);
   }
 
+  const admin = createAdminClient() as unknown as SupabaseClient;
+  const inviteeId = await findVerifiedAccount(admin, email);
+  if (inviteeId) {
+    const { error: inboxError } = await db.from("notifications").insert({
+      type: "admin.invitation.received",
+      channel: "in_app",
+      recipient: email,
+      recipient_user_id: inviteeId,
+      audience: "member",
+      related_record_type: "admin_role_invitations",
+      related_record_id: id,
+      title: "Administrator invitation received",
+      message: `You have been invited to join the CSC Circle administration team as ${roleLabels[input.role]}. Review the role and accept using this verified account.`,
+      action_url: `/admin/accept-invitation?invitationId=${encodeURIComponent(id)}`,
+      payload: { role: input.role, expiresAt: expiresAt.toISOString() },
+      dedupe_key: `admin.invitation:${id}`,
+      status: "available",
+      delivered_at: new Date().toISOString(),
+    });
+    if (inboxError) {
+      await db.from("audit_logs").insert({
+        action: "admin.invitation.in_app_notification_failed", actor_id: context.userId,
+        actor_role: "super_admin", target_type: "admin_role_invitation", target_id: id,
+        after: { role: input.role, recipientAccountMatched: true }, correlation_id: randomUUID(),
+      });
+    }
+  }
+
   const delivery = await sendInvitation({ id, email, role: input.role, token, expiresAt, fullName: input.fullName, message: input.message });
   const deliveryState = delivery.accepted
     ? { delivery_status: "smtp_accepted", last_delivery_error: null, sent_at: new Date().toISOString() }
@@ -167,6 +216,6 @@ export async function POST(request: Request) {
     correlation_id: randomUUID(),
   });
   if (updateError) return authResponse({ error: "The invitation was created, but its delivery state could not be recorded. Refresh the invitation list before retrying." }, 503);
-  if (!delivery.accepted) return authResponse({ ok: false, invitationId: id, error: "The invitation is saved, but SMTP did not accept the email. Use Retry from the invitation list." }, 503);
-  return authResponse({ ok: true, invitationId: id, deliveryStatus: "smtp_accepted" }, 201);
+  if (!delivery.accepted) return authResponse({ ok: false, invitationId: id, invitationUrl: delivery.invitationUrl, error: "The invitation is saved, but SMTP did not accept the email. You can still copy the link below and share it manually, or use Retry from the invitation list." }, 503);
+  return authResponse({ ok: true, invitationId: id, deliveryStatus: "smtp_accepted", invitationUrl: delivery.invitationUrl }, 201);
 }
