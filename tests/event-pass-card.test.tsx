@@ -15,6 +15,9 @@ describe("EventPassCard", () => {
       venue: "TICEL Bio Park",
       location: "12th Floor, Coimbatore",
       memberName: "Asha Rao",
+      avatarUrl: "/api/member/portrait",
+      email: "asha@example.test",
+      phone: "+91 98765 43210",
       reference: "CSC-EVT-1234567890ABCDEF1234",
       status: "confirmed",
       verificationToken: "a".repeat(64),
@@ -26,6 +29,13 @@ describe("EventPassCard", () => {
     expect(screen.getByText("CSC-EVT-1234567890ABCDEF1234")).toBeInTheDocument();
     expect(screen.getByText(/Location:/)).toBeInTheDocument();
     expect(screen.getByText(/TICEL Bio Park, 12th Floor, Coimbatore/)).toBeInTheDocument();
+    expect(screen.getByText("Email")).toBeInTheDocument();
+    expect(screen.getByText("asha@example.test")).toBeInTheDocument();
+    expect(screen.getByText("Phone")).toBeInTheDocument();
+    expect(screen.getByText("+91 98765 43210")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Attendee profile picture" }).querySelector("img")).toHaveAttribute("src", "/api/member/portrait");
+    expect(container.querySelector(".font-mono")?.className).toContain("whitespace-nowrap");
+    expect(container.querySelector("svg.text-brand-accent")?.getAttribute("class")).toContain("size-7");
     expect(container.querySelector(".max-w-md")?.textContent).toContain("Name");
     expect(container.querySelector(".max-w-md")?.textContent).toContain("UID");
     expect(container.querySelector(".max-w-md")?.textContent).toContain("Location:");

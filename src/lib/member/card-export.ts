@@ -1,5 +1,5 @@
-/** Render the 4:5 card at up to 4K on its long edge for crisp zoom and print. */
-export function membershipCardCaptureOptions(cardHeightCssPx: number) {
+/** Render a card at up to 4K on its long edge while staying within mobile canvas limits. */
+export function cardCaptureOptions(cardHeightCssPx: number) {
   return {
     // A 4:5 4K card is about 3,072 × 3,840 (11.8 MP), below common mobile
     // canvas pixel limits. Blob capture avoids holding a multi-megabyte
@@ -8,6 +8,10 @@ export function membershipCardCaptureOptions(cardHeightCssPx: number) {
     cacheBust: true,
   } as const;
 }
+
+/** The membership and event passes share the same mobile-safe capture budget. */
+export const membershipCardCaptureOptions = cardCaptureOptions;
+export const eventPassCaptureOptions = cardCaptureOptions;
 
 /** Wait for the exact logo, portrait, QR and web fonts before rasterizing. */
 export async function waitForMembershipCardAssets(element: HTMLElement) {
@@ -115,6 +119,10 @@ export async function createMembershipCardExportNode(
     throw error;
   }
 }
+
+/** Event passes use the same authenticated-image inlining used by digital IDs. */
+export const createEventPassExportNode = createMembershipCardExportNode;
+export const waitForEventPassAssets = waitForMembershipCardAssets;
 
 const CIRCLE_HANDLE = 0.55228475;
 

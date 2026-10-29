@@ -234,6 +234,11 @@ export interface EventPass {
   venue?: string;
   location: string;
   memberName: string;
+  /** Same private profile portrait shown on the member's digital ID, when available. */
+  avatarUrl?: string;
+  /** Contact details from this attendee's own registration record. */
+  email?: string;
+  phone?: string;
   reference: string;
   status: RegistrationStatus;
   /** Opaque, event-scoped verification token — resolved server-side. */
