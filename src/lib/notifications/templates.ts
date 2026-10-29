@@ -13,6 +13,10 @@ export const definitions = {
   EventRSVPReceived: ["Event Registration Received", "Your event registration was received. We will email you when its status changes. A received registration is not a seat confirmation.", "/member/events", "onboarding", "sky"],
   EventRSVPAdminAlert: ["New Event Registration", "A registration or event enquiry has been saved and is ready for authorized review.", "/admin/registrations", "workspace", "light"],
   EventConfirmed: ["Your Event Registration Is Confirmed", "Your registration is confirmed. Review the event details and your current event pass in CSC Circle.", "/member/events", "milestone", "light"],
+  EventRegistrationNotConfirmed: ["Event Registration Update", "We could not confirm your event registration. Review the note below or contact CSC Circle if you need help.", "/events", "support", "light"],
+  PaidEventRegistrationReceived: ["Registration Received — Payment Verification Pending", "We received your CSC event registration and payment proof. Your place is not confirmed until an authorized CSC reviewer verifies the payment.", "/events", "payment", "light"],
+  PaidEventRegistrationConfirmed: ["Your CSC Event Registration Is Confirmed", "Your payment has been verified and your event registration is confirmed. Keep this email for your event details.", "/events", "milestone", "light"],
+  PaidEventRegistrationNotConfirmed: ["CSC Event Registration Update", "We could not confirm your event registration. Review the note below or contact CSC Circle if you need help.", "/events", "support", "light"],
   EventWaitlisted: ["Event Waitlist Update", "You have been added to the event waitlist. A place is not reserved unless CSC later confirms your registration.", "/member/events", "support", "light"],
   EventReminder: ["Upcoming CSC Event Reminder", "Your confirmed CSC event is approaching. Review the latest schedule, venue, and event pass before attending.", "/member/events", "campaign", "orange"],
   EventUpdated: ["Event Details Updated", "Details for an event you registered for have changed. Review the latest event information before travelling.", "/member/events", "support", "light"],
@@ -96,7 +100,7 @@ const detailFields: Array<[string, string, number]> = [
   ["startupAffiliation", "Startup affiliation", 140], ["goal", "Request", 400],
   ["scheduledAt", "Meeting time", 80], ["mode", "Meeting mode", 50], ["meetingLocation", "Meeting location", 180],
   ["rating", "Rating", 10], ["review", "Review", 800], ["website", "Website", 300],
-  ["description", "Description", 600],
+  ["description", "Description", 600], ["reviewNote", "Review note", 500],
 ];
 
 const asset = (base: string, file: string) => `${base}/email-assets/reference/${file}`;

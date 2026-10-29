@@ -11,7 +11,9 @@ export const instant = false;
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const event = (await getPublicEvents()).find((item) => item.slug === slug);
-  return event ? { title: `${event.title} · Events & Booking`, description: event.description.slice(0, 160), alternates: { canonical: `/events/${event.slug}` }, openGraph: { url: `${siteConfig.url}/events/${event.slug}` } } : { title: "Event not found" };
+  const description = event?.summary || event?.description.slice(0, 160);
+  const images = event?.coverImage ? [{ url: event.coverImage.startsWith("http") ? event.coverImage : `${siteConfig.url}${event.coverImage}`, alt: event.title }] : undefined;
+  return event ? { title: `${event.title} · Events & Booking`, description, alternates: { canonical: `/events/${event.slug}` }, openGraph: { title: event.title, description, url: `${siteConfig.url}/events/${event.slug}`, type: "website", images }, twitter: { card: "summary_large_image", title: event.title, description, images: images?.map((image) => image.url) } } : { title: "Event not found" };
 }
 
 export default async function EventDetailPage({ params }: { params: Promise<{ slug: string }> }) {

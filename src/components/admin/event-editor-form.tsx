@@ -17,6 +17,7 @@ import {
   eventEditorSchema,
   eventEditorDefaults,
   type EventEditorValues,
+  type ParsedEventEditorValues,
 } from "@/lib/validations/admin";
 import type { EventRecord } from "@/types";
 
@@ -25,7 +26,7 @@ const selectClass =
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <fieldset className="flex flex-col gap-4 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border">
+    <fieldset className="flex min-w-0 flex-col gap-4 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border">
       <legend className="px-1 text-sm font-semibold text-brand-ink">{title}</legend>
       {children}
     </fieldset>
@@ -51,17 +52,20 @@ export function EventEditorForm({
     setValue,
     getValues,
     formState: { errors },
-  } = useForm<EventEditorValues>({
+  } = useForm<EventEditorValues, unknown, ParsedEventEditorValues>({
     resolver: zodResolver(eventEditorSchema),
     defaultValues: { ...eventEditorDefaults, ...initial },
   });
   const [saving, setSaving] = React.useState(false);
   const [uploadingCover, setUploadingCover] = React.useState(false);
+  const [uploadingQr, setUploadingQr] = React.useState(false);
   const [coverPreview, setCoverPreview] = React.useState(() => {
     const value = initial?.coverImage ?? "";
     return value.startsWith("event-covers/") && eventId ? `/api/admin/events/cover?event=${eventId}` : value;
   });
   const coverInput = React.useRef<HTMLInputElement>(null);
+  const qrInput = React.useRef<HTMLInputElement>(null);
+  const [qrPreview, setQrPreview] = React.useState(() => initial?.upiQrPath && eventId ? `/api/admin/events/upi-qr?event=${eventId}` : "");
   const values = useWatch({ control }) as Partial<EventEditorValues>;
   const coverImagePreview = values.coverImage?.startsWith("event-covers/")
     ? coverPreview || (eventId ? `/api/admin/events/cover?event=${eventId}` : "")
@@ -104,7 +108,22 @@ export function EventEditorForm({
     } finally { setUploadingCover(false); }
   }
 
-  async function onSubmit(v: EventEditorValues) {
+  async function uploadQr(file?: File) {
+    if (!file || isDemo) return;
+    setUploadingQr(true);
+    try {
+      const body = new FormData(); body.append("file", file);
+      const response = await fetch("/api/admin/events/upi-qr", { method: "POST", body });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error ?? "UPI QR image could not be uploaded.");
+      setValue("upiQrPath", result.path, { shouldDirty: true, shouldValidate: true });
+      setQrPreview(result.previewUrl);
+      toast.success("UPI QR image uploaded privately.");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "UPI QR image could not be uploaded."); }
+    finally { setUploadingQr(false); }
+  }
+
+  async function onSubmit(v: ParsedEventEditorValues) {
     if (isDemo) { toast.info("DEMO preview. No event was saved or published."); return; }
     setSaving(true);
     try {
@@ -118,8 +137,8 @@ export function EventEditorForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
-      <div className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="grid w-full min-w-0 gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+      <div className="flex min-w-0 flex-col gap-5">
         <Section title="A · Basic information">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
@@ -283,6 +302,21 @@ export function EventEditorForm({
             <FieldLabel htmlFor="e-payinfo">Payment instructions</FieldLabel>
             <Textarea id="e-payinfo" rows={2} {...register("paymentInstructions")} />
           </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field><FieldLabel htmlFor="e-reg-mode">Registration mode</FieldLabel><select id="e-reg-mode" className={selectClass} {...register("registrationMode")}><option value="rsvp">Standard RSVP</option><option value="paid_upi">Paid registration with UPI proof</option></select></Field>
+            <Field><FieldLabel htmlFor="e-price-attendee">Price per attendee (₹)</FieldLabel><Input id="e-price-attendee" type="number" min="1" step="0.01" {...register("pricePerAttendee")} /></Field>
+            <Field><FieldLabel htmlFor="e-max-attendees">Maximum attendees per registration</FieldLabel><Input id="e-max-attendees" type="number" min="1" max="10" {...register("maxAttendeesPerRegistration", { valueAsNumber: true })} /></Field>
+            <Field><FieldLabel htmlFor="e-upi-payee">UPI payee name</FieldLabel><Input id="e-upi-payee" {...register("upiPayeeName")} /></Field>
+            <Field><FieldLabel htmlFor="e-upi-vpa">UPI VPA</FieldLabel><Input id="e-upi-vpa" placeholder="name@bank" {...register("upiVpa")} /></Field>
+          </div>
+          {values.registrationMode === "paid_upi" ? <Field>
+            <FieldLabel htmlFor="e-upi-qr">UPI QR image</FieldLabel>
+            <input ref={qrInput} id="e-upi-qr" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => { void uploadQr(e.currentTarget.files?.[0]); e.currentTarget.value = ""; }} />
+            <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={uploadingQr || isDemo} onClick={() => qrInput.current?.click()}>{uploadingQr ? "Uploading…" : values.upiQrPath ? "Replace UPI QR image" : "Upload UPI QR image"}</Button>{values.upiQrPath ? <Button type="button" variant="ghost" disabled={uploadingQr} onClick={() => { setValue("upiQrPath", "", { shouldDirty: true, shouldValidate: true }); setQrPreview(""); }}>Remove</Button> : null}</div>
+            {qrPreview ? <div className="relative mt-2 size-40 overflow-hidden rounded-xl bg-white p-2 ring-1 ring-brand-border"><Image src={qrPreview} alt="UPI QR preview" fill unoptimized sizes="160px" className="object-contain" /></div> : <p className="text-xs text-brand-muted">Publishing a paid UPI event requires this QR image, its payee name, and a verified VPA.</p>}
+            {errors.upiQrPath ? <FieldError>{errors.upiQrPath.message}</FieldError> : null}
+          </Field> : null}
+          <Field><FieldLabel htmlFor="e-pay-note">UPI payment instructions</FieldLabel><Textarea id="e-pay-note" rows={2} {...register("paymentNote")} /></Field>
         </Section>
 
         <Section title="H · Publication">
@@ -294,7 +328,7 @@ export function EventEditorForm({
             </select>
           </Field>
           <div className="flex flex-col gap-2">
-            <Button type="submit" disabled={saving || uploadingCover} className="h-11 gap-2 sm:w-fit sm:px-8">
+            <Button type="submit" disabled={saving || uploadingCover || uploadingQr} className="h-11 gap-2 sm:w-fit sm:px-8">
               {saving ? <Loader2 className="size-4 animate-spin" /> : null}
               {mode === "create" ? "Create event" : "Save changes"}
             </Button>

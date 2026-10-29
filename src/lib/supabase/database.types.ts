@@ -531,9 +531,20 @@ export type Database = {
         Update: { base_version?: number; created_at?: string; id?: string; proposed_data?: Json; proposed_private_details?: Json; review_reason?: string | null; reviewed_at?: string | null; reviewed_by?: string | null; startup_id?: string; status?: string; submitted_at?: string | null; submitted_by?: string; updated_at?: string }
         Relationships: []
       }
+      event_registration_import_metadata: {
+        Row: { created_at: string; metadata: Json; registration_id: string }
+        Insert: { created_at?: string; metadata?: Json; registration_id: string }
+        Update: { created_at?: string; metadata?: Json; registration_id?: string }
+        Relationships: [{ foreignKeyName: "event_registration_import_metadata_registration_id_fkey"; columns: ["registration_id"]; isOneToOne: true; referencedRelation: "event_registrations"; referencedColumns: ["id"] }]
+      }
       event_registrations: {
         Row: {
           attendee_name: string | null
+          paid_registration_id: string | null
+          source: string
+          source_email: string | null
+          source_timestamp: string | null
+          source_parent_registration_id: string | null
           attendance: Database["public"]["Enums"]["attendance_status"]
           created_at: string
           event_id: string
@@ -548,6 +559,11 @@ export type Database = {
         }
         Insert: {
           attendee_name?: string | null
+          paid_registration_id?: string | null
+          source?: string
+          source_email?: string | null
+          source_timestamp?: string | null
+          source_parent_registration_id?: string | null
           attendance?: Database["public"]["Enums"]["attendance_status"]
           created_at?: string
           event_id: string
@@ -562,6 +578,11 @@ export type Database = {
         }
         Update: {
           attendee_name?: string | null
+          paid_registration_id?: string | null
+          source?: string
+          source_email?: string | null
+          source_timestamp?: string | null
+          source_parent_registration_id?: string | null
           attendance?: Database["public"]["Enums"]["attendance_status"]
           created_at?: string
           event_id?: string
@@ -580,6 +601,20 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_paid_registration_id_fkey"
+            columns: ["paid_registration_id"]
+            isOneToOne: false
+            referencedRelation: "paid_event_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_source_parent_registration_id_fkey"
+            columns: ["source_parent_registration_id"]
+            isOneToOne: false
+            referencedRelation: "event_registrations"
             referencedColumns: ["id"]
           },
         ]
@@ -610,65 +645,104 @@ export type Database = {
       events: {
         Row: {
           admission: string
+          approval_mode: string
           capacity: number | null
           category: string
           cover_image: string | null
+          cover_image_alt: string | null
           created_at: string
           description: string
           ends_at: string
           featured: boolean
+          format: string
           id: string
           location: string
+          maps_url: string | null
+          max_attendees_per_registration: number
+          organizer: string
           price_minor: number
+          price_per_attendee: number | null
+          payment_note: string | null
           registration_deadline: string | null
+          registration_mode: Database["public"]["Enums"]["event_registration_mode"]
           registration_state: string
           settings: Json
           slug: string
           starts_at: string
+          summary: string
           status: Database["public"]["Enums"]["publication_status"]
           title: string
+          upi_payee_name: string | null
+          upi_qr_path: string | null
+          upi_vpa: string | null
           venue: string | null
         }
         Insert: {
           admission?: string
+          approval_mode?: string
           capacity?: number | null
           category: string
           cover_image?: string | null
+          cover_image_alt?: string | null
           created_at?: string
           description?: string
           ends_at: string
           featured?: boolean
+          format?: string
           id?: string
           location: string
+          maps_url?: string | null
+          max_attendees_per_registration?: number
+          organizer?: string
           price_minor?: number
+          price_per_attendee?: number | null
+          payment_note?: string | null
           registration_deadline?: string | null
+          registration_mode?: Database["public"]["Enums"]["event_registration_mode"]
           registration_state?: string
           settings?: Json
           slug: string
           starts_at: string
+          summary?: string
           status?: Database["public"]["Enums"]["publication_status"]
           title: string
+          upi_payee_name?: string | null
+          upi_qr_path?: string | null
+          upi_vpa?: string | null
           venue?: string | null
         }
         Update: {
           admission?: string
+          approval_mode?: string
           capacity?: number | null
           category?: string
           cover_image?: string | null
+          cover_image_alt?: string | null
           created_at?: string
           description?: string
           ends_at?: string
           featured?: boolean
+          format?: string
           id?: string
           location?: string
+          maps_url?: string | null
+          max_attendees_per_registration?: number
+          organizer?: string
           price_minor?: number
+          price_per_attendee?: number | null
+          payment_note?: string | null
           registration_deadline?: string | null
+          registration_mode?: Database["public"]["Enums"]["event_registration_mode"]
           registration_state?: string
           settings?: Json
           slug?: string
           starts_at?: string
+          summary?: string
           status?: Database["public"]["Enums"]["publication_status"]
           title?: string
+          upi_payee_name?: string | null
+          upi_qr_path?: string | null
+          upi_vpa?: string | null
           venue?: string | null
         }
         Relationships: []
@@ -1164,6 +1238,12 @@ export type Database = {
           },
         ]
       }
+      paid_event_registrations: {
+        Row: { member_registration_id: string | null; pass_token: string | null; reference: string; user_id: string | null; additional_attendee_names: string | null; attendee_count: number; consent_contact: boolean; consent_payment_terms: boolean; created_at: string; dietary_accessibility_notes: string | null; email: string; event_id: string; full_name: string; id: string; organization: string; payment_screenshot_path: string; referral_source: Database["public"]["Enums"]["paid_registration_referral"] | null; reviewed_at: string | null; reviewed_by: string | null; review_note: string | null; role: Database["public"]["Enums"]["paid_registration_role"]; status: Database["public"]["Enums"]["paid_registration_status"]; total_amount_paid: number; upi_transaction_ref: string; whatsapp: string }
+        Insert: { member_registration_id?: string | null; pass_token?: string | null; reference?: string; user_id?: string | null; additional_attendee_names?: string | null; attendee_count: number; consent_contact: boolean; consent_payment_terms: boolean; created_at?: string; dietary_accessibility_notes?: string | null; email: string; event_id: string; full_name: string; id?: string; organization: string; payment_screenshot_path: string; referral_source?: Database["public"]["Enums"]["paid_registration_referral"] | null; reviewed_at?: string | null; reviewed_by?: string | null; review_note?: string | null; role: Database["public"]["Enums"]["paid_registration_role"]; status?: Database["public"]["Enums"]["paid_registration_status"]; total_amount_paid: number; upi_transaction_ref: string; whatsapp: string }
+        Update: { member_registration_id?: string | null; pass_token?: string | null; reference?: string; user_id?: string | null; additional_attendee_names?: string | null; attendee_count?: number; consent_contact?: boolean; consent_payment_terms?: boolean; created_at?: string; dietary_accessibility_notes?: string | null; email?: string; event_id?: string; full_name?: string; id?: string; organization?: string; payment_screenshot_path?: string; referral_source?: Database["public"]["Enums"]["paid_registration_referral"] | null; reviewed_at?: string | null; reviewed_by?: string | null; review_note?: string | null; role?: Database["public"]["Enums"]["paid_registration_role"]; status?: Database["public"]["Enums"]["paid_registration_status"]; total_amount_paid?: number; upi_transaction_ref?: string; whatsapp?: string }
+        Relationships: [{ foreignKeyName: "paid_event_registrations_event_id_fkey"; columns: ["event_id"]; isOneToOne: false; referencedRelation: "events"; referencedColumns: ["id"] }, { foreignKeyName: "paid_event_registrations_member_registration_id_fkey"; columns: ["member_registration_id"]; isOneToOne: false; referencedRelation: "event_registrations"; referencedColumns: ["id"] }]
+      }
     }
     Views: {
       public_testimonials: {
@@ -1204,6 +1284,7 @@ export type Database = {
         Args: { decision: string; kind: string; reason: string; target: string }
         Returns: Json
       }
+      csc_resend_event_pass: { Args: { p_registration_id: string }; Returns: boolean }
       csc_begin_email_delivery: {
         Args: { digest: string; job: string; lease: string }
         Returns: boolean
@@ -1248,6 +1329,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+
       csc_email_budget_available: { Args: never; Returns: boolean }
       csc_ensure_profile: { Args: never; Returns: undefined }
       csc_finish_email_delivery: {
@@ -1320,6 +1402,10 @@ export type Database = {
     }
     Enums: {
       attendance_status: "not_attended" | "checked_in" | "no_show"
+      event_registration_mode: "rsvp" | "paid_upi"
+      paid_registration_status: "pending_verification" | "confirmed" | "rejected" | "cancelled"
+      paid_registration_role: "Startup Founder / Co-Founder" | "Entrepreneur / Business Owner" | "Working Professional" | "Student" | "Freelancer / Creator" | "Aspiring Entrepreneur" | "Other"
+      paid_registration_referral: "Instagram" | "WhatsApp" | "LinkedIn" | "Friends / Referral" | "CSC Community" | "Other"
       community_goal:
         | "networking"
         | "technical_collaboration"
@@ -1510,6 +1596,10 @@ export const Constants = {
   public: {
     Enums: {
       attendance_status: ["not_attended", "checked_in", "no_show"],
+      event_registration_mode: ["rsvp", "paid_upi"],
+      paid_registration_status: ["pending_verification", "confirmed", "rejected", "cancelled"],
+      paid_registration_role: ["Startup Founder / Co-Founder", "Entrepreneur / Business Owner", "Working Professional", "Student", "Freelancer / Creator", "Aspiring Entrepreneur", "Other"],
+      paid_registration_referral: ["Instagram", "WhatsApp", "LinkedIn", "Friends / Referral", "CSC Community", "Other"],
       community_goal: [
         "networking",
         "technical_collaboration",
