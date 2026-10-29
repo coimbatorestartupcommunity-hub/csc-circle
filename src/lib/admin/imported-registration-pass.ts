@@ -7,7 +7,7 @@ export async function issueImportedRegistrationPasses(admin: SupabaseClient<Data
   const { data: lead, error } = await admin.from("event_registrations").select("id,event_id,user_id,attendee_name,reference,pass_token,status,source,source_email,source_timestamp").eq("id", registrationId).maybeSingle();
   if (error || !lead || lead.source !== "google_form_import" || lead.status !== "pending_review") return { ok: false as const, error: "Imported registration is not pending review." };
   const [{ data: event }, { data: saved }] = await Promise.all([
-    admin.from("events").select("status,ends_at,capacity").eq("id", lead.event_id).maybeSingle(),
+    admin.from("events").select("status,ends_at,capacity,title").eq("id", lead.event_id).maybeSingle(),
     admin.from("event_registration_import_metadata").select("metadata").eq("registration_id", lead.id).maybeSingle(),
   ]);
   if (!event || event.status !== "published" || Date.parse(event.ends_at) <= Date.now()) return { ok: false as const, error: "Passes can be issued only for a published upcoming event." };
@@ -36,5 +36,35 @@ export async function issueImportedRegistrationPasses(admin: SupabaseClient<Data
     if (insertError) return { ok: false as const, error: "An additional attendee pass could not be issued." };
     await admin.from("event_registration_import_metadata").insert({ registration_id: id, metadata: { ...metadata, attendeeName: name, groupRegistrationId: lead.id } });
   }
+
+  // Best-effort in-app (bell) notification for the attendee's account: confirms
+  // registration + pass approval and deep-links to the downloadable pass page.
+  // The confirmation email is enqueued separately by the registration_status_email
+  // DB trigger. Never let a notification failure block pass issuance.
+  if (lead.user_id) {
+    const eventTitle = typeof event.title === "string" && event.title.trim() ? event.title.trim() : "your CSC event";
+    const passes = names.length > 1 ? `your ${names.length} event passes are` : "your event pass is";
+    try {
+      await admin.from("notifications").insert({
+        type: "EventConfirmed",
+        channel: "in_app",
+        recipient: lead.source_email,
+        recipient_user_id: lead.user_id,
+        audience: "member",
+        related_record_type: "event_registrations",
+        related_record_id: lead.id,
+        title: "You're registered — event pass approved",
+        message: `Your registration for ${eventTitle} is confirmed and ${passes} approved. Open your event pass to view the QR and download it.`,
+        action_url: `/member/events/${lead.id}`,
+        payload: { reference: lead.reference, passCount: names.length },
+        dedupe_key: `event.confirmed.inapp:${lead.id}`,
+        status: "available",
+        delivered_at: new Date().toISOString(),
+      });
+    } catch {
+      /* pass issuance already succeeded; the email remains the durable channel */
+    }
+  }
+
   return { ok: true as const, reference: lead.reference, passCount: names.length };
 }
