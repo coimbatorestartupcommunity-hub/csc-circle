@@ -125,6 +125,17 @@ export interface EventRecord {
   status: PublicationStatus;
   admission: "free" | "paid";
   registrationState: EventRegistrationState;
+  registrationMode?: "rsvp" | "paid_upi";
+  pricePerAttendee?: number;
+  maxAttendeesPerRegistration?: number;
+  upiPayeeName?: string;
+  upiVpa?: string;
+  upiQrImage?: string;
+  paymentNote?: string;
+  summary?: string;
+  organizer?: string;
+  mapsUrl?: string;
+  format?: "offline" | "online" | "hybrid";
   featured?: boolean;
   isFixture?: boolean;
 }

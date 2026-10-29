@@ -17,7 +17,7 @@ export default async function NewEventPage() {
         <ArrowLeft className="size-4" /> Back to events
       </Link>
       <AdminPageHeader title="Create event" description="Fill in the event details and preview before publishing." isDemo={ctx.mode === "preview"} />
-      <EventEditorForm mode="create" isDemo={ctx.mode === "preview"} />
+      <EventEditorForm mode="create" isDemo={ctx.mode === "preview"} canPublishSurfaces={can(ctx, "events.publish") && can(ctx, "content.manage")} />
     </>
   );
 }

@@ -216,3 +216,27 @@ export async function createMembershipCardPdf(pngBlob: Blob) {
 
   return pdf.save();
 }
+
+/** Put the rendered event pass artwork on a compact, printable PDF page. */
+export async function createEventPassPdf(pngBlob: Blob, title: string) {
+  const { PDFDocument } = await import("pdf-lib");
+  const pdf = await PDFDocument.create();
+  pdf.setTitle(title || "CSC Circle Event Pass");
+  pdf.setSubject("CSC Circle digital event pass");
+
+  const imageBytes = await new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => reader.result instanceof ArrayBuffer
+      ? resolve(reader.result)
+      : reject(new Error("Could not read the event pass image."));
+    reader.onerror = () => reject(new Error("Could not read the event pass image."));
+    reader.readAsArrayBuffer(pngBlob);
+  });
+  const image = await pdf.embedPng(new Uint8Array(imageBytes));
+  const scale = Math.min(432 / image.width, 576 / image.height);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  const page = pdf.addPage([width, height]);
+  page.drawImage(image, { x: 0, y: 0, width, height });
+  return pdf.save();
+}

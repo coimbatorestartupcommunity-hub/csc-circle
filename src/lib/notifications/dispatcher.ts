@@ -40,6 +40,11 @@ async function isCurrent(sb: Service, job: Job) {
     };
     return !error && expected[key]?.includes(data?.status ?? "") === true;
   }
+  if (job.related_record_type === "paid_event_registrations" && ["PaidEventRegistrationReceived", "PaidEventRegistrationConfirmed", "PaidEventRegistrationNotConfirmed"].includes(key)) {
+    const { data, error } = await sb.from("paid_event_registrations").select("status").eq("id", id).maybeSingle();
+    if (error || !data) return false;
+    return key === "PaidEventRegistrationReceived" ? data.status === "pending_verification" : key === "PaidEventRegistrationConfirmed" ? data.status === "confirmed" : data.status === "rejected";
+  }
   if (job.related_record_type === "event_registrations" && ["EventRSVPReceived", "EventRSVPAdminAlert", "EventConfirmed", "EventWaitlisted", "EventReminder", "EventUpdated", "EventCancelled", "PaymentPendingVerification"].includes(key)) {
     const { data: r, error } = await sb.from("event_registrations").select("status,event_id,payment").eq("id", id).maybeSingle();
     if (error || !r) return false;
@@ -127,6 +132,13 @@ export async function dispatchNotifications(batch = 15) {
       const originalPayload = job.payload && typeof job.payload === "object" && !Array.isArray(job.payload) ? job.payload : {};
       let payload: Record<string, unknown> = originalPayload;
       let attachments: { filename: string; content: Buffer; contentType: string; cid: string }[] | undefined;
+      if (job.related_record_type === "paid_event_registrations" && job.related_record_id) {
+        const { data: registration } = await sb.from("paid_event_registrations").select("full_name,reference,status,review_note,event_id,member_registration_id,pass_token").eq("id", job.related_record_id).maybeSingle();
+        if (registration) {
+          const { data: event } = await sb.from("events").select("title,starts_at,ends_at,venue,location").eq("id", registration.event_id).maybeSingle();
+          payload = { ...originalPayload, name: registration.full_name, reference: registration.reference, status: registration.status, reviewNote: registration.review_note ?? "", eventTitle: event?.title ?? "Event", startsAt: event?.starts_at, endsAt: event?.ends_at, venue: event?.venue, location: event?.location, memberRegistrationId: registration.member_registration_id };
+        }
+      }
       if (job.template_key === "EventConfirmed" && job.related_record_type === "event_registrations" && job.related_record_id) {
         payload = { ...originalPayload, registrationId: job.related_record_id };
         const { data: registration } = await sb.from("event_registrations").select("pass_token,reference,user_id,event_id,attendee_name").eq("id", job.related_record_id).maybeSingle();

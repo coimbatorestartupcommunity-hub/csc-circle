@@ -1,0 +1,40 @@
+import { randomBytes, randomUUID } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/database.types";
+import { parseAdditionalAttendeeNames } from "@/lib/validations/paid-registration";
+
+export async function issueImportedRegistrationPasses(admin: SupabaseClient<Database>, registrationId: string) {
+  const { data: lead, error } = await admin.from("event_registrations").select("id,event_id,user_id,attendee_name,reference,pass_token,status,source,source_email,source_timestamp").eq("id", registrationId).maybeSingle();
+  if (error || !lead || lead.source !== "google_form_import" || lead.status !== "pending_review") return { ok: false as const, error: "Imported registration is not pending review." };
+  const [{ data: event }, { data: saved }] = await Promise.all([
+    admin.from("events").select("status,ends_at,capacity").eq("id", lead.event_id).maybeSingle(),
+    admin.from("event_registration_import_metadata").select("metadata").eq("registration_id", lead.id).maybeSingle(),
+  ]);
+  if (!event || event.status !== "published" || Date.parse(event.ends_at) <= Date.now()) return { ok: false as const, error: "Passes can be issued only for a published upcoming event." };
+  const metadata = (saved?.metadata ?? {}) as Record<string, unknown>;
+  const additional = typeof metadata.additionalAttendeeNames === "string" ? parseAdditionalAttendeeNames(metadata.additionalAttendeeNames) : [];
+  const names = [...new Set([lead.attendee_name?.trim() || (typeof metadata.fullName === "string" ? metadata.fullName.trim() : ""), ...additional].filter(Boolean))].slice(0, 10);
+  if (!names.length) return { ok: false as const, error: "Attendee names are missing." };
+  const { count: confirmedCount } = await admin.from("event_registrations").select("id", { count: "exact", head: true }).eq("event_id", lead.event_id).in("status", ["confirmed", "checked_in"]);
+  const { data: existing } = await admin.from("event_registrations").select("id,attendee_name,status").eq("source_parent_registration_id", lead.id);
+  const existingNames = new Set((existing ?? []).map((pass) => pass.attendee_name?.trim().toLocaleLowerCase("en")).filter(Boolean));
+  const needed = 1 + names.slice(1).filter((name) => !existingNames.has(name.toLocaleLowerCase("en"))).length;
+  if (event.capacity && (confirmedCount ?? 0) + needed > event.capacity) return { ok: false as const, error: "The remaining event capacity is too small for this registration." };
+
+  const passToken = lead.pass_token || randomBytes(32).toString("hex");
+  const { error: leadError } = await admin.from("event_registrations").update({ status: "confirmed", payment: "paid", attendee_name: names[0], pass_token: passToken }).eq("id", lead.id).eq("status", "pending_review");
+  if (leadError) return { ok: false as const, error: "The lead attendee pass could not be issued." };
+  for (const name of names.slice(1)) {
+    if (existingNames.has(name.toLocaleLowerCase("en"))) continue;
+    const id = randomUUID();
+    const ref = `CSC-EVT-${randomUUID().replaceAll("-", "").toUpperCase()}`;
+    const { error: insertError } = await admin.from("event_registrations").insert({
+      id, event_id: lead.event_id, user_id: lead.user_id, status: "confirmed", payment: "paid", attendee_name: name,
+      reference: ref, pass_token: randomBytes(32).toString("hex"), source: "google_form_import", source_email: lead.source_email,
+      source_timestamp: lead.source_timestamp, source_parent_registration_id: lead.id, goal: "Additional attendee pass from imported Google Form registration.",
+    });
+    if (insertError) return { ok: false as const, error: "An additional attendee pass could not be issued." };
+    await admin.from("event_registration_import_metadata").insert({ registration_id: id, metadata: { ...metadata, attendeeName: name, groupRegistrationId: lead.id } });
+  }
+  return { ok: true as const, reference: lead.reference, passCount: names.length };
+}

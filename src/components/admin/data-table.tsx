@@ -46,7 +46,8 @@ export type ColType =
   | "statusPayment"
   | "statusNotification"
   | "statusPublication"
-  | "badge";
+  | "badge"
+  | "link";
 
 export interface Column {
   key: string;
@@ -110,6 +111,12 @@ function renderCell(value: unknown, type?: ColType): React.ReactNode {
       ) : (
         "—"
       );
+    case "link": {
+      const link = value && typeof value === "object" ? value as { href?: unknown; label?: unknown } : {};
+      return typeof link.href === "string" && link.href.startsWith("/api/admin/")
+        ? <a href={link.href} target="_blank" rel="noreferrer" className="font-medium text-brand-ink underline underline-offset-2">{typeof link.label === "string" ? link.label : "View"}</a>
+        : "—";
+    }
     default:
       return value === null || value === undefined || value === "" ? "—" : String(value);
   }

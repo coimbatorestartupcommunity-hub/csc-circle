@@ -35,6 +35,7 @@ export default async function EditEventPage({
         eventId={eventId}
         mode="edit"
         isDemo={ctx.mode === "preview"}
+        canPublishSurfaces={can(ctx, "events.publish") && can(ctx, "content.manage")}
         initial={
           parsed.success ? parsed.data : e
             ? {

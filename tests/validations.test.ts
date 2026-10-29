@@ -112,6 +112,8 @@ describe("event editor schema", () => {
     allowWaitlist: true,
     admission: "free" as const,
     currency: "INR",
+    registrationMode: "rsvp" as const,
+    maxAttendeesPerRegistration: 10,
     status: "draft" as const,
   };
   it("accepts a valid event", () => {

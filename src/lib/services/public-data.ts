@@ -45,6 +45,17 @@ function mapEvent(r: Row): EventRecord {
     status: "published",
     admission: (r.admission as EventRecord["admission"]) ?? "free",
     registrationState: (r.registration_state as EventRecord["registrationState"]) ?? "coming-soon",
+    registrationMode: (r.registration_mode as EventRecord["registrationMode"]) ?? "rsvp",
+    pricePerAttendee: typeof r.price_per_attendee === "number" ? r.price_per_attendee : undefined,
+    maxAttendeesPerRegistration: Number(r.max_attendees_per_registration ?? 10),
+    upiPayeeName: (r.upi_payee_name as string) ?? undefined,
+    upiVpa: (r.upi_vpa as string) ?? undefined,
+    upiQrImage: typeof r.upi_qr_path === "string" && r.upi_qr_path ? `/api/events/${String(r.id)}/upi-qr` : undefined,
+    paymentNote: (r.payment_note as string) ?? undefined,
+    summary: (r.summary as string) ?? undefined,
+    organizer: (r.organizer as string) ?? undefined,
+    mapsUrl: (r.maps_url as string) ?? undefined,
+    format: (r.format as EventRecord["format"]) ?? "offline",
     featured: !!r.featured,
   };
 }

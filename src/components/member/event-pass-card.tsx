@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { toPng } from "html-to-image";
+import { toBlob } from "html-to-image";
 import { Check, Copy, Download, Loader2, MapPin, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/member/status-badge";
@@ -11,13 +11,14 @@ import { brandAssets, siteConfig } from "@/lib/content/site";
 import { registrationStatusMeta } from "@/lib/content/member-taxonomy";
 import { buildEventPassQrPayload } from "@/lib/member/qr";
 import { eventPassViewModel } from "@/lib/member/event-pass-view-model";
+import { createEventPassPdf } from "@/lib/member/card-export";
 import { formatEventRange } from "@/lib/format";
 import type { EventPass } from "@/types/member";
 
 export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boolean }) {
   const ref = React.useRef<HTMLDivElement>(null);
   const [qr, setQr] = React.useState<string | null>(null);
-  const [downloading, setDownloading] = React.useState(false);
+  const [downloading, setDownloading] = React.useState<"png" | "pdf" | null>(null);
   const [copied, setCopied] = React.useState(false);
   const meta = registrationStatusMeta[pass.status];
   const fields = eventPassViewModel(pass);
@@ -36,21 +37,27 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
     };
   }, [pass.verificationToken]);
 
-  async function download() {
+  async function download(format: "png" | "pdf") {
     if (!ref.current) return;
-    setDownloading(true);
+    setDownloading(format);
     try {
-      const dataUrl = await toPng(ref.current, {
+      const png = await toBlob(ref.current, {
         pixelRatio: 3,
         cacheBust: true,
         backgroundColor: "#ffffff",
       });
+      if (!png) throw new Error("Could not render the event pass.");
+      const file = format === "png"
+        ? png
+        : new Blob([new Uint8Array(await createEventPassPdf(png, pass.eventTitle))], { type: "application/pdf" });
+      const objectUrl = URL.createObjectURL(file);
       const link = document.createElement("a");
-      link.download = `CSC-EventPass-${fields.uid}${isDemo ? "-DEMO" : ""}.png`;
-      link.href = dataUrl;
+      link.download = `CSC-EventPass-${fields.uid}${isDemo ? "-DEMO" : ""}.${format}`;
+      link.href = objectUrl;
       link.click();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
     } finally {
-      setDownloading(false);
+      setDownloading(null);
     }
   }
 
@@ -151,10 +158,16 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
         {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
         {copied ? "Copied" : "Copy UID"}
       </Button>
-      <Button onClick={download} disabled={downloading} className="h-11 w-full max-w-md gap-2">
-        {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
-        Download pass as PNG
-      </Button>
+      <div className="flex w-full max-w-md flex-col gap-2 sm:flex-row">
+        <Button onClick={() => void download("png")} disabled={downloading !== null} className="h-11 flex-1 gap-2">
+          {downloading === "png" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+          Download pass as PNG
+        </Button>
+        <Button onClick={() => void download("pdf")} disabled={downloading !== null} variant="outline" className="h-11 flex-1 gap-2">
+          {downloading === "pdf" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+          Download pass as PDF
+        </Button>
+      </div>
     </div>
   );
 }
