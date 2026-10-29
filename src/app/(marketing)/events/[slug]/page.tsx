@@ -23,6 +23,6 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
   if (!event) notFound();
   return <section className="py-10 sm:py-14"><Container className="flex flex-col gap-6">
     <Link href="/events" className="inline-flex min-h-10 w-fit items-center gap-2 rounded-lg text-sm font-medium text-brand-secondary hover:text-brand-ink"><ArrowLeft className="size-4" />Back to Events &amp; Booking</Link>
-    <div className="mx-auto w-full max-w-3xl"><EventDetailsPanel event={event} events={[event]} onEventChange={() => undefined} /></div>
+    <div className="mx-auto w-full max-w-3xl"><EventDetailsPanel event={event} events={[event]} /></div>
   </Container></section>;
 }
