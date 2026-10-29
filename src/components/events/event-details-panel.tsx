@@ -29,8 +29,9 @@ export function EventDetailsPanel({
 }: {
   event: EventRecord;
   events: EventRecord[];
-  onEventChange: (id: string) => void;
+  onEventChange?: (id: string) => void;
 }) {
+  const handleEventChange = onEventChange ?? (() => undefined);
   const facts: { icon: React.ElementType; label: string; value: string }[] = [
     { icon: CalendarDays, label: "Date", value: formatEventDate(event.startsAt) },
     {
@@ -106,7 +107,7 @@ export function EventDetailsPanel({
         <PaidEventRegistration event={event} />
       </div> : <div className="border-t border-brand-border pt-6">
         <h4 className="mb-4 text-lg font-semibold text-brand-ink">Request your spot</h4>
-        <RsvpForm events={events} selectedEventId={event.id} onEventChange={onEventChange} />
+        <RsvpForm events={events} selectedEventId={event.id} onEventChange={handleEventChange} />
       </div>}
     </div>
   );
