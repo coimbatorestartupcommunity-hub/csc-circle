@@ -106,8 +106,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
       if (!userId) {
         const redirectTo = new URL("/auth/confirm?next=%2Fmember%2Fevents", new URL(request.url).origin).toString();
         const { data, error } = await admin.auth.admin.inviteUserByEmail(row.email, { redirectTo });
-        if (error || !data.user) { results.push({ rowNumber: preview.rowNumber, status: "invite_failed" }); continue; }
-        userId = data.user.id;
+        if (error || !data.user) {
+          // The auth invite email is rate-limited after many imports in a short
+          // window, which would otherwise silently drop valid rows. Fall back to
+          // creating the account without sending an email so the registration
+          // still imports; the attendee receives their event pass email directly
+          // and can sign in with Google using the same address.
+          const { data: created, error: createError } = await admin.auth.admin.createUser({ email: row.email, email_confirm: true });
+          if (createError || !created.user) { results.push({ rowNumber: preview.rowNumber, status: "invite_failed" }); continue; }
+          userId = created.user.id;
+        } else {
+          userId = data.user.id;
+        }
         emails.set(mailKey(row.email), userId);
       }
       const registrationId = existing?.id ?? randomUUID();
