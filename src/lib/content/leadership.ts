@@ -59,6 +59,7 @@ export const leaders: Leader[] = [
     role: "Event Manager — Coimbatore Startup Community (CSC)",
     responsibility:
       "As CSC's Event Manager, coordinates community events, meetup planning, attendee experiences, event operations, and on-ground community activities.",
+    portrait: "/images/Kishore.png",
     order: 4,
   },
   {
