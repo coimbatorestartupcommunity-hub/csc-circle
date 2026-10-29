@@ -39,7 +39,7 @@ const resultMeta: Record<
   payment: { label: "Payment incomplete", tone: "bg-brand-gold text-brand-ink", icon: CreditCard },
   wrong_event: { label: "Wrong event", tone: "bg-brand-red text-brand-ink", icon: Ban },
   revoked: { label: "Expired / revoked", tone: "bg-brand-red text-brand-ink", icon: Ban },
-  already: { label: "Already checked in", tone: "bg-brand-blue text-brand-ink", icon: CheckCircle2 },
+  already: { label: "Already checked in", tone: "bg-red-100 text-red-800", icon: Ban },
 };
 
 /**
