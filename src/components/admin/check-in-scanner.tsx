@@ -73,12 +73,10 @@ export function CheckInScanner({
   React.useEffect(() => () => stop(), [stop]);
 
   const verifying = React.useRef(false);
-  const lastScan = React.useRef<{ text: string; at: number }>({ text: "", at: 0 });
 
   async function start() {
     setResult("idle");
     setVerifiedMember(null);
-    lastScan.current = { text: "", at: 0 };
     setCameraState("starting");
     try {
       // Faster re-scan cadence so a code is captured the instant it is sharp.
@@ -86,7 +84,7 @@ export function CheckInScanner({
       const controls = await reader.decodeFromConstraints(
         { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 1280 } } },
         videoRef.current!,
-        (res) => { if (res) onScan(res.getText()); },
+        (res) => { if (res) void verify(res.getText()); },
       );
       controlsRef.current = controls;
       // Continuous autofocus where supported, so the preview sharpens
@@ -101,20 +99,12 @@ export function CheckInScanner({
     }
   }
 
-  // The camera stays on for rapid back-to-back check-ins. Ignore repeat reads
-  // of the same code (within 4s) and any read while a verification is running.
-  function onScan(text: string) {
-    const now = Date.now();
-    if (verifying.current) return;
-    if (text === lastScan.current.text && now - lastScan.current.at < 4000) return;
-    lastScan.current = { text, at: now };
-    void verify(text);
-  }
-
   async function verify(text: string) {
     if (verifying.current) return;
     verifying.current = true;
-    setResult("verifying"); setVerifiedMember(null);
+    // One scan = one result: stop the camera immediately, show the verdict,
+    // then "Scan next" reopens the scanner for the next person.
+    stop(); setResult("verifying"); setVerifiedMember(null);
     try {
       const payload = JSON.parse(text);
       if (payload.t !== "csc.eventpass" || payload.v !== 1 || !payload.ref) throw new Error("invalid");
@@ -124,9 +114,16 @@ export function CheckInScanner({
       if (!res.ok || !data.status || !(data.status in resultMeta)) {
         setResult("invalid"); setDetail(data.error ?? "Verification unavailable. No entry authorized."); return;
       }
+      // Show the verdict at once; load the attendee pass card afterwards so it
+      // never delays the result.
       setResult(data.status as ResultState);
-      setVerifiedMember(data.attendee ?? null);
       setDetail(data.status === "valid" ? `${data.name ?? "Attendee"} · ${data.reference} · check-in recorded` : data.status === "already" ? `Previously checked in at ${data.checkedInAt}` : "Entry blocked by the server.");
+      if (data.status === "valid" || data.status === "already") {
+        void fetch(`/api/admin/check-in/pass?event=${encodeURIComponent(eventId)}&ref=${encodeURIComponent(payload.ref)}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((card) => { if (card?.attendee) setVerifiedMember(card.attendee); })
+          .catch(() => {});
+      }
     } catch { setResult("invalid"); setDetail("Could not verify this credential. Check the code and network connection."); }
     finally { verifying.current = false; }
   }
@@ -235,7 +232,7 @@ export function CheckInScanner({
               {verifiedMember.portraitUrl ? <Image src={verifiedMember.portraitUrl} alt={`${verifiedMember.name} membership portrait`} width={80} height={100} unoptimized className="aspect-4/5 w-20 shrink-0 rounded-xl object-cover ring-1 ring-brand-border" /> : <span className="flex aspect-4/5 w-20 shrink-0 items-center justify-center rounded-xl bg-brand-purple text-lg font-bold text-brand-ink">{verifiedMember.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>}
               <div className="min-w-0 flex-1"><div className="rounded-xl bg-white p-3 ring-1 ring-brand-border"><div className="flex items-center gap-2"><Image src="/brand/csc-icon.png" alt="CSC Circle" width={32} height={32} unoptimized className="size-8 rounded-full object-cover" /><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wider text-brand-muted">CSC membership card</p><p className="font-semibold break-words text-brand-ink">{verifiedMember.name}</p></div></div><div className="mt-3 flex flex-wrap items-center justify-between gap-2"><span className="font-mono text-xs font-semibold text-brand-ink">{verifiedMember.memberNumber ?? "Membership ID unavailable"}</span><span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${verifiedMember.membershipStatus === "active" ? "bg-emerald-50 text-emerald-800" : "bg-brand-cloud text-brand-secondary"}`}>{verifiedMember.membershipStatus?.replaceAll("_", " ") ?? "Member record"}</span></div><p className="mt-1 text-xs text-brand-secondary">{verifiedMember.designation ?? "CSC member"}{verifiedMember.startupName ? ` · ${verifiedMember.startupName}` : ""}</p></div><p className="mt-2 text-xs font-medium text-emerald-700">Event pass verified · {verifiedMember.eventTitle ?? selectedEvent?.title}</p><p className="mt-0.5 font-mono text-[11px] break-all text-emerald-700">{verifiedMember.registrationReference}</p></div>
             </div> : null}
-            <Button variant="outline" onClick={() => { setResult("idle"); setVerifiedMember(null); lastScan.current = { text: "", at: 0 }; if (cameraState !== "on") void start(); }} className="gap-2">
+            <Button variant="outline" onClick={() => { void start(); }} className="gap-2">
               <ScanLine className="size-4" /> Scan next
             </Button>
           </div>
