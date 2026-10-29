@@ -27,6 +27,9 @@ begin
   if not found then return jsonb_build_object('status','invalid'); end if;
   if r.event_id<>event then return jsonb_build_object('status','wrong_event'); end if;
   if e.status<>'published' or now()>e.ends_at then return jsonb_build_object('status','revoked'); end if;
+  -- Non-members may hold paid event passes, but a member whose membership was
+  -- suspended or revoked must still be refused entry.
+  if exists(select 1 from public.memberships where user_id=r.user_id and status in ('suspended','revoked')) then return jsonb_build_object('status','revoked'); end if;
   select checked_in_at into previous from public.attendance_checkins where registration_id=r.id;
   if found then return jsonb_build_object('status','already','checkedInAt',previous); end if;
   if r.status<>'confirmed' then return jsonb_build_object('status','pending'); end if;
