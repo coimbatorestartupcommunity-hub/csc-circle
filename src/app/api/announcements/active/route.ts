@@ -33,7 +33,7 @@ export async function GET() {
       const event = (Array.isArray(notice.events) ? notice.events[0] : notice.events) as Record<string, unknown>;
       return {
         id: String(notice.id), title: String(notice.title), message: String(notice.message), buttonLabel: String(notice.button_label),
-        bannerUrl: notice.banner_path ? `/api/announcements/banner?noticeId=${encodeURIComponent(String(notice.id))}` : null,
+        bannerUrl: notice.banner_path ? (String(notice.banner_path).startsWith("/") ? String(notice.banner_path) : `/api/announcements/banner?noticeId=${encodeURIComponent(String(notice.id))}`) : null,
         eventPath: `/events/${encodeURIComponent(String(event.slug))}`,
         eventTitle: String(event.title), eventStartsAt: String(event.starts_at), venue: event.venue ? String(event.venue) : null,
         registrationState: String(event.registration_state ?? "coming-soon"), priority: Number(notice.display_priority ?? 0),

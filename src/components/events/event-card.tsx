@@ -13,7 +13,7 @@ import {
 import type { EventRecord } from "@/types";
 
 const registrationLabel: Record<EventRecord["registrationState"], string> = {
-  open: "Registration open",
+  open: "Open Registration",
   closed: "Registration closed",
   full: "Fully booked",
   "coming-soon": "Registration opening soon",
@@ -119,8 +119,15 @@ export function EventCard({
             {registrationLabel[event.registrationState]}
           </span>
           {interactive ? (
-            <span className="text-sm font-medium text-brand-accent">
-              {selected ? "Selected" : "View details"}
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-sm font-semibold",
+                event.registrationState === "open"
+                  ? "rounded-full bg-brand-ink px-3 py-1.5 text-brand-white shadow-sm"
+                  : "text-brand-accent",
+              )}
+            >
+              {event.registrationState === "open" ? "Book Now →" : "View details"}
             </span>
           ) : null}
         </div>
