@@ -5,12 +5,22 @@ import { MemberIdCard } from "@/components/member/member-id-card";
 import { EmptyState } from "@/components/common/empty-state";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
+import { eventPassViewModel } from "@/lib/member/event-pass-view-model";
+import { isPassEligible } from "@/types/member";
+import { CalendarDays, MapPin, Ticket } from "lucide-react";
+import { formatEventDate, formatEventTime } from "@/lib/format";
 
 export const metadata = { title: "Digital ID" };
 
 export default async function IdCardPage() {
   const ctx = await getMemberContext();
-  const cardRes = await memberServices.getCard();
+  const [cardRes, registrationsRes] = await Promise.all([
+    memberServices.getCard(),
+    memberServices.listRegistrations(),
+  ]);
+  const eventPasses = registrationsRes.ok
+    ? registrationsRes.data.filter((registration) => isPassEligible(registration.status))
+    : [];
 
   if (!cardRes.ok) {
     const needsPortrait = cardRes.error.message.toLowerCase().includes("portrait");
@@ -65,6 +75,38 @@ export default async function IdCardPage() {
           </div>
         </section>
       </div>
+      <section className="mt-8 flex flex-col gap-4" aria-labelledby="digital-id-event-passes">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 id="digital-id-event-passes" className="text-xl font-semibold text-brand-ink">My event passes</h2>
+            <p className="mt-1 text-sm text-brand-secondary">View and download tickets for your confirmed event registrations.</p>
+          </div>
+          <Link href="/member/events" className="text-sm font-medium text-brand-accent hover:underline">All registrations</Link>
+        </div>
+        {eventPasses.length ? (
+          <ul className="grid gap-4 md:grid-cols-2">
+            {eventPasses.map((registration) => {
+              const fields = eventPassViewModel(registration);
+              return (
+                <li key={registration.id} className="flex flex-col gap-3 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border">
+                  <h3 className="font-semibold text-brand-ink">{registration.eventTitle}</h3>
+                  <ul className="flex flex-col gap-1.5 text-sm text-brand-muted">
+                    <li className="flex items-center gap-2"><CalendarDays className="size-4" aria-hidden />{formatEventDate(registration.startsAt)} · {formatEventTime(registration.startsAt)} IST</li>
+                    <li className="flex items-start gap-2"><MapPin className="size-4 shrink-0" aria-hidden /><span><strong className="text-brand-ink">Location:</strong> {fields.location}</span></li>
+                    <li><strong className="text-brand-ink">UID:</strong> <span className="font-mono">{fields.uid}</span></li>
+                    <li><strong className="text-brand-ink">Name:</strong> {fields.name}</li>
+                  </ul>
+                  <Link href={`/member/events/${registration.id}`} className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-brand-accent hover:underline">
+                    <Ticket className="size-4" aria-hidden />View and download pass
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="rounded-2xl bg-brand-white p-5 text-sm text-brand-muted ring-1 ring-brand-border">Confirmed event passes will appear here. <Link href="/events" className="font-medium text-brand-accent hover:underline">Browse events</Link>.</p>
+        )}
+      </section>
     </>
   );
 }
