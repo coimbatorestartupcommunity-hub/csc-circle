@@ -13,7 +13,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const event = (await getPublicEvents()).find((item) => item.slug === slug);
   const description = event?.summary || event?.description.slice(0, 160);
-  const images = event?.coverImage ? [{ url: event.coverImage.startsWith("http") ? event.coverImage : `${siteConfig.url}${event.coverImage}`, alt: event.title }] : undefined;
+  // Social crawlers (WhatsApp, Facebook, X, LinkedIn) don't reliably render
+  // WebP link previews, so serve a JPG sibling for static covers while the page
+  // itself keeps the WebP. Absolute URLs are required for og:image.
+  const ogImageUrl = event?.coverImage
+    ? event.coverImage.startsWith("http")
+      ? event.coverImage
+      : `${siteConfig.url}${event.coverImage.replace(/\.webp$/i, ".jpg")}`
+    : undefined;
+  const images = ogImageUrl ? [{ url: ogImageUrl, width: 1200, height: 675, alt: event?.title ?? "Event" }] : undefined;
   return event ? { title: `${event.title} · Events & Booking`, description, alternates: { canonical: `/events/${event.slug}` }, openGraph: { title: event.title, description, url: `${siteConfig.url}/events/${event.slug}`, type: "website", images }, twitter: { card: "summary_large_image", title: event.title, description, images: images?.map((image) => image.url) } } : { title: "Event not found" };
 }
 
