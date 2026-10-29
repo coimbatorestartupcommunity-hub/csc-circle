@@ -33,7 +33,13 @@ export async function GET(request: Request) {
   if (membershipError || profileError) return NextResponse.redirect(new URL("/access-denied", url.origin));
   if (membership && ["suspended", "revoked", "rejected"].includes(membership.status))
     return NextResponse.redirect(new URL("/access-denied", url.origin));
-  const next = safeNext(url.searchParams.get("next"));
+  // Active members continue to where they were headed (their dashboard by
+  // default). Anyone who has not yet become an active member is sent to the
+  // membership claim / digital ID page, which shows the claim form or their
+  // current claim status so they can claim their membership ID.
+  const next = membership?.status === "active"
+    ? safeNext(url.searchParams.get("next"))
+    : "/member/claim";
   // Incomplete profiles are completed on the profile page itself; avoid
   // splitting first-time members into an unrelated empty onboarding screen.
   if (!profile) return NextResponse.redirect(new URL("/access-denied", url.origin));

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   CalendarDays,
   Clock,
@@ -9,6 +10,7 @@ import {
   Users,
   Ticket,
   ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FixtureNotice } from "@/components/common/empty-state";
@@ -26,10 +28,15 @@ export function EventDetailsPanel({
   event,
   events,
   onEventChange,
+  canRegister = true,
+  loginHref = "/login",
 }: {
   event: EventRecord;
   events: EventRecord[];
   onEventChange?: (id: string) => void;
+  /** When false, show a sign-in prompt instead of the registration form. */
+  canRegister?: boolean;
+  loginHref?: string;
 }) {
   const handleEventChange = onEventChange ?? (() => undefined);
   const facts: { icon: React.ElementType; label: string; value: string }[] = [
@@ -101,7 +108,11 @@ export function EventDetailsPanel({
         </p>
       </div>
 
-      {event.registrationMode === "paid_upi" ? <div className="border-t border-brand-border pt-6">
+      {!canRegister ? <div className="border-t border-brand-border pt-6">
+        <h4 className="mb-2 text-lg font-semibold text-brand-ink">Sign in to register</h4>
+        <p className="mb-4 text-sm text-brand-secondary">Log in with your Google account to book your spot and receive your event pass.</p>
+        <Link href={loginHref} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink">Sign in with Google to register<ArrowRight className="size-4" /></Link>
+      </div> : event.registrationMode === "paid_upi" ? <div className="border-t border-brand-border pt-6">
         <h4 className="mb-2 text-lg font-semibold text-brand-ink">Register and submit payment proof</h4>
         <p className="mb-4 text-sm text-brand-secondary">Pay the exact total using any UPI app, then enter your transaction reference and upload the screenshot.</p>
         <PaidEventRegistration event={event} />
