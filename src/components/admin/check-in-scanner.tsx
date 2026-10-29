@@ -72,32 +72,49 @@ export function CheckInScanner({
 
   React.useEffect(() => () => stop(), [stop]);
 
+  const verifying = React.useRef(false);
+  const lastScan = React.useRef<{ text: string; at: number }>({ text: "", at: 0 });
+
   async function start() {
     setResult("idle");
+    setVerifiedMember(null);
+    lastScan.current = { text: "", at: 0 };
     setCameraState("starting");
     try {
-      const reader = new BrowserQRCodeReader();
-      const controls = await reader.decodeFromVideoDevice(
-        undefined,
+      // Faster re-scan cadence so a code is captured the instant it is sharp.
+      const reader = new BrowserQRCodeReader(undefined, { delayBetweenScanAttempts: 80, delayBetweenScanSuccess: 300 });
+      const controls = await reader.decodeFromConstraints(
+        { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 1280 } } },
         videoRef.current!,
-        (res) => {
-          if (res) {
-            verify(res.getText());
-          }
-        },
+        (res) => { if (res) onScan(res.getText()); },
       );
       controlsRef.current = controls;
+      // Continuous autofocus where supported, so the preview sharpens
+      // immediately instead of after a visible focus hunt.
+      try {
+        const track = (videoRef.current?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
+        await track?.applyConstraints({ advanced: [{ focusMode: "continuous" }] } as unknown as MediaTrackConstraints);
+      } catch { /* focusMode not supported on this camera */ }
       setCameraState("on");
     } catch {
       setCameraState("denied");
     }
   }
 
-  const verifying = React.useRef(false);
+  // The camera stays on for rapid back-to-back check-ins. Ignore repeat reads
+  // of the same code (within 4s) and any read while a verification is running.
+  function onScan(text: string) {
+    const now = Date.now();
+    if (verifying.current) return;
+    if (text === lastScan.current.text && now - lastScan.current.at < 4000) return;
+    lastScan.current = { text, at: now };
+    void verify(text);
+  }
+
   async function verify(text: string) {
     if (verifying.current) return;
     verifying.current = true;
-    stop(); setResult("verifying"); setVerifiedMember(null);
+    setResult("verifying"); setVerifiedMember(null);
     try {
       const payload = JSON.parse(text);
       if (payload.t !== "csc.eventpass" || payload.v !== 1 || !payload.ref) throw new Error("invalid");
@@ -218,7 +235,7 @@ export function CheckInScanner({
               {verifiedMember.portraitUrl ? <Image src={verifiedMember.portraitUrl} alt={`${verifiedMember.name} membership portrait`} width={80} height={100} unoptimized className="aspect-4/5 w-20 shrink-0 rounded-xl object-cover ring-1 ring-brand-border" /> : <span className="flex aspect-4/5 w-20 shrink-0 items-center justify-center rounded-xl bg-brand-purple text-lg font-bold text-brand-ink">{verifiedMember.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span>}
               <div className="min-w-0 flex-1"><div className="rounded-xl bg-white p-3 ring-1 ring-brand-border"><div className="flex items-center gap-2"><Image src="/brand/csc-icon.png" alt="CSC Circle" width={32} height={32} unoptimized className="size-8 rounded-full object-cover" /><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wider text-brand-muted">CSC membership card</p><p className="font-semibold break-words text-brand-ink">{verifiedMember.name}</p></div></div><div className="mt-3 flex flex-wrap items-center justify-between gap-2"><span className="font-mono text-xs font-semibold text-brand-ink">{verifiedMember.memberNumber ?? "Membership ID unavailable"}</span><span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${verifiedMember.membershipStatus === "active" ? "bg-emerald-50 text-emerald-800" : "bg-brand-cloud text-brand-secondary"}`}>{verifiedMember.membershipStatus?.replaceAll("_", " ") ?? "Member record"}</span></div><p className="mt-1 text-xs text-brand-secondary">{verifiedMember.designation ?? "CSC member"}{verifiedMember.startupName ? ` · ${verifiedMember.startupName}` : ""}</p></div><p className="mt-2 text-xs font-medium text-emerald-700">Event pass verified · {verifiedMember.eventTitle ?? selectedEvent?.title}</p><p className="mt-0.5 font-mono text-[11px] break-all text-emerald-700">{verifiedMember.registrationReference}</p></div>
             </div> : null}
-            <Button variant="outline" onClick={() => { setResult("idle"); setVerifiedMember(null); start(); }} className="gap-2">
+            <Button variant="outline" onClick={() => { setResult("idle"); setVerifiedMember(null); lastScan.current = { text: "", at: 0 }; if (cameraState !== "on") void start(); }} className="gap-2">
               <ScanLine className="size-4" /> Scan next
             </Button>
           </div>
