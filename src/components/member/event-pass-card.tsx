@@ -167,21 +167,27 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
 
           {/* Attendee Details Card - Perfectly aligned before the QR code, matching design */}
           <div className="flex min-w-0 flex-col gap-3.5 rounded-[1.5rem] border border-brand-border/60 bg-[#f8faff]/85 p-4 sm:p-5 text-left ring-1 ring-brand-border/30">
-            {/* Row 1: Name and Phone */}
-            <div className="grid grid-cols-2 gap-4 min-w-0">
-              <div className="min-w-0">
-                <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block">
+            {/* Row 1: Name (Left side) and Phone (Right-hand corner) */}
+            <div className="flex w-full items-start justify-between gap-4 min-w-0">
+              <div className="flex min-w-0 flex-1 flex-col items-start text-left">
+                <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block text-left">
                   Name
                 </span>
-                <p className="mt-1 truncate text-xs sm:text-sm font-bold text-brand-ink uppercase no-underline [text-decoration:none]">
+                <p
+                  className="mt-1 max-w-full truncate text-left text-xs sm:text-sm font-bold text-brand-ink uppercase no-underline [text-decoration:none] border-none"
+                  style={{ textDecoration: "none", textDecorationLine: "none", borderBottom: "none" }}
+                >
                   {fields.name}
                 </p>
               </div>
-              <div className="min-w-0">
-                <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block">
+              <div className="flex min-w-0 flex-1 flex-col items-end text-right">
+                <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block text-right">
                   Phone
                 </span>
-                <p className="mt-1 truncate text-xs sm:text-sm font-bold text-brand-ink no-underline [text-decoration:none]">
+                <p
+                  className="mt-1 max-w-full truncate text-right text-xs sm:text-sm font-bold text-brand-ink no-underline [text-decoration:none] border-none"
+                  style={{ textDecoration: "none", textDecorationLine: "none", borderBottom: "none" }}
+                >
                   {fields.phone}
                 </p>
               </div>

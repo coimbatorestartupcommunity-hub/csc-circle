@@ -7,6 +7,8 @@ import { sendCommunityEmail } from "@/lib/notifications/email";
 import { classifyEmailFailure } from "@/lib/notifications/failures";
 import QRCode from "qrcode";
 import { buildEventPassQrPayload } from "@/lib/member/qr";
+import { generateServerEventPassPdf } from "@/lib/events/server-pass-pdf";
+import { formatEventRange } from "@/lib/format";
 import { chooseNotificationRecipient } from "@/lib/notifications/recipients";
 import type { Database } from "@/lib/supabase/database.types";
 type Job = Database["public"]["Tables"]["notifications"]["Row"];
@@ -175,7 +177,47 @@ export async function dispatchNotifications(batch = 15) {
         if (registration?.pass_token && /^[a-f0-9]{64}$/i.test(registration.pass_token)) {
           const cid = `csc-event-pass-${job.id}@csc`;
           payload = { ...payload, eventPassQrCid: cid, reference: registration.reference };
-          attachments = [{ filename: `CSC-EventPass-${registration.reference}.png`, content: await QRCode.toBuffer(buildEventPassQrPayload(registration.pass_token), { type: "png", width: 440, margin: 2, color: { dark: "#121826", light: "#ffffff" } }), contentType: "image/png", cid }];
+          const qrBuffer = await QRCode.toBuffer(buildEventPassQrPayload(registration.pass_token), {
+            type: "png",
+            width: 440,
+            margin: 2,
+            color: { dark: "#121826", light: "#ffffff" },
+          });
+
+          let pdfBuffer: Buffer | null = null;
+          try {
+            pdfBuffer = await generateServerEventPassPdf({
+              eventTitle: String(payload.eventTitle || "CSC Event"),
+              name: String(payload.name || "Attendee"),
+              phone: String(payload.phone || ""),
+              email: String(payload.email || ""),
+              uid: String(payload.reference || registration.reference),
+              dateRange: payload.startsAt && payload.endsAt ? formatEventRange(String(payload.startsAt), String(payload.endsAt)) : "",
+              location: String(payload.venue ? `${payload.venue}, ${payload.location}` : payload.location || ""),
+              qrBuffer,
+            });
+          } catch {
+            pdfBuffer = null;
+          }
+
+          attachments = [
+            ...(pdfBuffer
+              ? [
+                  {
+                    filename: `CSC-EventPass-${registration.reference}.pdf`,
+                    content: pdfBuffer,
+                    contentType: "application/pdf",
+                    cid: `pdf-${cid}`,
+                  },
+                ]
+              : []),
+            {
+              filename: `CSC-EventPass-${registration.reference}.png`,
+              content: qrBuffer,
+              contentType: "image/png",
+              cid,
+            },
+          ];
         }
       }
       if (!recipients.length || recipients.some(r=>!validEmail(r))) { await finish("failed_permanent","INVALID_RECIPIENT"); continue; }
