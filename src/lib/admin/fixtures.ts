@@ -59,8 +59,8 @@ export const demoPayments: AdminPaymentRow[] = [
 ];
 
 export const demoReviews: AdminReviewRow[] = [
-  { id: "rv1", reviewer: "Demo Member A", rating: 5, excerpt: "Great community, lots of value…", submittedAt: d(8), status: "submitted" },
-  { id: "rv2", reviewer: "Demo Member D", rating: 4, excerpt: "Helpful connections and events…", submittedAt: d(12), status: "approved" },
+  { id: "rv1", reviewer: "Demo Member A", reviewerName: "Demo Member A", kind: "collaboration", kindLabel: "Collaboration", targetTitle: "CSC × TiE Coimbatore Founders Forum", rating: 5, excerpt: "Great community, lots of value…", submittedAt: d(8), status: "submitted" },
+  { id: "rv2", reviewer: "Demo Member D", reviewerName: "Demo Member D", kind: "event", kindLabel: "Event", targetTitle: "CSC CONNECT — Edition 2", rating: 4, excerpt: "Helpful connections and events…", submittedAt: d(12), status: "approved" },
 ];
 
 export const demoConsultations: AdminConsultationRow[] = [

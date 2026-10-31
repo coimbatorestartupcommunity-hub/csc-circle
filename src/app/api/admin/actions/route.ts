@@ -8,6 +8,7 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { randomBytes, randomUUID } from "node:crypto";
 import type { Permission } from "@/lib/admin/permissions";
+import type { Database } from "@/lib/supabase/database.types";
 import { issueImportedRegistrationPasses } from "@/lib/admin/imported-registration-pass";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 const schema = z.object({ kind: z.enum(["claim", "member", "registration", "imported_registration", "paid_registration", "resend_event_pass", "payment", "review", "startup", "consultation"]), target: z.string().uuid(), decision: z.string().min(1).max(40), reason: z.string().max(1000).default("") });
@@ -100,18 +101,89 @@ export async function POST(request: Request) {
       scheduleNotificationDelivery();
       return authResponse({ ok: true });
     }
+    if (parsed.data.kind === "review") {
+      if (!["approved", "rejected", "under_review"].includes(parsed.data.decision)) {
+        return authResponse({ error: "Invalid review decision." }, 422);
+      }
+      if (parsed.data.decision === "rejected" && parsed.data.reason.trim().length < 5) {
+        return authResponse({ error: "A note of at least 5 characters is required when rejecting a review." }, 422);
+      }
+      const admin = createAdminClient();
+      const { data: review, error: reviewFetchError } = await admin
+        .from("reviews")
+        .select("id, moderation, user_id, rating, review, kind, event_id, collaboration_id")
+        .eq("id", parsed.data.target)
+        .maybeSingle();
+      if (reviewFetchError || !review) return authResponse({ error: "Review could not be found." }, 404);
+
+      const { error: updateError } = await admin
+        .from("reviews")
+        .update({ moderation: parsed.data.decision as Database["public"]["Enums"]["review_moderation_status"] })
+        .eq("id", parsed.data.target);
+      if (updateError) return authResponse({ error: "Review moderation could not be saved." }, 409);
+
+      await admin.from("audit_logs").insert({
+        action: `review.${parsed.data.decision}`,
+        actor_id: ctx.userId,
+        actor_role: ctx.roles[0] || "admin",
+        target_type: "review",
+        target_id: parsed.data.target,
+        before: { moderation: review.moderation },
+        after: { moderation: parsed.data.decision, reason: parsed.data.reason },
+        correlation_id: randomUUID(),
+      });
+
+      if (review.user_id) {
+        const title = parsed.data.decision === "approved" ? "Review approved" : "Review update";
+        const message = parsed.data.decision === "approved"
+          ? "Your CSC community review has been approved."
+          : "There is an update to your CSC community review.";
+        await admin.from("notifications").insert({
+          type: `review.${parsed.data.decision}`,
+          channel: "in_app",
+          recipient: review.user_id,
+          recipient_user_id: review.user_id,
+          audience: "member",
+          related_record_type: "review",
+          related_record_id: parsed.data.target,
+          title,
+          message,
+          action_url: "/member/reviews",
+          payload: { target: parsed.data.target, kind: review.kind || "review" },
+          dedupe_key: `review.${parsed.data.decision}:${parsed.data.target}:${parsed.data.decision}`,
+          status: "available",
+          delivered_at: new Date().toISOString(),
+        }).select().maybeSingle();
+      }
+
+      for (const tag of ["reviews", "testimonials"]) revalidateTag(tag, { expire: 0 });
+      scheduleNotificationDelivery();
+      return authResponse({ ok: true });
+    }
+    if (parsed.data.kind === "payment" && (!parsed.data.reason || parsed.data.reason.trim().length < 5)) {
+      return authResponse({ error: "An independent settlement reference (at least 5 characters) is required for payment verification or rejection." }, 422);
+    }
     const sb = await createClient();
     const { data, error } = await sb.rpc("csc_admin_action", parsed.data);
     if (error) {
-      const claimErrors: Record<string, string> = {
+      const knownErrors: Record<string, string> = {
         "unverified account": "This account's email must be verified before membership can be approved.",
         "membership unavailable": "The member record is missing or cannot be activated. Ask the member to refresh their account, then retry.",
         "claim already decided": "This claim has already been decided. Refresh the page to see its current status.",
-        "not found": "This claim could not be found. Refresh the page and try again.",
+        "not found": "This record could not be found. Refresh the page and try again.",
+        "independent settlement reference required": "An independent settlement reference (at least 5 characters) is required for payment actions.",
+        "event full": "Cannot confirm registration: the event capacity has been reached.",
+        "payment not verified": "Cannot confirm registration: event admission payment has not been verified.",
+        "event unavailable": "This event has ended or is not published.",
+        "membership ineligible": "The member does not have an active membership.",
+        "reason required": "A reason of at least 5 characters is required for this action.",
+        "invalid transition": "This record cannot undergo this status transition in its current state. Refresh the page to check its latest status.",
+        "forbidden": "You do not have permission to perform this action.",
+        "review authors cannot approve their own review": "Review authors cannot approve their own review.",
       };
       const message = parsed.data.kind === "claim"
-        ? claimErrors[error.message] ?? "Membership approval was not saved. Refresh the claim and verify the member account before retrying."
-        : "Action was not saved. Check the current state, required reason, event payment, and capacity.";
+        ? (knownErrors[error.message] ?? "Membership approval was not saved. Refresh the claim and verify the member account before retrying.")
+        : (knownErrors[error.message] ?? error.message ?? "Action was not saved. Check the current record status and try again.");
       return authResponse({ error: message }, 409);
     }
     for (const tag of ["events", "directory", "reviews"]) revalidateTag(tag, { expire: 0 });

@@ -116,6 +116,10 @@ export interface AdminPaymentRow {
 export interface AdminReviewRow {
   id: string;
   reviewer: string;
+  reviewerName?: string;
+  kind?: "general" | "event" | "collaboration";
+  kindLabel?: string;
+  targetTitle?: string;
   rating: number;
   excerpt: string;
   submittedAt: string;

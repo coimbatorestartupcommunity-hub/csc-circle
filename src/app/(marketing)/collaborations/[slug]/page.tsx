@@ -23,6 +23,7 @@ import { RevealOnScroll, StaggerContainer, StaggerItem } from "@/components/moti
 import { getCollaborationBySlug } from "@/lib/services/public-data";
 import { safeExternalUrl, displayHost, formatEventDate } from "@/lib/format";
 import { siteConfig } from "@/lib/content/site";
+import { CollaborationReviewDialog } from "@/components/collaborations/collaboration-review-dialog";
 
 // Reads the slug param + looks it up, so this route blocks on the server and
 // returns a real 404 for unknown slugs.
@@ -92,12 +93,7 @@ export default async function CollaborationDetail({
             {c.title}
           </h1>
           {c.status === "completed" ? (
-            <Link
-              href={`/member/reviews?collaboration=${c.id}#collaboration-${c.id}`}
-              className="rounded-xl bg-brand-ink px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-ink/90"
-            >
-              Ratings and Review
-            </Link>
+            <CollaborationReviewDialog collaborationId={c.id} collaborationTitle={c.title} />
           ) : null}
           {c.tagline ? (
             <p className="font-serif text-2xl font-medium text-[#f97316] sm:text-3xl">{c.tagline}</p>
@@ -279,6 +275,26 @@ export default async function CollaborationDetail({
               );
             })}
           </div>
+        </Section>
+      ) : null}
+
+      {/* Review Callout for Completed Collaborations */}
+      {c.status === "completed" ? (
+        <Section className="bg-brand-cloud/60 py-12 sm:py-16">
+          <Container>
+            <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 rounded-3xl border border-brand-border bg-white p-7 text-center shadow-xs sm:p-9">
+              <span className="rounded-full bg-brand-cloud px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-accent">
+                Completed Collaboration
+              </span>
+              <h2 className="text-xl font-bold tracking-tight text-brand-ink sm:text-2xl">
+                Share your rating and review
+              </h2>
+              <p className="text-sm leading-relaxed text-brand-secondary">
+                Rate and review your experience with {c.title}. Your feedback is recorded in My Ratings and Reviews and highlighted across the CSC community.
+              </p>
+              <CollaborationReviewDialog collaborationId={c.id} collaborationTitle={c.title} />
+            </div>
+          </Container>
         </Section>
       ) : null}
 

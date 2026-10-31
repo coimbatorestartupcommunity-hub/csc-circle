@@ -6,7 +6,9 @@ import { adminServices } from "@/lib/admin/services";
 export const metadata = { title: "Reviews" };
 
 const columns: Column[] = [
-  { key: "reviewer", header: "Reviewer", type: "mono" },
+  { key: "reviewer", header: "Reviewer" },
+  { key: "kindLabel", header: "Type", type: "badge" },
+  { key: "targetTitle", header: "Activity / Target" },
   { key: "rating", header: "Rating", type: "stars", sortable: true },
   { key: "excerpt", header: "Review" },
   { key: "submittedAt", header: "Submitted", type: "date", sortable: true },
@@ -14,6 +16,15 @@ const columns: Column[] = [
 ];
 
 const facets: Facet[] = [
+  {
+    key: "kind",
+    label: "Type",
+    options: [
+      { label: "Collaboration", value: "collaboration" },
+      { label: "Event", value: "event" },
+      { label: "Community", value: "general" },
+    ],
+  },
   {
     key: "status",
     label: "Moderation",
@@ -48,14 +59,14 @@ export default async function AdminReviewsPage() {
     <>
       <AdminPageHeader
         title="Ratings & reviews moderation"
-        description="Moderate genuine member reviews. Approved reviews appear in the public testimonials carousel."
+        description="Moderate genuine member reviews. Approved reviews appear in the public testimonials carousel and activity highlights."
         isDemo={ctx.mode === "preview"}
       />
       <DataTable
         rows={rows}
         columns={columns}
         facets={facets}
-        searchKeys={["reviewer", "excerpt"]}
+        searchKeys={["reviewer", "targetTitle", "excerpt"]}
         actions={actions}
         emptyMessage={res.ok ? "No reviews." : res.error.message}
       />

@@ -502,12 +502,50 @@ export const adminServices = {
   listReviews(): Promise<ServiceResult<AdminReviewRow[]>> {
     return guard("reviews.moderate", demoReviews, async () => {
       const sb = await createClient();
-      const { data } = await sb.from("reviews").select("*").order("created_at", { ascending: false });
-      const rows: AdminReviewRow[] = (data ?? []).map((v) => {
-        const r = v as Row;
+      const { data: reviews } = await sb
+        .from("reviews")
+        .select("id, user_id, kind, event_id, collaboration_id, rating, review, moderation, created_at")
+        .order("created_at", { ascending: false });
+
+      if (!reviews || reviews.length === 0) return ok([]);
+
+      const userIds = [...new Set(reviews.map((r) => r.user_id).filter(Boolean))];
+      const eventIds = [...new Set(reviews.map((r) => r.event_id).filter(Boolean))] as string[];
+      const collaborationIds = [...new Set(reviews.map((r) => r.collaboration_id).filter(Boolean))] as string[];
+
+      const [profilesRes, eventsRes, collabsRes] = await Promise.all([
+        userIds.length > 0
+          ? sb.from("profiles").select("id, full_name, display_name, email").in("id", userIds)
+          : Promise.resolve({ data: [] }),
+        eventIds.length > 0
+          ? sb.from("events").select("id, title").in("id", eventIds)
+          : Promise.resolve({ data: [] }),
+        collaborationIds.length > 0
+          ? sb.from("collaborations").select("id, title").in("id", collaborationIds)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const profileMap = new Map((profilesRes.data ?? []).map((p) => [p.id, p.full_name || p.display_name || p.email || p.id.slice(0, 8)]));
+      const eventMap = new Map((eventsRes.data ?? []).map((e) => [e.id, e.title]));
+      const collabMap = new Map((collabsRes.data ?? []).map((c) => [c.id, c.title]));
+
+      const rows: AdminReviewRow[] = reviews.map((r) => {
+        const kind = (r.kind as "general" | "event" | "collaboration") || "general";
+        const kindLabel = kind === "collaboration" ? "Collaboration" : kind === "event" ? "Event" : "Community";
+        const targetTitle = kind === "collaboration" && r.collaboration_id
+          ? collabMap.get(r.collaboration_id) ?? "Collaboration"
+          : kind === "event" && r.event_id
+          ? eventMap.get(r.event_id) ?? "Event"
+          : "CSC Circle Community";
+        const reviewerName = profileMap.get(r.user_id) ?? String(r.user_id).slice(0, 8);
+
         return {
           id: String(r.id),
-          reviewer: String(r.user_id).slice(0, 8),
+          reviewer: reviewerName,
+          reviewerName,
+          kind,
+          kindLabel,
+          targetTitle,
           rating: (r.rating as number) ?? 0,
           excerpt: (r.review as string) ?? "",
           submittedAt: (r.created_at as string) ?? "",

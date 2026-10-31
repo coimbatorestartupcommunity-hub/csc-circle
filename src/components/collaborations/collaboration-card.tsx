@@ -18,7 +18,7 @@ export function CollaborationCard({ collaboration: c }: { collaboration: Collabo
   return (
     <HoverLiftCard>
       <Link
-        href={`/collaborations/${c.slug}`}
+        href={c.status === "completed" ? `/collaborations/${c.slug}#review` : `/collaborations/${c.slug}`}
         className="group flex h-full flex-col overflow-hidden rounded-3xl bg-brand-white ring-1 ring-brand-border focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <div className="relative aspect-[5/3] w-full overflow-hidden bg-brand-cloud">

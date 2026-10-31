@@ -267,14 +267,25 @@ export async function POST(request: Request, context: { params: Promise<{ action
   } catch { return authResponse({ error: "Could not save your information. Please try again." }, 503); }
 }
 
-export async function GET(_request: Request, context: { params: Promise<{ action: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ action: string }> }) {
   try {
     const { action } = await context.params;
     if (action !== "review") return authResponse({ error: "Not found." }, 404);
     const ctx = await getMemberContext();
     if (ctx.mode !== "live") return authResponse({ error: "Sign in to continue." }, 401);
     const sb = await createClient();
-    const { data, error } = await sb.from("reviews").select("id,rating,review,moderation").eq("user_id", ctx.user!.id).eq("kind", "general").is("event_id", null).maybeSingle();
+    const url = new URL(request.url);
+    const collaborationId = url.searchParams.get("collaborationId");
+    const eventId = url.searchParams.get("eventId");
+    let query = sb.from("reviews").select("id,rating,review,moderation").eq("user_id", ctx.user!.id);
+    if (collaborationId) {
+      query = query.eq("kind", "collaboration").eq("collaboration_id", collaborationId);
+    } else if (eventId) {
+      query = query.eq("kind", "event").eq("event_id", eventId);
+    } else {
+      query = query.eq("kind", "general").is("event_id", null).is("collaboration_id", null);
+    }
+    const { data, error } = await query.maybeSingle();
     if (error) return authResponse({ error: "Review status could not be loaded." }, 503);
     return authResponse({ ok: true, review: data });
   } catch { return authResponse({ error: "Review status could not be loaded." }, 503); }

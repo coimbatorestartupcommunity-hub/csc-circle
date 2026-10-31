@@ -43,10 +43,43 @@ export function ActionButton({
   const isStartupApproval = operation?.kind === "startup" && operation.decision === "published";
   const isEventPassApproval = ["imported_registration", "paid_registration", "registration"].includes(operation?.kind ?? "") && operation?.decision === "confirmed";
   const displayDetails = Object.entries(details ?? {}).filter(([key, value]) =>
-    value !== null && value !== undefined && value !== "" && !["id", "user_id", "owner_id"].includes(key),
+    value !== null &&
+    value !== undefined &&
+    value !== "" &&
+    !["id", "user_id", "owner_id", "kind"].includes(key) &&
+    !(key === "reviewer" && details?.reviewerName),
   ).slice(0, 12);
-  const detailLabel = (key: string) => ({ applicantName: "Applicant name", fullName: "Full name", email: "Email address", linkedAccountEmail: "Account email", whatsapp: "WhatsApp number", applicantType: "Applicant type", designation: "Designation", startup: "Startup", reference: "Reference", submittedAt: "Submitted", declarationAccurate: "Accuracy declaration", status: "Current status", reviewer: "Reviewer", startupName: "Startup name", directorySlug: "Directory slug", description: "Submitted description", website: "Website", collaboration: "Collaboration interests", submitted: "Submitted", currentStatus: "Current status", publicListingConsent: "Public listing consent", consentRecorded: "Consent recorded" }[key] ?? key.replace(/([A-Z])/g, " $1").replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase()));
-  const detailValue = (value: unknown) => {
+  const detailLabel = (key: string) => ({
+    applicantName: "Applicant name",
+    fullName: "Full name",
+    email: "Email address",
+    linkedAccountEmail: "Account email",
+    whatsapp: "WhatsApp number",
+    applicantType: "Applicant type",
+    designation: "Designation",
+    startup: "Startup",
+    reference: "Reference",
+    submittedAt: "Submitted",
+    declarationAccurate: "Accuracy declaration",
+    status: "Current status",
+    reviewer: "Reviewer",
+    reviewerName: "Reviewer",
+    kindLabel: "Review type",
+    targetTitle: "Activity / Target",
+    rating: "Rating",
+    excerpt: "Review comments",
+    startupName: "Startup name",
+    directorySlug: "Directory slug",
+    description: "Submitted description",
+    website: "Website",
+    collaboration: "Collaboration interests",
+    submitted: "Submitted",
+    currentStatus: "Current status",
+    publicListingConsent: "Public listing consent",
+    consentRecorded: "Consent recorded",
+  }[key] ?? key.replace(/([A-Z])/g, " $1").replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase()));
+  const detailValue = (value: unknown, key?: string) => {
+    if (key === "rating") return `${value}★`;
     if (typeof value === "boolean") return value ? "Confirmed" : "Not confirmed";
     if (typeof value === "string" && /^[a-z]+(?:_[a-z]+)+$/.test(value)) return value.split("_").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ");
     return Array.isArray(value) ? value.join(", ") : typeof value === "object" ? JSON.stringify(value) : String(value);
@@ -88,7 +121,7 @@ export function ActionButton({
             </DialogHeader>
             {result === null && <>
               {displayDetails.length > 0 && <dl className={`mt-5 grid gap-2.5 rounded-2xl bg-brand-cloud/60 p-3 ring-1 ring-brand-border/70 backdrop-blur-xs ${isMembershipApproval || isStartupApproval ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}>
-                {displayDetails.map(([key, value]) => <div key={key} className="min-w-0 rounded-xl border border-white/80 bg-white/85 p-2.5 shadow-xs ring-1 ring-brand-border/40 backdrop-blur-md"><dt className="text-[10px] font-bold uppercase tracking-wider text-brand-muted">{detailLabel(key)}</dt><dd className="mt-1 break-words text-xs sm:text-sm font-medium text-brand-ink">{detailValue(value)}</dd></div>)}
+                {displayDetails.map(([key, value]) => <div key={key} className="min-w-0 rounded-xl border border-white/80 bg-white/85 p-2.5 shadow-xs ring-1 ring-brand-border/40 backdrop-blur-md"><dt className="text-[10px] font-bold uppercase tracking-wider text-brand-muted">{detailLabel(key)}</dt><dd className="mt-1 break-words text-xs sm:text-sm font-medium text-brand-ink">{detailValue(value, key)}</dd></div>)}
               </dl>}
               {operation && <div className="mt-4 grid gap-1.5"><label htmlFor="admin-action-reason" className="text-xs sm:text-sm font-medium text-brand-ink">{isMembershipApproval ? "Internal approval note" : operation.kind === "payment" ? "Independent settlement reference" : "Review reason"} {reasonRequired ? <span className="text-red-700">(required)</span> : <span className="font-normal text-brand-muted">(optional)</span>}</label><Textarea id="admin-action-reason" value={reason} onChange={(event) => setReason(event.target.value)} maxLength={1000} rows={isMembershipApproval ? 2 : 3} className="rounded-xl border border-brand-border/80 bg-white/90 text-sm focus:border-brand-ink focus:ring-2 focus:ring-brand-ink/10" placeholder={reasonRequired ? "Enter at least 5 characters for the audit record…" : "Add an optional note for the audit record…"} aria-invalid={reasonRequired && reason.trim().length > 0 && reason.trim().length < 5} />{!isMembershipApproval && <p className="text-[11px] text-brand-muted">This note is attached to the privileged action for audit.</p>}</div>}
               {!operation && message && <p className="mt-5 rounded-xl bg-amber-50 p-4 text-xs sm:text-sm text-amber-900">{message}</p>}
