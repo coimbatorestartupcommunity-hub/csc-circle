@@ -187,23 +187,27 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
               </div>
             </div>
 
-            {/* Row 2: Email */}
-            <div className="min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block">
+            {/* Row 2: Email - Centered */}
+            <div className="flex w-full min-w-0 flex-col items-center justify-center text-center">
+              <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block text-center">
                 Email
               </span>
-              <p className="mt-1 break-all text-xs sm:text-sm font-bold text-brand-ink no-underline [text-decoration:none]">
+              <p
+                className="mt-1 max-w-full break-all text-center text-xs sm:text-sm font-bold text-brand-ink no-underline [text-decoration:none] border-none"
+                style={{ textDecoration: "none", textDecorationLine: "none", borderBottom: "none" }}
+              >
                 {fields.email}
               </p>
             </div>
 
-            {/* Row 3: UID */}
-            <div className="min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block">
+            {/* Row 3: UID - Centered */}
+            <div className="flex w-full min-w-0 flex-col items-center justify-center text-center">
+              <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block text-center">
                 UID
               </span>
               <p
-                className="mt-1 whitespace-nowrap font-mono text-[9px] sm:text-[11px] font-bold tracking-tight text-brand-ink no-underline [text-decoration:none] overflow-hidden text-ellipsis"
+                className="mt-1 max-w-full whitespace-nowrap font-mono text-[9px] sm:text-[11px] font-bold tracking-tight text-brand-ink text-center no-underline [text-decoration:none] overflow-hidden text-ellipsis border-none"
+                style={{ textDecoration: "none", textDecorationLine: "none", borderBottom: "none" }}
                 title={fields.uid}
               >
                 {fields.uid}

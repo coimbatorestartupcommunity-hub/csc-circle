@@ -222,7 +222,7 @@ export function ReviewDialog({
   const dialogDescription = submitted
     ? "Your review was received and is awaiting administrator moderation. It is stored on your profile under Ratings & Reviews."
     : existingReview
-    ? `Your review is saved and visible under My Ratings & Reviews.`
+    ? "Your review is saved and visible under My Ratings & Reviews."
     : resolvedType === "collaboration"
     ? `Share your thoughts on "${collaborationTitle || "this collaboration"}". Your rating and review help spotlight genuine community collaborations.`
     : resolvedType === "event"
@@ -247,8 +247,8 @@ export function ReviewDialog({
               type="button"
               className={cn(
                 variant === "glass"
-                  ? "inline-flex items-center justify-center gap-2 rounded-xl border border-white/80 bg-white/80 px-5 py-2.5 text-sm font-semibold text-brand-ink shadow-[0_8px_20px_-6px_rgba(31,41,78,0.18)] ring-1 ring-black/5 backdrop-blur-xl transition hover:bg-white hover:shadow-[0_12px_24px_-6px_rgba(31,41,78,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-                  : "inline-flex items-center justify-center gap-2 rounded-xl bg-brand-ink px-5 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-black/5 transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple cursor-pointer",
+                  ? "inline-flex items-center justify-center gap-2 rounded-xl border border-white/90 bg-white/80 px-5 py-2.5 text-sm font-semibold text-brand-ink shadow-[0_8px_20px_-6px_rgba(31,41,78,0.18)] ring-1 ring-black/5 backdrop-blur-xl transition hover:bg-white hover:shadow-[0_12px_24px_-6px_rgba(31,41,78,0.25)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  : "inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-brand-ink px-5 py-2.5 text-sm font-semibold text-white shadow-md ring-1 ring-black/5 transition hover:bg-brand-ink/90 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple cursor-pointer active:scale-[0.99]",
                 className,
               )}
             >
@@ -259,199 +259,206 @@ export function ReviewDialog({
         }
       />
 
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg rounded-[2rem] border border-white/85 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl ring-1 ring-black/5 sm:p-8">
-        <DialogHeader className="text-left">
-          <div className="mb-3 flex size-12 items-center justify-center rounded-2xl border border-white/80 bg-brand-purple/40 text-brand-ink shadow-xs ring-1 ring-white/70 backdrop-blur-md">
-            {submitted || existingReview ? (
-              <CheckCircle2 className="size-6 text-emerald-600" />
-            ) : (
-              <MessageSquareQuote className="size-6 text-brand-ink" />
-            )}
-          </div>
-          <DialogTitle className="text-xl font-bold tracking-tight text-brand-ink">
-            {dialogTitle}
-          </DialogTitle>
-          <DialogDescription className="mt-1 text-xs leading-relaxed text-brand-secondary sm:text-sm">
-            {dialogDescription}
-          </DialogDescription>
-        </DialogHeader>
-
-        {notAuthenticated ? (
-          <div className="mt-4 flex flex-col items-center gap-3 rounded-2xl border border-white/70 bg-brand-cloud/70 p-5 text-center backdrop-blur-md">
-            <p className="text-sm font-semibold text-brand-ink">
-              Sign in to rate and review
-            </p>
-            <p className="text-xs text-brand-muted">
-              Member reviews are connected to your verified CSC account.
-            </p>
-            <Button
-              render={
-                <Link
-                  href={`/login?next=${encodeURIComponent(
-                    typeof window !== "undefined"
-                      ? window.location.pathname
-                      : "/",
-                  )}`}
-                />
-              }
-              className="mt-2 w-full sm:w-auto"
-            >
-              Sign in to Review
-            </Button>
-          </div>
-        ) : submitted || existingReview ? (
-          <div className="mt-4 flex flex-col gap-4">
-            <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/80 p-5 ring-1 ring-emerald-200 backdrop-blur-md shadow-xs">
-              <div className="flex items-center gap-2">
-                <div className="flex text-amber-500">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className={cn(
-                        "size-4",
-                        i < (existingReview?.rating ?? rating)
-                          ? "fill-amber-400 text-amber-400"
-                          : "fill-transparent text-emerald-200",
-                      )}
-                    />
-                  ))}
-                </div>
-                <span className="text-xs font-semibold text-emerald-900">
-                  {existingReview?.rating ?? rating} out of 5 stars
-                </span>
-                <span className="ml-auto rounded-full bg-emerald-200/70 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 capitalize">
-                  {existingReview?.moderation?.replace("_", " ") ?? "Submitted"}
-                </span>
-              </div>
-              <p className="mt-3 font-serif text-sm italic text-emerald-950 sm:text-base">
-                “{existingReview?.review || review}”
-              </p>
+      <DialogContent className="w-[calc(100%-1.25rem)] max-w-lg overflow-hidden rounded-[2rem] border border-white/80 bg-white/92 p-0 shadow-[0_25px_60px_-15px_rgba(20,25,45,0.25)] ring-1 ring-black/5 backdrop-blur-2xl">
+        <div className="max-h-[min(85dvh,720px)] overflow-y-auto p-5 sm:p-7">
+          <DialogHeader className="text-left">
+            <div className="mb-3.5 flex size-12 items-center justify-center rounded-2xl border border-white/80 bg-gradient-to-br from-brand-purple/40 to-brand-lilac/30 text-brand-ink shadow-xs ring-1 ring-white/80 backdrop-blur-md">
+              {submitted || existingReview ? (
+                <CheckCircle2 className="size-6 text-emerald-600" />
+              ) : (
+                <MessageSquareQuote className="size-6 text-brand-ink" />
+              )}
             </div>
+            <DialogTitle className="text-xl font-bold tracking-tight text-brand-ink sm:text-2xl">
+              {dialogTitle}
+            </DialogTitle>
+            <DialogDescription className="mt-1.5 text-xs leading-relaxed text-brand-secondary sm:text-sm">
+              {dialogDescription}
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="mt-2 flex flex-col gap-2.5 border-t border-brand-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <Link
-                href="/member/reviews"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/80 bg-white/80 px-4 py-2.5 text-xs font-semibold text-brand-ink shadow-xs ring-1 ring-brand-border/60 backdrop-blur-md transition hover:bg-white hover:shadow-sm"
-              >
-                View in My Ratings &amp; Reviews
-                <ExternalLink className="size-3.5" />
-              </Link>
+          {notAuthenticated ? (
+            <div className="mt-5 flex flex-col items-center gap-3 rounded-2xl border border-white/70 bg-brand-cloud/70 p-6 text-center backdrop-blur-md">
+              <p className="text-sm font-semibold text-brand-ink">
+                Sign in to rate and review
+              </p>
+              <p className="text-xs text-brand-muted">
+                Member reviews are connected to your verified CSC account.
+              </p>
               <Button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="text-xs font-semibold"
+                render={
+                  <Link
+                    href={`/login?next=${encodeURIComponent(
+                      typeof window !== "undefined"
+                        ? window.location.pathname
+                        : "/",
+                    )}`}
+                  />
+                }
+                className="mt-2 w-full sm:w-auto min-h-10 rounded-xl px-6 text-sm font-semibold"
               >
-                Done
+                Sign in to Review
               </Button>
             </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-white/80 bg-brand-cloud/60 p-4 shadow-xs ring-1 ring-brand-border/60 backdrop-blur-md">
-              <span className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
-                Your Rating
-              </span>
-              <div
-                className="flex items-center gap-2"
-                role="radiogroup"
-                aria-label="Rating"
-              >
-                {Array.from({ length: 5 }).map((_, i) => {
-                  const n = i + 1;
-                  const on = (hover || rating) >= n;
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      role="radio"
-                      aria-checked={rating === n}
-                      aria-label={`${n} star${n > 1 ? "s" : ""}`}
-                      onMouseEnter={() => setHover(n)}
-                      onMouseLeave={() => setHover(0)}
-                      onClick={() => setRating(n)}
-                      className="rounded-lg p-1 transition hover:scale-115 focus-visible:ring-2 focus-visible:ring-brand-purple"
-                    >
+          ) : submitted || existingReview ? (
+            <div className="mt-5 flex flex-col gap-4">
+              <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/75 p-5 shadow-xs ring-1 ring-emerald-300/40 backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  <div className="flex text-amber-500">
+                    {Array.from({ length: 5 }).map((_, i) => (
                       <Star
+                        key={i}
                         className={cn(
-                          "size-8 transition-colors",
-                          on
-                            ? "fill-green-500 text-green-500"
-                            : "fill-transparent text-brand-border",
+                          "size-4",
+                          i < (existingReview?.rating ?? rating)
+                            ? "fill-amber-400 text-amber-400"
+                            : "fill-transparent text-emerald-200",
                         )}
                       />
-                    </button>
-                  );
-                })}
+                    ))}
+                  </div>
+                  <span className="text-xs font-semibold text-emerald-900">
+                    {existingReview?.rating ?? rating} out of 5 stars
+                  </span>
+                  <span className="ml-auto rounded-full bg-emerald-200/70 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 capitalize">
+                    {existingReview?.moderation?.replace("_", " ") ?? "Submitted"}
+                  </span>
+                </div>
+                <p className="mt-3 font-serif text-sm italic text-emerald-950 sm:text-base">
+                  “{existingReview?.review || review}”
+                </p>
               </div>
-              {errors.rating ? <FieldError>{errors.rating}</FieldError> : null}
             </div>
+          ) : (
+            <form id="review-dialog-form" onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4">
+              <div className="flex flex-col items-center gap-2 rounded-2xl border border-white/80 bg-white/80 p-4 shadow-xs ring-1 ring-brand-border/40 backdrop-blur-md">
+                <span className="text-[11px] font-bold tracking-wider text-brand-muted uppercase">
+                  Your Rating
+                </span>
+                <div
+                  className="flex items-center gap-2"
+                  role="radiogroup"
+                  aria-label="Rating"
+                >
+                  {Array.from({ length: 5 }).map((_, i) => {
+                    const n = i + 1;
+                    const on = (hover || rating) >= n;
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        role="radio"
+                        aria-checked={rating === n}
+                        aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                        onMouseEnter={() => setHover(n)}
+                        onMouseLeave={() => setHover(0)}
+                        onClick={() => setRating(n)}
+                        className="rounded-lg p-1 transition hover:scale-115 focus-visible:ring-2 focus-visible:ring-brand-purple"
+                      >
+                        <Star
+                          className={cn(
+                            "size-8 transition-colors",
+                            on
+                              ? "fill-green-500 text-green-500"
+                              : "fill-transparent text-brand-border",
+                          )}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.rating ? <FieldError>{errors.rating}</FieldError> : null}
+              </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="dialog-review-text"
-                className="text-xs font-semibold text-brand-ink"
-              >
-                Your Feedback &amp; Comments
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="dialog-review-text"
+                  className="text-xs font-semibold text-brand-ink"
+                >
+                  Your Feedback &amp; Comments
+                </label>
+                <Textarea
+                  id="dialog-review-text"
+                  rows={4}
+                  value={review}
+                  onChange={(e) => setReview(e.target.value)}
+                  maxLength={1000}
+                  placeholder={textareaPlaceholder}
+                  className="rounded-2xl border border-brand-border/80 bg-white/90 p-3.5 text-sm font-medium text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-ink focus:ring-2 focus:ring-brand-ink/10 shadow-xs"
+                  aria-invalid={!!errors.review}
+                />
+                {errors.review ? <FieldError>{errors.review}</FieldError> : null}
+              </div>
+
+              <label className="flex items-start gap-3 rounded-xl border border-brand-border/40 bg-brand-cloud/40 p-3.5 text-xs text-brand-secondary cursor-pointer hover:bg-brand-cloud/60 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 size-4 rounded accent-brand-ink shrink-0 cursor-pointer"
+                />
+                <span>
+                  I agree to share this review publicly in the CSC Circle
+                  community testimonials upon administrator approval.
+                </span>
               </label>
-              <Textarea
-                id="dialog-review-text"
-                rows={4}
-                value={review}
-                onChange={(e) => setReview(e.target.value)}
-                maxLength={1000}
-                placeholder={textareaPlaceholder}
-                className="rounded-xl border border-brand-border bg-white text-sm focus:border-brand-ink focus:ring-2 focus:ring-brand-ink/10"
-                aria-invalid={!!errors.review}
-              />
-              {errors.review ? <FieldError>{errors.review}</FieldError> : null}
-            </div>
+              {errors.consent ? <FieldError>{errors.consent}</FieldError> : null}
+            </form>
+          )}
+        </div>
 
-            <label className="flex items-start gap-2.5 text-xs text-brand-secondary">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 size-4 rounded accent-brand-ink shrink-0"
-              />
-              <span>
-                I agree to share this review publicly in the CSC Circle
-                community testimonials upon administrator approval.
-              </span>
-            </label>
-            {errors.consent ? <FieldError>{errors.consent}</FieldError> : null}
+        {/* Sticky Glassmorphism Dialog Footer with View in My Ratings & Reviews */}
+        <div className="sticky bottom-0 z-10 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 border-t border-brand-border/60 bg-white/85 px-5 py-3.5 backdrop-blur-xl">
+          <Link
+            href="/member/reviews"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-white/80 bg-white/90 px-4 text-xs font-semibold text-brand-ink shadow-xs ring-1 ring-brand-border/50 backdrop-blur-md transition hover:bg-white hover:shadow-sm"
+          >
+            View in My Ratings &amp; Reviews
+            <ExternalLink className="size-3.5" />
+          </Link>
 
-            <div className="mt-2 flex flex-col gap-2.5 border-t border-brand-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <Link
-                href="/member/reviews"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/80 bg-white/80 px-4 py-2.5 text-xs font-semibold text-brand-ink shadow-xs ring-1 ring-brand-border/60 backdrop-blur-md transition hover:bg-white hover:shadow-sm"
+          {submitted || existingReview ? (
+            <Button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="w-full sm:w-auto min-h-10 rounded-xl px-6 text-xs font-semibold"
+            >
+              Done
+            </Button>
+          ) : notAuthenticated ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="w-full sm:w-auto min-h-10 rounded-xl text-xs font-semibold"
+            >
+              Close
+            </Button>
+          ) : (
+            <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={submitting}
+                className="w-full sm:w-auto min-h-10 rounded-xl text-xs font-semibold"
               >
-                View in My Ratings &amp; Reviews
-                <ExternalLink className="size-3.5" />
-              </Link>
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  disabled={submitting}
-                  className="text-xs font-semibold"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitting || !checkedAuth}
-                  className="min-h-10 min-w-36 gap-2 rounded-xl text-xs font-semibold shadow-sm"
-                >
-                  {submitting ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : null}
-                  {submitting ? "Submitting…" : "Submit Review"}
-                </Button>
-              </div>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="review-dialog-form"
+                disabled={submitting || !checkedAuth}
+                className="w-full sm:w-auto min-h-10 min-w-36 gap-2 rounded-xl bg-brand-ink px-6 text-xs font-semibold text-white shadow-sm hover:bg-brand-ink/90"
+              >
+                {submitting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : null}
+                {submitting ? "Submitting…" : "Submit Review"}
+              </Button>
             </div>
-          </form>
-        )}
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
