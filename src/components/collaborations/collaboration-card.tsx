@@ -1,9 +1,12 @@
+"use client";
+
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { HoverLiftCard } from "@/components/motion";
+import { ReviewDialog } from "@/components/reviews/review-dialog";
 import { cn } from "cn";
 import type { Collaboration } from "@/types/collaboration";
 
@@ -15,10 +18,77 @@ const statusTone: Record<Collaboration["status"], string> = {
 };
 
 export function CollaborationCard({ collaboration: c }: { collaboration: Collaboration }) {
+  if (c.status === "completed") {
+    return (
+      <HoverLiftCard>
+        <div className="group flex h-full flex-col overflow-hidden rounded-3xl bg-brand-white ring-1 ring-brand-border">
+          <Link
+            href={`/collaborations/${c.slug}`}
+            className="relative aspect-[5/3] w-full overflow-hidden bg-brand-cloud block"
+          >
+            {c.featuredImagePath ? (
+              <Image
+                src={c.featuredImagePath}
+                alt={`${c.title} — ${c.tagline ?? "collaboration"}`}
+                fill
+                sizes="(max-width: 768px) 100vw, 420px"
+                className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              />
+            ) : null}
+            <div className="absolute top-3 left-3 flex gap-2">
+              <Badge className={statusTone[c.status]}>
+                Completed
+              </Badge>
+            </div>
+          </Link>
+
+          <div className="flex flex-1 flex-col gap-3 p-6">
+            <div className="flex items-center gap-2">
+              {c.partners.slice(0, 3).map((p) =>
+                p.organization.logoPath ? (
+                  <span
+                    key={p.organization.id}
+                    className="flex size-8 items-center justify-center overflow-hidden rounded-full bg-brand-white ring-1 ring-brand-border"
+                  >
+                    <Image
+                      src={p.organization.logoPath}
+                      alt={p.organization.name}
+                      width={32}
+                      height={32}
+                      className="size-full object-contain p-0.5"
+                    />
+                  </span>
+                ) : null,
+              )}
+            </div>
+
+            <Link href={`/collaborations/${c.slug}`} className="flex flex-col gap-1 group-hover:opacity-95">
+              <h3 className="text-lg font-semibold text-brand-ink">{c.title}</h3>
+              {c.tagline ? <p className="text-sm font-medium text-brand-accent">{c.tagline}</p> : null}
+            </Link>
+
+            <p className="flex-1 text-sm leading-relaxed text-brand-secondary">{c.summary}</p>
+
+            <div className="mt-2 flex items-center justify-between gap-2 border-t border-brand-border pt-3">
+              <span className="text-xs text-brand-muted">{c.category}</span>
+              <ReviewDialog
+                type="collaboration"
+                collaborationId={c.id}
+                collaborationTitle={c.title}
+                buttonLabel="Ratings and Review"
+                className="h-9 rounded-full px-3.5 text-xs shadow-xs"
+              />
+            </div>
+          </div>
+        </div>
+      </HoverLiftCard>
+    );
+  }
+
   return (
     <HoverLiftCard>
       <Link
-        href={c.status === "completed" ? `/collaborations/${c.slug}#review` : `/collaborations/${c.slug}`}
+        href={`/collaborations/${c.slug}`}
         className="group flex h-full flex-col overflow-hidden rounded-3xl bg-brand-white ring-1 ring-brand-border focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <div className="relative aspect-[5/3] w-full overflow-hidden bg-brand-cloud">
@@ -68,12 +138,9 @@ export function CollaborationCard({ collaboration: c }: { collaboration: Collabo
           <div className="mt-1 flex items-center justify-between gap-2 border-t border-brand-border pt-3">
             <span className="text-xs text-brand-muted">{c.category}</span>
             <span
-              className={cn(
-                "inline-flex items-center gap-1 text-sm font-semibold",
-                c.status === "completed" ? "text-brand-ink" : "text-brand-accent",
-              )}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-brand-accent"
             >
-              {c.status === "completed" ? "Ratings and Review" : "View collaboration"}{" "}
+              View collaboration{" "}
               <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </span>
           </div>

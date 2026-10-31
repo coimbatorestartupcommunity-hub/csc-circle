@@ -11,6 +11,7 @@ import {
 import { TestimonialCard } from "@/components/testimonials/testimonial-card";
 import { TestimonialCarouselControls } from "@/components/testimonials/testimonial-carousel-controls";
 import { TestimonialEmptyState } from "@/components/testimonials/testimonial-empty-state";
+import { ReviewDialog } from "@/components/reviews/review-dialog";
 import { brandAssets, siteConfig } from "@/lib/content/site";
 import type { Testimonial } from "@/types";
 
@@ -58,17 +59,25 @@ export function CommunityTestimonials({
   };
 
   const logoPill = (
-    <div className="mx-auto flex w-fit items-center gap-2.5 rounded-full bg-brand-white px-4 py-2 ring-1 ring-brand-border">
-      <Image
-        src={brandAssets.cscIcon}
-        alt={`${siteConfig.legalName} logo`}
-        width={28}
-        height={28}
-        className="rounded-full"
+    <div className="mx-auto flex flex-wrap items-center justify-center gap-3">
+      <div className="flex w-fit items-center gap-2.5 rounded-full bg-brand-white px-4 py-2 ring-1 ring-brand-border">
+        <Image
+          src={brandAssets.cscIcon}
+          alt={`${siteConfig.legalName} logo`}
+          width={28}
+          height={28}
+          className="rounded-full"
+        />
+        <span className="text-sm font-semibold text-brand-ink">
+          CSC Circle Ratings
+        </span>
+      </div>
+      <ReviewDialog
+        type="general"
+        buttonLabel="Rate CSC Circle"
+        variant="glass"
+        className="h-10 rounded-full px-4 text-xs font-semibold"
       />
-      <span className="text-sm font-semibold text-brand-ink">
-        CSC Circle Ratings
-      </span>
     </div>
   );
 

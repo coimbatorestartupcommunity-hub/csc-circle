@@ -2,9 +2,10 @@
 
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import QRCode from "qrcode";
 import { toBlob } from "html-to-image";
-import { Check, Copy, Download, Loader2, MapPin, CalendarDays } from "lucide-react";
+import { Check, Copy, Download, Loader2, MapPin, CalendarDays, FileDown, IdCard } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/member/status-badge";
@@ -34,7 +35,7 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
     let active = true;
     QRCode.toDataURL(buildEventPassQrPayload(pass.verificationToken), {
       margin: 1,
-      width: 512,
+      width: 1024,
       color: { dark: "#121826", light: "#ffffff" },
     })
       .then((url) => active && setQr(url))
@@ -114,59 +115,166 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-3 sm:gap-5">
-      <div ref={ref} className="relative w-full max-w-md overflow-hidden rounded-[1.75rem] bg-brand-white ring-1 ring-brand-border">
-        <div className="flex items-center gap-3 bg-gradient-to-r from-brand-blue to-brand-lilac px-4 py-3 sm:px-6 sm:py-4">
-          <Image src={brandAssets.cscIcon} alt="" width={40} height={40} unoptimized className="size-10 rounded-full bg-brand-white/80 object-cover ring-1 ring-brand-border" />
-          <div className="flex min-w-0 flex-col">
-            <span className="text-xs font-semibold tracking-wide text-brand-ink uppercase">CSC Event Pass</span>
-            <span className="text-[10px] text-brand-muted">{siteConfig.legalName}</span>
+    <div className="flex w-full flex-col items-center gap-4 sm:gap-6">
+      {/* The exportable card node */}
+      <div
+        ref={ref}
+        className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/80 bg-white shadow-[0_25px_60px_-22px_rgba(52,48,108,0.4)] ring-1 ring-brand-border backdrop-blur-xl transition-transform duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_30px_65px_-22px_rgba(52,48,108,0.48)] motion-reduce:transition-none"
+      >
+        {/* Brand header matching glass-office design */}
+        <div className="relative flex items-center justify-between overflow-hidden bg-gradient-to-r from-[#f5efff] via-[#e9f3ff] to-[#fbfaff] px-4 py-3.5 sm:px-6 sm:py-4 border-b border-brand-border/60">
+          <span aria-hidden="true" className="pointer-events-none absolute -top-8 -right-6 size-24 rounded-full bg-white/60 blur-xl" />
+          <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -left-6 size-28 rounded-full bg-[#d7d1ff]/50 blur-xl" />
+          <div className="relative flex items-center gap-3">
+            <Image
+              src={brandAssets.cscIcon}
+              alt="CSC Circle logo"
+              width={40}
+              height={40}
+              unoptimized
+              className="size-10 rounded-full bg-white/95 object-contain p-1 shadow-xs ring-1 ring-brand-border sm:size-11"
+            />
+            <div className="flex min-w-0 flex-col">
+              <span className="text-xs font-bold tracking-wider text-brand-ink uppercase sm:text-sm">CSC Event Pass</span>
+              <span className="text-[10px] font-medium text-brand-muted">{siteConfig.legalName}</span>
+            </div>
           </div>
+          <StatusBadge label={meta.label} tone={meta.tone} />
         </div>
 
-        <div className="flex flex-col gap-4 p-4 sm:gap-5 sm:p-6">
-          <div className="flex flex-col items-center gap-3 text-center">
+        <div className="flex flex-col gap-4 p-5 sm:gap-5 sm:p-6">
+          {/* Attendee Profile & Event Title */}
+          <div className="flex flex-col items-center gap-2.5 text-center">
             <span role="img" aria-label="Attendee profile picture" className="flex size-20 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#eee8ff] to-[#e3f0ff] ring-4 ring-white shadow-[0_0_0_1px_rgba(111,100,186,0.22),0_5px_15px_-7px_rgba(55,48,119,0.55)]">
               <AccountAvatar name={fields.name} src={pass.avatarUrl} className="size-full text-2xl" />
             </span>
-            <h3 className="max-w-full break-words text-center text-lg font-bold leading-tight text-brand-ink text-balance sm:text-xl">{pass.eventTitle}</h3>
+            <h3 className="max-w-full break-words text-center text-lg font-bold leading-snug text-brand-ink text-balance sm:text-xl">
+              {pass.eventTitle}
+            </h3>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2">
-            <p className="flex min-w-0 items-center gap-2 text-sm text-brand-muted">
-              <CalendarDays className="size-5 shrink-0" aria-hidden />
-              <span className="min-w-0 break-words">{formatEventRange(pass.startsAt, pass.endsAt)}</span>
+          {/* Date & Location */}
+          <div className="flex min-w-0 flex-col gap-2 rounded-2xl bg-brand-cloud/60 p-3.5 ring-1 ring-brand-border/40">
+            <p className="flex min-w-0 items-center gap-2 text-xs sm:text-sm text-brand-secondary">
+              <CalendarDays className="size-4 shrink-0 text-brand-muted" aria-hidden />
+              <span className="min-w-0 font-medium break-words">{formatEventRange(pass.startsAt, pass.endsAt)}</span>
             </p>
-            <p className="flex min-w-0 items-start gap-2 text-sm text-brand-muted">
+            <p className="flex min-w-0 items-start gap-2 text-xs sm:text-sm text-brand-secondary">
               <MapPin className="mt-0.5 size-7 shrink-0 text-brand-accent" aria-hidden />
-              <span className="min-w-0 break-words"><span className="font-semibold text-brand-ink">Location:</span> {fields.location}</span>
+              <span className="min-w-0 break-words leading-relaxed"><span className="font-semibold text-brand-ink">Location:</span> {fields.location}</span>
             </p>
           </div>
 
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_4rem] items-center gap-3 rounded-2xl bg-brand-cloud p-3 sm:grid-cols-[minmax(0,1fr)_6rem] sm:gap-4 sm:p-4">
-            <div className="flex min-w-0 flex-col gap-2">
-              <div className="min-w-0"><p className="text-[10px] tracking-wide text-brand-muted uppercase">Name</p><p className="break-words text-sm font-semibold text-brand-ink">{fields.name}</p></div>
-              <div className="min-w-0"><p className="text-[10px] tracking-wide text-brand-muted uppercase">Email</p><p className="break-all text-xs font-medium text-brand-ink">{fields.email}</p></div>
-              <div className="min-w-0"><p className="text-[10px] tracking-wide text-brand-muted uppercase">Phone</p><p className="break-words text-xs font-medium text-brand-ink">{fields.phone}</p></div>
-              <div className="min-w-0"><p className="text-[10px] tracking-wide text-brand-muted uppercase">UID</p><p className="whitespace-nowrap font-mono text-[7px] font-semibold tracking-[-0.1em] text-brand-ink sm:text-[10px]" title={fields.uid}>{fields.uid}</p></div>
-              <StatusBadge label={meta.label} tone={meta.tone} />
+          {/* Significantly Larger QR Code Section */}
+          <div className="flex flex-col items-center gap-2 rounded-2xl bg-brand-cloud/80 p-4 text-center ring-1 ring-brand-border/60">
+            <span className="text-[10px] font-bold tracking-[0.16em] text-brand-muted uppercase">
+              Entrance Verification QR
+            </span>
+            <div className="relative flex size-40 sm:size-48 items-center justify-center rounded-2xl bg-white p-3 shadow-xs ring-1 ring-brand-border">
+              {qr ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={qr}
+                  alt="Event pass QR code"
+                  className="size-full object-contain"
+                />
+              ) : (
+                <div className="flex size-full items-center justify-center">
+                  <Loader2 className="size-8 animate-spin text-brand-muted" />
+                </div>
+              )}
             </div>
-            {qr ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={qr} alt="Event pass QR code" className="size-16 shrink-0 rounded-md bg-white sm:size-24" />
-            ) : <span className="flex size-16 items-center justify-center rounded-md bg-brand-white sm:size-24"><Loader2 className="size-5 animate-spin text-brand-muted" /></span>}
+            <p className="text-[9px] sm:text-[10px] font-semibold text-brand-secondary">
+              Scan at Venue Entrance
+            </p>
           </div>
 
-          <p className="text-center text-[11px] text-brand-muted">Show this pass at the entrance. All times in India Standard Time.</p>
+          {/* Attendee Details Grid */}
+          <div className="grid min-w-0 grid-cols-2 gap-2.5 rounded-2xl bg-brand-cloud/50 p-3 sm:p-4 text-left ring-1 ring-brand-border/40">
+            <div className="min-w-0">
+              <p className="text-[10px] tracking-wide text-brand-muted uppercase">Name</p>
+              <p className="break-words text-xs sm:text-sm font-semibold text-brand-ink">{fields.name}</p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] tracking-wide text-brand-muted uppercase">Phone</p>
+              <p className="break-words text-xs font-medium text-brand-ink">{fields.phone}</p>
+            </div>
+            <div className="min-w-0 col-span-2">
+              <p className="text-[10px] tracking-wide text-brand-muted uppercase">Email</p>
+              <p className="break-all text-xs font-medium text-brand-ink">{fields.email}</p>
+            </div>
+            <div className="min-w-0 col-span-2">
+              <p className="text-[10px] tracking-wide text-brand-muted uppercase">UID</p>
+              <p className="whitespace-nowrap font-mono text-[8px] font-semibold tracking-[-0.05em] text-brand-ink sm:text-[10px]" title={fields.uid}>
+                {fields.uid}
+              </p>
+            </div>
+          </div>
+
+          <p className="text-center text-[11px] text-brand-muted">
+            Show this pass at the entrance. All times in India Standard Time.
+          </p>
         </div>
 
-        {isDemo ? <div className="pointer-events-none absolute inset-0 flex items-center justify-center"><span className="rotate-[-18deg] rounded-md bg-brand-ink/5 px-4 py-1 text-xs font-bold tracking-widest text-brand-ink/40 uppercase ring-1 ring-brand-ink/10">Demo · not a valid pass</span></div> : null}
+        {isDemo ? (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="rotate-[-18deg] rounded-md bg-brand-ink/5 px-4 py-1 text-xs font-bold tracking-widest text-brand-ink/40 uppercase ring-1 ring-brand-ink/10">
+              Demo · not a valid pass
+            </span>
+          </div>
+        ) : null}
       </div>
 
-      <Button type="button" variant="ghost" size="sm" onClick={copyUid} className="h-8 gap-2" aria-label="Copy UID">{copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}{copied ? "Copied" : "Copy UID"}</Button>
-      <div className="flex w-full max-w-md flex-col gap-2 sm:flex-row">
-        <Button onClick={() => void download("png")} disabled={downloading !== null} className="h-11 min-w-0 flex-1 gap-2"><span className="shrink-0">{downloading === "png" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}</span>Download pass as PNG</Button>
-        <Button onClick={() => void download("pdf")} disabled={downloading !== null} variant="outline" className="h-11 min-w-0 flex-1 gap-2"><span className="shrink-0">{downloading === "pdf" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}</span>Download pass as PDF</Button>
+      {/* Action Buttons matching Member ID Card design */}
+      <div className="grid w-full max-w-md grid-cols-2 gap-2.5">
+        <Button
+          onClick={() => void download("png")}
+          disabled={downloading !== null || !qr}
+          className="h-12 w-full gap-2 rounded-xl bg-brand-ink text-sm font-semibold text-white shadow-sm transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple"
+        >
+          {downloading === "png" ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Download className="size-4" />
+          )}
+          Download as PNG
+        </Button>
+        <Button
+          onClick={() => void download("pdf")}
+          disabled={downloading !== null || !qr}
+          variant="outline"
+          className="h-12 w-full gap-2 rounded-xl border border-brand-border bg-white text-sm font-semibold text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple"
+        >
+          {downloading === "pdf" ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <FileDown className="size-4" />
+          )}
+          Download as PDF
+        </Button>
+
+        <div className="col-span-2 flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={copyUid}
+            className="h-10 flex-1 gap-1.5 rounded-xl text-xs font-medium"
+            aria-label="Copy UID"
+          >
+            {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+            {copied ? "Copied UID" : "Copy UID"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            className="h-10 flex-1 gap-1.5 rounded-xl text-xs font-medium"
+            render={<Link href="/member/id-card" />}
+          >
+            <IdCard className="size-3.5" /> Member ID
+          </Button>
+        </div>
       </div>
     </div>
   );

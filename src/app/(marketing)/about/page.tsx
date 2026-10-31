@@ -19,7 +19,6 @@ import {
   aboutHero,
   whyExists,
   values,
-  techPartnership,
   aboutClosing,
 } from "@/lib/content/about";
 
@@ -102,34 +101,6 @@ export default function AboutPage() {
             </StaggerItem>
           ))}
         </StaggerContainer>
-      </Section>
-
-      {/* Technology partnership */}
-      <Section className="bg-brand-white">
-        <div className="mx-auto flex max-w-4xl flex-col items-center gap-8 rounded-[2rem] bg-brand-cloud p-8 text-center ring-1 ring-brand-border sm:p-12">
-          <a
-            href={siteConfig.technologyPartner.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex"
-          >
-            <Image
-              src={brandAssets.litLogo}
-              alt={`${siteConfig.technologyPartner.name} logo`}
-              width={88}
-              height={88}
-              className="size-20 rounded-full ring-1 ring-brand-border"
-            />
-          </a>
-          <div className="flex flex-col gap-3">
-            <h2 className="text-[length:var(--text-section)] leading-[1.1] font-bold tracking-tight text-balance text-brand-ink">
-              {techPartnership.heading}
-            </h2>
-            <p className="text-base leading-relaxed text-brand-secondary sm:text-[17px]">
-              {techPartnership.body}
-            </p>
-          </div>
-        </div>
       </Section>
 
       {/* Closing CTA */}

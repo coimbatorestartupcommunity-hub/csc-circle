@@ -1,6 +1,7 @@
 import * as React from "react";
 import { MessageSquareQuote } from "lucide-react";
 import { ReviewInvitation } from "@/components/testimonials/review-invitation";
+import { ReviewDialog } from "@/components/reviews/review-dialog";
 
 /** Shown when there are no approved reviews yet — a warm invitation, not a gap. */
 export function TestimonialEmptyState() {
@@ -17,6 +18,14 @@ export function TestimonialEmptyState() {
           Approved member reviews will appear here. Share your experience with
           the CSC community.
         </p>
+        <div className="mt-2">
+          <ReviewDialog
+            type="general"
+            buttonLabel="Rate & Review CSC Circle"
+            variant="glass"
+            className="h-11 rounded-2xl px-6 text-sm font-semibold shadow-md"
+          />
+        </div>
       </div>
       <ReviewInvitation />
     </div>

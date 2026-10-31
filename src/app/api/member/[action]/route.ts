@@ -53,11 +53,16 @@ export async function POST(request: Request, context: { params: Promise<{ action
         if (!collaboration) return authResponse({ error: "This collaboration is not available for review." }, 403);
       }
       if (eventId) {
-        const [{ data: event }, { data: attendance }] = await Promise.all([
+        const [{ data: event }, { data: reg }, { data: paidReg }] = await Promise.all([
           sb.from("events").select("ends_at,registration_state").eq("id", eventId).maybeSingle(),
-          sb.from("event_registrations").select("id").eq("event_id", eventId).eq("user_id", user.id).eq("attendance", "checked_in").limit(1),
+          sb.from("event_registrations").select("id, attendance").eq("event_id", eventId).eq("user_id", user.id).limit(1),
+          sb.from("paid_event_registrations").select("id, status").eq("event_id", eventId).eq("user_id", user.id).limit(1),
         ]);
-        if (!event || (Date.parse(event.ends_at) > Date.now() && event.registration_state !== "completed") || !attendance?.length) return authResponse({ error: "Reviews are available to checked-in attendees after the event concludes." }, 403);
+        const isConcluded = event && (Date.parse(event.ends_at) <= Date.now() || event.registration_state === "completed");
+        const hasRegistration = Boolean(reg?.length || paidReg?.length);
+        if (!event || !isConcluded || !hasRegistration) {
+          return authResponse({ error: "Reviews are available to registered attendees after the event concludes." }, 403);
+        }
       }
       const kind = eventId ? "event" : collaborationId ? "collaboration" : "general";
       let lookup = sb.from("reviews").select("id,moderation").eq("user_id", user.id).eq("kind", kind);

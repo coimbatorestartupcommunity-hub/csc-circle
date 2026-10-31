@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { FixtureNotice } from "@/components/common/empty-state";
 import { RsvpForm } from "@/components/events/rsvp-form";
 import { PaidEventRegistration } from "@/components/events/paid-event-registration";
+import { ReviewDialog } from "@/components/reviews/review-dialog";
 import { eventCategoryLabels } from "@/lib/content/taxonomy";
 import {
   formatEventDate,
@@ -139,12 +140,13 @@ export function EventDetailsPanel({
                   This event is completed. We will notify you with another event. Attendees who participated can submit their ratings and feedback below.
                 </p>
               </div>
-              <Link
-                href={`/member/reviews?event=${event.id}`}
-                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-brand-ink px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-ink/90"
-              >
-                Ratings and Review
-              </Link>
+              <ReviewDialog
+                eventId={event.id}
+                eventTitle={event.title}
+                type="event"
+                buttonLabel="Ratings and Review"
+                className="min-h-11 shrink-0 px-6 py-2.5 text-sm font-semibold"
+              />
             </div>
           </div>
         </div>

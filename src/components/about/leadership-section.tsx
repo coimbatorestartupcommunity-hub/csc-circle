@@ -40,10 +40,10 @@ export function LeadershipSection() {
         title={leadershipSection.heading}
         description={leadershipSection.description}
       />
-      <StaggerContainer className="mx-auto mt-12 flex max-w-5xl flex-wrap justify-center gap-6">
+      <StaggerContainer className="mx-auto mt-12 grid max-w-4xl gap-8 sm:grid-cols-2">
         {ordered.map((leader) => (
-          <StaggerItem key={leader.id} className="w-full sm:w-[320px]">
-            <article className="flex h-full flex-col overflow-hidden rounded-[2rem] bg-brand-white ring-1 ring-brand-border">
+          <StaggerItem key={leader.id} className="w-full">
+            <article className="flex h-full flex-col overflow-hidden rounded-[2rem] bg-brand-white ring-1 ring-brand-border shadow-sm transition-transform duration-300 hover:-translate-y-1">
               <div className="relative aspect-4/5 overflow-hidden bg-brand-cloud">
                 <LeaderPortrait leader={leader} />
                 {leader.org ? (

@@ -11,6 +11,7 @@ import {
   formatEventDate,
   formatEventTime,
 } from "@/lib/format";
+import { ReviewDialog } from "@/components/reviews/review-dialog";
 import type { EventRecord } from "@/types";
 
 const registrationLabel: Record<EventRecord["registrationState"], string> = {
@@ -53,6 +54,9 @@ export function EventCard({
   const body = (
     <>
       <div className="group/cover relative isolate aspect-video w-full overflow-hidden rounded-t-3xl bg-gradient-to-br from-[#e8e5ff] via-[#e8f3ff] to-[#fcecf4]">
+        {targetHref && event.registrationState === "completed" && !interactive ? (
+          <Link href={targetHref} className="absolute inset-0 z-10" aria-label={`View details for ${event.title}`} />
+        ) : null}
         {event.coverImage ? (
           <>
             <Image
@@ -100,9 +104,17 @@ export function EventCard({
           </span>
         </div>
 
-        <h3 className="text-lg leading-tight font-semibold text-brand-ink">
-          {event.title}
-        </h3>
+        {targetHref && event.registrationState === "completed" && !interactive ? (
+          <Link href={targetHref} className="hover:underline">
+            <h3 className="text-lg leading-tight font-semibold text-brand-ink">
+              {event.title}
+            </h3>
+          </Link>
+        ) : (
+          <h3 className="text-lg leading-tight font-semibold text-brand-ink">
+            {event.title}
+          </h3>
+        )}
 
         <ul className="flex flex-col gap-1.5 text-sm text-brand-muted">
           <li className="flex items-center gap-2">
@@ -124,16 +136,26 @@ export function EventCard({
           >
             {registrationLabel[event.registrationState]}
           </span>
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 text-sm font-semibold",
-              event.registrationState === "completed" || event.registrationState === "open"
-                ? "rounded-full bg-brand-ink px-3 py-1.5 text-brand-white shadow-sm"
-                : "text-brand-accent",
-            )}
-          >
-            {event.registrationState === "completed" ? "Ratings and Review" : event.registrationState === "open" ? "Book Now →" : "View details"}
-          </span>
+          {event.registrationState === "completed" && !interactive ? (
+            <ReviewDialog
+              eventId={event.id}
+              eventTitle={event.title}
+              type="event"
+              buttonLabel="Ratings and Review"
+              className="relative z-20 rounded-full bg-brand-ink px-3 py-1.5 text-xs text-brand-white shadow-sm hover:bg-brand-ink/90 cursor-pointer"
+            />
+          ) : (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-sm font-semibold",
+                event.registrationState === "completed" || event.registrationState === "open"
+                  ? "rounded-full bg-brand-ink px-3 py-1.5 text-brand-white shadow-sm"
+                  : "text-brand-accent",
+              )}
+            >
+              {event.registrationState === "completed" ? "Ratings and Review" : event.registrationState === "open" ? "Book Now →" : "View details"}
+            </span>
+          )}
         </div>
       </div>
     </>
@@ -161,7 +183,7 @@ export function EventCard({
     );
   }
 
-  if (targetHref) {
+  if (targetHref && event.registrationState !== "completed") {
     return (
       <Link href={targetHref} className={base}>
         {body}
