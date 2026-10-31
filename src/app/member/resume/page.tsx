@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import { emptyResumeData, resumeDataSchema } from "@/lib/member/resume-schema";
 
 export const metadata = { title: "Resume Creation" };
-export const instant = false;
 
 export default async function MemberResumePage() {
   const ctx = await getMemberContext();

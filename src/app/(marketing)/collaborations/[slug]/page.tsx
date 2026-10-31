@@ -91,6 +91,14 @@ export default async function CollaborationDetail({
           <h1 className="text-[length:var(--text-hero)] leading-[1.05] font-extrabold tracking-tight text-brand-ink">
             {c.title}
           </h1>
+          {c.status === "completed" ? (
+            <Link
+              href={`/member/reviews?collaboration=${c.id}#collaboration-${c.id}`}
+              className="rounded-xl bg-brand-ink px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-ink/90"
+            >
+              Ratings and Review
+            </Link>
+          ) : null}
           {c.tagline ? (
             <p className="font-serif text-2xl font-medium text-[#f97316] sm:text-3xl">{c.tagline}</p>
           ) : null}

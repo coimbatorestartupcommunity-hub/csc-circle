@@ -5,10 +5,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ImagePlus, Loader2, Save } from "lucide-react";
+import { ImagePlus, Loader2, Save, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { Button } from "@/components/ui/button";
+import { CompleteContentButton } from "@/components/admin/complete-content-button";
 import { collaborationSaveSchema, type CollaborationSaveValues } from "@/lib/validations/collaboration";
 import type { z } from "zod";
 
@@ -366,7 +367,33 @@ export function CollaborationEditor({
         <label className={labelClass}>SEO title<input className={inputClass} {...form.register("seoTitle")} /></label>
         <label className={labelClass}>Meta description<input className={inputClass} {...form.register("metaDescription")} /></label>
       </section>
-      <div className="flex justify-end"><Button type="submit" disabled={saving || mode !== "live"} className="gap-2">{saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}Save collaboration</Button></div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {initial?.id ? (
+          <CompleteContentButton
+            kind="collaboration"
+            id={initial.id}
+            isCompleted={form.watch("status") === "completed"}
+          />
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={saving || mode !== "live"}
+            onClick={() => {
+              form.setValue("status", "completed");
+              form.setValue("publicationStatus", "published");
+              void form.handleSubmit(onSubmit)();
+            }}
+            className="gap-2 border-emerald-600 text-emerald-800 hover:bg-emerald-50"
+          >
+            <CheckCircle2 className="size-4" />
+            Completed
+          </Button>
+        )}
+        <Button type="submit" disabled={saving || mode !== "live"} className="gap-2">
+          {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}Save collaboration
+        </Button>
+      </div>
     </form>
   );
 }

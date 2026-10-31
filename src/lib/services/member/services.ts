@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 /**
  * Member service layer.
  *
@@ -134,7 +136,7 @@ export const memberServices = {
     });
   },
 
-  async getProfile(): Promise<ServiceResult<MemberProfile>> {
+  getProfile: cache(async function getProfile(): Promise<ServiceResult<MemberProfile>> {
     const ctx = await getMemberContext();
     if (ctx.mode === "closed") return unavailable();
     if (ctx.mode === "preview") return ok(demoProfile);
@@ -149,9 +151,9 @@ export const memberServices = {
     } catch {
       return fail("unknown", "Could not load your profile.");
     }
-  },
+  }),
 
-  async getCard(): Promise<ServiceResult<MemberCard>> {
+  getCard: cache(async function getCard(): Promise<ServiceResult<MemberCard>> {
     const ctx = await getMemberContext();
     if (ctx.mode === "closed") return unavailable();
     if (ctx.mode === "preview") return ok(demoCard);
@@ -192,9 +194,9 @@ export const memberServices = {
     } catch {
       return fail("unknown", "Could not load your membership card.");
     }
-  },
+  }),
 
-  async listRegistrations(): Promise<ServiceResult<EventRegistration[]>> {
+  listRegistrations: cache(async function listRegistrations(): Promise<ServiceResult<EventRegistration[]>> {
     const ctx = await getMemberContext();
     if (ctx.mode === "closed") return unavailable();
     if (ctx.mode === "preview") return ok(demoRegistrations);
@@ -213,7 +215,7 @@ export const memberServices = {
     } catch {
       return fail("unknown", "Could not load your registrations.");
     }
-  },
+  }),
 
   async getRegistration(id: string): Promise<ServiceResult<EventRegistration>> {
     const list = await this.listRegistrations();
@@ -289,7 +291,7 @@ export const memberServices = {
     });
   },
 
-  async listConsultations(): Promise<ServiceResult<ConsultationRequest[]>> {
+  listConsultations: cache(async function listConsultations(): Promise<ServiceResult<ConsultationRequest[]>> {
     const ctx = await getMemberContext();
     if (ctx.mode === "closed") return unavailable();
     if (ctx.mode === "preview") return ok(demoConsultations);
@@ -319,9 +321,9 @@ export const memberServices = {
     } catch {
       return fail("unknown", "Could not load your consultations.");
     }
-  },
+  }),
 
-  async listReviews(): Promise<ServiceResult<CommunityReview[]>> {
+  listReviews: cache(async function listReviews(): Promise<ServiceResult<CommunityReview[]>> {
     const ctx = await getMemberContext();
     if (ctx.mode === "closed") return unavailable();
     if (ctx.mode === "preview") return ok(demoReviews);
@@ -329,12 +331,14 @@ export const memberServices = {
       const sb = await createClient();
       const { data } = await sb
         .from("reviews")
-        .select("*")
+        .select("*, events(title), collaborations(title)")
         .eq("user_id", ctx.user!.id)
         .order("created_at", { ascending: false });
       return ok(
         (data ?? []).map((v) => {
           const r = v as Row;
+          const ev = r.events as { title?: string } | null;
+          const col = r.collaborations as { title?: string } | null;
           return {
             id: String(r.id),
             rating: (r.rating as number) ?? 0,
@@ -344,11 +348,14 @@ export const memberServices = {
             moderation: (r.moderation as CommunityReview["moderation"]) ?? "submitted",
             kind: (r.kind as CommunityReview["kind"]) ?? "general",
             eventId: (r.event_id as string) ?? undefined,
+            eventTitle: ev?.title,
+            collaborationId: (r.collaboration_id as string) ?? undefined,
+            collaborationTitle: col?.title,
           };
         }),
       );
     } catch {
       return fail("unknown", "Could not load your reviews.");
     }
-  },
+  }),
 };

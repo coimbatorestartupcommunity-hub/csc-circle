@@ -292,8 +292,11 @@ export interface CommunityReview {
   updatedAt?: string;
   moderation: ReviewModerationStatus;
   /** General community review vs. event-specific (future). */
-  kind: "general" | "event";
+  kind: "general" | "event" | "collaboration";
+  collaborationId?: string;
+  collaborationTitle?: string;
   eventId?: string;
+  eventTitle?: string;
 }
 
 /* -------------------------------------------------------------------------- */

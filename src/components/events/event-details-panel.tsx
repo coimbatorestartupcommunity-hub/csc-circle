@@ -11,6 +11,7 @@ import {
   Ticket,
   ShieldCheck,
   ArrowRight,
+  Video,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FixtureNotice } from "@/components/common/empty-state";
@@ -46,7 +47,9 @@ export function EventDetailsPanel({
       label: "Time",
       value: formatEventRange(event.startsAt, event.endsAt),
     },
-    { icon: MapPin, label: "Location", value: event.venue ? `${event.venue}, ${event.location}` : event.location },
+    event.format === "online"
+      ? { icon: Video, label: "Format", value: "Online (Google Meet)" }
+      : { icon: MapPin, label: "Location", value: event.venue ? `${event.venue}, ${event.location}` : event.location },
     {
       icon: Ticket,
       label: "Admission",
@@ -108,7 +111,44 @@ export function EventDetailsPanel({
         </p>
       </div>
 
-      {!canRegister ? <div className="border-t border-brand-border pt-6">
+      {event.format !== "offline" && event.onlineInfo ? (
+        <div className="flex flex-col gap-2 rounded-2xl bg-brand-white p-4 ring-1 ring-brand-border">
+          <span className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+            Online meeting link
+          </span>
+          <a
+            href={event.onlineInfo}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-fit items-center gap-2 font-semibold text-brand-accent hover:underline"
+          >
+            <Video className="size-4" /> Join Google Meet / Calendar Link
+          </a>
+        </div>
+      ) : null}
+      {event.registrationState === "completed" ? (
+        <div className="border-t border-brand-border pt-6">
+          <div className="flex flex-col gap-4 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <span className="inline-flex w-fit rounded-full bg-brand-cloud px-3 py-1 text-xs font-semibold text-brand-secondary">
+                  Completed
+                </span>
+                <h4 className="text-lg font-bold text-brand-ink">This event has been completed</h4>
+                <p className="text-sm text-brand-secondary">
+                  This event is completed. We will notify you with another event. Attendees who participated can submit their ratings and feedback below.
+                </p>
+              </div>
+              <Link
+                href={`/member/reviews?event=${event.id}`}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-brand-ink px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-ink/90"
+              >
+                Ratings and Review
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : !canRegister ? <div className="border-t border-brand-border pt-6">
         <h4 className="mb-2 text-lg font-semibold text-brand-ink">Sign in to register</h4>
         <p className="mb-4 text-sm text-brand-secondary">Log in with your Google account to book your spot and receive your event pass.</p>
         <Link href={loginHref} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink">Sign in with Google to register<ArrowRight className="size-4" /></Link>

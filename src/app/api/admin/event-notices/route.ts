@@ -30,7 +30,7 @@ export async function GET() {
     const admin = createAdminClient() as unknown as SupabaseClient;
     const [eventsResult, noticesResult] = await Promise.all([
       admin.from("events").select("id,slug,title,status,starts_at,ends_at,venue,location,registration_state").order("starts_at", { ascending: true }),
-      admin.from("event_notices").select("id,event_id,title,message,button_label,banner_path,status,visible_from,visible_until,display_priority,updated_at,deleted_at").is("deleted_at", null).order("updated_at", { ascending: false }),
+      admin.from("event_notices").select("id,event_id,title,message,button_label,banner_path,status,visible_from,visible_until,display_priority,updated_at,deleted_at,completed_at").is("deleted_at", null).order("updated_at", { ascending: false }),
     ]);
     if (eventsResult.error || noticesResult.error) return authResponse({ error: "Could not load events and event notices." }, 503);
     const events = (eventsResult.data ?? []).map((event: Record<string, unknown>) => ({
@@ -47,6 +47,7 @@ export async function GET() {
         eventSlug: event?.slug ?? "", title: String(notice.title), message: String(notice.message), buttonLabel: String(notice.button_label), bannerPath,
         previewUrl: signed?.signedUrl ?? null, status: String(notice.status), startsAt: notice.visible_from ? String(notice.visible_from) : null,
         stopsAt: notice.visible_until ? String(notice.visible_until) : null, priority: Number(notice.display_priority ?? 0), updatedAt: String(notice.updated_at),
+        completedAt: notice.completed_at ? String(notice.completed_at) : null,
       };
     }));
     return authResponse({ events, notices });

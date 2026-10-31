@@ -56,6 +56,7 @@ export interface CommunityUpdateRecord {
   seoTitle: string | null;
   metaDescription: string | null;
   status: PublicationStatus;
+  completedAt?: string | null;
   publishedAt: string | null;
   updatedAt: string | null;
 }
@@ -86,6 +87,7 @@ export interface ResourceRecord {
   seoTitle: string | null;
   metaDescription: string | null;
   status: PublicationStatus;
+  completedAt?: string | null;
   publishedAt: string | null;
   updatedAt: string | null;
 }
@@ -117,6 +119,7 @@ export interface OpportunityRecord {
   seoTitle: string | null;
   metaDescription: string | null;
   status: PublicationStatus;
+  completedAt?: string | null;
   publishedAt: string | null;
   updatedAt: string | null;
 }

@@ -46,8 +46,8 @@ export async function GET() {
       name: profile?.display_name || profile?.full_name || metadata.name || user.email || "Member",
       avatarUrl: portraitUrl ?? googleUrl,
       isAdmin: activeAdmin,
-      accountHref: activeAdmin ? "/admin" : "/member/profile",
-      accountLabel: activeAdmin ? "Admin Dashboard" : "Profile",
+      accountHref: activeAdmin ? "/admin" : "/member",
+      accountLabel: activeAdmin ? "Admin Dashboard" : (membership?.member_number ? `Member #${membership.member_number}` : "Member Page"),
       membershipLabel: statusLabels[status] ?? "Membership status unavailable",
       memberNumber: membership?.member_number ?? null,
     }, { headers: { "Cache-Control": "private, no-store" } });
@@ -59,8 +59,8 @@ export async function GET() {
       name: metadata.name || user.email || "Member",
       avatarUrl: googlePicture(metadata.avatar_url) ?? googlePicture(metadata.picture),
       isAdmin: false,
-      accountHref: "/member/profile",
-      accountLabel: "Profile",
+      accountHref: "/member",
+      accountLabel: "Member Page",
       membershipLabel: "Membership status unavailable",
       memberNumber: null,
     }, { headers: { "Cache-Control": "private, no-store" } });

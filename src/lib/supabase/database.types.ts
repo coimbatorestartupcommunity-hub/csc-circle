@@ -1140,6 +1140,7 @@ export type Database = {
       }
       reviews: {
         Row: {
+          collaboration_id: string | null
           created_at: string
           event_id: string | null
           id: string
@@ -1154,6 +1155,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          collaboration_id?: string | null
           created_at?: string
           event_id?: string | null
           id?: string
@@ -1168,6 +1170,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          collaboration_id?: string | null
           created_at?: string
           event_id?: string | null
           id?: string
@@ -1266,6 +1269,8 @@ export type Database = {
       }
     }
     Functions: {
+      csc_complete_content: { Args: { content_kind: string; target: string }; Returns: undefined }
+      csc_schedule_event_review_requests: { Args: Record<string, never>; Returns: number }
       get_member_resume: { Args: never; Returns: Json }
       save_member_resume: { Args: { p_resume_data: Json }; Returns: string }
       save_member_startup: { Args: { p_private_details?: Json; p_startup: Json }; Returns: string }

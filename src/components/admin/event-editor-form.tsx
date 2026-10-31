@@ -7,7 +7,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
-import { Loader2, Eye } from "lucide-react";
+import { Loader2, Eye, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -83,12 +83,13 @@ export function EventEditorForm({
     coverImage: coverImagePreview || undefined,
     startsAt: toIso(values.date, values.startTime),
     endsAt: toIso(values.date, values.endTime),
-    location: values.venueName || (values.format === "online" ? "Online" : "Coimbatore"),
-    venue: values.venueName || undefined,
+    location: values.format === "online" ? "Online (Google Meet)" : (values.venueName || "Coimbatore"),
+    venue: values.format === "online" ? undefined : (values.venueName || undefined),
     capacity: values.capacity ? Number(values.capacity) || undefined : undefined,
     status: values.status === "published" ? "published" : "draft",
     admission: values.admission || "free",
-    registrationState: values.status === "published" ? "open" : "coming-soon",
+    registrationState: values.completed ? "completed" : values.status === "published" ? "open" : "coming-soon",
+    onlineInfo: values.onlineInfo,
     isFixture: false,
   };
 
@@ -242,31 +243,65 @@ export function EventEditorForm({
         <Section title="D · Location">
           <Field>
             <FieldLabel htmlFor="e-format">Format</FieldLabel>
-            <select id="e-format" className={selectClass} {...register("format")}>
-              <option value="offline">Offline</option>
-              <option value="online">Online</option>
+            <select
+              id="e-format"
+              className={selectClass}
+              {...register("format", {
+                onChange: (e) => {
+                  if (e.target.value === "online") {
+                    setValue("venueName", "");
+                    setValue("venueAddress", "");
+                    setValue("mapsUrl", "");
+                  }
+                },
+              })}
+            >
+              <option value="offline">Offline (In-person venue)</option>
+              <option value="online">Online (Google Meet / Virtual)</option>
               <option value="hybrid">Hybrid</option>
             </select>
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          {values.format === "online" ? (
+            <p className="rounded-xl bg-blue-50/60 p-3 text-xs text-blue-800 ring-1 ring-blue-200">
+              Online event selected: Venue name, venue address, and Google Maps URL are omitted. Attendees join directly via the Google meeting link below.
+            </p>
+          ) : null}
+          {values.format !== "online" ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="e-venue">Venue name</FieldLabel>
+                  <Input id="e-venue" placeholder="e.g. CSC Hub" {...register("venueName")} />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="e-maps">Google Maps URL</FieldLabel>
+                  <Input id="e-maps" placeholder="https://" {...register("mapsUrl")} aria-invalid={!!errors.mapsUrl} />
+                  {errors.mapsUrl ? <FieldError>{errors.mapsUrl.message}</FieldError> : null}
+                </Field>
+              </div>
+              <Field>
+                <FieldLabel htmlFor="e-addr">Venue address</FieldLabel>
+                <Input id="e-addr" placeholder="Street, area, Coimbatore" {...register("venueAddress")} />
+              </Field>
+            </>
+          ) : null}
+          {values.format !== "offline" ? (
             <Field>
-              <FieldLabel htmlFor="e-venue">Venue name</FieldLabel>
-              <Input id="e-venue" {...register("venueName")} />
+              <FieldLabel htmlFor="e-online" className="font-semibold text-brand-ink">
+                Online meeting joining link
+              </FieldLabel>
+              <Input
+                id="e-online"
+                type="url"
+                placeholder="Google Meet or calendar link (https://meet.google.com/…)"
+                {...register("onlineInfo")}
+              />
+              <span className="text-xs text-brand-muted">
+                Google Meet link or calendar link visible to participants for joining the online event.
+              </span>
+              {errors.onlineInfo ? <FieldError>{errors.onlineInfo.message}</FieldError> : null}
             </Field>
-            <Field>
-              <FieldLabel htmlFor="e-maps">Google Maps URL</FieldLabel>
-              <Input id="e-maps" placeholder="https://" {...register("mapsUrl")} aria-invalid={!!errors.mapsUrl} />
-              {errors.mapsUrl ? <FieldError>{errors.mapsUrl.message}</FieldError> : null}
-            </Field>
-          </div>
-          <Field>
-            <FieldLabel htmlFor="e-addr">Venue address</FieldLabel>
-            <Input id="e-addr" {...register("venueAddress")} />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="e-online">Online meeting info</FieldLabel>
-            <Input id="e-online" {...register("onlineInfo")} />
-          </Field>
+          ) : null}
         </Section>
 
         <Section title="F · Registration">
@@ -301,42 +336,153 @@ export function EventEditorForm({
           <div className="grid gap-4 sm:grid-cols-3">
             <Field>
               <FieldLabel htmlFor="e-adm">Admission</FieldLabel>
-              <select id="e-adm" className={selectClass} {...register("admission")}>
+              <select
+                id="e-adm"
+                className={selectClass}
+                {...register("admission", {
+                  onChange: (e) => {
+                    if (e.target.value === "free") {
+                      setValue("price", "0");
+                      setValue("currency", "INR");
+                      setValue("pricePerAttendee", "0");
+                      setValue("registrationMode", "rsvp");
+                    } else {
+                      setValue("registrationMode", "paid_upi");
+                      setValue("currency", "INR");
+                    }
+                  },
+                })}
+              >
                 <option value="free">Free</option>
                 <option value="paid">Paid</option>
               </select>
             </Field>
-            <Field>
-              <FieldLabel htmlFor="e-price">Ticket price</FieldLabel>
-              <Input id="e-price" type="number" min={0} {...register("price")} />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="e-cur">Currency</FieldLabel>
-              <Input id="e-cur" {...register("currency")} />
-            </Field>
+            {values.admission === "paid" ? (
+              <>
+                <Field>
+                  <FieldLabel htmlFor="e-price">Ticket price (₹)</FieldLabel>
+                  <Input
+                    id="e-price"
+                    type="number"
+                    min={0}
+                    placeholder="e.g. 299"
+                    {...register("price", {
+                      onChange: (e) => {
+                        if (!getValues("pricePerAttendee")) {
+                          setValue("pricePerAttendee", e.target.value);
+                        }
+                      },
+                    })}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="e-cur">Currency</FieldLabel>
+                  <Input id="e-cur" defaultValue="INR" {...register("currency")} />
+                </Field>
+              </>
+            ) : null}
           </div>
-          <Field>
-            <FieldLabel htmlFor="e-payinfo">Payment instructions</FieldLabel>
-            <Textarea id="e-payinfo" rows={2} {...register("paymentInstructions")} />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field><FieldLabel htmlFor="e-reg-mode">Registration mode</FieldLabel><select id="e-reg-mode" className={selectClass} {...register("registrationMode")}><option value="rsvp">Standard RSVP</option><option value="paid_upi">Paid registration with UPI proof</option></select></Field>
-            <Field><FieldLabel htmlFor="e-price-attendee">Price per attendee (₹)</FieldLabel><Input id="e-price-attendee" type="number" min="1" step="0.01" {...register("pricePerAttendee")} /></Field>
-            <Field><FieldLabel htmlFor="e-max-attendees">Maximum attendees per registration</FieldLabel><Input id="e-max-attendees" type="number" min="1" max="10" {...register("maxAttendeesPerRegistration", { valueAsNumber: true })} /></Field>
-            <Field><FieldLabel htmlFor="e-upi-payee">UPI payee name</FieldLabel><Input id="e-upi-payee" {...register("upiPayeeName")} /></Field>
-            <Field><FieldLabel htmlFor="e-upi-vpa">UPI VPA</FieldLabel><Input id="e-upi-vpa" placeholder="name@bank" {...register("upiVpa")} /></Field>
-          </div>
-          {values.registrationMode === "paid_upi" ? <Field>
-            <FieldLabel htmlFor="e-upi-qr">UPI QR image</FieldLabel>
-            <input ref={qrInput} id="e-upi-qr" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => { void uploadQr(e.currentTarget.files?.[0]); e.currentTarget.value = ""; }} />
-            <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={uploadingQr || isDemo} onClick={() => qrInput.current?.click()}>{uploadingQr ? "Uploading…" : values.upiQrPath ? "Replace UPI QR image" : "Upload UPI QR image"}</Button>{values.upiQrPath ? <Button type="button" variant="ghost" disabled={uploadingQr} onClick={() => { setValue("upiQrPath", "", { shouldDirty: true, shouldValidate: true }); setQrPreview(""); }}>Remove</Button> : null}</div>
-            {qrPreview ? <div className="relative mt-2 size-40 overflow-hidden rounded-xl bg-white p-2 ring-1 ring-brand-border"><Image src={qrPreview} alt="UPI QR preview" fill unoptimized sizes="160px" className="object-contain" /></div> : <p className="text-xs text-brand-muted">Publishing a paid UPI event requires this QR image, its payee name, and a verified VPA.</p>}
-            {errors.upiQrPath ? <FieldError>{errors.upiQrPath.message}</FieldError> : null}
-          </Field> : null}
-          <Field><FieldLabel htmlFor="e-pay-note">UPI payment instructions</FieldLabel><Textarea id="e-pay-note" rows={2} {...register("paymentNote")} /></Field>
+
+          {values.admission === "paid" ? (
+            <div className="flex flex-col gap-4 rounded-xl border border-brand-border bg-white p-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="e-price-attendee">Price per attendee (₹)</FieldLabel>
+                  <Input id="e-price-attendee" type="number" min="1" step="0.01" {...register("pricePerAttendee")} />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="e-max-attendees">Maximum attendees per registration</FieldLabel>
+                  <Input id="e-max-attendees" type="number" min="1" max="10" {...register("maxAttendeesPerRegistration", { valueAsNumber: true })} />
+                </Field>
+              </div>
+
+              {/* QR Code Upload Section */}
+              <div className="rounded-xl bg-brand-cloud/60 p-4 ring-1 ring-brand-border">
+                <FieldLabel htmlFor="e-upi-qr" className="font-semibold text-brand-ink">
+                  Payment QR Code (Scan to Pay)
+                </FieldLabel>
+                <p className="mt-0.5 text-xs text-brand-muted">
+                  Upload a UPI payment QR code. Attendees can pay by scanning it with any UPI app (GPay, PhonePe, Paytm).
+                </p>
+                <input
+                  ref={qrInput}
+                  id="e-upi-qr"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={(e) => {
+                    void uploadQr(e.currentTarget.files?.[0]);
+                    e.currentTarget.value = "";
+                  }}
+                />
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={uploadingQr || isDemo}
+                    onClick={() => qrInput.current?.click()}
+                    className="gap-2"
+                  >
+                    {uploadingQr ? <Loader2 className="size-4 animate-spin" /> : null}
+                    {uploadingQr ? "Uploading QR code…" : values.upiQrPath ? "Replace QR code" : "Upload QR code"}
+                  </Button>
+                  {values.upiQrPath ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={uploadingQr}
+                      onClick={() => {
+                        setValue("upiQrPath", "", { shouldDirty: true, shouldValidate: true });
+                        setQrPreview("");
+                      }}
+                    >
+                      Remove QR code
+                    </Button>
+                  ) : null}
+                </div>
+                {qrPreview ? (
+                  <div className="relative mt-3 size-44 overflow-hidden rounded-xl bg-white p-2 shadow-sm ring-1 ring-brand-border">
+                    <Image src={qrPreview} alt="Payment QR code preview" fill unoptimized sizes="176px" className="object-contain" />
+                  </div>
+                ) : null}
+                {errors.upiQrPath ? <FieldError>{errors.upiQrPath.message}</FieldError> : null}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="e-upi-payee">UPI payee name</FieldLabel>
+                  <Input id="e-upi-payee" placeholder="e.g. CSC Community" {...register("upiPayeeName")} />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="e-upi-vpa">UPI VPA (UPI ID)</FieldLabel>
+                  <Input id="e-upi-vpa" placeholder="username@bank" {...register("upiVpa")} />
+                </Field>
+              </div>
+
+              <Field>
+                <FieldLabel htmlFor="e-payinfo">Payment instructions</FieldLabel>
+                <Textarea id="e-payinfo" rows={2} placeholder="Explain payment steps to attendees" {...register("paymentInstructions")} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="e-pay-note">UPI payment note</FieldLabel>
+                <Textarea id="e-pay-note" rows={2} placeholder="Transaction reference requirements or remarks" {...register("paymentNote")} />
+              </Field>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-brand-cloud p-4 text-sm text-brand-secondary ring-1 ring-brand-border">
+              <p className="font-semibold text-brand-ink">Free Admission · ₹0 INR</p>
+              <p className="mt-1 text-xs text-brand-muted">
+                Price per attendee and online payment details are omitted for free events. Attendees RSVP directly without payment.
+              </p>
+            </div>
+          )}
         </Section>
 
         <Section title="H · Publication">
+          <label className="flex items-center gap-2 text-sm text-brand-ink">
+            <input type="checkbox" {...register("completed")} />
+            Completed — mark this event as completed and close bookings
+          </label>
           <Field>
             <FieldLabel htmlFor="e-status">Status</FieldLabel>
             <select id="e-status" className={selectClass} {...register("status")}>
@@ -344,20 +490,47 @@ export function EventEditorForm({
               <option value="published" disabled={!canPublishSurfaces}>Published</option>
             </select>
           </Field>
-          {values.status === "published" ? <label className="flex items-start gap-2 rounded-xl bg-brand-cloud p-3 text-sm leading-5 text-brand-secondary">
-            <input type="checkbox" checked={publicationConsent} onChange={(event) => setPublicationConsent(event.target.checked)} className="mt-0.5 size-4 shrink-0 accent-[var(--brand-accent)]" />
-            <span>I confirm CSC may publish this event’s title, summary, description, date and venue on the Updates surface. The event cover will also be used for its Event Notice and Update.</span>
-          </label> : null}
-          {!canPublishSurfaces ? <p className="text-xs text-brand-muted">Publishing across Events, Event Notice and Updates requires event publishing and content management access.</p> : null}
-          <div className="flex flex-col gap-2">
-            <Button type="submit" disabled={saving || uploadingCover || uploadingQr} className="h-11 gap-2 sm:w-fit sm:px-8">
+          {values.status === "published" ? (
+            <label className="flex items-start gap-2 rounded-xl bg-brand-cloud p-3 text-sm leading-5 text-brand-secondary">
+              <input
+                type="checkbox"
+                checked={publicationConsent}
+                onChange={(event) => setPublicationConsent(event.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-[var(--brand-accent)]"
+              />
+              <span>
+                I confirm CSC may publish this event’s title, summary, description, date and venue on the Updates surface. The event cover will also be used for its Event Notice and Update.
+              </span>
+            </label>
+          ) : null}
+          {!canPublishSurfaces ? (
+            <p className="text-xs text-brand-muted">
+              Publishing across Events, Event Notice and Updates requires event publishing and content management access.
+            </p>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Button type="submit" disabled={saving || uploadingCover || uploadingQr} className="h-11 gap-2 sm:px-8">
               {saving ? <Loader2 className="size-4 animate-spin" /> : null}
               {mode === "create" ? "Create event" : "Save changes"}
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving || uploadingCover || uploadingQr}
+              onClick={() => {
+                setValue("completed", true, { shouldDirty: true });
+                setValue("status", "published", { shouldDirty: true });
+                setPublicationConsent(true);
+                void handleSubmit(onSubmit)();
+              }}
+              className="h-11 gap-2 border-emerald-600 text-emerald-800 hover:bg-emerald-50"
+            >
+              <CheckCircle2 className="size-4" />
+              Completed
+            </Button>
             {isDemo ? (
-              <p className="text-xs text-brand-muted">
-                DEMO — validates the form; saving/publishing is performed by the
-                trusted backend in Phase 1.
+              <p className="w-full text-xs text-brand-muted">
+                DEMO — validates the form; saving/publishing is performed by the trusted backend in Phase 1.
               </p>
             ) : null}
           </div>

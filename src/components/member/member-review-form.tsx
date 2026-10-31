@@ -18,7 +18,7 @@ import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
  * DEMO preview there is no session, so it reports that sign-in is required —
  * it never fabricates a published review.
  */
-export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
+export function MemberReviewForm({ isDemo, eventId, collaborationId, title }: { isDemo: boolean; eventId?: string; collaborationId?: string; title?: string }) {
   const router = useRouter();
   const [rating, setRating] = React.useState(0);
   const [hover, setHover] = React.useState(0);
@@ -43,7 +43,7 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
     setErrors({});
     setSubmitting(true);
     try {
-      const result = await memberRequest("review", { rating, review, consent });
+      const result = await memberRequest("review", { rating, review, consent, eventId, collaborationId });
       if (result.error) { toast.error(result.error); return; }
       notifySubmissionSuccess({ title: "Successfully submitted", message: "Thank you. Your review was received and is waiting for moderation." });
       setSubmitted(true);
@@ -54,27 +54,27 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
   }
 
   return (
-    submitted ? <div role="status" className="flex flex-col items-center gap-3 rounded-2xl bg-emerald-50 p-6 text-center text-emerald-900 ring-1 ring-emerald-200">
-      <h2 className="font-semibold">Review submitted</h2>
-      <p className="text-sm">Your review is waiting for CSC administrator review. You can check its status here.</p>
+    submitted ? <div role="status" className="flex flex-col items-center gap-3 rounded-3xl bg-emerald-50 p-7 text-center text-emerald-900 ring-1 ring-emerald-200 sm:p-9">
+      <h2 className="text-lg font-bold">Review submitted</h2>
+      <p className="text-sm">Thank you for sharing your feedback. Your review was received and will be displayed after administrator review.</p>
       <Button type="button" variant="outline" onClick={() => router.refresh()}>Refresh review status</Button>
     </div> :
     <form
       onSubmit={onSubmit}
-      className="flex flex-col items-center gap-5 rounded-2xl bg-brand-white p-6 text-center ring-1 ring-brand-border"
+      className="flex flex-col items-center gap-5 rounded-3xl bg-brand-white p-7 text-center shadow-sm ring-1 ring-brand-border sm:p-9"
     >
       <div className="flex w-full flex-col gap-1 text-center">
-        <h2 className="text-lg font-semibold text-brand-ink">
-          Share your CSC experience
+        <h2 className="text-xl font-bold tracking-tight text-brand-ink">
+          {title ? `Review ${title}` : "Share your CSC experience"}
         </h2>
         <p className="text-sm text-brand-muted">
-          Approved reviews may appear publicly on the CSC Circle website.
+          {eventId ? "Rate how this event was conducted and share your feedback." : collaborationId ? "Rate and review this community collaboration." : "Approved reviews may appear publicly on the CSC Circle website."}
         </p>
       </div>
 
-      <div className="flex w-full flex-col items-center gap-1.5">
-        <span className="text-sm font-medium text-brand-ink">Your rating</span>
-        <div className="flex items-center gap-1" role="radiogroup" aria-label="Rating">
+      <div className="flex w-full flex-col items-center gap-2">
+        <span className="text-sm font-semibold text-brand-ink">Your rating</span>
+        <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Rating">
           {Array.from({ length: 5 }).map((_, i) => {
             const n = i + 1;
             const on = (hover || rating) >= n;
@@ -94,11 +94,11 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
                   if (event.key === "ArrowLeft" || event.key === "ArrowDown") { event.preventDefault(); setRating(Math.max(1, n - 1)); }
                   if (event.key === " ") { event.preventDefault(); setRating(n); }
                 }}
-                className="rounded-md p-0.5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="rounded-md p-1 outline-none transition hover:scale-110 focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <Star
                   className={cn(
-                    "size-7 transition-colors",
+                    "size-8 transition-colors",
                     on ? "fill-green-500 text-green-500" : "fill-transparent text-brand-border",
                   )}
                 />
@@ -111,14 +111,15 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
 
       <div className="flex w-full flex-col gap-1.5">
         <label htmlFor="member-review" className="text-center text-sm font-medium text-brand-ink">
-          Your review
+          Your feedback &amp; comments
         </label>
         <Textarea
           id="member-review"
           value={review}
           onChange={(e) => setReview(e.target.value)}
           rows={4}
-          placeholder="What has your experience with CSC Circle been like?"
+          className="font-serif text-base text-brand-ink"
+          placeholder={eventId ? 'Share how the event was conducted (e.g. "Super", "Fantastic session, well organized and great founder discussions!")...' : 'What has your experience with CSC Circle been like? (e.g. "Super", "Fantastic community!")...'}
           aria-invalid={!!errors.review}
         />
         {errors.review ? <FieldError>{errors.review}</FieldError> : null}
@@ -135,7 +136,7 @@ export function MemberReviewForm({ isDemo }: { isDemo: boolean }) {
       </label>
       {errors.consent ? <FieldError>{errors.consent}</FieldError> : null}
 
-      <Button type="submit" disabled={submitting} className="h-11 w-full max-w-md gap-2">
+      <Button type="submit" disabled={submitting} className="h-11 w-full max-w-md gap-2 rounded-xl font-semibold shadow-sm">
         {submitting ? <Loader2 className="size-4 animate-spin" /> : null}
         Submit review
       </Button>

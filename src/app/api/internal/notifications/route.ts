@@ -14,6 +14,8 @@ export async function GET(request: Request) {
       if (!sb) return Response.json({error:"Queue unavailable"},{status:503});
       const scheduled=await sb.rpc("csc_schedule_event_reminders");
       if (scheduled.error) return Response.json({error:"Queue unavailable"},{status:503});
+      const reviews = await sb.rpc("csc_schedule_event_review_requests");
+      if (reviews.error) return Response.json({error:"Review scheduling unavailable"},{status:503});
     }
     after(async () => {
       try {

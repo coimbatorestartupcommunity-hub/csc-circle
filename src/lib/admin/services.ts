@@ -401,6 +401,7 @@ export const adminServices = {
         const r = e as Row;
         return {
           id: String(r.id),
+          slug: (r.slug as string) ?? undefined,
           title: (r.title as string) ?? "—",
           category: (r.category as string) ?? "meetup",
           startsAt: (r.starts_at as string) ?? "",
@@ -410,6 +411,8 @@ export const adminServices = {
           waitlisted: (registrations ?? []).filter(x => x.event_id === r.id && x.status === "waitlisted").length,
           status: (r.status as AdminEventRow["status"]) ?? "draft",
           admission: (r.admission as AdminEventRow["admission"]) ?? "free",
+          registrationState: (r.registration_state as string) ?? undefined,
+          isCompleted: Boolean((r.settings as Record<string, unknown> | null)?.completed) || r.registration_state === "completed",
         };
       });
       return ok(rows);

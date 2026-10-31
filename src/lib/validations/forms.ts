@@ -46,6 +46,8 @@ export const consultationSchema = rsvpSchema
 export type ConsultationFormValues = z.infer<typeof consultationSchema>;
 
 export const reviewSchema = z.object({
+  eventId: z.string().uuid().optional(),
+  collaborationId: z.string().uuid().optional(),
   rating: z
     .number()
     .int()

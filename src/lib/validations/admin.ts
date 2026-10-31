@@ -46,7 +46,7 @@ export const eventEditorSchema = z.object({
   venueName: z.string().trim().max(160).optional(),
   venueAddress: z.string().trim().max(300).optional(),
   mapsUrl: urlOrEmpty,
-  onlineInfo: z.string().trim().max(300).optional(),
+  onlineInfo: urlOrEmpty,
   // F. Registration
   capacity: z.string().trim().optional(),
   approvalMode: z.enum(["automatic", "manual"]),
@@ -67,7 +67,14 @@ export const eventEditorSchema = z.object({
   paymentNote: z.string().trim().max(500).optional(),
   // H. Publication
   status: z.enum(["draft", "published"]),
-}).superRefine((event, ctx) => {
+  completed: z.boolean().optional(),
+}).transform((event) => ({
+  ...event,
+  ...(event.format === "online" ? { venueName: "", venueAddress: "", mapsUrl: "" } : {}),
+  ...(event.format === "offline" ? { onlineInfo: "" } : {}),
+  ...(event.admission === "free" ? { price: "0", pricePerAttendee: "0", currency: "INR", registrationMode: "rsvp" as const, paymentInstructions: "", upiVpa: "", upiPayeeName: "", upiQrPath: "", paymentNote: "" } : {}),
+})).superRefine((event, ctx) => {
+  if (event.format !== "offline" && !event.onlineInfo && event.status === "published") ctx.addIssue({ code: "custom", path: ["onlineInfo"], message: "Add the online meeting or calendar link before publishing." });
   if (event.registrationMode === "paid_upi") {
     const price = Number(event.pricePerAttendee);
     if (event.admission !== "paid" || !Number.isFinite(price) || price <= 0) ctx.addIssue({ code: "custom", path: ["pricePerAttendee"], message: "Paid UPI registration requires a positive price per attendee." });

@@ -9,8 +9,9 @@ import type { Database } from "@/lib/supabase/database.types";
  * Server Supabase client bound to the request cookies. Reading cookies makes the
  * caller dynamic under Cache Components, so use this only in dynamic (member)
  * server components / route handlers — never in a statically prerendered path.
+ * Cached per request so that one render shares a single client instance.
  */
-export async function createClient() {
+export const createClient = cache(async function createClient() {
   const cookieStore = await cookies();
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,7 +34,7 @@ export async function createClient() {
       },
     },
   );
-}
+});
 
 /** The currently authenticated user (verified against Supabase), or null. */
 async function loadAuthUser() {

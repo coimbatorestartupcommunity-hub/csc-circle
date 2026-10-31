@@ -12,21 +12,28 @@ import { designationLabels, membershipStatusMeta } from "@/lib/content/member-ta
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { CommunityProfileSharing } from "@/components/member/community-profile-sharing";
+import { MemberProfileReviewsSection } from "@/components/member/member-profile-reviews";
 import { roleLabels, type AdminRole } from "@/lib/admin/permissions";
 
 export const metadata = { title: "Profile" };
 
 export default async function MemberProfilePage() {
   const ctx = await getMemberContext();
-  const result = await memberServices.getProfile();
+  const userId = ctx.user?.id;
+  const isLive = ctx.mode === "live" && Boolean(userId);
+
+  const [result, startupsCountRes, memberRolesRes, reviewsRes, attendanceRes] = await Promise.all([
+    memberServices.getProfile(),
+    isLive ? createAdminClient().from("directory_startups").select("id", { count: "exact", head: true }).eq("user_id", userId!).neq("status", "archived") : Promise.resolve({ count: 0 }),
+    isLive ? createClient().then((sb) => sb.from("admin_roles").select("role").eq("user_id", userId!)) : Promise.resolve({ data: [] }),
+    memberServices.listReviews(),
+    isLive ? createClient().then((sb) => sb.from("event_registrations").select("event_id, events(id, title, ends_at, registration_state)").eq("user_id", userId!)) : Promise.resolve({ data: [] }),
+  ]);
+
   if (!result.ok) return <EmptyState icon={UserCircle} title="Profile unavailable." description={result.error.message} />;
   const profile = result.data;
-  const startupCount = ctx.mode === "live" ? (await createAdminClient().from("directory_startups").select("id", { count: "exact", head: true }).eq("user_id", ctx.user!.id).neq("status", "archived")).count ?? 0 : 0;
-  const supabase = ctx.mode === "live" ? await createClient() : null;
-  const { data: memberRoles } = supabase
-    ? await supabase.from("admin_roles").select("role").eq("user_id", ctx.user!.id)
-    : { data: [] };
-  const roles = (memberRoles ?? []).map((entry) => entry.role as AdminRole).filter((role) => role in roleLabels);
+  const startupCount = startupsCountRes.count ?? 0;
+  const roles = (memberRolesRes.data ?? []).map((entry) => entry.role as AdminRole).filter((role) => role in roleLabels);
   const status = membershipStatusMeta[profile.membership.status];
   const directoryReady = !!profile.portraitPath && !!profile.directoryPhotoPath && profile.consent.directoryParticipation && profile.consent.displayNamePublicly && profile.consent.displayPhotoPublicly;
   const completion = [
@@ -36,6 +43,14 @@ export default async function MemberProfilePage() {
   const completionPercent = Math.round(completion / 7 * 100);
   const identityEmail = ctx.user?.email || profile.email;
   const emailVerified = Boolean(ctx.user?.emailVerified);
+  const reviews = reviewsRes.ok ? reviewsRes.data : [];
+  const eligibleEvents = (attendanceRes.data ?? []).flatMap((row) => {
+    const ev = row.events as { id: string; title: string; ends_at: string; registration_state: string } | null;
+    if (!ev) return [];
+    const hasConcluded = ev.registration_state === "completed" || Date.parse(ev.ends_at) <= Date.now();
+    const alreadyReviewed = reviews.some((r) => r.eventId === ev.id);
+    return hasConcluded && !alreadyReviewed ? [{ id: ev.id, title: ev.title }] : [];
+  });
 
   return (
     <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-5 sm:gap-6">
@@ -96,6 +111,8 @@ export default async function MemberProfilePage() {
           <Button render={<Link href="/member/startups" />} className="w-full shrink-0 gap-2 sm:w-auto"><Rocket className="size-4" /> Manage My Startups <ArrowRight className="size-4" /></Button>
         </div>
       </section>
+
+      <MemberProfileReviewsSection reviews={reviews} eligibleEvents={eligibleEvents} />
 
       <CommunityProfileSharing memberId={profile.id} portraitUrl={profile.portraitUrl} />
 

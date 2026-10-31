@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { HoverLiftCard } from "@/components/motion";
+import { cn } from "cn";
 import type { Collaboration } from "@/types/collaboration";
 
 const statusTone: Record<Collaboration["status"], string> = {
@@ -66,8 +67,14 @@ export function CollaborationCard({ collaboration: c }: { collaboration: Collabo
 
           <div className="mt-1 flex items-center justify-between gap-2 border-t border-brand-border pt-3">
             <span className="text-xs text-brand-muted">{c.category}</span>
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-brand-accent">
-              View collaboration <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-sm font-semibold",
+                c.status === "completed" ? "text-brand-ink" : "text-brand-accent",
+              )}
+            >
+              {c.status === "completed" ? "Ratings and Review" : "View collaboration"}{" "}
+              <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </span>
           </div>
         </div>

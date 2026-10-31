@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 import { createClient } from "@/lib/supabase/server";
@@ -13,7 +12,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// The member area reads the session on every request, so it blocks server-side.
 export const instant = false;
 
 export default async function MemberLayout({
@@ -21,9 +19,6 @@ export default async function MemberLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Supabase's cookie-backed session loader reads Date.now(); defer the
-  // authenticated shell until a request exists instead of prefetch-prerendering it.
-  await connection();
   const ctx = await getMemberContext();
 
   // Production, unauthenticated — never render member content.
@@ -44,6 +39,7 @@ export default async function MemberLayout({
   const isAdmin = ownAdminRole !== null && !ownAdminRole.error && Boolean(ownAdminRole.data);
   const status = profile?.membership.status ?? "not_started";
   const meta = membershipStatusMeta[status];
+  const memberNumber = profile?.membership.memberNumber;
 
   return (
     <>
@@ -53,8 +49,8 @@ export default async function MemberLayout({
         avatarUrl={profile?.portraitUrl ?? profile?.avatarUrl}
         statusLabel={meta.label}
         statusTone={meta.tone}
-        accountHref={isAdmin ? "/admin" : "/member/profile"}
-        accountLabel={isAdmin ? "Admin Dashboard" : "Profile"}
+        accountHref={isAdmin ? "/admin" : "/member"}
+        accountLabel={isAdmin ? "Admin Dashboard" : memberNumber ? `Member #${memberNumber}` : "Member"}
       >
         {children}
       </MemberShell>

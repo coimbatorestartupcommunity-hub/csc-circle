@@ -94,11 +94,17 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           {account.loading ? <span className="hidden h-8 w-20 animate-pulse rounded-lg bg-brand-cloud xl:inline-flex" aria-label="Loading account" /> : account.authenticated ? (
             <div className="hidden shrink-0 items-center gap-1.5 xl:flex">
-              <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-7 shrink-0" />
-              <span className="hidden max-w-28 truncate text-xs font-semibold text-brand-ink 2xl:inline">{account.name}</span>
-              {account.isAdmin ? <CtaLink href="/member/profile" variant="outline" size="md" arrow={false} className="h-8 px-2.5 text-[11px]">Profile</CtaLink> : null}
-              <CtaLink href={account.accountHref ?? "/member/profile"} size="md" arrow={false} className="h-8 px-2.5 text-[11px]">
-                {account.accountLabel ?? "Profile"}
+              <Link href="/member" prefetch={true} className="flex items-center gap-1.5 transition hover:opacity-85">
+                <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-7 shrink-0" />
+                <span className="hidden max-w-28 truncate text-xs font-semibold text-brand-ink 2xl:inline">{account.name}</span>
+              </Link>
+              {account.isAdmin ? (
+                <CtaLink href="/member" variant="outline" size="md" arrow={false} prefetch={true} className="h-8 px-2.5 text-[11px]">
+                  Member Page
+                </CtaLink>
+              ) : null}
+              <CtaLink href={account.accountHref ?? "/member"} size="md" arrow={false} prefetch={true} className="h-8 px-2.5 text-[11px]">
+                {account.accountLabel ?? "Member Page"}
               </CtaLink>
             </div>
           ) : (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
+import { CompleteContentButton } from "@/components/admin/complete-content-button";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 import { CtaLink } from "@/components/common/cta-link";
 import { requireAdminPagePermission, can } from "@/lib/admin/gate";
@@ -114,6 +115,11 @@ export default async function AdminCollaborationsPage() {
             <div className="flex items-center gap-4">
               <Link href={`/admin/collaborations/${row.id}/edit`} className="font-medium text-brand-accent hover:underline">Edit</Link>
               {row.publicationStatus === "published" ? <Link href={`/collaborations/${row.slug}`} target="_blank" className="inline-flex items-center gap-1 text-brand-secondary hover:underline">View public <ExternalLink className="size-3.5" /></Link> : null}
+              <CompleteContentButton
+                kind="collaboration"
+                id={row.id}
+                isCompleted={row.status === "completed"}
+              />
             </div>
           </div>
         ))}

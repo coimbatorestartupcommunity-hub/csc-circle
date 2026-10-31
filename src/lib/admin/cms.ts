@@ -279,6 +279,7 @@ function mapCommunityUpdateAdmin(r: Row): CommunityUpdateRecord {
     relatedEventId: s(r.related_event_id), relatedCollaborationId: s(r.related_collaboration_id),
     seoTitle: s(r.seo_title), metaDescription: s(r.meta_description),
     status: (s(r.publication_status) as CommunityUpdateRecord["status"]) ?? "draft",
+    completedAt: s(r.completed_at),
     publishedAt: s(r.published_at), updatedAt: s(r.updated_at),
   };
 }

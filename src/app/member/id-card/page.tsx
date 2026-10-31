@@ -34,6 +34,7 @@ export default async function IdCardPage() {
         >
           <Link
             href={needsPortrait ? "/member/profile#profile-portrait" : "/member/claim"}
+            prefetch={true}
             className="inline-flex items-center gap-2 rounded-lg bg-brand-ink px-4 py-2 text-sm font-medium text-brand-white hover:bg-brand-ink/90"
           >
             {needsPortrait ? "Upload a 4:5 portrait" : "Claim your membership"}
@@ -81,7 +82,7 @@ export default async function IdCardPage() {
             <h2 id="digital-id-event-passes" className="text-xl font-semibold text-brand-ink">My event passes</h2>
             <p className="mt-1 text-sm text-brand-secondary">View and download tickets for your confirmed event registrations.</p>
           </div>
-          <Link href="/member/events" className="text-sm font-medium text-brand-accent hover:underline">All registrations</Link>
+          <Link href="/member/events" prefetch={true} className="text-sm font-medium text-brand-accent hover:underline">All registrations</Link>
         </div>
         {eventPasses.length ? (
           <ul className="grid gap-4 md:grid-cols-2">
@@ -96,7 +97,7 @@ export default async function IdCardPage() {
                     <li><strong className="text-brand-ink">UID:</strong> <span className="font-mono">{fields.uid}</span></li>
                     <li><strong className="text-brand-ink">Name:</strong> {fields.name}</li>
                   </ul>
-                  <Link href={`/member/events/${registration.id}`} className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-brand-accent hover:underline">
+                  <Link href={`/member/events/${registration.id}`} prefetch={true} className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-brand-accent hover:underline">
                     <Ticket className="size-4" aria-hidden />View and download pass
                   </Link>
                 </li>

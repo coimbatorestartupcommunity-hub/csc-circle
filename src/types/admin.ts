@@ -76,6 +76,7 @@ export interface AdminStartupRow {
 
 export interface AdminEventRow {
   id: string;
+  slug?: string;
   title: string;
   category: string;
   startsAt: string;
@@ -85,6 +86,8 @@ export interface AdminEventRow {
   waitlisted: number;
   status: "draft" | "published" | "cancelled" | "archived";
   admission: "free" | "paid";
+  registrationState?: string;
+  isCompleted?: boolean;
 }
 
 export type PaymentStatusAdmin =

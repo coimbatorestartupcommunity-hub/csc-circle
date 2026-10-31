@@ -1,4 +1,5 @@
 "use client";
+import { CompleteContentButton } from "@/components/admin/complete-content-button";
 
 import * as React from "react";
 import Image from "next/image";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 type EventOption = { id: string; slug: string; title: string; status: string; startsAt: string; endsAt: string; venue: string | null; location: string; registrationState: string };
-type Notice = { id: string; eventId: string; eventTitle: string; eventStatus: string; eventSlug: string; title: string; message: string; buttonLabel: string; bannerPath: string; previewUrl: string | null; status: string; startsAt: string | null; stopsAt: string | null; priority: number; updatedAt: string };
+type Notice = { id: string; eventId: string; eventTitle: string; eventStatus: string; eventSlug: string; title: string; message: string; buttonLabel: string; bannerPath: string; previewUrl: string | null; status: string; startsAt: string | null; stopsAt: string | null; priority: number; updatedAt: string; completedAt?: string | null };
 type Draft = { id: string; eventId: string; title: string; message: string; buttonLabel: string; bannerPath: string | null; startsAt: string | null; stopsAt: string | null; priority: number };
 type Data = { events: EventOption[]; notices: Notice[] };
 
@@ -169,7 +170,7 @@ export function EventNoticeEditor({ isDemo, canPublish, canEditEvents, initialEv
 
       {data.notices.length > 0 ? <div className="mb-6 flex flex-wrap gap-2" aria-label="Existing event notices">
         {data.notices.map((notice) => <button type="button" key={notice.id} onClick={() => chooseNotice(notice.id)} aria-pressed={selectedId === notice.id} className={`rounded-xl border px-3 py-2 text-left text-sm ${selectedId === notice.id ? "border-brand-ink bg-brand-cloud text-brand-ink" : "border-brand-border bg-white text-brand-secondary"}`}>
-          <span className="block max-w-64 truncate font-semibold">{notice.title}</span><span className="block text-xs text-brand-muted">{notice.eventTitle} · notice {notice.status} · event {notice.eventStatus}</span>
+          <span className="block max-w-64 truncate font-semibold">{notice.title}</span><span className="block text-xs text-brand-muted">{notice.eventTitle} · {notice.completedAt ? "Completed" : `notice ${notice.status}`} · event {notice.eventStatus}</span>
         </button>)}
       </div> : null}
 
@@ -207,6 +208,17 @@ export function EventNoticeEditor({ isDemo, canPublish, canEditEvents, initialEv
       <div className="mt-5 flex flex-wrap gap-2">
         <Button type="button" variant="outline" disabled={saving || uploading || loading || !canPublish} onClick={() => void mutate("save")}>{saving ? "Saving…" : "Save draft"}</Button>
         <Button type="button" disabled={saving || uploading || loading || !canPublish} onClick={() => void mutate("publish")}>{saving ? "Saving…" : selectedNotice?.status === "published" ? "Update & publish" : "Publish Event Notice"}</Button>
+        {selectedNotice?.status === "published" && canPublish ? (
+          <CompleteContentButton
+            kind="notice"
+            id={selectedNotice.id}
+            isCompleted={Boolean(selectedNotice.completedAt)}
+            onCompleted={() => {
+              update("stopsAt", null);
+              setMessage("Event notice marked as completed. The notice remains visible and the finishing date was automatically removed.");
+            }}
+          />
+        ) : null}
         {selectedNotice?.status === "published" ? <Button type="button" variant="outline" disabled={saving || uploading} onClick={() => void mutate("unpublish")}>Unpublish Event Notice</Button> : null}
         {selectedNotice ? <Button type="button" variant="ghost" disabled={saving || uploading} onClick={() => void mutate("delete")}>Delete Event Notice</Button> : null}
       </div>

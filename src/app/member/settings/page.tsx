@@ -44,6 +44,7 @@ export default async function MemberSettingsPage() {
             <div className="mt-auto flex flex-wrap gap-2 pt-6">
               <Link
                 href="/member/profile"
+                prefetch={true}
                 className="inline-flex h-10 items-center justify-center rounded-lg border border-brand-border px-4 text-sm font-medium text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 Edit profile

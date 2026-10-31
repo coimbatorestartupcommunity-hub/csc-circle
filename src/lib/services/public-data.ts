@@ -44,7 +44,7 @@ function mapEvent(r: Row): EventRecord {
     registrationDeadline: (r.registration_deadline as string) ?? undefined,
     status: "published",
     admission: (r.admission as EventRecord["admission"]) ?? "free",
-    registrationState: (r.registration_state as EventRecord["registrationState"]) ?? "coming-soon",
+    registrationState: Date.parse(String(r.ends_at)) <= Date.now() ? "completed" : (r.registration_state as EventRecord["registrationState"]) ?? "coming-soon",
     registrationMode: (r.registration_mode as EventRecord["registrationMode"]) ?? "rsvp",
     pricePerAttendee: typeof r.price_per_attendee === "number" ? r.price_per_attendee : undefined,
     maxAttendeesPerRegistration: Number(r.max_attendees_per_registration ?? 10),
@@ -55,6 +55,7 @@ function mapEvent(r: Row): EventRecord {
     summary: (r.summary as string) ?? undefined,
     organizer: (r.organizer as string) ?? undefined,
     mapsUrl: (r.maps_url as string) ?? undefined,
+    onlineInfo: typeof (r.settings as Record<string, unknown> | null)?.onlineInfo === "string" ? (r.settings as Record<string, string>).onlineInfo : undefined,
     format: (r.format as EventRecord["format"]) ?? "offline",
     featured: !!r.featured,
   };
@@ -186,7 +187,7 @@ export async function getPublicFeaturedEvent(): Promise<EventRecord | null> {
 }
 
 export async function getPublicUpcomingEvents(limit = 3): Promise<EventRecord[]> {
-  return (await getPublicEvents()).slice(0, limit);
+  return (await getPublicEvents()).filter((event) => event.registrationState !== "completed").slice(0, limit);
 }
 
 export async function getPublicTestimonials(): Promise<Testimonial[]> {

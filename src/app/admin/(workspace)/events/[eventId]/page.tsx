@@ -6,6 +6,7 @@ import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { publicationStatusMeta } from "@/lib/admin/status-meta";
 import { formatEventDate } from "@/lib/format";
+import { CompleteContentButton } from "@/components/admin/complete-content-button";
 
 export const metadata = { title: "Event detail" };
 
@@ -40,6 +41,7 @@ export default async function AdminEventDetail({
         isDemo={ctx.mode === "preview"}
         action={
           <div className="flex flex-wrap gap-2">
+          {ctx.mode === "live" && can(ctx, "events.publish") ? <CompleteContentButton kind="event" id={eventId} /> : null}
           {can(ctx, "registrations.read") ? <Link href={`/admin/events/${e.id}/registrations`} className="inline-flex items-center gap-2 rounded-xl border border-brand-border bg-white px-3.5 py-2 text-sm font-medium text-brand-ink hover:bg-brand-cloud">Registrations</Link> : null}
           {can(ctx, "events.publish") ? <><Link href={`/admin/notifications?eventId=${e.id}`} className="inline-flex items-center gap-2 rounded-xl border border-brand-border bg-white px-3.5 py-2 text-sm font-medium text-brand-ink hover:bg-brand-cloud"><Megaphone className="size-4" />Promote This Event</Link><Link href="/admin/events" className="inline-flex items-center rounded-xl px-3.5 py-2 text-sm font-medium text-brand-muted hover:bg-brand-cloud">Skip For Now</Link></> : null}
           {can(ctx, "events.update") ? (

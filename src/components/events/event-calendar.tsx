@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
@@ -52,42 +53,59 @@ export function EventCalendar({
             {monthEvents.map((event) => {
               const { day, month: mon } = eventDayParts(event.startsAt);
               const selected = event.id === selectedId;
+              const content = (
+                <>
+                  <span className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-purple text-brand-ink">
+                    <span className="text-lg leading-none font-bold">{day}</span>
+                    <span className="text-[10px] font-semibold">{mon}</span>
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="truncate text-base font-semibold text-brand-ink">
+                        {event.title}
+                      </span>
+                      <Badge
+                        variant="secondary"
+                        className="bg-brand-cloud text-brand-secondary"
+                      >
+                        {eventCategoryLabels[event.category]}
+                      </Badge>
+                    </span>
+                    <span className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-brand-muted">
+                      <span>{formatEventTime(event.startsAt)} IST</span>
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="size-3.5" aria-hidden />
+                        {event.format === "online" ? "Online (Google Meet)" : event.location}
+                      </span>
+                    </span>
+                  </span>
+                </>
+              );
+
+              const className = cn(
+                "flex w-full items-center gap-4 rounded-2xl bg-brand-white p-4 text-left ring-1 transition-colors outline-none hover:bg-brand-cloud focus-visible:ring-3 focus-visible:ring-ring/50",
+                selected ? "ring-2 ring-brand-accent" : "ring-brand-border",
+              );
+
               return (
                 <li key={event.id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect?.(event)}
-                    aria-pressed={selected}
-                    className={cn(
-                      "flex w-full items-center gap-4 rounded-2xl bg-brand-white p-4 text-left ring-1 transition-colors outline-none hover:bg-brand-cloud focus-visible:ring-3 focus-visible:ring-ring/50",
-                      selected ? "ring-2 ring-brand-accent" : "ring-brand-border",
-                    )}
-                  >
-                    <span className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-purple text-brand-ink">
-                      <span className="text-lg leading-none font-bold">{day}</span>
-                      <span className="text-[10px] font-semibold">{mon}</span>
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="truncate text-base font-semibold text-brand-ink">
-                          {event.title}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className="bg-brand-cloud text-brand-secondary"
-                        >
-                          {eventCategoryLabels[event.category]}
-                        </Badge>
-                      </span>
-                      <span className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-brand-muted">
-                        <span>{formatEventTime(event.startsAt)} IST</span>
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="size-3.5" aria-hidden />
-                          {event.location}
-                        </span>
-                      </span>
-                    </span>
-                  </button>
+                  {onSelect ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelect(event)}
+                      aria-pressed={selected}
+                      className={className}
+                    >
+                      {content}
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/events/${event.slug}`}
+                      className={className}
+                    >
+                      {content}
+                    </Link>
+                  )}
                 </li>
               );
             })}

@@ -70,6 +70,7 @@ export default async function MemberDashboard() {
           profile && profile.profileCompletion < 100 ? (
             <Link
               href="/member/profile"
+              prefetch={true}
               className="inline-flex items-center gap-2 rounded-xl bg-brand-purple px-3.5 py-2 text-sm font-medium text-brand-ink hover:bg-brand-lilac"
             >
               Profile {profile.profileCompletion}% complete
@@ -105,6 +106,7 @@ export default async function MemberDashboard() {
             <Link
               key={a.href}
               href={a.href}
+              prefetch={true}
               className="group flex items-center justify-between gap-3 rounded-2xl bg-brand-white p-4 ring-1 ring-brand-border transition-colors hover:bg-brand-cloud"
             >
               <span className="flex items-center gap-3">

@@ -45,10 +45,28 @@ export async function POST(request: Request, context: { params: Promise<{ action
     if (action === "review") {
       const parsed = reviewSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your review and consent." }, 422);
-      const { data: existing, error: lookupError } = await sb.from("reviews").select("id,moderation").eq("user_id", user.id).eq("kind", "general").is("event_id", null).maybeSingle();
+      const eventId = parsed.data.eventId;
+      const collaborationId = parsed.data.collaborationId;
+      if (eventId && collaborationId) return authResponse({ error: "Choose one activity to review." }, 422);
+      if (collaborationId) {
+        const { data: collaboration } = await sb.from("collaborations").select("id").eq("id", collaborationId).eq("status", "completed").eq("publication_status", "published").maybeSingle();
+        if (!collaboration) return authResponse({ error: "This collaboration is not available for review." }, 403);
+      }
+      if (eventId) {
+        const [{ data: event }, { data: attendance }] = await Promise.all([
+          sb.from("events").select("ends_at,registration_state").eq("id", eventId).maybeSingle(),
+          sb.from("event_registrations").select("id").eq("event_id", eventId).eq("user_id", user.id).eq("attendance", "checked_in").limit(1),
+        ]);
+        if (!event || (Date.parse(event.ends_at) > Date.now() && event.registration_state !== "completed") || !attendance?.length) return authResponse({ error: "Reviews are available to checked-in attendees after the event concludes." }, 403);
+      }
+      const kind = eventId ? "event" : collaborationId ? "collaboration" : "general";
+      let lookup = sb.from("reviews").select("id,moderation").eq("user_id", user.id).eq("kind", kind);
+      if (collaborationId) lookup = lookup.eq("collaboration_id", collaborationId);
+      lookup = eventId ? lookup.eq("event_id", eventId) : lookup.is("event_id", null);
+      const { data: existing, error: lookupError } = await lookup.maybeSingle();
       if (lookupError) return authResponse({ error: "Review status could not be checked. Please try again." }, 503);
-      if (existing) return authResponse({ error: "You already have a community review. View its status in My Reviews." }, 409);
-      const { data, error } = await sb.from("reviews").insert({ user_id: user.id, rating: parsed.data.rating, review: parsed.data.review, kind: "general", moderation: "submitted", publication_consent: true, publication_consent_at: new Date().toISOString(), publication_consent_version: "csc-review-publication-v1" }).select("id,rating,review,moderation").single();
+      if (existing) return authResponse({ error: "You already submitted this review. View its status in My Reviews." }, 409);
+      const { data, error } = await sb.from("reviews").insert({ user_id: user.id, rating: parsed.data.rating, review: parsed.data.review, kind, event_id: eventId ?? null, collaboration_id: collaborationId ?? null, moderation: "submitted", publication_consent: true, publication_consent_at: new Date().toISOString(), publication_consent_version: "csc-review-publication-v1" }).select("id,rating,review,moderation").single();
       if (!error) scheduleNotificationDelivery();
       if (error) return authResponse({ error: error.code === "23505" ? "You already have a community review. View its status in My Reviews." : "Review was not saved. Please try again." }, error.code === "23505" ? 409 : 503);
       return authResponse({ ok: true, id: data.id, review: { id: data.id, rating: data.rating, review: data.review, moderation: data.moderation } });

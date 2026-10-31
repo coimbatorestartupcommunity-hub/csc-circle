@@ -1,5 +1,6 @@
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { MapPin, Clock, Calendar } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import {
 import type { EventRecord } from "@/types";
 
 const registrationLabel: Record<EventRecord["registrationState"], string> = {
+  completed: "Completed",
   open: "Open Registration",
   closed: "Registration closed",
   full: "Fully booked",
@@ -21,6 +23,7 @@ const registrationLabel: Record<EventRecord["registrationState"], string> = {
 };
 
 const registrationTone: Record<EventRecord["registrationState"], string> = {
+  completed: "bg-brand-cloud text-brand-muted",
   open: "bg-green-100 text-green-700",
   closed: "bg-brand-cloud text-brand-muted",
   full: "bg-brand-red text-brand-ink",
@@ -33,6 +36,7 @@ export interface EventCardProps {
   onSelect?: (event: EventRecord) => void;
   selected?: boolean;
   className?: string;
+  href?: string;
 }
 
 export function EventCard({
@@ -40,9 +44,11 @@ export function EventCard({
   onSelect,
   selected,
   className,
+  href,
 }: EventCardProps) {
   const { day, month } = eventDayParts(event.startsAt);
   const interactive = typeof onSelect === "function";
+  const targetHref = href ?? (event.slug ? `/events/${event.slug}` : undefined);
 
   const body = (
     <>
@@ -105,7 +111,7 @@ export function EventCard({
           </li>
           <li className="flex items-center gap-2">
             <MapPin className="size-4 shrink-0" aria-hidden />
-            {event.location}
+            {event.format === "online" ? "Online (Google Meet)" : event.location}
           </li>
         </ul>
 
@@ -118,18 +124,16 @@ export function EventCard({
           >
             {registrationLabel[event.registrationState]}
           </span>
-          {interactive ? (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 text-sm font-semibold",
-                event.registrationState === "open"
-                  ? "rounded-full bg-brand-ink px-3 py-1.5 text-brand-white shadow-sm"
-                  : "text-brand-accent",
-              )}
-            >
-              {event.registrationState === "open" ? "Book Now →" : "View details"}
-            </span>
-          ) : null}
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 text-sm font-semibold",
+              event.registrationState === "completed" || event.registrationState === "open"
+                ? "rounded-full bg-brand-ink px-3 py-1.5 text-brand-white shadow-sm"
+                : "text-brand-accent",
+            )}
+          >
+            {event.registrationState === "completed" ? "Ratings and Review" : event.registrationState === "open" ? "Book Now →" : "View details"}
+          </span>
         </div>
       </div>
     </>
@@ -154,6 +158,14 @@ export function EventCard({
       >
         {body}
       </button>
+    );
+  }
+
+  if (targetHref) {
+    return (
+      <Link href={targetHref} className={base}>
+        {body}
+      </Link>
     );
   }
 

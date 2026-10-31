@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CommunityUpdateRecord, UpdateGalleryImage } from "@/types/cms";
 import { UPDATE_CATEGORIES } from "@/types/cms";
+import { CompleteContentButton } from "@/components/admin/complete-content-button";
 
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 90);
 
@@ -23,7 +24,8 @@ export function UpdateEditor({ initial }: { initial?: CommunityUpdateRecord }) {
     publicationConsent: initial?.publicationConsent ?? false, relatedEventId: initial?.relatedEventId ?? "",
     relatedCollaborationId: initial?.relatedCollaborationId ?? "", seoTitle: initial?.seoTitle ?? "", metaDescription: initial?.metaDescription ?? "",
   });
-  const [status, setStatus] = React.useState(initial?.status ?? "draft");
+  const [status, setStatus] = React.useState(initial?.completedAt ? "completed" : (initial?.status ?? "draft"));
+  const [completed, setCompleted] = React.useState(Boolean(initial?.completedAt));
   const [busy, setBusy] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const [notice, setNotice] = React.useState<{ error: boolean; text: string } | null>(null);
@@ -82,8 +84,27 @@ export function UpdateEditor({ initial }: { initial?: CommunityUpdateRecord }) {
   }
 
   return <div className="flex flex-col gap-5">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-4 ring-1 ring-brand-border">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-brand-muted">Status:</span>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${completed || status === "completed" ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200" : "bg-brand-cloud text-brand-ink"}`}>
+          {completed || status === "completed" ? "Completed" : status}
+        </span>
+        {completed ? <span className="text-xs text-brand-muted">· Finalized content remains fully editable for further updates and image changes</span> : null}
+      </div>
+      {value.id ? (
+        <CompleteContentButton
+          kind="update"
+          id={value.id}
+          isCompleted={completed || status === "completed"}
+          onCompleted={() => {
+            setCompleted(true);
+            setStatus("completed");
+          }}
+        />
+      ) : null}
+    </div>
     {notice ? <p role={notice.error ? "alert" : "status"} aria-live="polite" className={`rounded-xl p-3 text-sm ${notice.error ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"}`}>{notice.text}</p> : null}
-    <p className="text-sm text-brand-muted">Status: <span className="font-semibold capitalize text-brand-ink">{status}</span></p>
     <section className="grid gap-4 rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:grid-cols-2">
       <div className="flex flex-col gap-1.5 sm:col-span-2"><Label htmlFor="update-title">Title</Label><Input id="update-title" maxLength={160} value={value.title} onChange={(e) => { set("title", e.target.value); if (!value.id && !value.slug) set("slug", slugify(e.target.value)); }} /></div>
       <div className="flex flex-col gap-1.5"><Label htmlFor="update-slug">URL slug</Label><Input id="update-slug" maxLength={90} value={value.slug} onChange={(e) => set("slug", slugify(e.target.value))} /></div>

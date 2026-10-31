@@ -2,6 +2,7 @@ import { emailConfiguration } from "@/lib/notifications/config";
 
 /** CSC versions of the reference collection's transactional and lifecycle families. */
 export const definitions = {
+  EventReviewRequest: ["How Was Your CSC Event?", "Thank you for attending. Share your rating and experience in My Ratings and Reviews. Your feedback helps CSC plan future events.", "/member/reviews", "support", "light"],
   FirstLoginWelcome: ["Welcome to CSC Circle", "Welcome to Coimbatore Startup Community. Connect with founders, discover events, and build your profile at your own pace.", "/member/profile", "welcome", "orange"],
   MembershipApplicationReceived: ["Membership Application Received", "We received your CSC membership application. Membership is free; your card will be available after the community team approves your claim.", "/member/claim", "onboarding", "sky"],
   MembershipAdminAlert: ["New Membership Application", "A membership application has been submitted and is ready for authorized review.", "/admin/membership-claims", "workspace", "light"],

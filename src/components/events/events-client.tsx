@@ -164,14 +164,13 @@ export function EventsClient({ events }: { events: EventRecord[] }) {
                 <EventCard
                   key={event.id}
                   event={event}
-                  onSelect={(e) => setRegisteringId(e.id)}
+                  href={`/events/${event.slug}`}
                 />
               ))}
             </div>
           ) : (
             <EventCalendar
               events={filtered}
-              onSelect={(e) => setRegisteringId(e.id)}
             />
           )}
         </>

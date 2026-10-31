@@ -75,13 +75,17 @@ export function MobileNavigation({ account }: { account: { authenticated: boolea
             <p className="text-center text-sm text-brand-muted" aria-live="polite">Checking your account…</p>
           ) : account.authenticated ? (
             <>
-              <div className="flex items-center gap-2.5 px-1">
+              <Link href="/member" prefetch={true} className="flex items-center gap-2.5 px-1 transition hover:opacity-85" onClick={() => setOpen(false)}>
                 <AccountAvatar name={account.name ?? "Member"} src={account.avatarUrl} className="size-8 shrink-0" />
                 <span className="min-w-0 truncate text-sm font-medium text-brand-ink">{account.name}</span>
-              </div>
-              {account.isAdmin ? <CtaLink href="/member/profile" variant="outline" size="md" arrow={false} className="h-9 w-full text-[13px]" onClick={() => setOpen(false)}>Profile</CtaLink> : null}
-              <CtaLink href={account.accountHref ?? "/member/profile"} size="md" className="h-9 w-full text-[13px]" onClick={() => setOpen(false)} arrow={false}>
-                {account.accountLabel ?? "Profile"}
+              </Link>
+              {account.isAdmin ? (
+                <CtaLink href="/member" variant="outline" size="md" arrow={false} prefetch={true} className="h-9 w-full text-[13px]" onClick={() => setOpen(false)}>
+                  Member Page
+                </CtaLink>
+              ) : null}
+              <CtaLink href={account.accountHref ?? "/member"} size="md" prefetch={true} className="h-9 w-full text-[13px]" onClick={() => setOpen(false)} arrow={false}>
+                {account.accountLabel ?? "Member Page"}
               </CtaLink>
               <form action="/auth/signout" method="post">
                 <button type="submit" className="h-9 w-full rounded-lg border border-brand-border px-4 text-[13px] font-medium text-brand-ink">Sign out</button>

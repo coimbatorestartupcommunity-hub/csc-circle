@@ -99,6 +99,7 @@ export type EventCategory =
   | "consultation";
 
 export type EventRegistrationState =
+  | "completed"
   | "open"
   | "closed"
   | "full"
@@ -135,6 +136,7 @@ export interface EventRecord {
   summary?: string;
   organizer?: string;
   mapsUrl?: string;
+  onlineInfo?: string;
   format?: "offline" | "online" | "hybrid";
   featured?: boolean;
   isFixture?: boolean;

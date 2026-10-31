@@ -46,7 +46,7 @@ export interface MemberShellProps {
   statusLabel: string;
   statusTone: string;
   accountHref: string;
-  accountLabel: "Profile" | "Admin Dashboard";
+  accountLabel: string;
   children: React.ReactNode;
 }
 
@@ -76,7 +76,7 @@ export function MemberShell({
                 <nav className="flex flex-col gap-1 py-3" aria-label="Member">
                   {nav.map((item) => {
                     const active = isActive(item.href, item.exact);
-                    return <SheetClose key={item.href} render={<Link href={item.href} aria-current={active ? "page" : undefined} className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-medium", active ? "bg-brand-ink text-brand-white" : "text-brand-secondary hover:bg-brand-cloud")} />}>
+                    return <SheetClose key={item.href} render={<Link href={item.href} prefetch={true} aria-current={active ? "page" : undefined} className={cn("flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-medium", active ? "bg-brand-ink text-brand-white" : "text-brand-secondary hover:bg-brand-cloud")} />}>
                       <item.icon className="size-4" aria-hidden />{item.label}
                     </SheetClose>;
                   })}
@@ -130,6 +130,7 @@ export function MemberShell({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",

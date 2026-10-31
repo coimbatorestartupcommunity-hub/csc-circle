@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ArrowUpRight,
 } from "lucide-react";
 import { cn } from "cn";
 import { Input } from "@/components/ui/input";
@@ -246,13 +247,17 @@ export function DataTable<T extends { id: string }>({
                   )}
                 </th>
               ))}
-              {actions ? <th className="sticky right-0 z-20 min-w-56 bg-brand-white px-4 py-3 text-right text-xs font-semibold tracking-wide text-brand-muted uppercase shadow-[-10px_0_12px_-12px_rgba(18,24,38,0.35)]">Actions</th> : null}
+              {actions || rowHrefBase ? (
+                <th className="sticky right-0 z-20 min-w-36 bg-brand-white px-4 py-3 text-right text-xs font-semibold tracking-wide text-brand-muted uppercase shadow-[-10px_0_12px_-12px_rgba(18,24,38,0.35)]">
+                  Action
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
             {pageRows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + (actions ? 1 : 0)} className="px-4 py-10 text-center text-brand-muted">
+                <td colSpan={columns.length + (actions || rowHrefBase ? 1 : 0)} className="px-4 py-10 text-center text-brand-muted">
                   {emptyMessage}
                 </td>
               </tr>
@@ -272,10 +277,18 @@ export function DataTable<T extends { id: string }>({
                         )}
                       </td>
                     ))}
-                    {actions ? (
-                      <td className="sticky right-0 z-10 min-w-56 bg-brand-white px-4 py-3 text-right shadow-[-10px_0_12px_-12px_rgba(18,24,38,0.25)]">
-                        <div className="flex flex-wrap justify-end gap-1.5">
-                          {actions.filter((a) => !a.visibleForStatuses || a.visibleForStatuses.includes(String(get(row, "status")))).map((a) => (
+                    {actions || rowHrefBase ? (
+                      <td className="sticky right-0 z-10 min-w-36 bg-brand-white px-4 py-3 text-right shadow-[-10px_0_12px_-12px_rgba(18,24,38,0.25)]">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
+                          {href ? (
+                            <Link
+                              href={href}
+                              className="inline-flex items-center gap-1 rounded-lg border border-brand-border bg-white px-2.5 py-1 text-xs font-semibold text-brand-ink shadow-2xs transition hover:border-brand-ink/40 hover:bg-brand-cloud"
+                            >
+                              Open <ArrowUpRight className="size-3" />
+                            </Link>
+                          ) : null}
+                          {actions?.filter((a) => !a.visibleForStatuses || a.visibleForStatuses.includes(String(get(row, "status")))).map((a) => (
                             <ActionButton
                               key={a.label}
                               label={a.label}
