@@ -165,12 +165,58 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
             </p>
           </div>
 
-          {/* Significantly Larger QR Code Section */}
-          <div className="flex flex-col items-center gap-2 rounded-2xl bg-brand-cloud/80 p-4 text-center ring-1 ring-brand-border/60">
-            <span className="text-[10px] font-bold tracking-[0.16em] text-brand-muted uppercase">
+          {/* Attendee Details Card - Perfectly aligned before the QR code, matching design */}
+          <div className="flex min-w-0 flex-col gap-3.5 rounded-[1.5rem] border border-brand-border/60 bg-[#f8faff]/85 p-4 sm:p-5 text-left ring-1 ring-brand-border/30">
+            {/* Row 1: Name and Phone */}
+            <div className="grid grid-cols-2 gap-4 min-w-0">
+              <div className="min-w-0">
+                <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block">
+                  Name
+                </span>
+                <p className="mt-1 truncate text-xs sm:text-sm font-bold text-brand-ink uppercase no-underline [text-decoration:none]">
+                  {fields.name}
+                </p>
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block">
+                  Phone
+                </span>
+                <p className="mt-1 truncate text-xs sm:text-sm font-bold text-brand-ink no-underline [text-decoration:none]">
+                  {fields.phone}
+                </p>
+              </div>
+            </div>
+
+            {/* Row 2: Email */}
+            <div className="min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block">
+                Email
+              </span>
+              <p className="mt-1 break-all text-xs sm:text-sm font-bold text-brand-ink no-underline [text-decoration:none]">
+                {fields.email}
+              </p>
+            </div>
+
+            {/* Row 3: UID */}
+            <div className="min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-brand-muted uppercase block">
+                UID
+              </span>
+              <p
+                className="mt-1 whitespace-nowrap font-mono text-[9px] sm:text-[11px] font-bold tracking-tight text-brand-ink no-underline [text-decoration:none] overflow-hidden text-ellipsis"
+                title={fields.uid}
+              >
+                {fields.uid}
+              </p>
+            </div>
+          </div>
+
+          {/* Entrance Verification QR Code Section */}
+          <div className="flex flex-col items-center gap-2.5 rounded-[1.5rem] border border-brand-border/60 bg-[#f8faff]/85 p-4 sm:p-5 text-center ring-1 ring-brand-border/30">
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.18em] text-brand-muted uppercase">
               Entrance Verification QR
             </span>
-            <div className="relative flex size-40 sm:size-48 items-center justify-center rounded-2xl bg-white p-3 shadow-xs ring-1 ring-brand-border">
+            <div className="relative flex size-44 sm:size-52 items-center justify-center rounded-2xl bg-white p-3 shadow-xs ring-1 ring-brand-border">
               {qr ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -184,31 +230,9 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
                 </div>
               )}
             </div>
-            <p className="text-[9px] sm:text-[10px] font-semibold text-brand-secondary">
+            <p className="text-[10px] sm:text-[11px] font-semibold text-brand-secondary">
               Scan at Venue Entrance
             </p>
-          </div>
-
-          {/* Attendee Details Grid */}
-          <div className="grid min-w-0 grid-cols-2 gap-2.5 rounded-2xl bg-brand-cloud/50 p-3 sm:p-4 text-left ring-1 ring-brand-border/40">
-            <div className="min-w-0">
-              <p className="text-[10px] tracking-wide text-brand-muted uppercase">Name</p>
-              <p className="break-words text-xs sm:text-sm font-semibold text-brand-ink">{fields.name}</p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] tracking-wide text-brand-muted uppercase">Phone</p>
-              <p className="break-words text-xs font-medium text-brand-ink">{fields.phone}</p>
-            </div>
-            <div className="min-w-0 col-span-2">
-              <p className="text-[10px] tracking-wide text-brand-muted uppercase">Email</p>
-              <p className="break-all text-xs font-medium text-brand-ink">{fields.email}</p>
-            </div>
-            <div className="min-w-0 col-span-2">
-              <p className="text-[10px] tracking-wide text-brand-muted uppercase">UID</p>
-              <p className="whitespace-nowrap font-mono text-[8px] font-semibold tracking-[-0.05em] text-brand-ink sm:text-[10px]" title={fields.uid}>
-                {fields.uid}
-              </p>
-            </div>
           </div>
 
           <p className="text-center text-[11px] text-brand-muted">
