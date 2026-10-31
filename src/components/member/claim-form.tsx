@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
@@ -38,10 +38,12 @@ export function ClaimForm({ isDemo }: { isDemo: boolean }) {
       reference: "",
       whatsapp: "",
       designation: undefined,
+      designationOther: "",
       startupAffiliation: "",
       declarationAccurate: false as unknown as true,
     },
   });
+  const selectedDesignation = useWatch({ control, name: "designation" });
   const [submitting, setSubmitting] = React.useState(false);
 
   async function onSubmit(values: ClaimFormValues) {
@@ -141,6 +143,23 @@ export function ClaimForm({ isDemo }: { isDemo: boolean }) {
           <Input id="c-aff" {...register("startupAffiliation")} />
         </Field>
       </div>
+
+      {selectedDesignation === "other" ? (
+        <Field>
+          <FieldLabel htmlFor="c-desig-other">Your category</FieldLabel>
+          <Input
+            id="c-desig-other"
+            maxLength={30}
+            placeholder="For example, Community Builder"
+            {...register("designationOther")}
+            aria-invalid={!!errors.designationOther}
+          />
+          <p className="text-xs text-brand-muted">
+            This label will appear on your membership ID. Use 2 to 30 characters.
+          </p>
+          {errors.designationOther ? <FieldError>{errors.designationOther.message}</FieldError> : null}
+        </Field>
+      ) : null}
 
       <Controller
         control={control}

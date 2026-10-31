@@ -321,7 +321,9 @@ export const adminServices = {
           email: (r.linked_account_email as string) ?? undefined,
           whatsapp: (r.whatsapp as string) ?? undefined,
           applicantType: (r.applicant_type as AdminClaimRow["applicantType"]) ?? "new_applicant",
-          designation: (r.designation as string) ?? undefined,
+          designation: r.designation === "other" && typeof r.designation_other === "string"
+            ? r.designation_other
+            : (r.designation as string) ?? undefined,
           submittedAt: (r.submitted_at as string) ?? "",
           startup: (r.startup_affiliation as string) ?? undefined,
           declarationAccurate: Boolean(r.declaration_accurate),

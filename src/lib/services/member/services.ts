@@ -31,7 +31,7 @@ import {
 import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { designationLabels } from "@/lib/content/member-taxonomy";
+import { membershipDesignationLabel } from "@/lib/member/membership-designation";
 import {
   demoCard,
   demoConsultations,
@@ -69,6 +69,7 @@ function mapProfile(p: Row, m: Row | null): MemberProfile {
     email: (p.email as string) ?? "",
     whatsapp: (p.whatsapp as string) ?? undefined,
     city: (p.city as string) ?? undefined,
+    designationOther: (p.designation_other as string) ?? undefined,
     avatarUrl: (p.avatar_url as string) ?? undefined,
     portraitPath: (p.portrait_path as string) ?? undefined,
     portraitUrl: p.portrait_path ? "/api/member/portrait" : undefined,
@@ -156,16 +157,11 @@ export const memberServices = {
     if (ctx.mode === "preview") return ok(demoCard);
     try {
       const sb = await createClient();
-      const { data: m } = await sb
-        .from("memberships")
-        .select("*")
-        .eq("user_id", ctx.user!.id)
-        .maybeSingle();
-      const { data: p } = await sb
-        .from("profiles")
-        .select("full_name, display_name, portrait_path, designations, startup")
-        .eq("id", ctx.user!.id)
-        .maybeSingle();
+      const [{ data: m }, { data: p }, { data: approvedClaim }] = await Promise.all([
+        sb.from("memberships").select("*").eq("user_id", ctx.user!.id).maybeSingle(),
+        sb.from("profiles").select("full_name, display_name, portrait_path, designations, designation_other, startup").eq("id", ctx.user!.id).maybeSingle(),
+        sb.from("membership_claims").select("designation,designation_other,startup_affiliation").eq("user_id", ctx.user!.id).eq("status", "active").order("submitted_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
       const mm = m as Row | null;
       if (!mm || !mm.member_number || !mm.verification_token || mm.status !== "active" || (mm.expires_at && new Date(String(mm.expires_at)).getTime() <= Date.now())) {
         return fail(
@@ -180,11 +176,13 @@ export const memberServices = {
       return ok({
         memberNumber: String(mm.member_number),
         fullName: (pp.full_name as string) ?? (pp.display_name as string) ?? "CSC Member",
-        designationLabel:
-          designationLabels[
-            (designations[0] as keyof typeof designationLabels) ?? "other"
-          ] ?? "Member",
-        startupName: startup.name,
+        designationLabel: membershipDesignationLabel(
+          designations,
+          approvedClaim?.designation,
+          pp.designation_other as string | null,
+          approvedClaim?.designation_other,
+        ),
+        startupName: startup.name || approvedClaim?.startup_affiliation || undefined,
         avatarUrl: "/api/member/portrait",
         status: mm.status as MembershipStatus,
         issuedAt: (mm.issued_at as string) ?? undefined,

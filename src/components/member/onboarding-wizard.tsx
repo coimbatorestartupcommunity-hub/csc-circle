@@ -37,6 +37,7 @@ interface Data {
   whatsapp: string;
   city: string;
   designations: string[];
+  designationOther: string;
   startupName: string;
   startupWebsite: string;
   startupDescription: string;
@@ -56,6 +57,7 @@ const initial: Data = {
   whatsapp: "",
   city: "",
   designations: [],
+  designationOther: "",
   startupName: "",
   startupWebsite: "",
   startupDescription: "",
@@ -132,7 +134,7 @@ export function OnboardingWizard({ isDemo }: { isDemo: boolean }) {
       };
     } else if (step === 1) {
       schema = onboardingStep2Schema;
-      payload = { designations: data.designations };
+      payload = { designations: data.designations, designationOther: data.designationOther };
     } else if (step === 3) {
       schema = onboardingStep4Schema;
       payload = { goals: data.goals };
@@ -245,6 +247,23 @@ export function OnboardingWizard({ isDemo }: { isDemo: boolean }) {
             <p className="text-sm text-brand-muted">Select all that apply.</p>
             <Chips options={designationOptions} value={data.designations} onToggle={(v) => toggle("designations", v)} />
             {errors.designations ? <FieldError>{errors.designations}</FieldError> : null}
+            {data.designations.includes("other") ? (
+              <Field>
+                <FieldLabel htmlFor="o-desig-other">Your category</FieldLabel>
+                <Input
+                  id="o-desig-other"
+                  maxLength={30}
+                  placeholder="For example, Community Builder"
+                  value={data.designationOther}
+                  onChange={(event) => set("designationOther", event.target.value)}
+                  aria-invalid={!!errors.designationOther}
+                />
+                <p className="text-xs text-brand-muted">
+                  This label will appear on your membership ID. Use 2 to 30 characters.
+                </p>
+                {errors.designationOther ? <FieldError>{errors.designationOther}</FieldError> : null}
+              </Field>
+            ) : null}
           </div>
         ) : null}
 
