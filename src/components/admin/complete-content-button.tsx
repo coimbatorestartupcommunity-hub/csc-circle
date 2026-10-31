@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { cn } from "cn";
 
 export function CompleteContentButton({
   kind,
@@ -26,7 +27,12 @@ export function CompleteContentButton({
 
   if (isCompleted) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+      <span
+        className={cn(
+          "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80 shadow-2xs",
+          className,
+        )}
+      >
         <CheckCircle2 className="size-3.5" /> Completed
       </span>
     );
@@ -59,7 +65,10 @@ export function CompleteContentButton({
       size="sm"
       disabled={busy}
       onClick={() => void complete()}
-      className={className ?? "inline-flex items-center gap-1.5 font-medium text-brand-ink hover:border-emerald-500 hover:text-emerald-700"}
+      className={cn(
+        "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-brand-border bg-white px-3 text-xs font-semibold text-brand-ink shadow-2xs transition hover:border-emerald-500 hover:bg-emerald-50/50 hover:text-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-500/20",
+        className,
+      )}
     >
       {busy ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
       {busy ? "Saving…" : label}

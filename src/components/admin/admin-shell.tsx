@@ -159,6 +159,7 @@ export function AdminShell({
   const pathname = usePathname();
   const crumbs = pathname.split("/").filter(Boolean);
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = React.useState(false);
   React.useEffect(() => {
     let alive = true;
     void fetch("/api/member/header", { cache: "no-store" }).then((response) => response.json()).then((account) => {
@@ -179,7 +180,7 @@ export function AdminShell({
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center justify-between gap-3 border-b border-brand-border bg-brand-white/90 px-3 backdrop-blur-md sm:px-4">
           <div className="flex items-center gap-2">
-            <Sheet>
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
               <SheetTrigger
                 render={<Button variant="outline" size="icon" aria-label="Open menu" className="lg:hidden" />}
               >
@@ -190,7 +191,7 @@ export function AdminShell({
                 <div className="mb-4">
                   <BrandLogo showWordmark={false} markSize={34} />
                 </div>
-                <NavList permissions={permissions} />
+                <NavList permissions={permissions} onNavigate={() => setMenuOpen(false)} />
               </SheetContent>
             </Sheet>
             <nav aria-label="Breadcrumb" className="hidden items-center gap-1.5 text-sm text-brand-muted sm:flex">
@@ -225,8 +226,9 @@ export function AdminShell({
               <span className="hidden lg:inline">Profile</span>
               <span className="sr-only lg:hidden">Profile</span>
             </Link>
-            <Link href="/admin" aria-current={pathname === "/admin" ? "page" : undefined} className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-brand-ink px-2.5 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3">
-              Admin Dashboard
+            <Link href="/admin" aria-current={pathname === "/admin" ? "page" : undefined} className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-brand-ink px-2.5 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3">
+              <span className="hidden sm:inline">Admin Dashboard</span>
+              <span className="sm:hidden">Dashboard</span>
             </Link>
             <form action="/auth/signout" method="post">
               <button

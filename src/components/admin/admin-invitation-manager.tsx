@@ -112,7 +112,53 @@ export function AdminInvitationManager({ isDemo }: { isDemo: boolean }) {
     </section>
     <section className="flex flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-7">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-lg font-semibold text-brand-ink">Invitation history</h2><p className="text-sm text-brand-muted">Access is granted only after secure, verified acceptance.</p></div><Button variant="outline" onClick={() => void load()} disabled={loading}>Refresh</Button></div>
-      {loading ? <p className="py-6 text-sm text-brand-muted">Loading invitations…</p> : invitations.length ? <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead><tr className="border-b border-brand-border text-xs uppercase tracking-wide text-brand-muted"><th className="px-3 py-3">Invitee</th><th className="px-3 py-3">Role</th><th className="px-3 py-3">Invited by / date</th><th className="px-3 py-3">Delivery</th><th className="px-3 py-3">Invitation status</th><th className="px-3 py-3">Expires / accepted</th><th className="px-3 py-3">Actions</th></tr></thead><tbody>{invitations.map((row) => <tr key={row.id} className="border-b border-brand-border/60 align-top last:border-0"><td className="px-3 py-3 font-medium text-brand-ink">{row.fullName ? <>{row.fullName}<br /></> : null}{row.email}</td><td className="px-3 py-3">{row.roleLabel}</td><td className="px-3 py-3"><div>{row.invitedBy}</div><div className="text-xs text-brand-muted">{date(row.createdAt)}</div></td><td className="px-3 py-3"><span className="capitalize">{row.deliveryStatus.replaceAll("_", " ")}</span><div className="text-xs text-brand-muted">{row.attempts} attempt{row.attempts === 1 ? "" : "s"}{row.deliveryIssue ? ` · ${row.deliveryIssue}` : ""}</div></td><td className="px-3 py-3 capitalize">{row.status}{row.acceptedBy ? <div className="text-xs text-brand-muted">Accepted by {row.acceptedBy}</div> : null}</td><td className="px-3 py-3"><div>{date(row.expiresAt)}</div>{row.acceptedAt ? <div className="text-xs text-brand-muted">Accepted {date(row.acceptedAt)}</div> : null}</td><td className="px-3 py-3"><div className="flex gap-2">{row.status === "pending" ? <><Button size="sm" variant="outline" disabled={busyId === row.id || isDemo} onClick={() => void act(row,"resend")}>Resend</Button><Button size="sm" variant="destructive" disabled={busyId === row.id || isDemo} onClick={() => void act(row,"revoke")}>Revoke</Button></> : "—"}</div></td></tr>)}</tbody></table></div> : <p className="py-6 text-sm text-brand-muted">No administrator invitations yet.</p>}
+      {loading ? (
+        <p className="py-6 text-sm text-brand-muted">Loading invitations…</p>
+      ) : invitations.length ? (
+        <>
+          <div className="flex flex-col gap-3 md:hidden">
+            {invitations.map((row) => (
+              <div key={row.id} className="flex flex-col gap-2.5 rounded-xl border border-brand-border bg-white p-4 shadow-2xs">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    {row.fullName ? <p className="font-semibold text-brand-ink">{row.fullName}</p> : null}
+                    <p className="break-all text-xs text-brand-muted">{row.email}</p>
+                  </div>
+                  <span className="rounded-full bg-brand-cloud px-2.5 py-0.5 text-xs font-semibold text-brand-secondary shrink-0">
+                    {row.roleLabel}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 border-t border-brand-border/60 pt-2 text-xs text-brand-muted">
+                  <div>
+                    <span className="block text-[10px] uppercase font-semibold text-brand-muted">Status</span>
+                    <span className="capitalize font-medium text-brand-ink">{row.status}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-semibold text-brand-muted">Delivery</span>
+                    <span className="capitalize text-brand-secondary">{row.deliveryStatus.replaceAll("_", " ")}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="block text-[10px] uppercase font-semibold text-brand-muted">Expires</span>
+                    <span className="text-brand-secondary">{date(row.expiresAt)}</span>
+                  </div>
+                </div>
+                {row.status === "pending" ? (
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" variant="outline" className="flex-1 h-9 rounded-xl" disabled={busyId === row.id || isDemo} onClick={() => void act(row, "resend")}>Resend</Button>
+                    <Button size="sm" variant="destructive" className="flex-1 h-9 rounded-xl" disabled={busyId === row.id || isDemo} onClick={() => void act(row, "revoke")}>Revoke</Button>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full min-w-[980px] text-left text-sm">
+              <thead><tr className="border-b border-brand-border text-xs uppercase tracking-wide text-brand-muted"><th className="px-3 py-3">Invitee</th><th className="px-3 py-3">Role</th><th className="px-3 py-3">Invited by / date</th><th className="px-3 py-3">Delivery</th><th className="px-3 py-3">Invitation status</th><th className="px-3 py-3">Expires / accepted</th><th className="px-3 py-3">Actions</th></tr></thead>
+              <tbody>{invitations.map((row) => <tr key={row.id} className="border-b border-brand-border/60 align-top last:border-0"><td className="px-3 py-3 font-medium text-brand-ink">{row.fullName ? <>{row.fullName}<br /></> : null}{row.email}</td><td className="px-3 py-3">{row.roleLabel}</td><td className="px-3 py-3"><div>{row.invitedBy}</div><div className="text-xs text-brand-muted">{date(row.createdAt)}</div></td><td className="px-3 py-3"><span className="capitalize">{row.deliveryStatus.replaceAll("_", " ")}</span><div className="text-xs text-brand-muted">{row.attempts} attempt{row.attempts === 1 ? "" : "s"}{row.deliveryIssue ? ` · ${row.deliveryIssue}` : ""}</div></td><td className="px-3 py-3 capitalize">{row.status}{row.acceptedBy ? <div className="text-xs text-brand-muted">Accepted by {row.acceptedBy}</div> : null}</td><td className="px-3 py-3"><div>{date(row.expiresAt)}</div>{row.acceptedAt ? <div className="text-xs text-brand-muted">Accepted {date(row.acceptedAt)}</div> : null}</td><td className="px-3 py-3"><div className="flex gap-2">{row.status === "pending" ? <><Button size="sm" variant="outline" disabled={busyId === row.id || isDemo} onClick={() => void act(row,"resend")}>Resend</Button><Button size="sm" variant="destructive" disabled={busyId === row.id || isDemo} onClick={() => void act(row,"revoke")}>Revoke</Button></> : "—"}</div></td></tr>)}</tbody>
+            </table>
+          </div>
+        </>
+      ) : <p className="py-6 text-sm text-brand-muted">No administrator invitations yet.</p>}
     </section>
   </div>;
 }

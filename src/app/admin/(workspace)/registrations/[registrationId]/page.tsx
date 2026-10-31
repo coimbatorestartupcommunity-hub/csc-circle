@@ -62,9 +62,9 @@ export default async function RegistrationDetail({
 
 function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex min-w-0 flex-col">
       <dt className="text-xs tracking-wide text-brand-muted uppercase">{label}</dt>
-      <dd className={mono ? "font-mono text-xs text-brand-ink" : "text-brand-ink"}>{value}</dd>
+      <dd className={`break-words ${mono ? "font-mono text-xs text-brand-ink" : "text-brand-ink"}`}>{value}</dd>
     </div>
   );
 }

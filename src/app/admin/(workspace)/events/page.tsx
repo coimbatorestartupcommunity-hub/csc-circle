@@ -94,21 +94,21 @@ export default async function AdminEventsPage() {
                 <div className="flex flex-wrap items-center gap-2 pt-2 sm:pt-0">
                   <Link
                     href={`/admin/events/${row.id}`}
-                    className="inline-flex items-center gap-1 rounded-xl bg-brand-ink px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-brand-ink/90"
+                    className="h-9 min-h-9 inline-flex items-center justify-center gap-1 rounded-xl bg-brand-ink px-3 text-xs font-semibold text-white shadow-xs transition hover:bg-brand-ink/90"
                   >
                     Open <ArrowUpRight className="size-3.5" />
                   </Link>
                   {can(ctx, "registrations.read") ? (
                     <Link
                       href={`/admin/events/${row.id}/registrations`}
-                      className="inline-flex items-center gap-1 rounded-xl border border-brand-border bg-white px-3 py-2 text-xs font-semibold text-brand-secondary hover:bg-brand-cloud"
+                      className="h-9 min-h-9 inline-flex items-center justify-center gap-1 rounded-xl border border-brand-border bg-white px-3 text-xs font-semibold text-brand-secondary hover:bg-brand-cloud"
                     >
                       Registrations ({row.confirmed})
                     </Link>
                   ) : null}
                   <Link
                     href={`/admin/events/${row.id}/edit`}
-                    className="inline-flex items-center gap-1 rounded-xl border border-brand-border bg-white px-3 py-2 text-xs font-semibold text-brand-accent hover:bg-brand-cloud"
+                    className="h-9 min-h-9 inline-flex items-center justify-center gap-1 rounded-xl border border-brand-border bg-white px-3 text-xs font-semibold text-brand-accent hover:bg-brand-cloud"
                   >
                     Edit
                   </Link>
@@ -116,7 +116,7 @@ export default async function AdminEventsPage() {
                     <Link
                       href={`/events/${row.slug}`}
                       target="_blank"
-                      className="inline-flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs text-brand-muted hover:text-brand-ink hover:underline"
+                      className="h-9 min-h-9 inline-flex items-center justify-center gap-1 rounded-xl border border-brand-border bg-white px-2.5 text-xs text-brand-muted hover:text-brand-ink hover:underline"
                     >
                       Public <ExternalLink className="size-3" />
                     </Link>

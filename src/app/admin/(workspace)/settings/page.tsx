@@ -114,7 +114,20 @@ export default async function AdminSettingsPage() {
             roles that hold it can create, edit, publish, and unpublish those items, and publishing is what
             makes content appear on the public site.
           </p>
-          <div className="overflow-x-auto">
+          {/* Mobile card view */}
+          <div className="flex flex-col gap-2.5 md:hidden">
+            {workspaceAccess.map((row) => (
+              <div key={row.permission} className="flex flex-col gap-1.5 rounded-xl border border-brand-border bg-white p-3.5 text-xs shadow-2xs">
+                <span className="font-semibold text-brand-ink">{row.sections.join(", ")}</span>
+                <div className="flex items-center justify-between border-t border-brand-border/60 pt-1.5">
+                  <span className="font-mono text-[11px] text-brand-muted">{row.permission}</span>
+                  <span className="text-brand-secondary font-medium">{rolesWith(row.permission)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-brand-border text-left">
@@ -146,9 +159,9 @@ export default async function AdminSettingsPage() {
 
 function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex min-w-0 flex-col">
       <dt className="text-xs tracking-wide text-brand-muted uppercase">{label}</dt>
-      <dd className={mono ? "font-mono text-xs text-brand-ink" : "text-brand-ink"}>{value}</dd>
+      <dd className={`break-words ${mono ? "font-mono text-xs text-brand-ink" : "text-brand-ink"}`}>{value}</dd>
     </div>
   );
 }

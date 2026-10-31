@@ -124,9 +124,9 @@ function HistoryRow({ title, detail, date }: { title: string; detail: string; da
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex justify-between gap-4">
-      <dt className="text-brand-muted">{label}</dt>
-      <dd className={mono ? "font-mono text-xs text-brand-ink" : "text-brand-ink"}>{value}</dd>
+    <div className="flex items-center justify-between gap-4">
+      <dt className="shrink-0 text-brand-muted">{label}</dt>
+      <dd className={`min-w-0 break-all text-right ${mono ? "font-mono text-xs text-brand-ink" : "text-brand-ink"}`}>{value}</dd>
     </div>
   );
 }

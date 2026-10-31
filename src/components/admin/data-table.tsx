@@ -228,7 +228,98 @@ export function DataTable<T extends { id: string }>({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl bg-brand-white ring-1 ring-brand-border">
+      {/* Mobile Card View (< md screens) */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {pageRows.length === 0 ? (
+          <div className="rounded-2xl border border-brand-border bg-brand-white p-6 text-center text-sm text-brand-muted">
+            {emptyMessage}
+          </div>
+        ) : (
+          pageRows.map((row) => {
+            const href = rowHrefBase ? `${rowHrefBase}/${get(row, rowHrefKey)}` : undefined;
+            const primaryCol = columns[0];
+            const otherCols = columns.slice(1);
+            const statusCol = columns.find((c) => c.type?.startsWith("status") || c.key === "status");
+            const nonStatusCols = otherCols.filter((c) => c !== statusCol);
+
+            return (
+              <article
+                key={row.id}
+                className="flex min-w-0 flex-col gap-3 rounded-2xl border border-brand-border bg-white p-4 text-sm shadow-2xs"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    {href ? (
+                      <Link
+                        href={href}
+                        className="font-bold text-brand-ink hover:underline break-words"
+                      >
+                        {renderCell(get(row, primaryCol.key), primaryCol.type)}
+                      </Link>
+                    ) : (
+                      <span className="font-bold text-brand-ink break-words">
+                        {renderCell(get(row, primaryCol.key), primaryCol.type)}
+                      </span>
+                    )}
+                  </div>
+                  {statusCol ? (
+                    <div className="shrink-0">
+                      {renderCell(get(row, statusCol.key), statusCol.type)}
+                    </div>
+                  ) : null}
+                </div>
+
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-brand-border/60 pt-2.5 text-xs">
+                  {nonStatusCols.map((col) => {
+                    const val = get(row, col.key);
+                    if (val === null || val === undefined || val === "") return null;
+                    return (
+                      <div key={col.key} className="flex flex-col min-w-0">
+                        <dt className="text-[10px] font-semibold uppercase tracking-wider text-brand-muted">
+                          {col.header}
+                        </dt>
+                        <dd className="mt-0.5 break-words font-medium text-brand-ink">
+                          {renderCell(val, col.type)}
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+
+                {actions || href ? (
+                  <div className="flex flex-wrap items-center gap-2 border-t border-brand-border/60 pt-3">
+                    {href ? (
+                      <Link
+                        href={href}
+                        className="inline-flex h-9 items-center justify-center gap-1 rounded-xl bg-brand-ink px-3.5 text-xs font-semibold text-white shadow-2xs transition hover:bg-brand-ink/90"
+                      >
+                        Open <ArrowUpRight className="size-3.5" />
+                      </Link>
+                    ) : null}
+                    {actions
+                      ?.filter((a) => !a.visibleForStatuses || a.visibleForStatuses.includes(String(get(row, "status"))))
+                      .map((a) => (
+                        <ActionButton
+                          key={a.label}
+                          label={a.label}
+                          operation={a.operation ? { ...a.operation, target: row.id } : undefined}
+                          message={a.message}
+                          confirm={a.confirm}
+                          details={row as unknown as Record<string, unknown>}
+                          variant={a.variant}
+                          size="sm"
+                        />
+                      ))}
+                  </div>
+                ) : null}
+              </article>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table View (>= md screens) */}
+      <div className="hidden md:block overflow-x-auto rounded-2xl bg-brand-white ring-1 ring-brand-border">
         <table className="w-full min-w-[640px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-brand-border text-left">

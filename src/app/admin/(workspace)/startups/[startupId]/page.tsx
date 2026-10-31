@@ -134,9 +134,9 @@ export default async function AdminStartupDetail({
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex min-w-0 flex-col">
       <dt className="text-xs tracking-wide text-brand-muted uppercase">{label}</dt>
-      <dd className="text-sm text-brand-ink">{value}</dd>
+      <dd className="break-words text-sm text-brand-ink">{value}</dd>
     </div>
   );
 }
