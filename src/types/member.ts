@@ -98,6 +98,7 @@ export interface MembershipClaim {
   reference?: string;
   whatsapp: string;
   designation: MemberDesignation;
+  designationOther?: string;
   startupAffiliation?: string;
   declarationAccurate: boolean;
   submittedAt?: string;
@@ -126,6 +127,7 @@ export interface MemberProfile {
   email: string;
   whatsapp?: string;
   city?: string;
+  designationOther?: string;
   avatarUrl?: string;
   /** Private, server-validated 4:5 portrait used by the profile and eligible ID card. */
   portraitPath?: string;

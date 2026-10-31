@@ -794,6 +794,7 @@ export type Database = {
           applicant_type: string
           declaration_accurate: boolean
           designation: Database["public"]["Enums"]["member_designation"]
+          designation_other: string | null
           full_name: string
           id: string
           linked_account_email: string
@@ -808,6 +809,7 @@ export type Database = {
           applicant_type: string
           declaration_accurate?: boolean
           designation: Database["public"]["Enums"]["member_designation"]
+          designation_other?: string | null
           full_name: string
           id?: string
           linked_account_email: string
@@ -822,6 +824,7 @@ export type Database = {
           applicant_type?: string
           declaration_accurate?: boolean
           designation?: Database["public"]["Enums"]["member_designation"]
+          designation_other?: string | null
           full_name?: string
           id?: string
           linked_account_email?: string
@@ -1072,6 +1075,7 @@ export type Database = {
           consent: Json
           created_at: string
           designations: Database["public"]["Enums"]["member_designation"][]
+          designation_other: string | null
           display_name: string | null
           email: string | null
           full_name: string | null
@@ -1094,6 +1098,7 @@ export type Database = {
           consent?: Json
           created_at?: string
           designations?: Database["public"]["Enums"]["member_designation"][]
+          designation_other?: string | null
           display_name?: string | null
           email?: string | null
           full_name?: string | null
@@ -1116,6 +1121,7 @@ export type Database = {
           consent?: Json
           created_at?: string
           designations?: Database["public"]["Enums"]["member_designation"][]
+          designation_other?: string | null
           display_name?: string | null
           email?: string | null
           full_name?: string | null

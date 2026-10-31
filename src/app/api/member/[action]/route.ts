@@ -6,14 +6,24 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getMemberContext } from "@/lib/services/member/context";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
 import { rateLimit } from "@/lib/rate-limit";
-import { claimSchema, profileSchema, onboardingStep1Schema, onboardingStep2Schema, onboardingStep3Schema, onboardingStep4Schema, onboardingStep5Schema } from "@/lib/validations/member";
+import { claimSchema, profileSchema, onboardingStep1Schema, onboardingStep2FieldsSchema, onboardingStep3Schema, onboardingStep4Schema, onboardingStep5Schema } from "@/lib/validations/member";
 import { reviewSchema } from "@/lib/validations/forms";
 import type { Database } from "@/lib/supabase/database.types";
 import { memberStartupSchema } from "@/lib/validations/member-startup";
 import { isExactPendingStartupRevisionRetry } from "@/lib/member/startup-revision-retry";
 import { classifyStartupSaveError, startupSaveErrorResponse } from "@/lib/member/startup-save-errors";
 const consentSchema = onboardingStep5Schema;
-const onboardingSchema = onboardingStep1Schema.merge(onboardingStep2Schema).merge(onboardingStep3Schema).merge(onboardingStep4Schema).merge(onboardingStep5Schema).extend({ startupDescription: z.string().max(600).optional() });
+const onboardingSchema = onboardingStep1Schema
+  .merge(onboardingStep2FieldsSchema)
+  .merge(onboardingStep3Schema)
+  .merge(onboardingStep4Schema)
+  .merge(onboardingStep5Schema)
+  .extend({ startupDescription: z.string().max(600).optional() })
+  .superRefine((value, ctx) => {
+    if (value.designations.includes("other") && (value.designationOther?.trim().length ?? 0) < 2) {
+      ctx.addIssue({ code: "custom", path: ["designationOther"], message: "Describe your category in 2 to 30 characters." });
+    }
+  });
 export async function POST(request: Request, context: { params: Promise<{ action: string }> }) {
   try {
     const ctx = await getMemberContext();
@@ -28,7 +38,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = claimSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check all claim fields and your declaration." }, 422);
       const v = parsed.data;
-      const { data, error } = await sb.from("membership_claims").insert({ user_id: user.id, full_name: v.fullName, linked_account_email: user.email!, applicant_type: v.applicantType, reference: v.reference || null, whatsapp: v.whatsapp.replace(/[ -]/g, ""), designation: v.designation as Database["public"]["Enums"]["member_designation"], startup_affiliation: v.startupAffiliation || null, declaration_accurate: true }).select("id").single();
+      const { data, error } = await sb.from("membership_claims").insert({ user_id: user.id, full_name: v.fullName, linked_account_email: user.email!, applicant_type: v.applicantType, reference: v.reference || null, whatsapp: v.whatsapp.replace(/[ -]/g, ""), designation: v.designation as Database["public"]["Enums"]["member_designation"], designation_other: v.designation === "other" ? v.designationOther?.trim() || null : null, startup_affiliation: v.startupAffiliation || null, declaration_accurate: true }).select("id").single();
       if (!error) scheduleNotificationDelivery();
       return error ? authResponse({ error: "Claim was not saved. You may already have a pending claim." }, 409) : authResponse({ ok: true, id: data.id });
     }
@@ -209,7 +219,7 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = onboardingSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Complete all onboarding fields and required consent." }, 422);
       const v = parsed.data;
-      const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, designations: v.designations as Database["public"]["Enums"]["member_designation"][], goals: v.goals as Database["public"]["Enums"]["community_goal"][], startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription ?? v.description }, profile_completion: 100 }).eq("id", user.id).select("id").single();
+      const { data, error } = await sb.from("profiles").update({ full_name: v.fullName, display_name: v.displayName, whatsapp: v.whatsapp.replace(/[ -]/g, ""), city: v.city, designations: v.designations as Database["public"]["Enums"]["member_designation"][], designation_other: v.designations.includes("other") ? v.designationOther?.trim() || null : null, goals: v.goals as Database["public"]["Enums"]["community_goal"][], startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription ?? v.description }, profile_completion: 100 }).eq("id", user.id).select("id").single();
       const consentResult = !error ? await sb.rpc("update_member_profile_preferences", { p_consent: v }) : { error };
       if (!error && consentResult.error) return authResponse({ error: "Profile saved, but privacy preferences were not saved. Review Settings and try again." }, 409);
       if (!error) revalidateTag("directory", { expire: 0 });

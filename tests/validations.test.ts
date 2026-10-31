@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { rsvpSchema, reviewSchema } from "@/lib/validations/forms";
-import { claimSchema } from "@/lib/validations/member";
+import { claimSchema, onboardingStep2Schema } from "@/lib/validations/member";
 import { memberStartupSchema } from "@/lib/validations/member-startup";
 import { eventEditorSchema } from "@/lib/validations/admin";
 import { communityUpdateSaveSchema } from "@/lib/validations/cms";
@@ -47,6 +47,19 @@ describe("claim schema", () => {
   });
   it("requires the accuracy declaration", () => {
     expect(claimSchema.safeParse({ ...valid, declarationAccurate: false }).success).toBe(false);
+  });
+  it("requires a short custom category when Other is selected", () => {
+    expect(claimSchema.safeParse({ ...valid, designation: "other", designationOther: "" }).success).toBe(false);
+    expect(claimSchema.safeParse({ ...valid, designation: "other", designationOther: "Community Builder" }).success).toBe(true);
+    expect(claimSchema.safeParse({ ...valid, designation: "other", designationOther: "x".repeat(31) }).success).toBe(false);
+  });
+});
+
+describe("member designation onboarding", () => {
+  it("requires a 2-30 character label only when Other is selected", () => {
+    expect(onboardingStep2Schema.safeParse({ designations: ["other"], designationOther: "" }).success).toBe(false);
+    expect(onboardingStep2Schema.safeParse({ designations: ["other"], designationOther: "Community Builder" }).success).toBe(true);
+    expect(onboardingStep2Schema.safeParse({ designations: ["mentor"] }).success).toBe(true);
   });
 });
 

@@ -6,6 +6,7 @@
 
 import { z } from "zod";
 const designationSchema = z.enum(["startup_founder", "co_founder", "team_member", "developer", "student_entrepreneur", "designer", "marketing", "investor", "mentor", "aspiring_entrepreneur", "other"]);
+const designationOtherSchema = z.string().trim().max(30, "Use 30 characters or fewer.").optional();
 const goalSchema = z.enum(["networking", "technical_collaboration", "finding_co_founder", "mentorship", "product_development", "marketing", "funding_connections", "hiring", "startup_learning", "community_participation"]);
 
 const whatsappRegex = /^[+]?[\d][\d\s-]{7,16}$/;
@@ -28,10 +29,21 @@ export const onboardingStep1Schema = z.object({
   city: z.string().trim().min(2, "Enter your city.").max(60),
 });
 
-export const onboardingStep2Schema = z.object({
+export const onboardingStep2FieldsSchema = z.object({
   designations: z
     .array(designationSchema)
     .min(1, "Select at least one that describes you."),
+  designationOther: designationOtherSchema,
+});
+
+export const onboardingStep2Schema = onboardingStep2FieldsSchema.superRefine((value, ctx) => {
+  if (value.designations.includes("other") && (value.designationOther?.trim().length ?? 0) < 2) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["designationOther"],
+      message: "Describe your category in 2 to 30 characters.",
+    });
+  }
 });
 
 export const onboardingStep3Schema = z.object({
@@ -84,10 +96,19 @@ export const claimSchema = z.object({
   reference: z.string().trim().max(80).optional(),
   whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
   designation: designationSchema,
+  designationOther: designationOtherSchema,
   startupAffiliation: z.string().trim().max(120).optional(),
   declarationAccurate: z.literal(true, {
     message: "Please confirm the information is accurate.",
   }),
+}).superRefine((value, ctx) => {
+  if (value.designation === "other" && (value.designationOther?.trim().length ?? 0) < 2) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["designationOther"],
+      message: "Describe your category in 2 to 30 characters.",
+    });
+  }
 });
 
 export type ClaimFormValues = z.infer<typeof claimSchema>;
