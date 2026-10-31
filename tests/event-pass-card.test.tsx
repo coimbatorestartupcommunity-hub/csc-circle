@@ -31,8 +31,7 @@ describe("EventPassCard", () => {
     expect(screen.getByText(/TICEL Bio Park, 12th Floor, Coimbatore/)).toBeInTheDocument();
     expect(screen.getByText("Email")).toBeInTheDocument();
     expect(screen.getByText("asha@example.test")).toBeInTheDocument();
-    expect(screen.getByText("Phone")).toBeInTheDocument();
-    expect(screen.getByText("+91 98765 43210")).toBeInTheDocument();
+    expect(screen.queryByText("Phone")).not.toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Attendee profile picture" }).querySelector("img")).toHaveAttribute("src", "/api/member/portrait");
     expect(container.querySelector(".font-mono")?.className).toContain("whitespace-nowrap");
     expect(container.querySelector("svg.text-brand-accent")?.getAttribute("class")).toContain("size-7");

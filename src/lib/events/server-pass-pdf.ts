@@ -4,12 +4,12 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 export interface ServerPassPdfOptions {
   eventTitle: string;
   name: string;
-  phone: string;
   email: string;
   uid: string;
   dateRange: string;
   location: string;
   qrBuffer: Buffer;
+  phone?: string;
 }
 
 /**
@@ -171,43 +171,23 @@ export async function generateServerEventPassPdf(
     borderWidth: 1,
   });
 
-  // Row 1 inside box: Name (Left side) & Phone (Right side)
-  const padInner = 14;
+  // Row 1 inside box: Name (Centered)
   const row1Y = detailsBoxY + detailsBoxHeight - 20;
-
-  // Name (Left)
-  page.drawText("NAME", {
-    x: detailsBoxX + padInner,
+  const nameLabel = "NAME";
+  const nameLabelWidth = fontBold.widthOfTextAtSize(nameLabel, 7.5);
+  page.drawText(nameLabel, {
+    x: detailsBoxX + (detailsBoxWidth - nameLabelWidth) / 2,
     y: row1Y,
     size: 7.5,
     font: fontBold,
     color: cMuted,
   });
   const nameValue = (options.name || "Attendee").toUpperCase();
-  page.drawText(nameValue.slice(0, 24), {
-    x: detailsBoxX + padInner,
+  const nameValueWidth = fontBold.widthOfTextAtSize(nameValue, 11);
+  page.drawText(nameValue, {
+    x: Math.max(detailsBoxX + 10, detailsBoxX + (detailsBoxWidth - nameValueWidth) / 2),
     y: row1Y - 14,
     size: 11,
-    font: fontBold,
-    color: cInk,
-  });
-
-  // Phone (Right-hand corner)
-  const phoneLabel = "PHONE";
-  const phoneLabelWidth = fontBold.widthOfTextAtSize(phoneLabel, 7.5);
-  const phoneValue = options.phone || "—";
-  const phoneValueWidth = fontBold.widthOfTextAtSize(phoneValue, 10);
-  page.drawText(phoneLabel, {
-    x: detailsBoxX + detailsBoxWidth - padInner - phoneLabelWidth,
-    y: row1Y,
-    size: 7.5,
-    font: fontBold,
-    color: cMuted,
-  });
-  page.drawText(phoneValue, {
-    x: detailsBoxX + detailsBoxWidth - padInner - phoneValueWidth,
-    y: row1Y - 14,
-    size: 10,
     font: fontBold,
     color: cInk,
   });
