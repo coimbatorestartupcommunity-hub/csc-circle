@@ -59,7 +59,7 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
   const rows = res?.ok ? res.data : [];
 
   return (
-    <>
+    <div className="w-full min-w-0 max-w-full">
       <AdminPageHeader
         title="Notifications"
         description={canDeliveryMonitor ? "Delivery status for email and in-app notifications. In-app availability is separate from a member's unread state; SMTP acceptance does not prove inbox delivery." : "Promote published events with independently scheduled CSC notices."}
@@ -75,6 +75,6 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
         searchKeys={["type", "recipient"]}
         emptyMessage={res?.ok ? "No notifications queued." : res && !res.ok ? res.error.message : "Notification delivery monitor is unavailable."}
       /> : null}
-    </>
+    </div>
   );
 }

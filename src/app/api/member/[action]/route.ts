@@ -75,12 +75,31 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const parsed = profileSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check your profile details." }, 422);
       const v = parsed.data;
+
+      const [{ data: currentProfile }, { count: startupCount }] = await Promise.all([
+        sb.from("profiles").select("portrait_path, designations").eq("id", user.id).maybeSingle(),
+        sb.from("directory_startups").select("id", { count: "exact", head: true }).eq("user_id", user.id).neq("status", "archived"),
+      ]);
+
+      const hasStartup = Boolean(v.startupName?.trim() || (startupCount ?? 0) > 0);
+      const completionItems = [
+        Boolean(v.fullName?.trim()),
+        Boolean(v.displayName?.trim()),
+        Boolean(v.whatsapp?.trim()),
+        Boolean(v.city?.trim()),
+        Boolean(currentProfile?.portrait_path),
+        Boolean((currentProfile?.designations as string[])?.length),
+        hasStartup,
+      ];
+      const completionPercent = Math.min(100, Math.round((completionItems.filter(Boolean).length / 7) * 100));
+
       const profileUpdate: Database["public"]["Tables"]["profiles"]["Update"] = {
         full_name: v.fullName,
         display_name: v.displayName,
         whatsapp: v.whatsapp.replace(/[ -]/g, ""),
         city: v.city,
         startup: { name: v.startupName, website: v.startupWebsite, description: v.startupDescription },
+        profile_completion: completionPercent,
       };
       if (v.aboutMe !== undefined) profileUpdate.about_me = v.aboutMe;
       if (v.skills !== undefined) profileUpdate.skills = v.skills.split(",").map(x => x.trim()).filter(Boolean);

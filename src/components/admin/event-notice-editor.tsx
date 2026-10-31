@@ -165,25 +165,42 @@ export function EventNoticeEditor({ isDemo, canPublish, canEditEvents, initialEv
           <h2 id="event-notice-heading" className="text-lg font-semibold text-brand-ink">Publish an event notice</h2>
           <p className="mt-1 text-sm leading-6 text-brand-muted">Promote an existing event in Featured Event Notices on Events &amp; Booking. The notice schedule never changes the event, registration or tickets.</p>
         </div>
-        <Button type="button" variant="outline" disabled={loading || !canPublish} onClick={startNew}><Plus className="size-4" />Create Event Notice</Button>
+        <Button type="button" variant="outline" disabled={loading || !canPublish} onClick={startNew} className="w-full sm:w-auto"><Plus className="size-4" />Create Event Notice</Button>
       </div>
 
-      {data.notices.length > 0 ? <div className="mb-6 flex flex-wrap gap-2" aria-label="Existing event notices">
-        {data.notices.map((notice) => <button type="button" key={notice.id} onClick={() => chooseNotice(notice.id)} aria-pressed={selectedId === notice.id} className={`rounded-xl border px-3 py-2 text-left text-sm ${selectedId === notice.id ? "border-brand-ink bg-brand-cloud text-brand-ink" : "border-brand-border bg-white text-brand-secondary"}`}>
-          <span className="block max-w-64 truncate font-semibold">{notice.title}</span><span className="block text-xs text-brand-muted">{notice.eventTitle} · {notice.completedAt ? "Completed" : `notice ${notice.status}`} · event {notice.eventStatus}</span>
-        </button>)}
-      </div> : null}
+      {data.notices.length > 0 ? (
+        <div className="mb-6 flex flex-wrap gap-2" aria-label="Existing event notices">
+          {data.notices.map((notice) => (
+            <button
+              type="button"
+              key={notice.id}
+              onClick={() => chooseNotice(notice.id)}
+              aria-pressed={selectedId === notice.id}
+              className={`w-full max-w-full rounded-xl border p-3 text-left text-sm sm:w-auto sm:max-w-md ${
+                selectedId === notice.id
+                  ? "border-brand-ink bg-brand-cloud text-brand-ink"
+                  : "border-brand-border bg-white text-brand-secondary"
+              }`}
+            >
+              <span className="block max-w-full truncate font-semibold">{notice.title}</span>
+              <span className="mt-0.5 block max-w-full truncate text-xs text-brand-muted">
+                {notice.eventTitle} · {notice.completedAt ? "Completed" : `notice ${notice.status}`} · event {notice.eventStatus}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
         <div className="grid min-w-0 content-start gap-4 sm:grid-cols-2">
           <label className="grid min-w-0 gap-1.5 text-sm font-medium text-brand-ink sm:col-span-2">Select existing event
-            <select className="min-h-11 w-full rounded-xl border border-brand-border bg-white px-3 text-sm" value={draft.eventId} disabled={loading || saving || !canPublish} onChange={(event) => { const selected = data.events.find((item) => item.id === event.target.value); update("eventId", event.target.value); if (selected && !selectedId) update("title", selected.title); }}>
+            <select className="min-h-11 w-full max-w-full rounded-xl border border-brand-border bg-white px-3 text-sm truncate" value={draft.eventId} disabled={loading || saving || !canPublish} onChange={(event) => { const selected = data.events.find((item) => item.id === event.target.value); update("eventId", event.target.value); if (selected && !selectedId) update("title", selected.title); }}>
               <option value="">Choose an event</option>{data.events.filter((event) => !["cancelled", "archived"].includes(event.status)).map((event) => <option key={event.id} value={event.id}>{event.title} — {eventTime(event.startsAt)} — {event.status}</option>)}
             </select><span className="text-xs font-normal text-brand-muted">Publishing requires the linked event to be published. A notice never creates an event.</span>
             {selectedEvent ? <span className="flex flex-wrap gap-3 text-xs font-semibold"><Link className="text-brand-accent underline underline-offset-2" href={selectedEvent.status === "published" ? `/events/${selectedEvent.slug}` : `/admin/events/${selectedEvent.id}`}>{selectedEvent.status === "published" ? "View Event" : "View Event in Admin"}</Link>{canEditEvents ? <Link className="text-brand-accent underline underline-offset-2" href={`/admin/events/${selectedEvent.id}/edit`}>Edit Event</Link> : null}</span> : null}
           </label>
-          <div className="grid gap-1.5 text-sm font-medium text-brand-ink sm:col-span-2">Event page path
-            <div className="flex min-h-11 items-center rounded-xl border border-brand-border bg-brand-cloud px-3 text-sm text-brand-secondary">{selectedEvent ? `/events/${selectedEvent.slug}` : "Select an event to generate its link"}</div>
+          <div className="grid min-w-0 gap-1.5 text-sm font-medium text-brand-ink sm:col-span-2">Event page path
+            <div className="flex min-h-11 items-center rounded-xl border border-brand-border bg-brand-cloud px-3 text-xs sm:text-sm text-brand-secondary break-all">{selectedEvent ? `/events/${selectedEvent.slug}` : "Select an event to generate its link"}</div>
           </div>
           <label className="grid min-w-0 gap-1.5 text-sm font-medium text-brand-ink sm:col-span-2">Notice title<Input value={draft.title} maxLength={100} placeholder="e.g., Registration now open — Founder Meetup" disabled={saving || !canPublish} onChange={(event) => update("title", event.target.value)} /></label>
           <label className="grid min-w-0 gap-1.5 text-sm font-medium text-brand-ink sm:col-span-2">Notice message<Textarea rows={4} maxLength={500} value={draft.message} placeholder="Write a short announcement explaining why CSC members should attend." disabled={saving || !canPublish} onChange={(event) => update("message", event.target.value)} /></label>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, LockKeyhole, Rocket, ShieldCheck, UserCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, LockKeyhole, Rocket, ShieldCheck, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MemberProfileForm } from "@/components/member/member-profile-form";
 import { MemberPortraitUpload } from "@/components/member/member-portrait-upload";
@@ -36,11 +36,17 @@ export default async function MemberProfilePage() {
   const roles = (memberRolesRes.data ?? []).map((entry) => entry.role as AdminRole).filter((role) => role in roleLabels);
   const status = membershipStatusMeta[profile.membership.status];
   const directoryReady = !!profile.portraitPath && !!profile.directoryPhotoPath && profile.consent.directoryParticipation && profile.consent.displayNamePublicly && profile.consent.displayPhotoPublicly;
-  const completion = [
-    Boolean(profile.fullName.trim()), Boolean(profile.displayName.trim()), Boolean(profile.city),
-    Boolean(profile.portraitPath), Boolean(profile.aboutMe?.trim()), Boolean(profile.skills?.length), Boolean(profile.designations.length),
-  ].filter(Boolean).length;
-  const completionPercent = Math.round(completion / 7 * 100);
+  const completionCriteria = [
+    Boolean(profile.fullName?.trim()),
+    Boolean(profile.displayName?.trim()),
+    Boolean(profile.whatsapp?.trim()),
+    Boolean(profile.city?.trim()),
+    Boolean(profile.portraitPath),
+    Boolean(profile.designations?.length),
+    Boolean(profile.startup?.name?.trim() || startupCount > 0),
+  ];
+  const completion = completionCriteria.filter(Boolean).length;
+  const completionPercent = Math.min(100, Math.round((completion / 7) * 100));
   const identityEmail = ctx.user?.email || profile.email;
   const emailVerified = Boolean(ctx.user?.emailVerified);
   const reviews = reviewsRes.ok ? reviewsRes.data : [];
@@ -74,8 +80,45 @@ export default async function MemberProfilePage() {
       <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-6">
         <h2 className="text-lg font-semibold text-brand-ink">Welcome to Your CSC Circle Member Profile</h2>
         <p className="mt-2 text-sm leading-6 text-brand-secondary">Your CSC member profile keeps your personal and professional information organized in one secure location. Your official CSC member ID, verified account identity, membership approval status and site permissions are controlled by CSC Circle.</p>
-        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="text-sm font-semibold text-brand-ink">Profile completion</h3><p className="mt-1 text-xs text-brand-muted">Based on information you have saved. Private contact details do not increase this score.</p></div><span className="text-lg font-bold tabular-nums text-brand-ink">{completionPercent}%</span></div>
-        <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-brand-cloud" role="progressbar" aria-label="Profile completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completionPercent}><div className="h-full rounded-full bg-brand-accent transition-[width]" style={{ width: `${completionPercent}%` }} /></div>
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold text-brand-ink">Profile completion</h3>
+              {completionPercent >= 100 ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                  <CheckCircle2 className="size-3.5 text-emerald-600" aria-hidden="true" />
+                  Completed
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-1 text-xs text-brand-muted">
+              {completionPercent >= 100
+                ? "All required personal details, portrait photo, membership category and startup details are completed."
+                : "Based on personal details, portrait photo, membership category and startup information."}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {completionPercent >= 100 ? (
+              <CheckCircle2 className="size-5 text-emerald-600" aria-hidden="true" />
+            ) : null}
+            <span className={`text-lg font-bold tabular-nums ${completionPercent >= 100 ? "text-emerald-700" : "text-brand-ink"}`}>
+              {completionPercent}%
+            </span>
+          </div>
+        </div>
+        <div
+          className="mt-2 h-2.5 overflow-hidden rounded-full bg-brand-cloud"
+          role="progressbar"
+          aria-label="Profile completion"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={completionPercent}
+        >
+          <div
+            className={`h-full rounded-full transition-[width] ${completionPercent >= 100 ? "bg-emerald-600" : "bg-brand-accent"}`}
+            style={{ width: `${completionPercent}%` }}
+          />
+        </div>
       </section>
 
       <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-6">

@@ -91,7 +91,23 @@ function mapProfile(p: Row, m: Row | null): MemberProfile {
       issuedAt: (m?.issued_at as string) ?? undefined,
       expiresAt: (m?.expires_at as string) ?? undefined,
     },
-    profileCompletion: (p.profile_completion as number) ?? 0,
+    profileCompletion: Math.max(
+      (p.profile_completion as number) ?? 0,
+      Math.min(
+        100,
+        Math.round(
+          ([
+            Boolean((p.full_name as string)?.trim()),
+            Boolean((p.display_name as string)?.trim()),
+            Boolean((p.whatsapp as string)?.trim()),
+            Boolean((p.city as string)?.trim()),
+            Boolean(p.portrait_path),
+            Boolean((p.designations as string[])?.length),
+            Boolean((p.startup as { name?: string } | null | undefined)?.name?.trim()),
+          ].filter(Boolean).length / 7) * 100
+        )
+      )
+    ),
   };
 }
 

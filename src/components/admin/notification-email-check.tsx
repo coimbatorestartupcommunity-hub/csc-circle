@@ -34,7 +34,7 @@ export function NotificationEmailCheck() {
   }
 
   return (
-    <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-border bg-white p-5">
+    <section className="mb-6 flex min-w-0 flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-brand-border bg-white p-5">
       <div className="min-w-0">
         <h2 className="font-semibold text-brand-ink">Email delivery health</h2>
         <p className="mt-1 text-sm text-brand-muted">Verify the production SMTP connection and start processing queued emails.</p>
@@ -44,7 +44,7 @@ export function NotificationEmailCheck() {
         type="button"
         disabled={busy}
         onClick={verify}
-        className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-ink px-4 py-2 font-semibold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple disabled:cursor-wait disabled:opacity-60"
+        className="inline-flex min-h-11 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-ink px-4 py-2 font-semibold text-white transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple disabled:cursor-wait disabled:opacity-60"
       >
         <MailCheck aria-hidden="true" className="size-4" />
         {busy ? "Checking email…" : "Verify & process queue"}
