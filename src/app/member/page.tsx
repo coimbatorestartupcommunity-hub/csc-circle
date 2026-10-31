@@ -24,8 +24,8 @@ import { isPassEligible } from "@/types/member";
 import { formatEventDate } from "@/lib/format";
 
 const quickActions = [
-  { href: "/member/id-card", label: "View Digital ID", icon: IdCard },
-  { href: "/member/events", label: "Browse Events", icon: CalendarDays },
+  { href: "/member/id-card", label: "Member ID", icon: IdCard },
+  { href: "/member/events", label: "Events Pass", icon: Ticket },
   { href: "/member/profile", label: "Complete Profile", icon: UserCircle },
   { href: "/member/startups", label: "My Startups", icon: Rocket },
   { href: "/directory", label: "Founder Directory", icon: Compass },
@@ -54,9 +54,9 @@ export default async function MemberDashboard() {
   const passes = regs.filter((r) => isPassEligible(r.status));
 
   const summary = [
-    { label: "Membership", value: statusMeta.label, icon: IdCard },
+    { label: "Member ID", value: statusMeta.label, icon: IdCard },
+    { label: "Events Pass", value: String(passes.length), icon: Ticket },
     { label: "Upcoming events", value: String(upcoming.length), icon: CalendarDays },
-    { label: "Event passes", value: String(passes.length), icon: Ticket },
     { label: "Consultations", value: String(consults.length), icon: MessagesSquare },
     { label: "Reviews", value: String(reviews.length), icon: Star },
   ];

@@ -4,12 +4,11 @@ import * as React from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
 import { toBlob } from "html-to-image";
-import { Check, Copy, Download, ExternalLink, Loader2, MapPin, CalendarDays, Share2 } from "lucide-react";
+import { Check, Copy, Download, Loader2, MapPin, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/member/status-badge";
 import { AccountAvatar } from "@/components/layout/account-avatar";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { brandAssets, siteConfig } from "@/lib/content/site";
 import { registrationStatusMeta } from "@/lib/content/member-taxonomy";
 import { buildEventPassQrPayload } from "@/lib/member/qr";
@@ -17,8 +16,6 @@ import { eventPassViewModel } from "@/lib/member/event-pass-view-model";
 import { createEventPassPdf, createEventPassExportNode, eventPassCaptureOptions, waitForEventPassAssets } from "@/lib/member/card-export";
 import { formatEventRange } from "@/lib/format";
 import type { EventPass } from "@/types/member";
-
-type PendingMobileExport = { file: File; objectUrl: string; filename: string; format: "png" | "pdf" };
 
 function isMobileBrowser() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
@@ -29,7 +26,6 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
   const ref = React.useRef<HTMLDivElement>(null);
   const [qr, setQr] = React.useState<string | null>(null);
   const [downloading, setDownloading] = React.useState<"png" | "pdf" | null>(null);
-  const [pendingMobileExport, setPendingMobileExport] = React.useState<PendingMobileExport | null>(null);
   const [copied, setCopied] = React.useState(false);
   const meta = registrationStatusMeta[pass.status];
   const fields = eventPassViewModel(pass);
@@ -45,10 +41,6 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
       .catch(() => setQr(null));
     return () => { active = false; };
   }, [pass.verificationToken]);
-
-  React.useEffect(() => () => {
-    if (pendingMobileExport) URL.revokeObjectURL(pendingMobileExport.objectUrl);
-  }, [pendingMobileExport]);
 
   async function download(format: "png" | "pdf") {
     if (!ref.current) return;
@@ -75,13 +67,27 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
       const uidFilename = fields.uid.replace(/[^A-Za-z0-9_-]/g, "-");
       const filename = `CSC-EventPass-${uidFilename}${isDemo ? "-DEMO" : ""}.${format}`;
 
-      if (isMobileBrowser()) {
-        const pendingFile = new File([file], filename, { type: file.type });
-        setPendingMobileExport({ file: pendingFile, objectUrl: URL.createObjectURL(file), filename, format });
-        toast.success(`Your high-resolution ${format.toUpperCase()} pass is ready to save.`);
-        return;
+      // On iOS devices, Web Share API allows saving PNG directly to Photos or PDF to Files
+      const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (isApple && typeof navigator !== "undefined" && "canShare" in navigator && typeof navigator.share === "function") {
+        try {
+          const passFile = new File([file], filename, { type: file.type });
+          if (navigator.canShare({ files: [passFile] })) {
+            await navigator.share({
+              files: [passFile],
+              title: filename,
+            });
+            toast.success(`Saved ${filename}`);
+            return;
+          }
+        } catch (shareErr) {
+          if (shareErr instanceof DOMException && shareErr.name === "AbortError") {
+            return;
+          }
+        }
       }
 
+      // Direct download: Triggers native file download to Downloads folder across Android, Laptops, Desktops and fallback
       const objectUrl = URL.createObjectURL(file);
       const link = document.createElement("a");
       link.href = objectUrl;
@@ -91,39 +97,12 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      toast.success(`Downloaded ${filename}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : `Could not prepare the event pass as ${format.toUpperCase()}.`);
     } finally {
       setDownloading(null);
     }
-  }
-
-  function shareOrSaveMobileExport() {
-    if (!pendingMobileExport) return;
-    const { file, format } = pendingMobileExport;
-    const shareApi = Reflect.get(navigator, "share") as Navigator["share"] | undefined;
-    const canShareApi = Reflect.get(navigator, "canShare") as Navigator["canShare"] | undefined;
-    if (!shareApi || (canShareApi && !canShareApi.call(navigator, { files: [file] }))) {
-      openMobileExportInSameTab();
-      return;
-    }
-    try {
-      void Promise.resolve(shareApi.call(navigator, { files: [file], title: "CSC Circle event pass" }))
-        .then(() => setPendingMobileExport(null))
-        .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          toast.info("Sharing cancelled. Your pass is still ready here.");
-          return;
-        }
-        toast.error(`Could not open the Share sheet for your ${format.toUpperCase()} pass. Use Open file in this tab to save it.`);
-        });
-    } catch {
-      toast.error(`Could not open the Share sheet for your ${format.toUpperCase()} pass. Use Open file in this tab to save it.`);
-    }
-  }
-
-  function openMobileExportInSameTab() {
-    if (pendingMobileExport) window.location.assign(pendingMobileExport.objectUrl);
   }
 
   async function copyUid() {
@@ -189,17 +168,6 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
         <Button onClick={() => void download("png")} disabled={downloading !== null} className="h-11 min-w-0 flex-1 gap-2"><span className="shrink-0">{downloading === "png" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}</span>Download pass as PNG</Button>
         <Button onClick={() => void download("pdf")} disabled={downloading !== null} variant="outline" className="h-11 min-w-0 flex-1 gap-2"><span className="shrink-0">{downloading === "pdf" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}</span>Download pass as PDF</Button>
       </div>
-
-      <Dialog open={pendingMobileExport !== null} onOpenChange={(open) => { if (!open) setPendingMobileExport(null); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Your event pass is ready</DialogTitle><DialogDescription>Tap Share, then choose Save to Files (or another destination). This preserves the full-resolution {pendingMobileExport?.format.toUpperCase()} file.</DialogDescription></DialogHeader>
-          <p className="break-all rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">{pendingMobileExport?.filename}</p>
-          <DialogFooter className="sm:flex-col">
-            <Button onClick={shareOrSaveMobileExport} className="w-full gap-2"><Share2 className="size-4" />Share or Save to Files</Button>
-            <Button variant="outline" onClick={openMobileExportInSameTab} className="w-full gap-2"><ExternalLink className="size-4" />Open file in this tab</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

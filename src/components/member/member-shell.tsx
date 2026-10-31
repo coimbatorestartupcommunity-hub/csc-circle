@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   IdCard,
+  Ticket,
   CalendarDays,
   UserCircle,
   MessagesSquare,
@@ -29,8 +30,8 @@ import { MemberNotificationMenu } from "@/components/member/member-notification-
 
 const nav = [
   { href: "/member", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/member/id-card", label: "Digital ID", icon: IdCard },
-  { href: "/member/events", label: "My Events", icon: CalendarDays },
+  { href: "/member/id-card", label: "Member ID", icon: IdCard },
+  { href: "/member/events", label: "Events Pass", icon: Ticket },
   { href: "/member/profile", label: "Profile", icon: UserCircle },
   { href: "/member/resume", label: "Resume Creation", icon: FileText },
   { href: "/member/startups", label: "My Startups", icon: Rocket },

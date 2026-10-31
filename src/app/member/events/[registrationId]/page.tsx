@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 
-export const metadata = { title: "Event pass" };
+export const metadata = { title: "Events Pass" };
 
 export default async function EventPassPage({
   params,
@@ -20,7 +20,7 @@ export default async function EventPassPage({
     memberServices.getPass(registrationId),
   ]);
 
-  const title = regRes.ok ? regRes.data.eventTitle : "Event pass";
+  const title = regRes.ok ? regRes.data.eventTitle : "Events Pass";
 
   return (
     <>
@@ -28,9 +28,9 @@ export default async function EventPassPage({
         href="/member/events"
         className="mb-3 inline-flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-ink"
       >
-        <ArrowLeft className="size-4" /> Back to my events
+        <ArrowLeft className="size-4" /> Back to Events Pass
       </Link>
-      <MemberPageHeader title={title} />
+      <MemberPageHeader title={title} description="Your verified admission ticket and entrance QR." />
       {passRes.ok ? (
         <EventPassCard pass={passRes.data} isDemo={ctx.mode === "preview"} />
       ) : (

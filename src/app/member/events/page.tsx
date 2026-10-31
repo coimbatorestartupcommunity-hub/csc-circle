@@ -5,7 +5,7 @@ import { CalendarX } from "lucide-react";
 import Link from "next/link";
 import { memberServices } from "@/lib/services/member/services";
 
-export const metadata = { title: "My Events" };
+export const metadata = { title: "Events Pass" };
 
 export default async function MemberEventsPage() {
   const res = await memberServices.listRegistrations();
@@ -14,8 +14,8 @@ export default async function MemberEventsPage() {
   return (
     <>
       <MemberPageHeader
-        title="My events"
-        description="Your CSC event registrations, grouped by status."
+        title="Events Pass"
+        description="Your confirmed event passes and registrations. View and download your passes."
       />
       {registrations.length > 0 ? (
         <RegistrationsClient registrations={registrations} />
