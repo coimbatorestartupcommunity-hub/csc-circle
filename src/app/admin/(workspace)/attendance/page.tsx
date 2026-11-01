@@ -10,6 +10,7 @@ import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 export const metadata = { title: "Attendance" };
 
 const columns: Column[] = [
+  { key: "eventTitle", header: "Event" },
   { key: "reference", header: "Reference", type: "mono" },
   { key: "memberName", header: "Attendee" },
   { key: "status", header: "Registration", type: "statusRegistration" },
@@ -24,12 +25,13 @@ export default async function AttendancePage() {
   const checkedIn = regs.filter((r) => r.attendance === "checked_in").length;
   const confirmed = regs.filter((r) => r.status === "confirmed" || r.status === "checked_in").length;
   const rate = confirmed ? Math.round((checkedIn / confirmed) * 100) : 0;
+  const canManualCheckIn = ctx.mode === "live" && can(ctx, "attendance.scan");
 
   return (
     <>
       <AdminPageHeader
         title="Attendance reports"
-        description="Check-in totals per event and an access-controlled attendance export."
+        description="Review attendance, manually check in confirmed attendees when scanning is unavailable, and export the access-controlled report."
         isDemo={ctx.mode === "preview"}
         action={ctx.mode === "live" ? <Link href="/api/admin/attendance/export" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"><Download className="size-4" aria-hidden />Download CSV</Link> : null}
       />
@@ -44,7 +46,14 @@ export default async function AttendancePage() {
       <DataTable
         rows={regs}
         columns={columns}
-        searchKeys={["reference", "memberName"]}
+        searchKeys={["eventTitle", "reference", "memberName"]}
+        actions={canManualCheckIn ? [{
+          label: "Check In",
+          operation: { kind: "manual_check_in", decision: "checked_in" },
+          confirm: "Confirm that this attendee has arrived. This records an audited manual check-in and cannot be used for an unconfirmed or unpaid registration.",
+          variant: "default",
+          visibleForStatuses: ["confirmed"],
+        }] : undefined}
         emptyMessage={res.ok ? "No attendance records." : res.error.message}
       />
     </>

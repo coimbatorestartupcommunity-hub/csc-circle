@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CommunityProfileSharing } from "@/components/member/community-profile-sharing";
 import { MemberProfileReviewsSection } from "@/components/member/member-profile-reviews";
 import { roleLabels, type AdminRole } from "@/lib/admin/permissions";
+import { eventHasConcluded } from "@/lib/events/completion";
 
 export const metadata = { title: "Profile" };
 
@@ -53,7 +54,7 @@ export default async function MemberProfilePage() {
   const eligibleEvents = (attendanceRes.data ?? []).flatMap((row) => {
     const ev = row.events as { id: string; title: string; ends_at: string; registration_state: string } | null;
     if (!ev) return [];
-    const hasConcluded = ev.registration_state === "completed" || Date.parse(ev.ends_at) <= Date.now();
+    const hasConcluded = eventHasConcluded(ev);
     const alreadyReviewed = reviews.some((r) => r.eventId === ev.id);
     return hasConcluded && !alreadyReviewed ? [{ id: ev.id, title: ev.title }] : [];
   });

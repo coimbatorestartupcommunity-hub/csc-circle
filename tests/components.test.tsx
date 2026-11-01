@@ -92,4 +92,26 @@ describe("admin review table actions", () => {
     expect(screen.getAllByRole("button", { name: "Cancel submission" }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByRole("button", { name: "Unpublish" }).length).toBeGreaterThanOrEqual(1);
   });
+
+  it("shows manual check-in only for confirmed attendees", () => {
+    render(<DataTable
+      rows={[
+        { id: "confirmed-registration", memberName: "Ready Attendee", status: "confirmed", attendance: "not_attended" },
+        { id: "checked-registration", memberName: "Arrived Attendee", status: "checked_in", attendance: "checked_in" },
+      ]}
+      columns={[
+        { key: "memberName", header: "Attendee" },
+        { key: "status", header: "Registration", type: "statusRegistration" },
+        { key: "attendance", header: "Attendance", type: "badge" },
+      ]}
+      actions={[{
+        label: "Check In",
+        operation: { kind: "manual_check_in", decision: "checked_in" },
+        visibleForStatuses: ["confirmed"],
+      }]}
+    />);
+
+    // The eligible row is rendered once in the mobile card and once in the desktop table.
+    expect(screen.getAllByRole("button", { name: "Check In" })).toHaveLength(2);
+  });
 });

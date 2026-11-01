@@ -524,6 +524,25 @@ describe("trusted operations and replay protection", () => {
     expect((second[0].rows[0] as { result: { status: string } }).result.status).toBe("already");
     expect((await db.query("select count(*)::int as n from attendance_checkins")).rows).toEqual([{ n: 1 }]);
   });
+  it("allows authorised staff to manually check in a confirmed attendee after an event", async () => {
+    const completedEvent = "e1000000-0000-4000-8000-000000000001";
+    const registration = "e1000000-0000-4000-8000-000000000002";
+    await db.exec(`
+      insert into events(id,slug,title,category,starts_at,ends_at,location,status,admission,registration_state)
+      values ('${completedEvent}','manual-check-in-test','Manual Check-In Test','networking',now()-interval '3 hours',now()-interval '1 hour','Test venue','published','free','completed');
+      insert into event_registrations(id,user_id,event_id,status,payment,attendance,attendee_name)
+      values ('${registration}','${b}','${completedEvent}','confirmed','not_required','not_attended','Manual Attendee');
+    `);
+
+    await expect(asUser(a, `select csc_manual_check_in('${registration}')`)).rejects.toThrow(/forbidden/i);
+    const first = await asUser(admin, `select csc_manual_check_in('${registration}') as result`);
+    expect((first[0].rows[0] as { result: { status: string; name: string } }).result).toMatchObject({ status: "valid", name: "Manual Attendee" });
+    const second = await asUser(admin, `select csc_manual_check_in('${registration}') as result`);
+    expect((second[0].rows[0] as { result: { status: string } }).result.status).toBe("already");
+    expect((await db.query("select status,attendance from event_registrations where id=$1", [registration])).rows).toEqual([{ status: "checked_in", attendance: "checked_in" }]);
+    expect((await db.query("select count(*)::int as n from attendance_checkins where registration_id=$1", [registration])).rows).toEqual([{ n: 1 }]);
+    expect((await db.query("select action,after->>'method' as method from audit_logs where target_id=$1", [registration])).rows).toEqual([{ action: "attendance.checked_in", method: "manual" }]);
+  });
   it("rejects suspended membership with an existing downloaded pass", async () => {
     const { rows } = await db.query<{ pass_token: string }>("select pass_token from event_registrations where user_id=$1", [a]);
     await db.exec(`update memberships set status='suspended' where user_id='${a}'`);
