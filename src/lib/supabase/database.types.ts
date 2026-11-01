@@ -1301,6 +1301,7 @@ export type Database = {
         Returns: boolean
       }
       csc_check_in: { Args: { event: string; token: string }; Returns: Json }
+      csc_manual_check_in: { Args: { registration: string }; Returns: Json }
       csc_claim_notifications: {
         Args: { batch?: number; worker?: string }
         Returns: {

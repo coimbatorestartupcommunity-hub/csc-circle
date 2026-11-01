@@ -11,8 +11,8 @@ import type { Permission } from "@/lib/admin/permissions";
 import type { Database } from "@/lib/supabase/database.types";
 import { issueImportedRegistrationPasses } from "@/lib/admin/imported-registration-pass";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
-const schema = z.object({ kind: z.enum(["claim", "member", "registration", "imported_registration", "paid_registration", "resend_event_pass", "payment", "review", "startup", "consultation"]), target: z.string().uuid(), decision: z.string().min(1).max(40), reason: z.string().max(1000).default("") });
-const permissions: Record<string, Permission> = { claim: "members.approve", member: "members.suspend", registration: "registrations.approve", imported_registration: "registrations.approve", paid_registration: "registrations.approve", resend_event_pass: "registrations.approve", payment: "payments.verify", review: "reviews.moderate", startup: "directory.manage", consultation: "consultations.manage" };
+const schema = z.object({ kind: z.enum(["claim", "member", "registration", "imported_registration", "paid_registration", "manual_check_in", "resend_event_pass", "payment", "review", "startup", "consultation"]), target: z.string().uuid(), decision: z.string().min(1).max(40), reason: z.string().max(1000).default("") });
+const permissions: Record<string, Permission> = { claim: "members.approve", member: "members.suspend", registration: "registrations.approve", imported_registration: "registrations.approve", paid_registration: "registrations.approve", manual_check_in: "attendance.scan", resend_event_pass: "registrations.approve", payment: "payments.verify", review: "reviews.moderate", startup: "directory.manage", consultation: "consultations.manage" };
 export async function POST(request: Request) {
   try {
     const ctx = await getAdminContext();
@@ -21,6 +21,25 @@ export async function POST(request: Request) {
     const parsed = schema.safeParse(await readAuthBody(request));
     if (!parsed.success) return authResponse({ error: "Invalid action." }, 422);
     if (!ctx.permissions.has(permissions[parsed.data.kind])) return authResponse({ error: "Permission denied." }, 403);
+    if (parsed.data.kind === "manual_check_in") {
+      if (parsed.data.decision !== "checked_in") return authResponse({ error: "Invalid attendance action." }, 422);
+      const session = await createClient();
+      const { data, error } = await session.rpc("csc_manual_check_in", { registration: parsed.data.target });
+      if (error) return authResponse({ error: "Manual check-in was not recorded. Confirm your event assignment and try again." }, 409);
+      const result = data && typeof data === "object" && !Array.isArray(data) ? data as Record<string, unknown> : {};
+      const status = typeof result.status === "string" ? result.status : "invalid";
+      if (status === "valid" || status === "already") {
+        revalidateTag("registrations", "max");
+        return authResponse({ ok: true, status, alreadyCheckedIn: status === "already", checkedInAt: result.checkedInAt });
+      }
+      const messages: Record<string, string> = {
+        invalid: "The registration could not be found.",
+        pending: "Only confirmed registrations can be checked in.",
+        payment: "Paid registration must be fully paid before check-in.",
+        revoked: "This attendee or event is not eligible for check-in.",
+      };
+      return authResponse({ error: messages[status] ?? "Manual check-in was not recorded." }, status === "invalid" ? 404 : 409);
+    }
     if (parsed.data.kind === "resend_event_pass") {
       if (parsed.data.decision !== "resend") return authResponse({ error: "Invalid pass action." }, 422);
       const session = await createClient();
