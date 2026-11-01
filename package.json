@@ -2,6 +2,7 @@
   "name": "csc-circle",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.6.2",
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
@@ -67,6 +68,7 @@
     "eslint-config-next": "16.4.2",
     "jsdom": "^27.0.0",
     "tailwindcss": "^4",
+    "turbo": "^2.11.10",
     "typescript": "^5",
     "vitest": "5.0.5"
   }
