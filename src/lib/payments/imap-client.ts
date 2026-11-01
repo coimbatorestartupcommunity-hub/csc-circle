@@ -132,26 +132,43 @@ export async function checkImapConnection(): Promise<ImapHealthCheckResult> {
 export interface FetchBankAlertsOptions {
   limit?: number;
   lastUid?: number;
+  expectedUidValidity?: number | bigint;
 }
 
 export interface FetchBankAlertsResult {
   messages: RawEmailInput[];
   highestUid: number;
+  uidValidity: number;
+  mailboxName: string;
 }
 
 /**
  * Fetches recent bank alerts from iCloud mailbox in read-only mode.
- * Bounded by limit (default 25) and tracks cursor UID.
+ * Bounded by limit (default 25) and tracks cursor UID and UIDVALIDITY.
  */
 export async function fetchRecentBankAlerts(options: FetchBankAlertsOptions = {}): Promise<FetchBankAlertsResult> {
   const limit = Math.min(Math.max(options.limit ?? 25, 1), 50);
-  const lastUid = options.lastUid ?? 0;
+  let lastUid = options.lastUid ?? 0;
   const rawEmails: RawEmailInput[] = [];
   let highestUid = lastUid;
+  let uidValidity = 0;
+  let mailboxName = "INBOX";
 
   await connectWithFallback(async (client) => {
     const lock = await client.getMailboxLock("INBOX", { readOnly: true });
     try {
+      if (client.mailbox) {
+        mailboxName = client.mailbox.path || "INBOX";
+        const rawValidity = client.mailbox.uidValidity;
+        uidValidity = typeof rawValidity === "bigint" ? Number(rawValidity) : Number(rawValidity ?? 0);
+
+        // If UIDVALIDITY has changed on the server, existing UIDs are invalid (RFC 3501)
+        if (options.expectedUidValidity && Number(options.expectedUidValidity) > 0 && Number(options.expectedUidValidity) !== uidValidity) {
+          lastUid = 0;
+          highestUid = 0;
+        }
+      }
+
       // Search for messages from Axis Bank alerts or matching subject
       // In IMAP: search criteria
       // If we have a lastUid, we search UID > lastUid; otherwise recent messages
@@ -220,5 +237,7 @@ export async function fetchRecentBankAlerts(options: FetchBankAlertsOptions = {}
   return {
     messages: rawEmails,
     highestUid,
+    uidValidity,
+    mailboxName,
   };
 }

@@ -4,15 +4,26 @@ import { reconcilePayments } from "@/lib/payments/reconciler";
 export const maxDuration = 300;
 
 function verifyAuth(request: Request): boolean {
-  // Allow CSC_PAYMENT_RECONCILE_SECRET or fallback to CRON_SECRET
+  // Prefer dedicated CSC_PAYMENT_RECONCILE_SECRET, fallback to CRON_SECRET
   const secret = process.env.CSC_PAYMENT_RECONCILE_SECRET || process.env.CRON_SECRET;
-  if (!secret || secret.length < 32) return false;
+  if (!secret || secret.length < 16) return false;
 
-  const expected = Buffer.from(`Bearer ${secret}`);
-  const supplied = Buffer.from(request.headers.get("authorization") ?? "");
+  const authHeader = request.headers.get("authorization") ?? "";
+  const directHeader = request.headers.get("x-reconcile-secret") ?? "";
 
-  if (expected.length !== supplied.length) return false;
-  return timingSafeEqual(expected, supplied);
+  const expectedBearer = Buffer.from(`Bearer ${secret}`);
+  const suppliedBearer = Buffer.from(authHeader);
+  if (expectedBearer.length === suppliedBearer.length && timingSafeEqual(expectedBearer, suppliedBearer)) {
+    return true;
+  }
+
+  const expectedDirect = Buffer.from(secret);
+  const suppliedDirect = Buffer.from(directHeader);
+  if (expectedDirect.length === suppliedDirect.length && timingSafeEqual(expectedDirect, suppliedDirect)) {
+    return true;
+  }
+
+  return false;
 }
 
 export async function GET(request: Request) {

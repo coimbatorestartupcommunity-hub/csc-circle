@@ -763,4 +763,201 @@ describe("resources & opportunities CMS", () => {
       expect((await db.query<{ n: number }>("select count(*)::int n from public.opportunities where publication_status='published' and (deadline is null or deadline>=current_date)")).rows).toEqual([{ n: 0 }]);
     } finally { await db.exec("reset role;"); }
   });
+
+  describe("custom UPI payment reconciliation and atomic fulfillment", () => {
+    it("atomically fulfills confirmed payment without screenshot proofs and maintains audit trail", async () => {
+      // 1. Setup event, order, and bank credit evidence
+      await db.exec(`
+        insert into public.events(id, slug, title, category, starts_at, ends_at, location, admission, price_per_attendee, status, registration_state)
+        values (
+          '11111111-1111-4111-8111-111111111111',
+          'atomic-upi-event',
+          'Atomic UPI Event',
+          'networking',
+          '2026-12-01T10:00:00Z',
+          '2026-12-01T13:00:00Z',
+          'Coimbatore',
+          'paid',
+          180.00,
+          'published',
+          'open'
+        ) on conflict (id) do nothing;
+
+        insert into public.event_payment_orders(
+          id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
+          amount_paise, currency, upi_uri, status, guest_token_hash, consent_contact, consent_payment_terms
+        ) values (
+          '22222222-2222-4222-8222-222222222222',
+          'CSC-ORD-ATOMIC01',
+          '11111111-1111-4111-8111-111111111111',
+          'Ramanathan K',
+          'ramanathan@example.test',
+          '9876543210',
+          'Kovai Ventures',
+          'Startup Founder / Co-Founder',
+          1,
+          18000,
+          'INR',
+          'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=180.00&cu=INR&tr=CSC-ORD-ATOMIC01',
+          'pending',
+          'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+          true,
+          true
+        ) on conflict (id) do nothing;
+
+        insert into public.event_payment_evidence(
+          id, bank, direction, currency, amount_paise, receiving_account_suffix, utr,
+          transaction_time, transaction_info_raw, sender_email, message_id, subject, auth_status
+        ) values (
+          '33333333-3333-4333-8333-333333333333',
+          'AXIS_BANK',
+          'CREDIT',
+          'INR',
+          18000,
+          '1995',
+          '630722119955',
+          now(),
+          'UPI/P2A/630722119955/RAMANATHAN K/IOBA/UPI/CSC-ORD-ATOMIC01',
+          'alerts@axis.bank.in',
+          '<alert-630722119955@axis.bank.in>',
+          'INR 180.00 was credited to your A/c.',
+          'authenticated'
+        ) on conflict (id) do nothing;
+      `);
+
+      // 2. Call atomic fulfillment RPC as service_role
+      const res = await db.query<{ res: { ok: boolean; order_id: string; evidence_id: string; paid_registration_id: string; primary_pass_id: string } }>(`
+        select public.csc_fulfill_confirmed_payment(
+          '22222222-2222-4222-8222-222222222222'::uuid,
+          '33333333-3333-4333-8333-333333333333'::uuid,
+          'automated_worker',
+          'Test automated fulfillment'
+        ) as res;
+      `);
+
+      expect(res.rows[0].res.ok).toBe(true);
+
+      // 3. Verify order updated
+      const order = await db.query<{ status: string; matched_evidence_id: string }>(
+        "select status, matched_evidence_id from public.event_payment_orders where id='22222222-2222-4222-8222-222222222222'"
+      );
+      expect(order.rows[0].status).toBe("reconciled");
+      expect(order.rows[0].matched_evidence_id).toBe("33333333-3333-4333-8333-333333333333");
+
+      // 4. Verify paid registration created without fake screenshot
+      const paidReg = await db.query<{ status: string; payment_evidence_type: string; payment_screenshot_path: string | null; upi_transaction_ref: string }>(
+        "select status, payment_evidence_type, payment_screenshot_path, upi_transaction_ref from public.paid_event_registrations where upi_transaction_ref='630722119955'"
+      );
+      expect(paidReg.rows).toHaveLength(1);
+      expect(paidReg.rows[0].status).toBe("confirmed");
+      expect(paidReg.rows[0].payment_evidence_type).toBe("authenticated_bank_alert");
+      expect(paidReg.rows[0].payment_screenshot_path).toBeNull();
+
+      // 5. Verify pass issued in event_registrations
+      const pass = await db.query<{ status: string; payment: string; attendee_name: string; pass_token: string }>(
+        "select status, payment, attendee_name, pass_token from public.event_registrations where paid_registration_id=(select id from public.paid_event_registrations where upi_transaction_ref='630722119955')"
+      );
+      expect(pass.rows).toHaveLength(1);
+      expect(pass.rows[0].status).toBe("confirmed");
+      expect(pass.rows[0].payment).toBe("paid");
+      expect(pass.rows[0].attendee_name).toBe("Ramanathan K");
+      expect(pass.rows[0].pass_token).toHaveLength(64);
+
+      // 6. Test Idempotency: re-running fulfillment on the same order returns already_fulfilled
+      const reRun = await db.query<{ res: { ok: boolean; already_fulfilled: boolean } }>(`
+        select public.csc_fulfill_confirmed_payment(
+          '22222222-2222-4222-8222-222222222222'::uuid,
+          '33333333-3333-4333-8333-333333333333'::uuid
+        ) as res;
+      `);
+      expect(reRun.rows[0].res.ok).toBe(true);
+      expect(reRun.rows[0].res.already_fulfilled).toBe(true);
+    });
+
+    it("rejects fulfillment and rolls back when evidence amount does not match order amount", async () => {
+      await db.exec(`
+        insert into public.event_payment_orders(
+          id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
+          amount_paise, currency, upi_uri, status
+        ) values (
+          '44444444-4444-4444-8444-444444444444',
+          'CSC-ORD-MISMATCH1',
+          '11111111-1111-4111-8111-111111111111',
+          'Mismatch Test',
+          'mismatch@example.test',
+          '9876543211',
+          'Kovai Startup',
+          'Working Professional',
+          1,
+          50000,
+          'INR',
+          'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=500.00&cu=INR&tr=CSC-ORD-MISMATCH1',
+          'pending'
+        ) on conflict (id) do nothing;
+
+        insert into public.event_payment_evidence(
+          id, bank, direction, currency, amount_paise, receiving_account_suffix, utr,
+          transaction_time, transaction_info_raw, sender_email, message_id, subject, auth_status
+        ) values (
+          '55555555-5555-4555-8555-555555555555',
+          'AXIS_BANK',
+          'CREDIT',
+          'INR',
+          18000,
+          '1995',
+          '999999999999',
+          now(),
+          'UPI/P2A/999999999999/TEST/IOBA/UPI',
+          'alerts@axis.bank.in',
+          '<alert-999999999999@axis.bank.in>',
+          'INR 180.00 was credited to your A/c.',
+          'authenticated'
+        ) on conflict (id) do nothing;
+      `);
+
+      await expect(
+        db.query(`
+          select public.csc_fulfill_confirmed_payment(
+            '44444444-4444-4444-8444-444444444444'::uuid,
+            '55555555-5555-4555-8555-555555555555'::uuid
+          );
+        `)
+      ).rejects.toThrow(/does not match order amount/i);
+
+      // Verify order remains pending
+      const order = await db.query<{ status: string }>(
+        "select status from public.event_payment_orders where id='44444444-4444-4444-8444-444444444444'"
+      );
+      expect(order.rows[0].status).toBe("pending");
+    });
+
+    it("tracks worker lease with uid_validity and mailbox_name", async () => {
+      const lease = await db.query<{ acquired: boolean }>(
+        "select public.csc_acquire_payment_worker_lease('test-worker-01', 30) as acquired"
+      );
+      expect(lease.rows[0].acquired).toBe(true);
+
+      const release = await db.query<{ released: boolean }>(`
+        select public.csc_release_payment_worker_lease(
+          'test-worker-01',
+          'success',
+          10,
+          2,
+          1005,
+          null,
+          12345678,
+          'INBOX'
+        ) as released
+      `);
+      expect(release.rows[0].released).toBe(true);
+
+      const state = await db.query<{ last_uid: string; uid_validity: string; mailbox_name: string; last_sync_status: string }>(
+        "select last_uid::text, uid_validity::text, mailbox_name, last_sync_status from public.payment_worker_state where id='primary'"
+      );
+      expect(state.rows[0].last_uid).toBe("1005");
+      expect(state.rows[0].uid_validity).toBe("12345678");
+      expect(state.rows[0].mailbox_name).toBe("INBOX");
+      expect(state.rows[0].last_sync_status).toBe("success");
+    });
+  });
 });

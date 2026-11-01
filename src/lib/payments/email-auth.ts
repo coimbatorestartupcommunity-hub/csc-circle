@@ -45,7 +45,25 @@ export function verifyEmailAuthentication(headers: Record<string, string | strin
     };
   }
 
-  // 2. Check for explicit spoofing or failure in Authentication-Results
+  // 2. Verify Authentication-Results MTA provenance (reject foreign / attacker MTAs)
+  const mtaMatch = authResults.match(/(?:^|\n)\s*([a-z0-9_.-]+\.[a-z]{2,})\s*;/i);
+  if (mtaMatch) {
+    const authservId = mtaMatch[1].toLowerCase();
+    const isAppleOrIcloud = authservId.endsWith("apple.com") || authservId.endsWith("icloud.com");
+    if (!isAppleOrIcloud) {
+      reasons.push(`Authentication-Results MTA (${authservId}) does not originate from trusted Apple/iCloud infrastructure`);
+      return {
+        status: "untrusted",
+        reasons,
+        dkimPass: false,
+        spfPass: false,
+        senderMatches: true,
+        details: { from, sender, authResultsSnippet: authResults.slice(0, 300) },
+      };
+    }
+  }
+
+  // 3. Check for explicit spoofing or failure in Authentication-Results
   let dkimPass = false;
   let spfPass = false;
   let dmarcPass: boolean | undefined = undefined;

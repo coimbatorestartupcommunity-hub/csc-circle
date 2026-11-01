@@ -31,6 +31,8 @@ const createOrderSchema = z.object({
     "Other",
   ]).optional(),
   dietaryAccessibilityNotes: z.string().max(500).optional(),
+  consentContact: z.boolean().optional(),
+  consentPaymentTerms: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -87,6 +89,7 @@ export async function POST(request: Request) {
         expiresAt: result.order.expires_at,
       },
       deepLinks: result.deepLinks,
+      guestCheckoutToken: result.guestCheckoutToken,
     });
   } catch {
     return NextResponse.json(

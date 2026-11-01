@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { UPI_CONFIG } from "./config";
@@ -14,6 +14,8 @@ export interface CreateOrderParams {
   additionalAttendeeNames?: string;
   referralSource?: Database["public"]["Enums"]["paid_registration_referral"];
   dietaryAccessibilityNotes?: string;
+  consentContact?: boolean;
+  consentPaymentTerms?: boolean;
   userId?: string;
 }
 
@@ -28,6 +30,35 @@ export interface PaymentDeepLinks {
 export function generateOrderReference(): string {
   const hex = randomBytes(6).toString("hex").toUpperCase();
   return `CSC-ORD-${hex}`;
+}
+
+export function generateGuestCheckoutToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+export function hashGuestToken(token: string): string {
+  return createHash("sha256").update(token.trim()).digest("hex");
+}
+
+export function verifyOrderAccess(
+  order: { user_id?: string | null; guest_token_hash?: string | null },
+  sessionUserId?: string | null,
+  guestToken?: string | null
+): boolean {
+  if (sessionUserId && order.user_id && sessionUserId === order.user_id) {
+    return true;
+  }
+  if (guestToken && order.guest_token_hash) {
+    const providedHash = hashGuestToken(guestToken);
+    const expectedHash = order.guest_token_hash;
+    if (
+      providedHash.length === expectedHash.length &&
+      timingSafeEqual(Buffer.from(providedHash), Buffer.from(expectedHash))
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function buildUpiUri(params: {
@@ -71,7 +102,21 @@ export async function createPaymentOrder(
   admin: SupabaseClient<Database>,
   params: CreateOrderParams
 ) {
-  const { eventId, fullName, email, whatsapp, organization, role, attendeeCount, additionalAttendeeNames, referralSource, dietaryAccessibilityNotes, userId } = params;
+  const {
+    eventId,
+    fullName,
+    email,
+    whatsapp,
+    organization,
+    role,
+    attendeeCount,
+    additionalAttendeeNames,
+    referralSource,
+    dietaryAccessibilityNotes,
+    consentContact = true,
+    consentPaymentTerms = true,
+    userId,
+  } = params;
 
   // 1. Fetch and validate event
   const { data: event, error: eventError } = await admin
@@ -107,7 +152,7 @@ export async function createPaymentOrder(
   // 2. Prevent duplicate active registrations for this event
   const lowerEmail = email.toLowerCase().trim();
   const [{ data: existingOrders }, { data: existingPaidRegs }, { data: existingPasses }] = await Promise.all([
-    admin.from("event_payment_orders").select("id,status").eq("event_id", event.id).eq("email", lowerEmail).in("status", ["pending", "processing", "verified", "reconciled"]).limit(5),
+    admin.from("event_payment_orders").select("id,status,guest_token_hash").eq("event_id", event.id).eq("email", lowerEmail).in("status", ["pending", "processing", "verified", "reconciled"]).limit(5),
     admin.from("paid_event_registrations").select("id,status").eq("event_id", event.id).eq("email", lowerEmail).not("status", "in", "('rejected','cancelled')").limit(5),
     admin.from("event_registrations").select("id,status").eq("event_id", event.id).eq("source_email", lowerEmail).not("status", "in", "('cancelled','revoked')").limit(5),
   ]);
@@ -116,16 +161,26 @@ export async function createPaymentOrder(
     return { ok: false as const, error: "You are already registered or confirmed for this event.", status: 409 };
   }
 
+  // Generate capability token for guest checkout access
+  const guestCheckoutToken = generateGuestCheckoutToken();
+  const guestTokenHash = hashGuestToken(guestCheckoutToken);
+
   // If there is an existing pending order created recently (< 30 min), we can reuse it
   const activeOrder = existingOrders?.find((o) => o.status === "pending" || o.status === "processing");
   if (activeOrder) {
-    // Return existing active order details
+    // Update with fresh guest token capability and return details
+    await admin
+      .from("event_payment_orders")
+      .update({ guest_token_hash: guestTokenHash, updated_at: new Date().toISOString() })
+      .eq("id", activeOrder.id);
+
     const { data: fullOrder } = await admin.from("event_payment_orders").select("*").eq("id", activeOrder.id).single();
     if (fullOrder) {
       return {
         ok: true as const,
         order: fullOrder,
         deepLinks: buildPaymentDeepLinks(fullOrder.upi_uri),
+        guestCheckoutToken,
       };
     }
   }
@@ -169,6 +224,9 @@ export async function createPaymentOrder(
       expected_account_suffix: UPI_CONFIG.RECEIVING_ACCOUNT_SUFFIX,
       upi_uri: upiUri,
       status: "pending",
+      guest_token_hash: guestTokenHash,
+      consent_contact: consentContact,
+      consent_payment_terms: consentPaymentTerms,
     })
     .select("*")
     .single();
@@ -188,5 +246,6 @@ export async function createPaymentOrder(
     ok: true as const,
     order: newOrder,
     deepLinks,
+    guestCheckoutToken,
   };
 }

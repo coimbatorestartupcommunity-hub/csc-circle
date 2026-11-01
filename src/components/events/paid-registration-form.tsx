@@ -94,6 +94,8 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
           additionalAttendeeNames: currentValues.additionalAttendeeNames,
           referralSource: currentValues.referralSource,
           dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
+          consentContact: currentValues.consentContact,
+          consentPaymentTerms: currentValues.consentPaymentTerms,
         }),
       });
 
@@ -102,7 +104,10 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
         throw new Error(data.error || "Unable to initialize UPI payment.");
       }
 
-      setActiveOrder(data.order);
+      setActiveOrder({
+        ...data.order,
+        guestCheckoutToken: data.guestCheckoutToken,
+      });
       setActiveDeepLinks(data.deepLinks);
       setCheckoutModalOpen(true);
     } catch (err) {

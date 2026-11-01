@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { toast } from "sonner";
@@ -8,7 +9,6 @@ import {
   Check,
   CheckCircle2,
   Copy,
-  ExternalLink,
   Loader2,
   QrCode,
   ShieldCheck,
@@ -32,6 +32,7 @@ export interface OrderInfo {
   upiUri: string;
   status: string;
   expiresAt: string;
+  guestCheckoutToken?: string;
 }
 
 interface UpiCheckoutModalProps {
@@ -82,7 +83,11 @@ export function UpiCheckoutModal({
 
     const checkStatus = async () => {
       try {
-        const res = await fetch(`/api/payments/orders/${order.id}/status`);
+        const headers: Record<string, string> = {};
+        if (order.guestCheckoutToken) {
+          headers["x-guest-token"] = order.guestCheckoutToken;
+        }
+        const res = await fetch(`/api/payments/orders/${order.id}/status`, { headers });
         if (!res.ok) return;
         const data = await res.json();
         if (cancelled) return;
@@ -135,9 +140,13 @@ export function UpiCheckoutModal({
 
     setSubmittingUtr(true);
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (order.guestCheckoutToken) {
+        headers["x-guest-token"] = order.guestCheckoutToken;
+      }
       const res = await fetch(`/api/payments/orders/${order.id}/claim-utr`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ utr: userUtr.trim() }),
       });
       const data = await res.json();
@@ -246,8 +255,8 @@ export function UpiCheckoutModal({
                       </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 text-[11px] text-teal-700 bg-teal-50 px-2 py-1 rounded-md border border-teal-200/60 mt-1">
-                    <ShieldCheck className="size-3.5 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-[11px] text-teal-700 bg-teal-50 px-2.5 py-1.5 rounded-lg border border-teal-200/60 mt-1">
+                    <Image src="/images/payments/axis-monogram.svg" alt="Axis Bank" width={14} height={14} className="shrink-0" />
                     <span>Exact amount required. Verified via Axis Bank.</span>
                   </div>
                 </div>
@@ -263,8 +272,9 @@ export function UpiCheckoutModal({
                     <a
                       href={deepLinks.gpay}
                       onClick={() => setViewState("verifying")}
-                      className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition"
+                      className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition"
                     >
+                      <Image src="/images/payments/gpay-icon.png" alt="Google Pay" width={16} height={16} className="shrink-0 object-contain" />
                       Google Pay
                     </a>
                   )}
@@ -272,8 +282,9 @@ export function UpiCheckoutModal({
                     <a
                       href={deepLinks.phonepe}
                       onClick={() => setViewState("verifying")}
-                      className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition"
+                      className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition"
                     >
+                      <Image src="/images/payments/phonepe-icon.png" alt="PhonePe" width={16} height={16} className="shrink-0 object-contain" />
                       PhonePe
                     </a>
                   )}
@@ -281,8 +292,9 @@ export function UpiCheckoutModal({
                     <a
                       href={deepLinks.paytm}
                       onClick={() => setViewState("verifying")}
-                      className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition"
+                      className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition"
                     >
+                      <Image src="/images/payments/paytm-icon.png" alt="Paytm" width={16} height={16} className="shrink-0 object-contain" />
                       Paytm
                     </a>
                   )}
@@ -290,9 +302,10 @@ export function UpiCheckoutModal({
                     <a
                       href={deepLinks.standardUpi}
                       onClick={() => setViewState("verifying")}
-                      className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition"
+                      className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition"
                     >
-                      Other UPI <ExternalLink className="size-3" />
+                      <Image src="/images/payments/bhim-icon.png" alt="BHIM" width={16} height={16} className="shrink-0 object-contain" />
+                      BHIM / Other
                     </a>
                   )}
                 </div>
