@@ -493,9 +493,70 @@ export const adminServices = {
   listPayments(): Promise<ServiceResult<AdminPaymentRow[]>> {
     return guard("payments.verify", demoPayments, async () => {
       const sb = await createClient();
-      const { data, error } = await sb.from("payments").select("*").order("created_at", { ascending: false });
-      if (error) return fail("unknown", "Could not load payments.");
-      return ok((data ?? []).map(p => ({ id: p.id, reference: p.reference ?? p.id, registrationReference: p.registration_id, attendee: "Restricted to registration detail", event: "See registration", amount: p.amount_minor / 100, currency: p.currency, status: p.status as AdminPaymentRow["status"], verifiedAt: p.reviewed_at ?? undefined, verifiedBy: p.reviewed_by ?? undefined })));
+      const [{ data: legacy, error: legacyError }, { data: upiOrders, error: upiError }, { data: events }] = await Promise.all([
+        sb.from("payments").select("*").order("created_at", { ascending: false }),
+        sb.from("event_payment_orders").select("*").order("created_at", { ascending: false }).limit(100),
+        sb.from("events").select("id, title"),
+      ]);
+
+      if (legacyError && upiError) return fail("unknown", "Could not load payments.");
+
+      const eventMap = new Map((events ?? []).map((e) => [e.id, e.title]));
+
+      const legacyRows: AdminPaymentRow[] = (legacy ?? []).map((p) => ({
+        id: p.id,
+        reference: p.reference ?? p.id,
+        registrationReference: p.registration_id,
+        attendee: "Restricted to registration detail",
+        event: "See registration",
+        amount: p.amount_minor / 100,
+        currency: p.currency,
+        method: "Manual Verification",
+        status: p.status as AdminPaymentRow["status"],
+        verifiedAt: p.reviewed_at ?? undefined,
+        verifiedBy: p.reviewed_by ?? undefined,
+      }));
+
+      const upiRows: AdminPaymentRow[] = (upiOrders ?? []).map((o) => {
+        let status: AdminPaymentRow["status"] = "pending_verification";
+        if (o.status === "reconciled" || o.status === "verified") status = "verified";
+        else if (o.status === "failed" || o.status === "expired" || o.status === "cancelled") status = "failed";
+
+        return {
+          id: o.id,
+          reference: o.order_reference,
+          registrationReference: o.paid_registration_id ? o.paid_registration_id.slice(0, 13) : "Pending match",
+          attendee: o.full_name,
+          event: eventMap.get(o.event_id) || "CSC Event",
+          amount: Number(o.amount_paise) / 100,
+          currency: o.currency,
+          method: o.claimed_utr ? `UPI (UTR: ${o.claimed_utr})` : "UPI (Axis Bank)",
+          status,
+          verifiedAt: o.matched_at ?? undefined,
+        };
+      });
+
+      return ok([...upiRows, ...legacyRows]);
+    });
+  },
+
+  getPaymentWorkerStatus(): Promise<ServiceResult<{
+    status: string;
+    lastSyncCompletedAt?: string;
+    lastSyncMessageCount: number;
+    lastSyncMatchedCount: number;
+    lastError?: string;
+  }>> {
+    return guard("payments.verify", { status: "idle", lastSyncCompletedAt: undefined, lastSyncMessageCount: 0, lastSyncMatchedCount: 0, lastError: undefined }, async () => {
+      const sb = await createClient();
+      const { data } = await sb.from("payment_worker_state").select("*").eq("id", "primary").maybeSingle();
+      return ok({
+        status: data?.last_sync_status || "idle",
+        lastSyncCompletedAt: data?.last_sync_completed_at ?? undefined,
+        lastSyncMessageCount: data?.last_sync_message_count ?? 0,
+        lastSyncMatchedCount: data?.last_sync_matched_count ?? 0,
+        lastError: data?.last_error ?? undefined,
+      });
     });
   },
 

@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    localPatterns: [
+      {
+        pathname: "/api/**",
+        search: "*",
+      },
+      {
+        pathname: "/**",
+        search: "",
+      },
+    ],
+  },
   outputFileTracingIncludes: {
     "/api/member/resume/pdf": ["./node_modules/dejavu-fonts-ttf/ttf/DejaVuSans*.ttf"],
   },

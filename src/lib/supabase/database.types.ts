@@ -1248,10 +1248,279 @@ export type Database = {
         ]
       }
       paid_event_registrations: {
-        Row: { member_registration_id: string | null; reference: string; user_id: string | null; additional_attendee_names: string | null; attendee_count: number; consent_contact: boolean; consent_payment_terms: boolean; created_at: string; dietary_accessibility_notes: string | null; email: string; event_id: string; full_name: string; id: string; organization: string; payment_screenshot_path: string; referral_source: Database["public"]["Enums"]["paid_registration_referral"] | null; reviewed_at: string | null; reviewed_by: string | null; review_note: string | null; role: Database["public"]["Enums"]["paid_registration_role"]; status: Database["public"]["Enums"]["paid_registration_status"]; total_amount_paid: number; upi_transaction_ref: string; whatsapp: string }
-        Insert: { member_registration_id?: string | null; reference?: string; user_id?: string | null; additional_attendee_names?: string | null; attendee_count: number; consent_contact: boolean; consent_payment_terms: boolean; created_at?: string; dietary_accessibility_notes?: string | null; email: string; event_id: string; full_name: string; id?: string; organization: string; payment_screenshot_path: string; referral_source?: Database["public"]["Enums"]["paid_registration_referral"] | null; reviewed_at?: string | null; reviewed_by?: string | null; review_note?: string | null; role: Database["public"]["Enums"]["paid_registration_role"]; status?: Database["public"]["Enums"]["paid_registration_status"]; total_amount_paid: number; upi_transaction_ref: string; whatsapp: string }
-        Update: { member_registration_id?: string | null; reference?: string; user_id?: string | null; additional_attendee_names?: string | null; attendee_count?: number; consent_contact?: boolean; consent_payment_terms?: boolean; created_at?: string; dietary_accessibility_notes?: string | null; email?: string; event_id?: string; full_name?: string; id?: string; organization?: string; payment_screenshot_path?: string; referral_source?: Database["public"]["Enums"]["paid_registration_referral"] | null; reviewed_at?: string | null; reviewed_by?: string | null; review_note?: string | null; role?: Database["public"]["Enums"]["paid_registration_role"]; status?: Database["public"]["Enums"]["paid_registration_status"]; total_amount_paid?: number; upi_transaction_ref?: string; whatsapp?: string }
+        Row: { member_registration_id: string | null; reference: string; user_id: string | null; additional_attendee_names: string | null; attendee_count: number; consent_contact: boolean; consent_payment_terms: boolean; created_at: string; dietary_accessibility_notes: string | null; email: string; event_id: string; full_name: string; id: string; organization: string; payment_screenshot_path: string | null; payment_evidence_type: "manual_screenshot" | "authenticated_bank_alert" | "bank_transaction_feed" | "admin_verified_external_evidence"; payment_evidence_id: string | null; referral_source: Database["public"]["Enums"]["paid_registration_referral"] | null; reviewed_at: string | null; reviewed_by: string | null; review_note: string | null; role: Database["public"]["Enums"]["paid_registration_role"]; status: Database["public"]["Enums"]["paid_registration_status"]; total_amount_paid: number; upi_transaction_ref: string; whatsapp: string }
+        Insert: { member_registration_id?: string | null; reference?: string; user_id?: string | null; additional_attendee_names?: string | null; attendee_count: number; consent_contact: boolean; consent_payment_terms: boolean; created_at?: string; dietary_accessibility_notes?: string | null; email: string; event_id: string; full_name: string; id?: string; organization: string; payment_screenshot_path?: string | null; payment_evidence_type?: "manual_screenshot" | "authenticated_bank_alert" | "bank_transaction_feed" | "admin_verified_external_evidence"; payment_evidence_id?: string | null; referral_source?: Database["public"]["Enums"]["paid_registration_referral"] | null; reviewed_at?: string | null; reviewed_by?: string | null; review_note?: string | null; role: Database["public"]["Enums"]["paid_registration_role"]; status?: Database["public"]["Enums"]["paid_registration_status"]; total_amount_paid: number; upi_transaction_ref: string; whatsapp: string }
+        Update: { member_registration_id?: string | null; reference?: string; user_id?: string | null; additional_attendee_names?: string | null; attendee_count?: number; consent_contact?: boolean; consent_payment_terms?: boolean; created_at?: string; dietary_accessibility_notes?: string | null; email?: string; event_id?: string; full_name?: string; id?: string; organization?: string; payment_screenshot_path?: string | null; payment_evidence_type?: "manual_screenshot" | "authenticated_bank_alert" | "bank_transaction_feed" | "admin_verified_external_evidence"; payment_evidence_id?: string | null; referral_source?: Database["public"]["Enums"]["paid_registration_referral"] | null; reviewed_at?: string | null; reviewed_by?: string | null; review_note?: string | null; role?: Database["public"]["Enums"]["paid_registration_role"]; status?: Database["public"]["Enums"]["paid_registration_status"]; total_amount_paid?: number; upi_transaction_ref?: string; whatsapp?: string }
         Relationships: [{ foreignKeyName: "paid_event_registrations_event_id_fkey"; columns: ["event_id"]; isOneToOne: false; referencedRelation: "events"; referencedColumns: ["id"] }, { foreignKeyName: "paid_event_registrations_member_registration_id_fkey"; columns: ["member_registration_id"]; isOneToOne: false; referencedRelation: "event_registrations"; referencedColumns: ["id"] }]
+      }
+      event_payment_orders: {
+        Row: {
+          id: string
+          order_reference: string
+          event_id: string
+          user_id: string | null
+          paid_registration_id: string | null
+          full_name: string
+          email: string
+          whatsapp: string
+          organization: string
+          role: Database["public"]["Enums"]["paid_registration_role"]
+          attendee_count: number
+          additional_attendee_names: string | null
+          referral_source: Database["public"]["Enums"]["paid_registration_referral"] | null
+          dietary_accessibility_notes: string | null
+          amount_paise: number
+          currency: string
+          payee_vpa: string
+          payee_name: string
+          expected_account_suffix: string
+          upi_uri: string
+          status: string
+          claimed_utr: string | null
+          guest_token_hash: string | null
+          consent_contact: boolean
+          consent_payment_terms: boolean
+          matched_evidence_id: string | null
+          matched_at: string | null
+          expires_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          order_reference: string
+          event_id: string
+          user_id?: string | null
+          paid_registration_id?: string | null
+          full_name: string
+          email: string
+          whatsapp: string
+          organization: string
+          role: Database["public"]["Enums"]["paid_registration_role"]
+          attendee_count: number
+          additional_attendee_names?: string | null
+          referral_source?: Database["public"]["Enums"]["paid_registration_referral"] | null
+          dietary_accessibility_notes?: string | null
+          amount_paise: number
+          currency?: string
+          payee_vpa?: string
+          payee_name?: string
+          expected_account_suffix?: string
+          upi_uri: string
+          status?: string
+          claimed_utr?: string | null
+          guest_token_hash?: string | null
+          consent_contact?: boolean
+          consent_payment_terms?: boolean
+          matched_evidence_id?: string | null
+          matched_at?: string | null
+          expires_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          order_reference?: string
+          event_id?: string
+          user_id?: string | null
+          paid_registration_id?: string | null
+          full_name?: string
+          email?: string
+          whatsapp?: string
+          organization?: string
+          role?: Database["public"]["Enums"]["paid_registration_role"]
+          attendee_count?: number
+          additional_attendee_names?: string | null
+          referral_source?: Database["public"]["Enums"]["paid_registration_referral"] | null
+          dietary_accessibility_notes?: string | null
+          amount_paise?: number
+          currency?: string
+          payee_vpa?: string
+          payee_name?: string
+          expected_account_suffix?: string
+          upi_uri?: string
+          status?: string
+          claimed_utr?: string | null
+          guest_token_hash?: string | null
+          consent_contact?: boolean
+          consent_payment_terms?: boolean
+          matched_evidence_id?: string | null
+          matched_at?: string | null
+          expires_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: "event_payment_orders_event_id_fkey"; columns: ["event_id"]; isOneToOne: false; referencedRelation: "events"; referencedColumns: ["id"] },
+          { foreignKeyName: "event_payment_orders_paid_registration_id_fkey"; columns: ["paid_registration_id"]; isOneToOne: false; referencedRelation: "paid_event_registrations"; referencedColumns: ["id"] }
+        ]
+      }
+      event_payment_evidence: {
+        Row: {
+          id: string
+          bank: string
+          direction: string
+          currency: string
+          amount_paise: number
+          receiving_account_suffix: string
+          utr: string
+          transaction_time: string
+          transaction_info_raw: string
+          payer_name: string | null
+          sender_email: string
+          message_id: string
+          subject: string
+          auth_status: string
+          auth_details: Json
+          reconciliation_state: string
+          matched_order_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          bank?: string
+          direction?: string
+          currency?: string
+          amount_paise: number
+          receiving_account_suffix: string
+          utr: string
+          transaction_time: string
+          transaction_info_raw: string
+          payer_name?: string | null
+          sender_email: string
+          message_id: string
+          subject: string
+          auth_status?: string
+          auth_details?: Json
+          reconciliation_state?: string
+          matched_order_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          bank?: string
+          direction?: string
+          currency?: string
+          amount_paise?: number
+          receiving_account_suffix?: string
+          utr?: string
+          transaction_time?: string
+          transaction_info_raw?: string
+          payer_name?: string | null
+          sender_email?: string
+          message_id?: string
+          subject?: string
+          auth_status?: string
+          auth_details?: Json
+          reconciliation_state?: string
+          matched_order_id?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: "event_payment_evidence_matched_order_id_fkey"; columns: ["matched_order_id"]; isOneToOne: false; referencedRelation: "event_payment_orders"; referencedColumns: ["id"] }
+        ]
+      }
+      event_payment_reconciliation: {
+        Row: {
+          id: string
+          order_id: string
+          evidence_id: string
+          matched_by: string
+          notes: string | null
+          reconciled_at: string
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          evidence_id: string
+          matched_by?: string
+          notes?: string | null
+          reconciled_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          evidence_id?: string
+          matched_by?: string
+          notes?: string | null
+          reconciled_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: "event_payment_reconciliation_order_id_fkey"; columns: ["order_id"]; isOneToOne: false; referencedRelation: "event_payment_orders"; referencedColumns: ["id"] },
+          { foreignKeyName: "event_payment_reconciliation_evidence_id_fkey"; columns: ["evidence_id"]; isOneToOne: false; referencedRelation: "event_payment_evidence"; referencedColumns: ["id"] }
+        ]
+      }
+      event_payment_events: {
+        Row: {
+          id: string
+          order_id: string | null
+          event_type: string
+          details: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          order_id?: string | null
+          event_type: string
+          details?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string | null
+          event_type?: string
+          details?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      payment_worker_state: {
+        Row: {
+          id: string
+          lease_holder: string | null
+          lease_expires_at: string | null
+          last_sync_started_at: string | null
+          last_sync_completed_at: string | null
+          last_sync_message_count: number
+          last_sync_matched_count: number
+          last_sync_status: string
+          last_error: string | null
+          last_uid: number
+          mailbox_name: string
+          uid_validity: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          lease_holder?: string | null
+          lease_expires_at?: string | null
+          last_sync_started_at?: string | null
+          last_sync_completed_at?: string | null
+          last_sync_message_count?: number
+          last_sync_matched_count?: number
+          last_sync_status?: string
+          last_error?: string | null
+          last_uid?: number
+          mailbox_name?: string
+          uid_validity?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          lease_holder?: string | null
+          lease_expires_at?: string | null
+          last_sync_started_at?: string | null
+          last_sync_completed_at?: string | null
+          last_sync_message_count?: number
+          last_sync_matched_count?: number
+          last_sync_status?: string
+          last_error?: string | null
+          last_uid?: number
+          mailbox_name?: string
+          uid_validity?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -1269,6 +1538,9 @@ export type Database = {
       }
     }
     Functions: {
+      csc_acquire_payment_worker_lease: { Args: { p_lease_holder: string; p_duration_seconds?: number }; Returns: boolean }
+      csc_release_payment_worker_lease: { Args: { p_lease_holder: string; p_status?: string; p_message_count?: number; p_matched_count?: number; p_last_uid?: number | null; p_error?: string | null; p_uid_validity?: number | null; p_mailbox_name?: string | null }; Returns: boolean }
+      csc_fulfill_confirmed_payment: { Args: { p_order_id: string; p_evidence_id: string; p_matched_by?: string; p_notes?: string | null; p_user_id?: string | null }; Returns: Json }
       csc_complete_content: { Args: { content_kind: string; target: string }; Returns: undefined }
       csc_schedule_event_review_requests: { Args: Record<string, never>; Returns: number }
       get_member_resume: { Args: never; Returns: Json }
