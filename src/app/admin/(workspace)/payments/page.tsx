@@ -2,6 +2,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { AdminPaymentsClient } from "@/components/admin/payments/admin-payments-client";
+import { PaymentTestPanel } from "@/components/admin/payments/payment-test-panel";
 import { ShieldCheck, Mail, RefreshCw, Smartphone } from "lucide-react";
 
 export const metadata = { title: "Payments & UPI Reconciliation" };
@@ -27,6 +28,9 @@ export default async function AdminPaymentsPage() {
         description="Review bank evidence, inspect cryptographic auth provenance, reconcile UPI payments, and monitor the payment worker."
         isDemo={ctx.mode === "preview"}
       />
+
+      {/* Internal QA Payment Test & Automated Cleanup Panel */}
+      <PaymentTestPanel />
 
       {/* Operational Overview Bar */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

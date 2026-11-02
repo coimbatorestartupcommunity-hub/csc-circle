@@ -15,7 +15,7 @@ export function CompleteContentButton({
   onCompleted,
   className,
 }: {
-  kind: "event" | "notice" | "update" | "collaboration";
+  kind: "event" | "notice" | "update" | "collaboration" | "opportunity" | "resource";
   id: string;
   isCompleted?: boolean;
   label?: string;

@@ -58,6 +58,8 @@ function mapEvent(r: Row): EventRecord {
     onlineInfo: typeof (r.settings as Record<string, unknown> | null)?.onlineInfo === "string" ? (r.settings as Record<string, string>).onlineInfo : undefined,
     format: (r.format as EventRecord["format"]) ?? "offline",
     featured: !!r.featured,
+    isTestEvent: Boolean((r.settings as Record<string, unknown> | null)?.is_test_event || (r.settings as Record<string, unknown> | null)?.isTestEvent),
+    testRunId: typeof (r.settings as Record<string, unknown> | null)?.test_run_id === "string" ? ((r.settings as Record<string, unknown> | null)?.test_run_id as string) : undefined,
   };
 }
 
@@ -122,7 +124,12 @@ export async function getLivePublishedEvents(): Promise<EventRecord[]> {
     .select("*")
     .eq("status", "published")
     .order("starts_at", { ascending: true });
-  return (data ?? []).map((r) => mapEvent(r as Row));
+  return (data ?? [])
+    .filter((r) => {
+      const s = (r.settings as Record<string, unknown> | null) ?? {};
+      return !s.is_test_event && !s.isTestEvent && s.visibility !== "unlisted";
+    })
+    .map((r) => mapEvent(r as Row));
 }
 
 export async function getLivePublishedStartups(): Promise<Startup[]> {
@@ -188,6 +195,24 @@ export async function getPublicFeaturedEvent(): Promise<EventRecord | null> {
 
 export async function getPublicUpcomingEvents(limit = 3): Promise<EventRecord[]> {
   return (await getPublicEvents()).filter((event) => event.registrationState !== "completed").slice(0, limit);
+}
+
+export async function getPublicEventBySlug(slug: string): Promise<EventRecord | null> {
+  const events = await getPublicEvents();
+  const matched = events.find((e) => e.slug === slug);
+  if (matched) return matched;
+
+  // Direct fetch for unlisted or authorized private test events accessible by slug
+  const sb = createAnonClient();
+  if (!sb) return null;
+  const { data } = await sb
+    .from("events")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+  if (!data) return null;
+  return mapEvent(data as Row);
 }
 
 export async function getPublicTestimonials(): Promise<Testimonial[]> {
