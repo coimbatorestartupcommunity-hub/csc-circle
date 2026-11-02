@@ -1,7 +1,6 @@
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { getAdminContext } from "@/lib/admin/gate";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 import { authResponse } from "@/lib/auth/http";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 
@@ -32,7 +31,6 @@ export async function POST(
     }
 
     const admin = createAdminClient();
-    const session = await createClient();
 
     // Query confirmed registrations for this event
     const { data: registrations, error } = await admin
@@ -58,7 +56,7 @@ export async function POST(
     let queuedCount = 0;
     for (const reg of registrations) {
       if (reg.pass_token) {
-        const { data: res } = await session.rpc("csc_resend_event_pass", {
+        const { data: res } = await admin.rpc("csc_resend_event_pass", {
           p_registration_id: reg.id,
         });
         if (res) queuedCount++;

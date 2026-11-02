@@ -390,5 +390,86 @@ describe("F24: Adversarial Security & Concurrency Verification", () => {
       expect(replayCall.rows[0].csc_fulfill_confirmed_payment.ok).toBe(true);
       expect(replayCall.rows[0].csc_fulfill_confirmed_payment.already_fulfilled).toBe(true);
     });
+
+    it("ADV-16: denies anon and authenticated roles from acquiring or releasing payment worker lease", async () => {
+      // Test as anon
+      await db.exec("set role anon;");
+      await expect(
+        db.query("select public.csc_acquire_payment_worker_lease('malicious-worker', 60);")
+      ).rejects.toThrow(/permission denied for function/);
+      await expect(
+        db.query("select public.csc_release_payment_worker_lease('malicious-worker', 'idle', 0, 0, null, null, null, null);")
+      ).rejects.toThrow(/permission denied for function/);
+
+      // Test as authenticated
+      await db.exec("set role authenticated;");
+      await expect(
+        db.query("select public.csc_acquire_payment_worker_lease('malicious-worker', 60);")
+      ).rejects.toThrow(/permission denied for function/);
+      await expect(
+        db.query("select public.csc_release_payment_worker_lease('malicious-worker', 'idle', 0, 0, null, null, null, null);")
+      ).rejects.toThrow(/permission denied for function/);
+
+      // Test as service_role (allowed)
+      await db.exec("set role service_role;");
+      const res = await db.query<{ csc_acquire_payment_worker_lease: boolean }>(
+        "select public.csc_acquire_payment_worker_lease('trusted-service-worker', 60);"
+      );
+      expect(res.rows[0].csc_acquire_payment_worker_lease).toBe(true);
+
+      const releaseRes = await db.query<{ csc_release_payment_worker_lease: boolean }>(
+        "select public.csc_release_payment_worker_lease('trusted-service-worker', 'idle', 0, 0, null, null, null, null);"
+      );
+      expect(releaseRes.rows[0].csc_release_payment_worker_lease).toBe(true);
+
+      // Reset role
+      await db.exec("reset role;");
+    });
+
+    it("ADV-17: denies anon and authenticated roles from executing csc_resend_event_pass", async () => {
+      const dummyId = "00000000-0000-0000-0000-000000000000";
+
+      // Test as anon
+      await db.exec("set role anon;");
+      await expect(
+        db.query(`select public.csc_resend_event_pass('${dummyId}');`)
+      ).rejects.toThrow(/permission denied for function/);
+
+      // Test as authenticated
+      await db.exec("set role authenticated;");
+      await expect(
+        db.query(`select public.csc_resend_event_pass('${dummyId}');`)
+      ).rejects.toThrow(/permission denied for function/);
+
+      // Test as service_role (allowed - returns false since record doesn't exist)
+      await db.exec("set role service_role;");
+      const res = await db.query<{ csc_resend_event_pass: boolean }>(
+        `select public.csc_resend_event_pass('${dummyId}');`
+      );
+      expect(res.rows[0].csc_resend_event_pass).toBe(false);
+
+      // Reset role
+      await db.exec("reset role;");
+    });
+
+    it("ADV-18: verifies distributed_rate_limits has RLS enabled with admin-only read policy", async () => {
+      // Check pg_policy
+      const policies = await db.query<{ polname: string }>(`
+        select p.polname
+        from pg_policy p
+        join pg_class c on c.oid = p.polrelid
+        where c.relname = 'distributed_rate_limits';
+      `);
+      expect(policies.rows.some((p) => p.polname === "distributed_rate_limits_admin_read")).toBe(true);
+
+      // Anon cannot read distributed_rate_limits
+      await db.exec("set role anon;");
+      await expect(
+        db.query("select * from public.distributed_rate_limits;")
+      ).rejects.toThrow(/permission denied for table distributed_rate_limits/);
+
+      // Reset role
+      await db.exec("reset role;");
+    });
   });
 });

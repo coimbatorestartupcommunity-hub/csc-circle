@@ -43,8 +43,8 @@ export async function POST(request: Request) {
     }
     if (parsed.data.kind === "resend_event_pass") {
       if (parsed.data.decision !== "resend") return authResponse({ error: "Invalid pass action." }, 422);
-      const session = await createClient();
-      const { data, error } = await session.rpc("csc_resend_event_pass", { p_registration_id: parsed.data.target });
+      const admin = createAdminClient();
+      const { data, error } = await admin.rpc("csc_resend_event_pass", { p_registration_id: parsed.data.target });
       if (error || !data) return authResponse({ error: "The confirmed event pass could not be re-queued." }, 409);
       scheduleNotificationDelivery();
       return authResponse({ ok: true });
