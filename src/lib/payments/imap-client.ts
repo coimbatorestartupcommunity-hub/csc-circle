@@ -1,6 +1,6 @@
 import { ImapFlow } from "imapflow";
 import { getImapConfig } from "./config";
-import type { RawEmailInput } from "./axis-parser";
+import { parseMimeEmail, type RawEmailInput } from "./axis-parser";
 
 export interface ImapHealthCheckResult {
   ok: boolean;
@@ -186,48 +186,37 @@ export async function fetchRecentBankAlerts(options: FetchBankAlertsOptions = {}
         uids = Array.isArray(all) ? (all as number[]) : [];
       }
 
-      // Filter and limit
-      uids = uids.filter((uid) => uid > lastUid).slice(-limit);
+      // Sort ascending to prevent message loss during backlogs (process oldest unhandled first)
+      uids = uids
+        .filter((uid) => uid > lastUid)
+        .sort((a, b) => a - b)
+        .slice(0, limit);
 
       if (uids.length === 0) return;
 
       for (const msg of await client.fetchAll(uids, { envelope: true, bodyStructure: true, source: true }, { uid: true })) {
         if (msg.uid > highestUid) highestUid = msg.uid;
 
-        const envelope = msg.envelope;
-        const fromAddress = envelope?.from?.[0]?.address || "";
-        const subject = envelope?.subject || "";
-        const messageId = envelope?.messageId || `<uid-${msg.uid}@icloud>`;
-        const date = envelope?.date;
-
-        // Parse raw source or headers
-        const sourceStr = msg.source ? msg.source.toString("utf-8") : "";
-
-        // Extract basic headers and body from raw source
-        const headerEnd = sourceStr.indexOf("\r\n\r\n");
-        const headersRaw = headerEnd !== -1 ? sourceStr.slice(0, headerEnd) : "";
-        const bodyRaw = headerEnd !== -1 ? sourceStr.slice(headerEnd + 4) : sourceStr;
-
-        const headers: Record<string, string> = {};
-        const headerLines = headersRaw.split(/\r?\n(?=[^\s])/);
-        for (const line of headerLines) {
-          const colonIdx = line.indexOf(":");
-          if (colonIdx > 0) {
-            const name = line.slice(0, colonIdx).trim().toLowerCase();
-            const val = line.slice(colonIdx + 1).replace(/\r?\n\s+/g, " ").trim();
-            headers[name] = val;
-          }
+        // Parse RFC 5322 MIME source if available
+        let emailInput: RawEmailInput;
+        if (msg.source) {
+          emailInput = parseMimeEmail(msg.source);
+          // Preserve server envelope properties if present
+          if (msg.envelope?.messageId) emailInput.messageId = msg.envelope.messageId;
+          if (msg.envelope?.date) emailInput.date = msg.envelope.date;
+          if (msg.envelope?.subject && !emailInput.subject) emailInput.subject = msg.envelope.subject;
+          if (msg.envelope?.from?.[0]?.address && !emailInput.from) emailInput.from = msg.envelope.from[0].address;
+        } else {
+          emailInput = {
+            messageId: msg.envelope?.messageId || `<uid-${msg.uid}@icloud>`,
+            subject: msg.envelope?.subject || "",
+            from: msg.envelope?.from?.[0]?.address || "",
+            headers: {},
+            date: msg.envelope?.date,
+          };
         }
 
-        rawEmails.push({
-          messageId,
-          subject,
-          from: fromAddress || headers["from"] || "",
-          headers,
-          text: bodyRaw,
-          html: bodyRaw.includes("<html") || bodyRaw.includes("<body") ? bodyRaw : undefined,
-          date,
-        });
+        rawEmails.push(emailInput);
       }
     } finally {
       lock.release();

@@ -78,11 +78,15 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
     }
 
     const currentValues = getValues();
+    const savedToken = typeof window !== "undefined" ? sessionStorage.getItem(`csc_guest_token_${event.id}`) : null;
     setSaving(true);
     try {
       const res = await fetch("/api/payments/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(savedToken ? { "x-guest-token": savedToken } : {}),
+        },
         body: JSON.stringify({
           eventId: event.id,
           fullName: currentValues.fullName,
@@ -96,6 +100,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
           dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
           consentContact: currentValues.consentContact,
           consentPaymentTerms: currentValues.consentPaymentTerms,
+          existingGuestToken: savedToken || undefined,
         }),
       });
 
@@ -104,9 +109,13 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
         throw new Error(data.error || "Unable to initialize UPI payment.");
       }
 
+      if (typeof window !== "undefined" && data.guestCheckoutToken) {
+        sessionStorage.setItem(`csc_guest_token_${event.id}`, data.guestCheckoutToken);
+      }
+
       setActiveOrder({
         ...data.order,
-        guestCheckoutToken: data.guestCheckoutToken,
+        guestCheckoutToken: data.guestCheckoutToken || savedToken || undefined,
       });
       setActiveDeepLinks(data.deepLinks);
       setCheckoutModalOpen(true);

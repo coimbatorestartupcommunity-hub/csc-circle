@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { verifyOrderAccess } from "@/lib/payments/orders";
+import { verifyOrderAccess, isPayerNameAligned } from "@/lib/payments/orders";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 
 const claimUtrSchema = z.object({
@@ -121,25 +121,49 @@ export async function POST(
         .maybeSingle();
 
       if (matchingEvidence && matchingEvidence.reconciliation_state !== "matched") {
-        // Execute atomic PostgreSQL fulfillment RPC
-        const { data: fulfillResult, error: fulfillError } = await admin.rpc("csc_fulfill_confirmed_payment", {
-          p_order_id: order.id,
-          p_evidence_id: matchingEvidence.id,
-          p_matched_by: "user_utr_claim",
-          p_notes: `User claimed UTR ${utr} matched with authenticated Axis Bank credit evidence ${matchingEvidence.id}`,
-          p_user_id: sessionUserId || order.user_id || null,
-        });
+        const hasDirectReference = matchingEvidence.transaction_info_raw.toUpperCase().includes(order.order_reference.toUpperCase());
+        const hasPayerAlignment = isPayerNameAligned(matchingEvidence.payer_name, order.full_name);
 
-        if (!fulfillError && fulfillResult && (fulfillResult as { ok?: boolean }).ok) {
-          const primaryPassId = (fulfillResult as { primary_pass_id?: string }).primary_pass_id;
-          if (primaryPassId) {
-            await ensureEventPassEmail(admin, primaryPassId);
+        if (hasDirectReference || hasPayerAlignment) {
+          // Unambiguous payment attribution established!
+          const { data: fulfillResult, error: fulfillError } = await admin.rpc("csc_fulfill_confirmed_payment", {
+            p_order_id: order.id,
+            p_evidence_id: matchingEvidence.id,
+            p_matched_by: "user_utr_claim",
+            p_notes: `Attributed UTR ${utr} to ${order.order_reference} (${hasDirectReference ? "direct reference" : "payer alignment"})`,
+            p_user_id: sessionUserId || order.user_id || null,
+          });
+
+          if (!fulfillError && fulfillResult && (fulfillResult as { ok?: boolean }).ok) {
+            const primaryPassId = (fulfillResult as { primary_pass_id?: string }).primary_pass_id;
+            if (primaryPassId) {
+              await ensureEventPassEmail(admin, primaryPassId);
+            }
+
+            return NextResponse.json({
+              ok: true,
+              status: "reconciled",
+              message: "Payment successfully verified and confirmed with Axis Bank record!",
+            });
           }
+        } else {
+          // UTR matches an authenticated credit, but credit has NO order reference and NO payer name alignment.
+          // Financial safety: do not auto-confirm unverified payment attribution.
+          await admin
+            .from("event_payment_evidence")
+            .update({ reconciliation_state: "ambiguous" })
+            .eq("id", matchingEvidence.id);
+
+          await admin.from("event_payment_events").insert({
+            order_id: order.id,
+            event_type: "utr_attribution_ambiguous",
+            details: { utr, evidence_id: matchingEvidence.id, payer_name: matchingEvidence.payer_name },
+          });
 
           return NextResponse.json({
             ok: true,
-            status: "reconciled",
-            message: "Payment successfully matched and confirmed with Axis Bank record!",
+            status: "processing",
+            message: "UTR reference recorded. Administrative verification is required to confirm payment ownership.",
           });
         }
       }

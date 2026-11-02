@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isPayerNameAligned } from "./orders";
 import { parseAxisCreditAlert, type RawEmailInput } from "./axis-parser";
 import { fetchRecentBankAlerts } from "./imap-client";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
@@ -139,8 +140,31 @@ export async function processReconciliationBatch(
         matchedOrder = refMatch;
         matchedBy = "automated_worker";
       } else if (utrMatch) {
-        matchedOrder = utrMatch;
-        matchedBy = "user_utr_claim";
+        // Enforce payment attribution alignment:
+        const hasPayerAlignment = isPayerNameAligned(evidence.payer_name, utrMatch.full_name);
+        if (hasPayerAlignment) {
+          matchedOrder = utrMatch;
+          matchedBy = "user_utr_claim";
+        } else {
+          // Claimed UTR matches, but without direct reference or payer alignment,
+          // require admin review to protect against stolen UTR claims
+          await admin
+            .from("event_payment_evidence")
+            .update({ reconciliation_state: "ambiguous" })
+            .eq("id", evidence.id);
+
+          await admin
+            .from("event_payment_orders")
+            .update({
+              status: "processing",
+              matched_evidence_id: evidence.id,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", utrMatch.id);
+
+          ambiguousCredits++;
+          continue;
+        }
       } else {
         // NO AMOUNT-ONLY AUTO-MATCHING.
         // If multiple orders owe this amount with no reference or UTR claim, mark ambiguous.

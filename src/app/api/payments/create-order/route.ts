@@ -31,8 +31,11 @@ const createOrderSchema = z.object({
     "Other",
   ]).optional(),
   dietaryAccessibilityNotes: z.string().max(500).optional(),
-  consentContact: z.boolean().optional(),
-  consentPaymentTerms: z.boolean().optional(),
+  consentContact: z.boolean().default(false),
+  consentPaymentTerms: z.boolean().refine((val) => val === true, {
+    message: "You must affirmatively accept the event registration and payment terms.",
+  }),
+  existingGuestToken: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -65,10 +68,14 @@ export async function POST(request: Request) {
       // Guest order is supported
     }
 
+    const headerToken = request.headers.get("x-guest-token");
+    const existingGuestToken = parsed.data.existingGuestToken || headerToken?.trim() || undefined;
+
     const admin = createAdminClient();
     const result = await createPaymentOrder(admin, {
       ...parsed.data,
       userId,
+      existingGuestToken,
     });
 
     if (!result.ok) {

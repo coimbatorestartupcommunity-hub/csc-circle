@@ -264,6 +264,7 @@ returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare
   v_order record;
+  v_event record;
   v_evidence record;
   v_user_id uuid;
   v_paid_reg_id uuid;
@@ -273,6 +274,9 @@ declare
   v_pass_token text;
   v_extra_name text;
   v_idx integer;
+  v_confirmed_seats integer;
+  v_existing_pass_count integer;
+  v_passes_created integer := 0;
 begin
   -- 1. Lock and validate order
   select * into v_order
@@ -297,7 +301,37 @@ begin
     raise exception 'Order % is in invalid status for fulfillment: %', p_order_id, v_order.status;
   end if;
 
-  -- 2. Lock and validate evidence
+  -- Validate order expiration (allow 10m grace for bank lag)
+  if v_order.expires_at is not null and now() > (v_order.expires_at + interval '10 minutes') then
+    raise exception 'Order % has expired (expires_at: %, now: %)', p_order_id, v_order.expires_at, now();
+  end if;
+
+  -- 2. Lock and validate event and seat capacity
+  select * into v_event
+  from public.events
+  where id = v_order.event_id
+  for update;
+
+  if not found then
+    raise exception 'Event not found: %', v_order.event_id;
+  end if;
+
+  if v_event.status != 'published' then
+    raise exception 'Event % is not published (status: %)', v_event.id, v_event.status;
+  end if;
+
+  if v_event.capacity is not null then
+    select coalesce(count(*), 0) into v_confirmed_seats
+    from public.event_registrations
+    where event_id = v_order.event_id and status in ('confirmed', 'checked_in');
+
+    if (v_confirmed_seats + v_order.attendee_count) > v_event.capacity then
+      raise exception 'Event % capacity exceeded: confirmed % + requested % > capacity %',
+        v_event.id, v_confirmed_seats, v_order.attendee_count, v_event.capacity;
+    end if;
+  end if;
+
+  -- 3. Lock and validate evidence
   select * into v_evidence
   from public.event_payment_evidence
   where id = p_evidence_id
@@ -309,6 +343,15 @@ begin
 
   if v_evidence.direction != 'CREDIT' then
     raise exception 'Evidence % direction is not CREDIT: %', p_evidence_id, v_evidence.direction;
+  end if;
+
+  if v_evidence.auth_status != 'authenticated' then
+    raise exception 'Evidence % failed authentication (status: %)', p_evidence_id, v_evidence.auth_status;
+  end if;
+
+  if v_evidence.receiving_account_suffix != v_order.expected_account_suffix then
+    raise exception 'Evidence account suffix % does not match expected suffix %',
+      v_evidence.receiving_account_suffix, v_order.expected_account_suffix;
   end if;
 
   if v_evidence.amount_paise != v_order.amount_paise then
@@ -327,7 +370,7 @@ begin
   v_paid_reg_id := coalesce(v_order.paid_registration_id, gen_random_uuid());
   v_reg_ref := 'CSC-EVT-' || upper(replace(gen_random_uuid()::text, '-', ''));
 
-  -- 3. Upsert paid_event_registrations
+  -- 4. Upsert paid_event_registrations
   insert into public.paid_event_registrations (
     id,
     event_id,
@@ -386,14 +429,12 @@ begin
     reviewed_at = clock_timestamp(),
     review_note = coalesce(p_notes, paid_event_registrations.review_note);
 
-  -- 4. Check or create event passes in event_registrations
-  select id into v_first_pass_id
+  -- 5. Guarantee exact attendee group passes in event_registrations
+  select count(*)::integer into v_existing_pass_count
   from public.event_registrations
-  where paid_registration_id = v_paid_reg_id
-  order by created_at asc
-  limit 1;
+  where paid_registration_id = v_paid_reg_id;
 
-  if v_first_pass_id is null then
+  if v_existing_pass_count = 0 then
     -- Primary pass
     v_pass_token := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
     v_pass_ref := 'CSC-EVT-' || upper(replace(gen_random_uuid()::text, '-', ''));
@@ -422,14 +463,50 @@ begin
       lower(v_order.email)
     ) returning id into v_first_pass_id;
 
-    -- Additional passes if attendee_count > 1
-    if v_order.attendee_count > 1 and v_order.additional_attendee_names is not null and trim(v_order.additional_attendee_names) != '' then
+    v_passes_created := 1;
+
+    -- Additional attendee passes if attendee_count > 1
+    if v_order.attendee_count > 1 then
       v_idx := 1;
-      for v_extra_name in
-        select trim(elem) from regexp_split_to_table(v_order.additional_attendee_names, E'[\r\n;]+') as elem where trim(elem) != ''
-      loop
+      if v_order.additional_attendee_names is not null and trim(v_order.additional_attendee_names) != '' then
+        for v_extra_name in
+          select trim(elem) from regexp_split_to_table(v_order.additional_attendee_names, E'[\r\n;]+') as elem where trim(elem) != ''
+        loop
+          exit when v_passes_created >= v_order.attendee_count;
+          v_idx := v_idx + 1;
+          v_pass_token := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
+          v_pass_ref := 'CSC-EVT-' || upper(replace(gen_random_uuid()::text, '-', ''));
+
+          insert into public.event_registrations (
+            event_id,
+            user_id,
+            attendee_name,
+            reference,
+            pass_token,
+            status,
+            payment,
+            paid_registration_id,
+            source,
+            source_email
+          ) values (
+            v_order.event_id,
+            v_user_id,
+            v_extra_name,
+            v_pass_ref,
+            v_pass_token,
+            'confirmed',
+            'paid',
+            v_paid_reg_id,
+            'platform',
+            lower(v_order.email)
+          );
+          v_passes_created := v_passes_created + 1;
+        end loop;
+      end if;
+
+      -- Generate labeled passes for remaining attendees to strictly satisfy attendee_count invariant
+      while v_passes_created < v_order.attendee_count loop
         v_idx := v_idx + 1;
-        exit when v_idx > v_order.attendee_count;
         v_pass_token := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
         v_pass_ref := 'CSC-EVT-' || upper(replace(gen_random_uuid()::text, '-', ''));
 
@@ -447,7 +524,7 @@ begin
         ) values (
           v_order.event_id,
           v_user_id,
-          v_extra_name,
+          v_order.full_name || ' (Guest ' || v_idx || ')',
           v_pass_ref,
           v_pass_token,
           'confirmed',
@@ -456,16 +533,27 @@ begin
           'platform',
           lower(v_order.email)
         );
+        v_passes_created := v_passes_created + 1;
       end loop;
     end if;
+
+    if v_passes_created != v_order.attendee_count then
+      raise exception 'Pass generation invariant violation: created % passes, expected %', v_passes_created, v_order.attendee_count;
+    end if;
+  else
+    select id into v_first_pass_id
+    from public.event_registrations
+    where paid_registration_id = v_paid_reg_id
+    order by created_at asc
+    limit 1;
   end if;
 
-  -- 5. Link primary pass to paid_event_registrations
+  -- 6. Link primary pass to paid_event_registrations
   update public.paid_event_registrations
   set member_registration_id = v_first_pass_id
   where id = v_paid_reg_id;
 
-  -- 6. Update order status
+  -- 7. Update order status
   update public.event_payment_orders
   set status = 'reconciled',
       matched_evidence_id = v_evidence.id,
@@ -475,13 +563,13 @@ begin
       updated_at = clock_timestamp()
   where id = v_order.id;
 
-  -- 7. Update evidence state
+  -- 8. Update evidence state
   update public.event_payment_evidence
   set reconciliation_state = 'matched',
       matched_order_id = v_order.id
   where id = v_evidence.id;
 
-  -- 8. Record payment reconciliation mapping
+  -- 9. Record payment reconciliation mapping
   insert into public.event_payment_reconciliation (
     order_id,
     evidence_id,
@@ -496,7 +584,7 @@ begin
     clock_timestamp()
   );
 
-  -- 9. Record audit event
+  -- 10. Record audit event
   insert into public.event_payment_events (
     order_id,
     event_type,
@@ -510,8 +598,28 @@ begin
       'matched_by', p_matched_by,
       'amount_paise', v_evidence.amount_paise,
       'paid_registration_id', v_paid_reg_id,
-      'primary_pass_id', v_first_pass_id
+      'primary_pass_id', v_first_pass_id,
+      'attendee_count', v_order.attendee_count
     )
+  );
+
+  -- 11. Transactionally queue confirmation email in durable notifications outbox
+  perform private.enqueue_email(
+    'EventConfirmed',
+    'event_registrations',
+    v_first_pass_id,
+    v_user_id,
+    lower(v_order.email),
+    jsonb_build_object(
+      'status', 'confirmed',
+      'reference', v_reg_ref,
+      'eventTitle', v_event.title,
+      'name', v_order.full_name,
+      'attendeeCount', v_order.attendee_count,
+      'totalAmountPaid', round(v_order.amount_paise::numeric / 100.0, 2)
+    ),
+    false,
+    'order:' || v_order.id
   );
 
   return jsonb_build_object(
@@ -519,7 +627,8 @@ begin
     'order_id', v_order.id,
     'evidence_id', v_evidence.id,
     'paid_registration_id', v_paid_reg_id,
-    'primary_pass_id', v_first_pass_id
+    'primary_pass_id', v_first_pass_id,
+    'attendee_count', v_order.attendee_count
   );
 end $$;
 

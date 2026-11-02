@@ -1,11 +1,13 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { verifyEmailAuthentication } from "@/lib/payments/email-auth";
-import { parseAxisCreditAlert, parseAxisTimestamp, parseTransactionInfo } from "@/lib/payments/axis-parser";
+import { parseAxisCreditAlert, parseAxisTimestamp, parseTransactionInfo, parseMimeEmail, decodeQuotedPrintable, decodeRfc2047 } from "@/lib/payments/axis-parser";
 import {
   generateGuestCheckoutToken,
   hashGuestToken,
   verifyOrderAccess,
+  isPayerNameAligned,
+  parseAttendeeList,
 } from "@/lib/payments/orders";
 
 describe("Payment Security & Cryptographic Verification", () => {
@@ -156,6 +158,95 @@ describe("Payment Security & Cryptographic Verification", () => {
       expect(alert?.receivingAccountSuffix).toBe("8888");
       expect(alert?.isEligibleForAutoReconcile).toBe(false);
       expect(alert?.rejectionReason).toContain("does not match expected CSC account XX1995");
+    });
+  });
+
+  describe("Payment Attribution & Payer Alignment Security", () => {
+    it("aligns payer names across different word orders and casing", () => {
+      expect(isPayerNameAligned("VIKASH S", "S Vikash")).toBe(true);
+      expect(isPayerNameAligned("RAMANATHAN K", "Ramanathan K")).toBe(true);
+      expect(isPayerNameAligned("MR KARTHIK RAJAN", "Karthik Rajan")).toBe(true);
+    });
+
+    it("rejects attribution when payer name is completely disjoint", () => {
+      expect(isPayerNameAligned("ALICE CHEN", "Bob Smith")).toBe(false);
+      expect(isPayerNameAligned("MALLORY ATTACKER", "Vikash S")).toBe(false);
+      expect(isPayerNameAligned(null, "Vikash S")).toBe(false);
+      expect(isPayerNameAligned("VIKASH S", null)).toBe(false);
+    });
+  });
+
+  describe("MIME Parsing & Character Decoding", () => {
+    it("decodes Quoted-Printable encoded bank alert content", () => {
+      const qpRaw = "INR=20180.00=20was=20credited=20to=20your=20A/c=20XX1995";
+      expect(decodeQuotedPrintable(qpRaw)).toBe("INR 180.00 was credited to your A/c XX1995");
+    });
+
+    it("decodes RFC 2047 encoded email subject headers", () => {
+      const base64Subject = "=?utf-8?B?SU5SIDE4MC4wMCB3YXMgY3JlZGl0ZWQgdG8geW91ciBBL2Mu?=";
+      expect(decodeRfc2047(base64Subject)).toBe("INR 180.00 was credited to your A/c.");
+    });
+
+    it("parses multipart/alternative MIME emails into clean text and html", () => {
+      const mime = [
+        "From: alerts@axis.bank.in",
+        "Subject: =?utf-8?B?SU5SIDE4MC4wMCB3YXMgY3JlZGl0ZWQ=?=",
+        "Content-Type: multipart/alternative; boundary=\"boundary_axis_123\"",
+        "Message-ID: <axis-msg-999@axis.bank.in>",
+        "",
+        "--boundary_axis_123",
+        "Content-Type: text/plain; charset=utf-8",
+        "Content-Transfer-Encoding: quoted-printable",
+        "",
+        "INR=20180.00=20was=20credited=20to=20your=20A/c=20XX1995.",
+        "Transaction Info: UPI/P2A/630799112233/VIKASH S/IOBA/UPI",
+        "",
+        "--boundary_axis_123",
+        "Content-Type: text/html; charset=utf-8",
+        "",
+        "<html><body><p>INR 180.00 was credited to your A/c XX1995.</p></body></html>",
+        "",
+        "--boundary_axis_123--",
+      ].join("\r\n");
+
+      const parsed = parseMimeEmail(mime);
+      expect(parsed.subject).toBe("INR 180.00 was credited");
+      expect(parsed.from).toBe("alerts@axis.bank.in");
+      expect(parsed.text).toContain("INR 180.00 was credited to your A/c XX1995.");
+      expect(parsed.text).toContain("630799112233");
+      expect(parsed.html).toContain("<p>INR 180.00 was credited to your A/c XX1995.</p>");
+    });
+  });
+
+  describe("Group Pass Structure Guarantee", () => {
+    it("guarantees exactly N passes for group bookings", () => {
+      // 3 attendees with 1 extra name provided -> 1 primary + 1 named extra + 1 labeled guest
+      const passes3 = parseAttendeeList("Vikash S", 3, "Karthik R");
+      expect(passes3).toEqual(["Vikash S", "Karthik R", "Vikash S (Guest 3)"]);
+
+      // 1 attendee -> 1 pass
+      const pass1 = parseAttendeeList("Vikash S", 1, null);
+      expect(pass1).toEqual(["Vikash S"]);
+
+      // 4 attendees with 3 extra names -> all 4 named
+      const passes4 = parseAttendeeList("Vikash S", 4, "A; B\nC");
+      expect(passes4).toEqual(["Vikash S", "A", "B", "C"]);
+    });
+  });
+
+  describe("Order Takeover Defense & Consent Invariants", () => {
+    it("protects guest token hashes from unauthorized rotation", () => {
+      const originalToken = generateGuestCheckoutToken();
+      const originalHash = hashGuestToken(originalToken);
+
+      const attackerToken = generateGuestCheckoutToken();
+      const attackerHash = hashGuestToken(attackerToken);
+
+      // Verify that attacker token cannot authorize original order
+      const order = { user_id: null, guest_token_hash: originalHash };
+      expect(verifyOrderAccess(order, null, attackerToken)).toBe(false);
+      expect(verifyOrderAccess(order, null, originalToken)).toBe(true);
+      expect(originalHash).not.toBe(attackerHash);
     });
   });
 });

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { verifyOrderAccess } from "@/lib/payments/orders";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export async function GET(
   request: Request,
@@ -12,6 +13,14 @@ export async function GET(
     const { orderId } = await params;
     if (!z.string().uuid().safeParse(orderId).success) {
       return NextResponse.json({ ok: false, error: "Invalid order ID." }, { status: 404 });
+    }
+
+    const ip = clientIp(request);
+    if (!rateLimit(`order-status:${orderId}:${ip}`, 40, 60_000).allowed) {
+      return NextResponse.json(
+        { ok: false, error: "Too many status requests. Please wait a moment." },
+        { status: 429, headers: { "Cache-Control": "private, no-store" } }
+      );
     }
 
     // Resolve caller identity

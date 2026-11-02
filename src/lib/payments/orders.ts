@@ -17,6 +17,7 @@ export interface CreateOrderParams {
   consentContact?: boolean;
   consentPaymentTerms?: boolean;
   userId?: string;
+  existingGuestToken?: string;
 }
 
 export interface PaymentDeepLinks {
@@ -38,6 +39,45 @@ export function generateGuestCheckoutToken(): string {
 
 export function hashGuestToken(token: string): string {
   return createHash("sha256").update(token.trim()).digest("hex");
+}
+
+export function isPayerNameAligned(bankPayerName?: string | null, orderFullName?: string | null): boolean {
+  if (!bankPayerName || !orderFullName) return false;
+  const normalize = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .trim()
+      .split(/\s+/)
+      .filter((w) => w.length > 1);
+  const bankWords = normalize(bankPayerName);
+  const orderWords = normalize(orderFullName);
+  if (bankWords.length === 0 || orderWords.length === 0) return false;
+  const common = bankWords.filter((w) => w.length > 2 && orderWords.includes(w));
+  return common.length > 0;
+}
+
+export function parseAttendeeList(
+  fullName: string,
+  attendeeCount: number,
+  additionalNamesRaw?: string | null
+): string[] {
+  const result: string[] = [fullName.trim()];
+  if (attendeeCount > 1 && additionalNamesRaw) {
+    const extras = additionalNamesRaw
+      .split(/[\r\n;]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    for (const name of extras) {
+      if (result.length < attendeeCount) {
+        result.push(name);
+      }
+    }
+  }
+  while (result.length < attendeeCount) {
+    result.push(`${fullName.trim()} (Guest ${result.length + 1})`);
+  }
+  return result;
 }
 
 export function verifyOrderAccess(
@@ -113,10 +153,15 @@ export async function createPaymentOrder(
     additionalAttendeeNames,
     referralSource,
     dietaryAccessibilityNotes,
-    consentContact = true,
-    consentPaymentTerms = true,
+    consentContact = false,
+    consentPaymentTerms = false,
     userId,
+    existingGuestToken,
   } = params;
+
+  if (!consentPaymentTerms) {
+    return { ok: false as const, error: "You must affirmatively accept the event registration and payment terms.", status: 422 };
+  }
 
   // 1. Fetch and validate event
   const { data: event, error: eventError } = await admin
@@ -152,7 +197,7 @@ export async function createPaymentOrder(
   // 2. Prevent duplicate active registrations for this event
   const lowerEmail = email.toLowerCase().trim();
   const [{ data: existingOrders }, { data: existingPaidRegs }, { data: existingPasses }] = await Promise.all([
-    admin.from("event_payment_orders").select("id,status,guest_token_hash").eq("event_id", event.id).eq("email", lowerEmail).in("status", ["pending", "processing", "verified", "reconciled"]).limit(5),
+    admin.from("event_payment_orders").select("id,status,guest_token_hash,user_id,expires_at").eq("event_id", event.id).eq("email", lowerEmail).in("status", ["pending", "processing", "verified", "reconciled"]).limit(5),
     admin.from("paid_event_registrations").select("id,status").eq("event_id", event.id).eq("email", lowerEmail).not("status", "in", "('rejected','cancelled')").limit(5),
     admin.from("event_registrations").select("id,status").eq("event_id", event.id).eq("source_email", lowerEmail).not("status", "in", "('cancelled','revoked')").limit(5),
   ]);
@@ -161,29 +206,60 @@ export async function createPaymentOrder(
     return { ok: false as const, error: "You are already registered or confirmed for this event.", status: 409 };
   }
 
-  // Generate capability token for guest checkout access
-  const guestCheckoutToken = generateGuestCheckoutToken();
-  const guestTokenHash = hashGuestToken(guestCheckoutToken);
-
-  // If there is an existing pending order created recently (< 30 min), we can reuse it
+  // Handle existing pending order safely without allowing order takeover
   const activeOrder = existingOrders?.find((o) => o.status === "pending" || o.status === "processing");
   if (activeOrder) {
-    // Update with fresh guest token capability and return details
-    await admin
-      .from("event_payment_orders")
-      .update({ guest_token_hash: guestTokenHash, updated_at: new Date().toISOString() })
-      .eq("id", activeOrder.id);
+    const isExpired = activeOrder.expires_at ? new Date(activeOrder.expires_at).getTime() <= now : false;
+    if (isExpired) {
+      await admin
+        .from("event_payment_orders")
+        .update({ status: "expired", updated_at: new Date().toISOString() })
+        .eq("id", activeOrder.id);
+    } else {
+      // Order is still active! Verify ownership before allowing resumption
+      let isOwner = false;
 
-    const { data: fullOrder } = await admin.from("event_payment_orders").select("*").eq("id", activeOrder.id).single();
-    if (fullOrder) {
-      return {
-        ok: true as const,
-        order: fullOrder,
-        deepLinks: buildPaymentDeepLinks(fullOrder.upi_uri),
-        guestCheckoutToken,
-      };
+      // 1) Authenticated user matches order's user_id
+      if (userId && activeOrder.user_id && activeOrder.user_id === userId) {
+        isOwner = true;
+      }
+
+      // 2) Guest presents matching capability token
+      if (existingGuestToken && activeOrder.guest_token_hash) {
+        const providedHash = hashGuestToken(existingGuestToken);
+        if (
+          providedHash.length === activeOrder.guest_token_hash.length &&
+          timingSafeEqual(Buffer.from(providedHash), Buffer.from(activeOrder.guest_token_hash))
+        ) {
+          isOwner = true;
+        }
+      }
+
+      if (isOwner) {
+        // Return existing active order details WITHOUT rotating the token
+        const { data: fullOrder } = await admin.from("event_payment_orders").select("*").eq("id", activeOrder.id).single();
+        if (fullOrder) {
+          return {
+            ok: true as const,
+            order: fullOrder,
+            deepLinks: buildPaymentDeepLinks(fullOrder.upi_uri),
+            guestCheckoutToken: existingGuestToken,
+          };
+        }
+      } else {
+        // Prevent order takeover: unauthenticated visitor cannot access or rotate someone else's order
+        return {
+          ok: false as const,
+          error: "A payment order is already in progress for this email address. Please resume from your active checkout session or wait for it to expire.",
+          status: 409,
+        };
+      }
     }
   }
+
+  // Generate capability token for new guest checkout access
+  const guestCheckoutToken = generateGuestCheckoutToken();
+  const guestTokenHash = hashGuestToken(guestCheckoutToken);
 
   // 3. Calculate amount
   const totalRupees = Math.round(pricePerAttendee * 100) * attendeeCount / 100;

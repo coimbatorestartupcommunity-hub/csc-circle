@@ -959,5 +959,159 @@ describe("resources & opportunities CMS", () => {
       expect(state.rows[0].mailbox_name).toBe("INBOX");
       expect(state.rows[0].last_sync_status).toBe("success");
     });
+
+    it("strictly creates exactly N passes for group orders and transactionally queues outbox email", async () => {
+      await db.exec(`
+        insert into public.events(id, slug, title, category, starts_at, ends_at, location, admission, price_per_attendee, status, registration_state, capacity)
+        values (
+          '66666666-6666-4666-8666-666666666666',
+          'group-pass-event',
+          'Group Pass Event',
+          'networking',
+          '2026-12-05T10:00:00Z',
+          '2026-12-05T13:00:00Z',
+          'Coimbatore',
+          'paid',
+          100.00,
+          'published',
+          'open',
+          50
+        ) on conflict (id) do nothing;
+
+        insert into public.event_payment_orders(
+          id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
+          amount_paise, currency, upi_uri, status, additional_attendee_names
+        ) values (
+          '77777777-7777-4777-8777-777777777777',
+          'CSC-ORD-GROUP003',
+          '66666666-6666-4666-8666-666666666666',
+          'Vikash S',
+          'vikash.group@example.test',
+          '9342877474',
+          'CSC Circle',
+          'Startup Founder / Co-Founder',
+          3,
+          30000,
+          'INR',
+          'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=300.00&cu=INR&tr=CSC-ORD-GROUP003',
+          'pending',
+          'Karthik R'
+        ) on conflict (id) do nothing;
+
+        insert into public.event_payment_evidence(
+          id, bank, direction, currency, amount_paise, receiving_account_suffix, utr,
+          transaction_time, transaction_info_raw, payer_name, sender_email, message_id, subject, auth_status
+        ) values (
+          '88888888-8888-4888-8888-888888888888',
+          'AXIS_BANK',
+          'CREDIT',
+          'INR',
+          30000,
+          '1995',
+          '630733445566',
+          now(),
+          'UPI/P2A/630733445566/VIKASH S/IOBA/UPI/CSC-ORD-GROUP003',
+          'VIKASH S',
+          'alerts@axis.bank.in',
+          '<alert-630733445566@axis.bank.in>',
+          'INR 300.00 was credited to your A/c.',
+          'authenticated'
+        ) on conflict (id) do nothing;
+      `);
+
+      const res = await db.query<{ res: { ok: boolean; attendee_count: number } }>(`
+        select public.csc_fulfill_confirmed_payment(
+          '77777777-7777-4777-8777-777777777777'::uuid,
+          '88888888-8888-4888-8888-888888888888'::uuid
+        ) as res;
+      `);
+      expect(res.rows[0].res.ok).toBe(true);
+
+      // Verify that EXACTLY 3 passes were created in event_registrations
+      const passes = await db.query<{ id: string; attendee_name: string; reference: string }>(
+        "select id, attendee_name, reference from public.event_registrations where paid_registration_id=(select id from public.paid_event_registrations where upi_transaction_ref='630733445566') order by attendee_name"
+      );
+      expect(passes.rows).toHaveLength(3);
+      expect(passes.rows.map((p) => p.attendee_name)).toEqual([
+        "Karthik R",
+        "Vikash S",
+        "Vikash S (Guest 3)",
+      ]);
+
+      // Verify durable transactional email was queued in public.notifications
+      const notifications = await db.query<{ type: string; recipient: string; dedupe_key: string }>(
+        "select type, recipient, dedupe_key from public.notifications where template_key='EventConfirmed' and dedupe_key like '%order:77777777-7777-4777-8777-777777777777%'"
+      );
+      expect(notifications.rows).toHaveLength(1);
+      expect(notifications.rows[0].type).toBe("EventConfirmed");
+      expect(notifications.rows[0].recipient).toBe("vikash.group@example.test");
+    });
+
+    it("rejects fulfillment when event capacity would be exceeded", async () => {
+      await db.exec(`
+        insert into public.events(id, slug, title, category, starts_at, ends_at, location, admission, price_per_attendee, status, registration_state, capacity)
+        values (
+          '99999999-9999-4999-8999-999999999999',
+          'limited-capacity-event',
+          'Limited Capacity Event',
+          'networking',
+          '2026-12-10T10:00:00Z',
+          '2026-12-10T13:00:00Z',
+          'Coimbatore',
+          'paid',
+          180.00,
+          'published',
+          'open',
+          1
+        ) on conflict (id) do update set capacity = 1;
+
+        insert into public.event_payment_orders(
+          id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
+          amount_paise, currency, upi_uri, status
+        ) values (
+          'aaaaaaaa-1111-4111-8111-111111111111',
+          'CSC-ORD-CAPOVER1',
+          '99999999-9999-4999-8999-999999999999',
+          'Oversell Attendee',
+          'oversell@example.test',
+          '9876543299',
+          'Test Startup',
+          'Student',
+          2,
+          36000,
+          'INR',
+          'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=360.00&cu=INR&tr=CSC-ORD-CAPOVER1',
+          'pending'
+        ) on conflict (id) do nothing;
+
+        insert into public.event_payment_evidence(
+          id, bank, direction, currency, amount_paise, receiving_account_suffix, utr,
+          transaction_time, transaction_info_raw, sender_email, message_id, subject, auth_status
+        ) values (
+          'bbbbbbbb-1111-4111-8111-111111111111',
+          'AXIS_BANK',
+          'CREDIT',
+          'INR',
+          36000,
+          '1995',
+          '630744556677',
+          now(),
+          'UPI/P2A/630744556677/OVERSELL/IOBA/UPI/CSC-ORD-CAPOVER1',
+          'alerts@axis.bank.in',
+          '<alert-630744556677@axis.bank.in>',
+          'INR 360.00 was credited to your A/c.',
+          'authenticated'
+        ) on conflict (id) do nothing;
+      `);
+
+      await expect(
+        db.query(`
+          select public.csc_fulfill_confirmed_payment(
+            'aaaaaaaa-1111-4111-8111-111111111111'::uuid,
+            'bbbbbbbb-1111-4111-8111-111111111111'::uuid
+          );
+        `)
+      ).rejects.toThrow(/capacity exceeded/i);
+    });
   });
 });
