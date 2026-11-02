@@ -193,7 +193,18 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (!isVerifiedGuest) {
+      // Check if this is an authorized test event
+      const { data: targetEvent } = await admin
+        .from("events")
+        .select("settings, admission")
+        .eq("id", parsed.data.eventId)
+        .maybeSingle();
+
+      const isTestEvent = Boolean(
+        (targetEvent?.settings as Record<string, unknown> | null)?.is_test_event
+      );
+
+      if (!isVerifiedGuest && !isTestEvent) {
         return NextResponse.json(
           { ok: false, error: "Verify your email before creating a guest payment order." },
           { status: 403, headers: { "Cache-Control": "no-store" } }

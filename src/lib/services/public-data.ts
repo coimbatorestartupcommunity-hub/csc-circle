@@ -45,8 +45,14 @@ function mapEvent(r: Row): EventRecord {
     status: "published",
     admission: (r.admission as EventRecord["admission"]) ?? "free",
     registrationState: Date.parse(String(r.ends_at)) <= Date.now() ? "completed" : (r.registration_state as EventRecord["registrationState"]) ?? "coming-soon",
-    registrationMode: (r.registration_mode as EventRecord["registrationMode"]) ?? "rsvp",
-    pricePerAttendee: typeof r.price_per_attendee === "number" ? r.price_per_attendee : undefined,
+    registrationMode: (r.registration_mode as EventRecord["registrationMode"]) ?? (r.admission === "paid" ? "paid_upi" : "rsvp"),
+    pricePerAttendee: typeof r.price_per_attendee === "number"
+      ? r.price_per_attendee
+      : r.price_per_attendee
+        ? Number(r.price_per_attendee)
+        : typeof r.price_minor === "number"
+          ? r.price_minor / 100
+          : undefined,
     maxAttendeesPerRegistration: Number(r.max_attendees_per_registration ?? 10),
     upiPayeeName: (r.upi_payee_name as string) ?? undefined,
     upiVpa: (r.upi_vpa as string) ?? undefined,
@@ -127,7 +133,7 @@ export async function getLivePublishedEvents(): Promise<EventRecord[]> {
   return (data ?? [])
     .filter((r) => {
       const s = (r.settings as Record<string, unknown> | null) ?? {};
-      return !s.is_test_event && !s.isTestEvent && s.visibility !== "unlisted";
+      return s.visibility !== "unlisted";
     })
     .map((r) => mapEvent(r as Row));
 }
