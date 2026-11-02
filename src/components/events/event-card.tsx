@@ -65,6 +65,7 @@ export function EventCard({
               fill
               sizes="(max-width: 768px) 100vw, 400px"
               className="object-cover transition-transform duration-500 group-hover/cover:scale-[1.03] motion-reduce:transition-none"
+              unoptimized
             />
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#111827]/25 via-transparent to-white/10" />
           </>

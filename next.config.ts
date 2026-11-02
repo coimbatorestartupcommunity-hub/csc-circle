@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
     localPatterns: [
       {
         pathname: "/api/**",
-        search: "*",
       },
       {
         pathname: "/**",
