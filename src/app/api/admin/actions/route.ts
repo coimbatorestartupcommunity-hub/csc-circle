@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getAdminContext } from "@/lib/admin/gate";
 import { createClient } from "@/lib/supabase/server";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { distributedRateLimit, clientIp } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { randomBytes, randomUUID } from "node:crypto";
 import type { Permission } from "@/lib/admin/permissions";
@@ -17,7 +17,8 @@ export async function POST(request: Request) {
   try {
     const ctx = await getAdminContext();
     if (ctx.mode !== "live") return authResponse({ error: "Administrator access required." }, 403);
-    if (!rateLimit(`admin:${ctx.userId}:${clientIp(request)}`, 30, 60_000).allowed) return authResponse({ error: "Too many requests." }, 429);
+    const rateLimitAdmin = createAdminClient();
+    if (!(await distributedRateLimit(rateLimitAdmin, "admin-actions", `${ctx.userId}:${clientIp(request)}`, 30, 60_000)).allowed) return authResponse({ error: "Too many requests." }, 429);
     const parsed = schema.safeParse(await readAuthBody(request));
     if (!parsed.success) return authResponse({ error: "Invalid action." }, 422);
     if (!ctx.permissions.has(permissions[parsed.data.kind])) return authResponse({ error: "Permission denied." }, 403);
@@ -181,6 +182,63 @@ export async function POST(request: Request) {
     }
     if (parsed.data.kind === "payment" && (!parsed.data.reason || parsed.data.reason.trim().length < 5)) {
       return authResponse({ error: "An independent settlement reference (at least 5 characters) is required for payment verification or rejection." }, 422);
+    }
+    if (parsed.data.kind === "payment") {
+      if (!ctx.userId || !["verified", "rejected"].includes(parsed.data.decision)) return authResponse({ error: "Invalid payment review action." }, 422);
+      if (!ctx.roles.some((role) => role === "super_admin" || role === "finance_reviewer")) {
+        return authResponse({ error: "Payment settlement requires the finance reviewer role." }, 403);
+      }
+      const admin = createAdminClient();
+      const { data: order, error: orderError } = await admin
+        .from("event_payment_orders")
+        .select("id,status,matched_evidence_id,order_reference")
+        .eq("id", parsed.data.target)
+        .maybeSingle();
+
+      // Preserve compatibility with the legacy payments table by falling
+      // through only when this is not a new UPI payment order.
+      if (!orderError && order) {
+        if (parsed.data.decision === "rejected") {
+          if (order.status === "reconciled") return authResponse({ error: "A reconciled payment cannot be rejected through this action." }, 409);
+          const { error } = await admin.from("event_payment_orders").update({ status: "failed", updated_at: new Date().toISOString() }).eq("id", order.id).neq("status", "reconciled");
+          if (error) return authResponse({ error: "The payment review decision was not saved." }, 409);
+          await admin.from("event_payment_events").insert({ order_id: order.id, event_type: "manual_reconciliation_rejected", details: { actor_id: ctx.userId, reason: parsed.data.reason } });
+          await admin.from("audit_logs").insert({ action: "payment.manual_reconciliation.rejected", actor_id: ctx.userId, actor_role: ctx.roles[0] || "finance_reviewer", target_type: "event_payment_orders", target_id: order.id, after: { status: "failed", reason: parsed.data.reason }, correlation_id: randomUUID() });
+          revalidateTag("registrations", "max");
+          return authResponse({ ok: true });
+        }
+
+        if (!order.matched_evidence_id) return authResponse({ error: "Select independently reviewed bank evidence for this order before verification." }, 409);
+        const { error: attributionError } = await admin.from("event_payment_attributions").upsert({
+          order_id: order.id,
+          evidence_id: order.matched_evidence_id,
+          attribution_method: "admin_bank_record_review",
+          bank_order_reference: null,
+          verification_source: "finance_reviewer_bank_record",
+          policy_version: "csc-manual-attribution-v1",
+          verified_by: ctx.userId,
+          supporting_evidence: { rationale: parsed.data.reason },
+          eligible_for_settlement: true,
+        }, { onConflict: "order_id" });
+        if (attributionError) return authResponse({ error: "The verified attribution decision could not be recorded." }, 409);
+
+        const { data, error } = await admin.rpc("csc_fulfill_confirmed_payment", {
+          p_order_id: order.id,
+          p_evidence_id: order.matched_evidence_id,
+          p_matched_by: "admin_manual",
+          p_notes: parsed.data.reason,
+          p_user_id: ctx.userId,
+        });
+        if (error || !data || typeof data !== "object" || Array.isArray(data) || !(data as { ok?: boolean }).ok) {
+          return authResponse({ error: error?.message ?? "Manual reconciliation did not complete atomically." }, 409);
+        }
+        const passId = (data as { primary_pass_id?: string }).primary_pass_id;
+        if (passId) await ensureEventPassEmail(admin, passId);
+        await admin.from("audit_logs").insert({ action: "payment.manual_reconciliation.verified", actor_id: ctx.userId, actor_role: ctx.roles[0] || "finance_reviewer", target_type: "event_payment_orders", target_id: order.id, after: { status: "reconciled", evidence_id: order.matched_evidence_id, reason: parsed.data.reason }, correlation_id: randomUUID() });
+        scheduleNotificationDelivery();
+        revalidateTag("registrations", "max");
+        return authResponse({ ok: true, result: data });
+      }
     }
     const sb = await createClient();
     const { data, error } = await sb.rpc("csc_admin_action", parsed.data);
