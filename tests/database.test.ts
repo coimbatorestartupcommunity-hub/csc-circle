@@ -878,7 +878,7 @@ describe("resources & opportunities CMS", () => {
       await db.exec(`
         insert into public.event_payment_orders(
           id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
-          amount_paise, currency, upi_uri, status
+          amount_paise, currency, upi_uri, status, consent_payment_terms
         ) values (
           '44444444-4444-4444-8444-444444444444',
           'CSC-ORD-MISMATCH1',
@@ -892,7 +892,8 @@ describe("resources & opportunities CMS", () => {
           50000,
           'INR',
           'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=500.00&cu=INR&tr=CSC-ORD-MISMATCH1',
-          'pending'
+          'pending',
+          true
         ) on conflict (id) do nothing;
 
         insert into public.event_payment_evidence(
@@ -980,7 +981,7 @@ describe("resources & opportunities CMS", () => {
 
         insert into public.event_payment_orders(
           id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
-          amount_paise, currency, upi_uri, status, additional_attendee_names
+          amount_paise, currency, upi_uri, status, additional_attendee_names, consent_payment_terms
         ) values (
           '77777777-7777-4777-8777-777777777777',
           'CSC-ORD-GROUP003',
@@ -995,7 +996,8 @@ describe("resources & opportunities CMS", () => {
           'INR',
           'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=300.00&cu=INR&tr=CSC-ORD-GROUP003',
           'pending',
-          'Karthik R'
+          E'Karthik R\nPraveen M',
+          true
         ) on conflict (id) do nothing;
 
         insert into public.event_payment_evidence(
@@ -1027,15 +1029,15 @@ describe("resources & opportunities CMS", () => {
       `);
       expect(res.rows[0].res.ok).toBe(true);
 
-      // Verify that EXACTLY 3 passes were created in event_registrations
+      // Verify that EXACTLY 3 passes were created with actual names (no placeholder names)
       const passes = await db.query<{ id: string; attendee_name: string; reference: string }>(
         "select id, attendee_name, reference from public.event_registrations where paid_registration_id=(select id from public.paid_event_registrations where upi_transaction_ref='630733445566') order by attendee_name"
       );
       expect(passes.rows).toHaveLength(3);
       expect(passes.rows.map((p) => p.attendee_name)).toEqual([
         "Karthik R",
+        "Praveen M",
         "Vikash S",
-        "Vikash S (Guest 3)",
       ]);
 
       // Verify durable transactional email was queued in public.notifications
@@ -1045,6 +1047,167 @@ describe("resources & opportunities CMS", () => {
       expect(notifications.rows).toHaveLength(1);
       expect(notifications.rows[0].type).toBe("EventConfirmed");
       expect(notifications.rows[0].recipient).toBe("vikash.group@example.test");
+    });
+
+    it("rejects fulfillment when group attendee identities are missing (no synthetic names)", async () => {
+      await db.exec(`
+        insert into public.event_payment_orders(
+          id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
+          amount_paise, currency, upi_uri, status, additional_attendee_names, consent_payment_terms
+        ) values (
+          '77777777-8888-4888-8888-888888888888',
+          'CSC-ORD-MISSINGNAMES',
+          '66666666-6666-4666-8666-666666666666',
+          'Vikash S',
+          'vikash.missing@example.test',
+          '9342877474',
+          'CSC Circle',
+          'Startup Founder / Co-Founder',
+          3,
+          30000,
+          'INR',
+          'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=300.00&cu=INR&tr=CSC-ORD-MISSINGNAMES',
+          'pending',
+          null, -- Missing attendee names!
+          true
+        ) on conflict (id) do nothing;
+
+        insert into public.event_payment_evidence(
+          id, bank, direction, currency, amount_paise, receiving_account_suffix, utr,
+          transaction_time, transaction_info_raw, payer_name, sender_email, message_id, subject, auth_status
+        ) values (
+          '88888888-9999-4999-8999-999999999999',
+          'AXIS_BANK',
+          'CREDIT',
+          'INR',
+          30000,
+          '1995',
+          '630733445599',
+          now(),
+          'UPI/P2A/630733445599/VIKASH S/IOBA/UPI/CSC-ORD-MISSINGNAMES',
+          'VIKASH S',
+          'alerts@axis.bank.in',
+          '<alert-630733445599@axis.bank.in>',
+          'INR 300.00 was credited to your A/c.',
+          'authenticated'
+        ) on conflict (id) do nothing;
+      `);
+
+      await expect(
+        db.query(`
+          select public.csc_fulfill_confirmed_payment(
+            '77777777-8888-4888-8888-888888888888'::uuid,
+            '88888888-9999-4999-8999-999999999999'::uuid
+          );
+        `)
+      ).rejects.toThrow(/invariant violation.*expected 3 attendees/i);
+    });
+
+    it("rejects fulfillment when affirmative payment terms consent is missing", async () => {
+      await db.exec(`
+        insert into public.event_payment_orders(
+          id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
+          amount_paise, currency, upi_uri, status, consent_payment_terms
+        ) values (
+          '77777777-0000-4000-8000-000000000000',
+          'CSC-ORD-NOCONSENT',
+          '66666666-6666-4666-8666-666666666666',
+          'Vikash S',
+          'vikash.noconsent@example.test',
+          '9342877474',
+          'CSC Circle',
+          'Startup Founder / Co-Founder',
+          1,
+          10000,
+          'INR',
+          'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=100.00&cu=INR&tr=CSC-ORD-NOCONSENT',
+          'pending',
+          false -- Declined or omitted consent!
+        ) on conflict (id) do nothing;
+
+        insert into public.event_payment_evidence(
+          id, bank, direction, currency, amount_paise, receiving_account_suffix, utr,
+          transaction_time, transaction_info_raw, payer_name, sender_email, message_id, subject, auth_status
+        ) values (
+          '88888888-0000-4000-8000-000000000000',
+          'AXIS_BANK',
+          'CREDIT',
+          'INR',
+          10000,
+          '1995',
+          '630733445500',
+          now(),
+          'UPI/P2A/630733445500/VIKASH S/IOBA/UPI/CSC-ORD-NOCONSENT',
+          'VIKASH S',
+          'alerts@axis.bank.in',
+          '<alert-630733445500@axis.bank.in>',
+          'INR 100.00 was credited to your A/c.',
+          'authenticated'
+        ) on conflict (id) do nothing;
+      `);
+
+      await expect(
+        db.query(`
+          select public.csc_fulfill_confirmed_payment(
+            '77777777-0000-4000-8000-000000000000'::uuid,
+            '88888888-0000-4000-8000-000000000000'::uuid
+          );
+        `)
+      ).rejects.toThrow(/affirmative payment terms consent/i);
+    });
+
+    it("rejects automated worker fulfillment when order reference is absent from bank transaction note", async () => {
+      await db.exec(`
+        insert into public.event_payment_orders(
+          id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
+          amount_paise, currency, upi_uri, status, consent_payment_terms
+        ) values (
+          '77777777-1111-4111-8111-111111111111',
+          'CSC-ORD-NOREFMEMO',
+          '66666666-6666-4666-8666-666666666666',
+          'Vikash S',
+          'vikash.noref@example.test',
+          '9342877474',
+          'CSC Circle',
+          'Startup Founder / Co-Founder',
+          1,
+          10000,
+          'INR',
+          'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=100.00&cu=INR&tr=CSC-ORD-NOREFMEMO',
+          'pending',
+          true
+        ) on conflict (id) do nothing;
+
+        insert into public.event_payment_evidence(
+          id, bank, direction, currency, amount_paise, receiving_account_suffix, utr,
+          transaction_time, transaction_info_raw, payer_name, sender_email, message_id, subject, auth_status
+        ) values (
+          '88888888-1111-4111-8111-111111111111',
+          'AXIS_BANK',
+          'CREDIT',
+          'INR',
+          10000,
+          '1995',
+          '630733445511',
+          now(),
+          'UPI/P2A/630733445511/VIKASH S/IOBA/UPI', -- Notice: NO order reference memo!
+          'VIKASH S',
+          'alerts@axis.bank.in',
+          '<alert-630733445511@axis.bank.in>',
+          'INR 100.00 was credited to your A/c.',
+          'authenticated'
+        ) on conflict (id) do nothing;
+      `);
+
+      await expect(
+        db.query(`
+          select public.csc_fulfill_confirmed_payment(
+            '77777777-1111-4111-8111-111111111111'::uuid,
+            '88888888-1111-4111-8111-111111111111'::uuid,
+            'automated_worker'
+          );
+        `)
+      ).rejects.toThrow(/Automated worker settlement requires verifiable order reference/i);
     });
 
     it("rejects fulfillment when event capacity would be exceeded", async () => {
@@ -1067,7 +1230,7 @@ describe("resources & opportunities CMS", () => {
 
         insert into public.event_payment_orders(
           id, order_reference, event_id, full_name, email, whatsapp, organization, role, attendee_count,
-          amount_paise, currency, upi_uri, status
+          amount_paise, currency, upi_uri, status, consent_payment_terms
         ) values (
           'aaaaaaaa-1111-4111-8111-111111111111',
           'CSC-ORD-CAPOVER1',
@@ -1081,7 +1244,8 @@ describe("resources & opportunities CMS", () => {
           36000,
           'INR',
           'upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=360.00&cu=INR&tr=CSC-ORD-CAPOVER1',
-          'pending'
+          'pending',
+          true
         ) on conflict (id) do nothing;
 
         insert into public.event_payment_evidence(

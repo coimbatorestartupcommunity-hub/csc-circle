@@ -58,6 +58,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // Require distinct attendee names for every seat booked in group registrations (Section 11)
+    if (parsed.data.attendeeCount > 1) {
+      const additional = (parsed.data.additionalAttendeeNames || "")
+        .split(/[\r\n;]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (additional.length < parsed.data.attendeeCount - 1) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `Please provide all ${parsed.data.attendeeCount} attendee names. Currently provided: ${additional.length + 1}.`,
+          },
+          { status: 422 }
+        );
+      }
+    }
+
     // Optional user session
     let userId: string | undefined;
     try {

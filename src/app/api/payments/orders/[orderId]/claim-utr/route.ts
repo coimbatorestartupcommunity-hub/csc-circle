@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { verifyOrderAccess, isPayerNameAligned } from "@/lib/payments/orders";
+import { verifyOrderAccess } from "@/lib/payments/orders";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 
 const claimUtrSchema = z.object({
@@ -121,16 +121,20 @@ export async function POST(
         .maybeSingle();
 
       if (matchingEvidence && matchingEvidence.reconciliation_state !== "matched") {
-        const hasDirectReference = matchingEvidence.transaction_info_raw.toUpperCase().includes(order.order_reference.toUpperCase());
-        const hasPayerAlignment = isPayerNameAligned(matchingEvidence.payer_name, order.full_name);
+        // Enforce Section 4 Financial Safety Policy:
+        // A claimed UTR or matching amount is NEVER sufficient by itself without verified order attribution.
+        // Direct order reference in bank transaction note is required for automated confirmation.
+        const hasDirectReference = matchingEvidence.transaction_info_raw
+          .toUpperCase()
+          .includes(order.order_reference.toUpperCase());
 
-        if (hasDirectReference || hasPayerAlignment) {
-          // Unambiguous payment attribution established!
+        if (hasDirectReference) {
+          // Unambiguous payment attribution established via bank-confirmed order reference
           const { data: fulfillResult, error: fulfillError } = await admin.rpc("csc_fulfill_confirmed_payment", {
             p_order_id: order.id,
             p_evidence_id: matchingEvidence.id,
             p_matched_by: "user_utr_claim",
-            p_notes: `Attributed UTR ${utr} to ${order.order_reference} (${hasDirectReference ? "direct reference" : "payer alignment"})`,
+            p_notes: `Attributed UTR ${utr} to ${order.order_reference} via verified bank transaction reference`,
             p_user_id: sessionUserId || order.user_id || null,
           });
 
@@ -147,23 +151,37 @@ export async function POST(
             });
           }
         } else {
-          // UTR matches an authenticated credit, but credit has NO order reference and NO payer name alignment.
+          // UTR matches an authenticated credit, but credit has NO verifiable order reference.
           // Financial safety: do not auto-confirm unverified payment attribution.
+          // Save candidate evidence, mark ambiguous, and hold for administrator review.
           await admin
             .from("event_payment_evidence")
             .update({ reconciliation_state: "ambiguous" })
             .eq("id", matchingEvidence.id);
 
+          await admin
+            .from("event_payment_orders")
+            .update({
+              matched_evidence_id: matchingEvidence.id,
+              status: "processing",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", order.id);
+
           await admin.from("event_payment_events").insert({
             order_id: order.id,
-            event_type: "utr_attribution_ambiguous",
-            details: { utr, evidence_id: matchingEvidence.id, payer_name: matchingEvidence.payer_name },
+            event_type: "utr_claimed_pending_review",
+            details: {
+              utr,
+              evidence_id: matchingEvidence.id,
+              reason: "Bank transaction description lacks verifiable order reference",
+            },
           });
 
           return NextResponse.json({
             ok: true,
             status: "processing",
-            message: "UTR reference recorded. Administrative verification is required to confirm payment ownership.",
+            message: "UTR reference recorded. Administrative verification is required to confirm payment attribution.",
           });
         }
       }

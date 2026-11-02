@@ -96,6 +96,31 @@ describe("Payment Security & Cryptographic Verification", () => {
       expect(result.status).toBe("untrusted");
       expect(result.senderMatches).toBe(false);
     });
+
+    it("rejects sub-domain and substring sender spoofing (Section 5A)", () => {
+      const headers1 = {
+        from: "alerts@axis.bank.in.attacker.com",
+        "authentication-results": "mx.apple.com; dkim=pass; spf=pass",
+      };
+      expect(verifyEmailAuthentication(headers1).status).toBe("untrusted");
+
+      const headers2 = {
+        from: "<alerts@axis.bank.in@scammer.org>",
+        "authentication-results": "mx.apple.com; dkim=pass; spf=pass",
+      };
+      expect(verifyEmailAuthentication(headers2).status).toBe("untrusted");
+    });
+
+    it("accepts RFC 5322 formatted sender with friendly display name", () => {
+      const headers = {
+        from: '"Axis Bank Alerts" <alerts@axis.bank.in>',
+        "authentication-results":
+          "mx.apple.com; dkim=pass header.d=axis.bank.in; spf=pass",
+      };
+      const result = verifyEmailAuthentication(headers);
+      expect(result.status).toBe("authenticated");
+      expect(result.senderMatches).toBe(true);
+    });
   });
 
   describe("Axis Bank Parser & Timestamp Accuracy", () => {
@@ -219,14 +244,18 @@ describe("Payment Security & Cryptographic Verification", () => {
   });
 
   describe("Group Pass Structure Guarantee", () => {
-    it("guarantees exactly N passes for group bookings", () => {
-      // 3 attendees with 1 extra name provided -> 1 primary + 1 named extra + 1 labeled guest
-      const passes3 = parseAttendeeList("Vikash S", 3, "Karthik R");
-      expect(passes3).toEqual(["Vikash S", "Karthik R", "Vikash S (Guest 3)"]);
+    it("guarantees verified attendee identities for group bookings without synthetic names (Section 11)", () => {
+      // 3 attendees with 2 extra names provided -> all 3 verified named attendees
+      const passes3 = parseAttendeeList("Vikash S", 3, "Karthik R\nPraveen M");
+      expect(passes3).toEqual(["Vikash S", "Karthik R", "Praveen M"]);
 
       // 1 attendee -> 1 pass
       const pass1 = parseAttendeeList("Vikash S", 1, null);
       expect(pass1).toEqual(["Vikash S"]);
+
+      // Missing additional attendee name returns fewer names than attendeeCount (triggering validation error)
+      const incomplete = parseAttendeeList("Vikash S", 3, "Karthik R");
+      expect(incomplete).toHaveLength(2);
 
       // 4 attendees with 3 extra names -> all 4 named
       const passes4 = parseAttendeeList("Vikash S", 4, "A; B\nC");

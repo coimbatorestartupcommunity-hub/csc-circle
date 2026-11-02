@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isPayerNameAligned } from "./orders";
 import { parseAxisCreditAlert, type RawEmailInput } from "./axis-parser";
 import { fetchRecentBankAlerts } from "./imap-client";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
@@ -121,14 +120,14 @@ export async function processReconciliationBatch(
         continue;
       }
 
-      // Matching Rule 1: Order reference in transaction info (unambiguous cryptographic or memo match)
+      // Matching Rule 1: Order reference in transaction info (unambiguous bank memo match)
       const refMatch = candidates.find(
         (o) =>
           o.order_reference &&
           evidence.transaction_info_raw.toUpperCase().includes(o.order_reference.toUpperCase())
       );
 
-      // Matching Rule 2: User claimed UTR matches evidence UTR
+      // Candidate with claimed UTR
       const utrMatch = candidates.find(
         (o) => o.claimed_utr && o.claimed_utr.trim().toLowerCase() === evidence.utr.trim().toLowerCase()
       );
@@ -137,34 +136,38 @@ export async function processReconciliationBatch(
       let matchedBy: "automated_worker" | "user_utr_claim" = "automated_worker";
 
       if (refMatch) {
+        // High confidence: verified order reference in bank transaction note
         matchedOrder = refMatch;
         matchedBy = "automated_worker";
       } else if (utrMatch) {
-        // Enforce payment attribution alignment:
-        const hasPayerAlignment = isPayerNameAligned(evidence.payer_name, utrMatch.full_name);
-        if (hasPayerAlignment) {
-          matchedOrder = utrMatch;
-          matchedBy = "user_utr_claim";
-        } else {
-          // Claimed UTR matches, but without direct reference or payer alignment,
-          // require admin review to protect against stolen UTR claims
-          await admin
-            .from("event_payment_evidence")
-            .update({ reconciliation_state: "ambiguous" })
-            .eq("id", evidence.id);
+        // Financial Safety Policy (Section 4):
+        // UTR claim without bank-confirmed order reference requires admin review to prevent stolen UTR confirmation.
+        await admin
+          .from("event_payment_evidence")
+          .update({ reconciliation_state: "ambiguous" })
+          .eq("id", evidence.id);
 
-          await admin
-            .from("event_payment_orders")
-            .update({
-              status: "processing",
-              matched_evidence_id: evidence.id,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", utrMatch.id);
+        await admin
+          .from("event_payment_orders")
+          .update({
+            status: "processing",
+            matched_evidence_id: evidence.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", utrMatch.id);
 
-          ambiguousCredits++;
-          continue;
-        }
+        await admin.from("event_payment_events").insert({
+          order_id: utrMatch.id,
+          event_type: "order.matched_pending_review",
+          details: {
+            evidence_id: evidence.id,
+            utr: evidence.utr,
+            reason: "Bank alert lacks verifiable order reference; held for admin review",
+          },
+        });
+
+        ambiguousCredits++;
+        continue;
       } else {
         // NO AMOUNT-ONLY AUTO-MATCHING.
         // If multiple orders owe this amount with no reference or UTR claim, mark ambiguous.

@@ -10,6 +10,10 @@ alter table public.paid_event_registrations
 alter table public.paid_event_registrations
   drop constraint if exists paid_reg_proof_path;
 
+-- Keep marketing/contact consent optional and independent (Section 12)
+alter table public.paid_event_registrations
+  drop constraint if exists paid_event_registrations_consent_contact_check;
+
 alter table public.paid_event_registrations
   add column if not exists payment_evidence_type text
   check (payment_evidence_type in ('manual_screenshot', 'authenticated_bank_alert', 'bank_transaction_feed', 'admin_verified_external_evidence'))
@@ -40,8 +44,8 @@ create table if not exists public.event_payment_orders (
   status text not null default 'pending' check (status in ('pending', 'processing', 'verified', 'reconciled', 'underpaid', 'unmatched', 'needs_review', 'expired', 'failed', 'cancelled')),
   claimed_utr text check (claimed_utr is null or length(trim(claimed_utr)) between 6 and 30),
   guest_token_hash text,
-  consent_contact boolean not null default true,
-  consent_payment_terms boolean not null default true,
+  consent_contact boolean not null default false,
+  consent_payment_terms boolean not null default false,
   matched_evidence_id uuid,
   matched_at timestamptz,
   expires_at timestamptz not null default (now() + interval '30 minutes'),
@@ -366,6 +370,17 @@ begin
     raise exception 'Evidence % is already matched to another order: %', p_evidence_id, v_evidence.matched_order_id;
   end if;
 
+  -- 3.5 Enforce Section 4 & Section 6 Financial Safety Invariants:
+  -- Automated settlement requires unambiguous order reference in transaction memo.
+  if p_matched_by = 'automated_worker' and not (v_evidence.transaction_info_raw ~* ('\y' || v_order.order_reference || '\y')) then
+    raise exception 'Automated worker settlement requires verifiable order reference % in transaction note', v_order.order_reference;
+  end if;
+
+  -- Enforce affirmative consent invariant (Section 12: no fallback to true)
+  if not v_order.consent_payment_terms then
+    raise exception 'Order % lacks required affirmative payment terms consent', p_order_id;
+  end if;
+
   v_user_id := coalesce(p_user_id, v_order.user_id);
   v_paid_reg_id := coalesce(v_order.paid_registration_id, gen_random_uuid());
   v_reg_ref := 'CSC-EVT-' || upper(replace(gen_random_uuid()::text, '-', ''));
@@ -415,8 +430,8 @@ begin
     'authenticated_bank_alert',
     v_evidence.id,
     null,
-    coalesce(v_order.consent_contact, true),
-    coalesce(v_order.consent_payment_terms, true),
+    coalesce(v_order.consent_contact, false),
+    v_order.consent_payment_terms,
     clock_timestamp(),
     coalesce(p_notes, 'Automated Axis Bank reconciliation: UTR ' || v_evidence.utr)
   )
@@ -429,7 +444,7 @@ begin
     reviewed_at = clock_timestamp(),
     review_note = coalesce(p_notes, paid_event_registrations.review_note);
 
-  -- 5. Guarantee exact attendee group passes in event_registrations
+  -- 5. Guarantee exact attendee group passes in event_registrations (Section 11)
   select count(*)::integer into v_existing_pass_count
   from public.event_registrations
   where paid_registration_id = v_paid_reg_id;
@@ -503,42 +518,12 @@ begin
           v_passes_created := v_passes_created + 1;
         end loop;
       end if;
-
-      -- Generate labeled passes for remaining attendees to strictly satisfy attendee_count invariant
-      while v_passes_created < v_order.attendee_count loop
-        v_idx := v_idx + 1;
-        v_pass_token := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
-        v_pass_ref := 'CSC-EVT-' || upper(replace(gen_random_uuid()::text, '-', ''));
-
-        insert into public.event_registrations (
-          event_id,
-          user_id,
-          attendee_name,
-          reference,
-          pass_token,
-          status,
-          payment,
-          paid_registration_id,
-          source,
-          source_email
-        ) values (
-          v_order.event_id,
-          v_user_id,
-          v_order.full_name || ' (Guest ' || v_idx || ')',
-          v_pass_ref,
-          v_pass_token,
-          'confirmed',
-          'paid',
-          v_paid_reg_id,
-          'platform',
-          lower(v_order.email)
-        );
-        v_passes_created := v_passes_created + 1;
-      end loop;
     end if;
 
+    -- Strictly require that all attendee identities were provided (no synthetic placeholder names)
     if v_passes_created != v_order.attendee_count then
-      raise exception 'Pass generation invariant violation: created % passes, expected %', v_passes_created, v_order.attendee_count;
+      raise exception 'Pass generation invariant violation: order % expected % attendees but only % verified names were provided',
+        p_order_id, v_order.attendee_count, v_passes_created;
     end if;
   else
     select id into v_first_pass_id

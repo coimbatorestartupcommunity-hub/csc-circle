@@ -74,9 +74,6 @@ export function parseAttendeeList(
       }
     }
   }
-  while (result.length < attendeeCount) {
-    result.push(`${fullName.trim()} (Guest ${result.length + 1})`);
-  }
   return result;
 }
 
@@ -161,6 +158,16 @@ export async function createPaymentOrder(
 
   if (!consentPaymentTerms) {
     return { ok: false as const, error: "You must affirmatively accept the event registration and payment terms.", status: 422 };
+  }
+
+  // Enforce Section 11: Validate that every group attendee identity is provided (no placeholder names)
+  const attendees = parseAttendeeList(fullName, attendeeCount, additionalAttendeeNames);
+  if (attendees.length !== attendeeCount) {
+    return {
+      ok: false as const,
+      error: `Please provide all ${attendeeCount} attendee names. Currently provided: ${attendees.length}.`,
+      status: 422,
+    };
   }
 
   // 1. Fetch and validate event

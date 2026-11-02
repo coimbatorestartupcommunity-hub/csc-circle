@@ -13,6 +13,18 @@ export interface EmailAuthResult {
 }
 
 /**
+ * Extracts and normalizes the pure RFC 5322 addr-spec from a header string.
+ * Example: 'Axis Bank Alerts <alerts@axis.bank.in>' -> 'alerts@axis.bank.in'
+ */
+export function extractMailboxAddress(headerValue: string): string | null {
+  if (!headerValue) return null;
+  const angleMatch = headerValue.match(/<([^>]+)>/);
+  const candidate = (angleMatch ? angleMatch[1] : headerValue).trim().toLowerCase();
+  const valid = candidate.match(/^[a-z0-9!#$%&'*+/=?^_`{|}~.-]+@([a-z0-9.-]+\.[a-z]{2,})$/i);
+  return valid ? valid[0].toLowerCase() : null;
+}
+
+/**
  * Validates the cryptographic and infrastructure provenance of incoming bank alert emails.
  * Provider-independent layer suitable for Apple iCloud Mail headers.
  */
@@ -23,25 +35,28 @@ export function verifyEmailAuthentication(headers: Record<string, string | strin
     return typeof val === "string" ? val : "";
   };
 
-  const from = getHeader("from").toLowerCase();
-  const sender = getHeader("sender").toLowerCase();
+  const from = getHeader("from");
+  const sender = getHeader("sender");
   const authResults = getHeader("authentication-results").toLowerCase();
   const receivedSpf = getHeader("received-spf").toLowerCase();
 
   const reasons: string[] = [];
   const expectedSender = UPI_CONFIG.BANK_ALERT_SENDER.toLowerCase();
 
-  // 1. Verify Sender Address
-  const senderMatches = from.includes(expectedSender) || sender.includes(expectedSender);
+  // 1. Strict RFC 5322 Mailbox Address Verification (no substring matches)
+  const parsedFrom = extractMailboxAddress(from);
+  const parsedSender = extractMailboxAddress(sender);
+
+  const senderMatches = parsedFrom === expectedSender || (parsedSender !== null && parsedSender === expectedSender);
   if (!senderMatches) {
-    reasons.push(`Sender does not match ${expectedSender}`);
+    reasons.push(`Parsed sender mailbox (${parsedFrom || from}) does not strictly match approved Axis Bank address (${expectedSender})`);
     return {
       status: "untrusted",
       reasons,
       dkimPass: false,
       spfPass: false,
       senderMatches: false,
-      details: { from, sender },
+      details: { from, sender, parsedFrom, parsedSender },
     };
   }
 

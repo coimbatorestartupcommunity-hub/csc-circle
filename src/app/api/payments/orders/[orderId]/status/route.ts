@@ -43,9 +43,8 @@ export async function GET(
     const headerToken = request.headers.get("x-guest-token");
     const authHeader = request.headers.get("authorization");
     const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
-    const url = new URL(request.url);
-    const queryToken = url.searchParams.get("token");
-    const guestToken = headerToken?.trim() || bearerToken || queryToken?.trim() || null;
+    // Guest tokens are strictly accepted via headers to prevent URL leakage in history/referrers
+    const guestToken = headerToken?.trim() || bearerToken || null;
 
     const admin = createAdminClient();
     const { data: order, error } = await admin
