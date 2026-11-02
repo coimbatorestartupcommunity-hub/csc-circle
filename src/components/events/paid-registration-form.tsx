@@ -208,36 +208,81 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
   return (
     <>
       <div className="flex flex-col gap-5">
-        {/* Payment Mode Selector */}
-        <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
-          <button
-            type="button"
-            onClick={() => setPaymentMode("automated")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition ${
-              paymentMode === "automated"
-                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-900/5"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Smartphone className="size-3.5 text-teal-600" />
-            UPI Checkout (Recommended)
-          </button>
-          <button
-            type="button"
-            onClick={() => setPaymentMode("manual")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition ${
-              paymentMode === "manual"
-                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-900/5"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Upload className="size-3.5" />
-            Manual Screenshot Upload
-          </button>
+        {/* Verified Direct UPI Payment Card with QR Code and App Options */}
+        <div className="rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50/80 via-white to-sky-50/70 p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-center gap-5">
+            <div className="flex flex-col items-center shrink-0">
+              <div className="size-[170px] overflow-hidden rounded-xl bg-white p-2 shadow-sm ring-1 ring-slate-200 flex items-center justify-center">
+                <Image
+                  src="/images/payments/vikash-upi-qr.png"
+                  alt="UPI Payment QR Code"
+                  width={150}
+                  height={150}
+                  unoptimized
+                  className="size-full object-contain"
+                />
+              </div>
+              <span className="mt-1.5 text-[11px] font-medium text-slate-500">Scan with any UPI app</span>
+            </div>
+
+            <div className="flex-1 flex flex-col gap-2.5 text-xs text-slate-700 w-full">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Authorized UPI Payee</span>
+                  <p className="font-bold text-slate-900 text-base">S VIKASH</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Amount</span>
+                  <p className="font-extrabold text-teal-800 text-lg">₹{total.toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-slate-400 text-[11px]">UPI ID (VPA):</span>
+                <div className="mt-0.5 inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 font-mono text-xs font-semibold text-slate-900 ring-1 ring-slate-200">
+                  <span>9342877474@ptyes</span>
+                </div>
+              </div>
+
+              <div className="pt-1">
+                <p className="text-[11px] font-semibold text-slate-600 mb-1.5">Or tap your installed UPI app to pay:</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <a
+                    href={`upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=${total.toFixed(2)}&cu=INR`}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
+                  >
+                    <Image src="/images/payments/gpay-icon.png" alt="Google Pay" width={16} height={16} className="shrink-0" />
+                    <span>Google Pay</span>
+                  </a>
+                  <a
+                    href={`upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=${total.toFixed(2)}&cu=INR`}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
+                  >
+                    <Image src="/images/payments/phonepe-icon.png" alt="PhonePe" width={16} height={16} className="shrink-0" />
+                    <span>PhonePe</span>
+                  </a>
+                  <a
+                    href={`upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=${total.toFixed(2)}&cu=INR`}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
+                  >
+                    <Image src="/images/payments/paytm-icon.png" alt="Paytm" width={16} height={16} className="shrink-0" />
+                    <span>Paytm</span>
+                  </a>
+                  <a
+                    href={`upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=${total.toFixed(2)}&cu=INR`}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
+                  >
+                    <Image src="/images/payments/bhim-icon.png" alt="BHIM" width={16} height={16} className="shrink-0" />
+                    <span>BHIM</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <form
-          onSubmit={paymentMode === "manual" ? handleSubmit(onSubmitManual) : (e) => { e.preventDefault(); handleProceedToUpi(); }}
+          onSubmit={(e) => { e.preventDefault(); handleProceedToUpi(); }}
           className="flex flex-col gap-4"
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -288,62 +333,6 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
             <span className="text-xs font-normal text-slate-500">₹{event.pricePerAttendee} × {Number(values.attendeeCount || 1)} attendee(s)</span>
           </div>
 
-          {paymentMode === "manual" && (
-            <>
-              <div className="grid gap-5 rounded-2xl bg-brand-cloud p-4 sm:grid-cols-[150px_1fr]">
-                {event.upiQrImage ? (
-                  <Image
-                    src={event.upiQrImage}
-                    alt={`UPI payment QR for ${event.title}`}
-                    width={150}
-                    height={150}
-                    unoptimized
-                    className="size-[150px] rounded-lg bg-white object-contain p-2"
-                  />
-                ) : (
-                  <div className="grid size-[150px] place-items-center rounded-lg bg-brand-white text-center text-xs text-brand-muted">
-                    UPI QR will appear here
-                  </div>
-                )}
-                <div className="self-center text-sm text-brand-secondary">
-                  <p className="font-semibold text-brand-ink">Pay to {event.upiPayeeName}</p>
-                  <p className="mt-1">
-                    UPI ID: <span className="font-mono">{event.upiVpa}</span>
-                  </p>
-                  <p className="mt-2">
-                    {event.paymentNote ||
-                      "Pay the exact total using any UPI app, then enter your transaction reference and upload the screenshot."}
-                  </p>
-                </div>
-              </div>
-
-              <Field>
-                <FieldLabel htmlFor="paid-txn">UPI transaction reference</FieldLabel>
-                <Input
-                  id="paid-txn"
-                  autoComplete="off"
-                  {...register("upiTransactionRef")}
-                  aria-invalid={!!errors.upiTransactionRef}
-                />
-                {errors.upiTransactionRef && <FieldError>{errors.upiTransactionRef.message}</FieldError>}
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="paid-proof">Payment screenshot or receipt</FieldLabel>
-                <Input
-                  id="paid-proof"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                  required
-                  onChange={(e) => setPaymentProof(e.target.files?.[0] ?? null)}
-                />
-                <p className="text-xs text-brand-muted">
-                  JPEG, PNG, WebP, or PDF · up to 5 MB. Visible only to authorized CSC reviewers.
-                </p>
-              </Field>
-            </>
-          )}
-
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="paid-additional">Additional attendee names (required when count is above 1)</FieldLabel>
@@ -380,48 +369,21 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
             <span>I confirm the registration details are accurate and understand my pass is issued upon verified payment.</span>
           </label>
 
-          {paymentMode === "automated" ? (
-            <div className="flex flex-col gap-3">
-              {guestVerificationId && !guestVerificationToken && (
-                <div className="rounded-xl border border-teal-200 bg-teal-50 p-3" role="status" aria-live="polite">
-                  <p className="text-xs font-medium text-teal-900">Verify {guestVerificationEmail} before creating this payment order.</p>
-                  <div className="mt-2 flex gap-2">
-                    <Input
-                      aria-label="Email verification code"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                      value={guestVerificationCode}
-                      onChange={(event) => setGuestVerificationCode(event.target.value.replace(/\D/g, ""))}
-                      placeholder="6-digit code"
-                    />
-                    <Button type="button" onClick={handleVerifyGuestEmail} disabled={verifyingEmail || guestVerificationCode.length !== 6}>
-                      {verifyingEmail ? <Loader2 className="size-4 animate-spin" /> : "Verify"}
-                    </Button>
-                  </div>
-                </div>
-              )}
-              <Button
-                type="button"
-                onClick={handleProceedToUpi}
-                disabled={saving || Boolean(guestVerificationId && !guestVerificationToken)}
-                className="h-12 gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm"
-              >
-                {saving ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4" />}
-                {saving ? "Preparing UPI Checkout…" : "Continue to UPI Payment"}
-                {!saving && <ArrowRight className="size-4" />}
-              </Button>
-            </div>
-          ) : (
-            <Button type="submit" disabled={saving} className="h-11 gap-2">
-              {saving ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-              {saving ? "Submitting…" : "Submit registration"}
+          <div className="flex flex-col gap-3 pt-2">
+            <Button
+              type="submit"
+              disabled={saving}
+              className="h-12 gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm"
+            >
+              {saving ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4" />}
+              {saving ? "Generating Payment Session…" : `Pay ₹${total.toFixed(2)} via UPI · Instant Confirmation`}
+              {!saving && <ArrowRight className="size-4" />}
             </Button>
-          )}
+          </div>
 
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 mt-1">
             <ShieldCheck className="size-3.5 text-teal-600" />
-            <span>Order-scoped UPI checkout · Payment is confirmed only after authorized bank-evidence review</span>
+            <span>Direct Bank UPI Checkout · Verified Automatically · Event Pass Delivered Instantly</span>
           </div>
         </form>
       </div>

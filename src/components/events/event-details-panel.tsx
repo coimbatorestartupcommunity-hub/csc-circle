@@ -150,18 +150,28 @@ export function EventDetailsPanel({
             </div>
           </div>
         </div>
-      ) : !canRegister ? <div className="border-t border-brand-border pt-6">
-        <h4 className="mb-2 text-lg font-semibold text-brand-ink">Sign in to register</h4>
-        <p className="mb-4 text-sm text-brand-secondary">Log in with your Google account to book your spot and receive your event pass.</p>
-        <Link href={loginHref} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink">Sign in with Google to register<ArrowRight className="size-4" /></Link>
-      </div> : event.registrationMode === "paid_upi" ? <div className="border-t border-brand-border pt-6">
-        <h4 className="mb-2 text-lg font-semibold text-brand-ink">Register and submit payment proof</h4>
-        <p className="mb-4 text-sm text-brand-secondary">Pay the exact total using any UPI app, then enter your transaction reference and upload the screenshot.</p>
-        <PaidEventRegistration event={event} />
-      </div> : <div className="border-t border-brand-border pt-6">
-        <h4 className="mb-4 text-lg font-semibold text-brand-ink">Request your spot</h4>
-        <RsvpForm events={events} selectedEventId={event.id} onEventChange={handleEventChange} />
-      </div>}
+      ) : (event.admission === "paid" || event.registrationMode === "paid_upi" || (event.pricePerAttendee ?? 0) > 0) ? (
+        <div className="border-t border-brand-border pt-6">
+          <div className="mb-4">
+            <h4 className="text-xl font-bold text-brand-ink">Book Your Ticket · Pay via UPI</h4>
+            <p className="mt-1 text-sm text-brand-secondary">
+              Instant automatic confirmation with dynamic QR code and Google Pay, PhonePe, Paytm, or BHIM.
+            </p>
+          </div>
+          <PaidEventRegistration event={event} />
+        </div>
+      ) : !canRegister ? (
+        <div className="border-t border-brand-border pt-6">
+          <h4 className="mb-2 text-lg font-semibold text-brand-ink">Sign in to register</h4>
+          <p className="mb-4 text-sm text-brand-secondary">Log in with your Google account to book your spot and receive your event pass.</p>
+          <Link href={loginHref} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink">Sign in with Google to register<ArrowRight className="size-4" /></Link>
+        </div>
+      ) : (
+        <div className="border-t border-brand-border pt-6">
+          <h4 className="mb-4 text-lg font-semibold text-brand-ink">Request your spot</h4>
+          <RsvpForm events={events} selectedEventId={event.id} onEventChange={handleEventChange} />
+        </div>
+      )}
     </div>
   );
 }

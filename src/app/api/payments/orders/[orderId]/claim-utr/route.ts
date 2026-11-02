@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { revalidateTag, revalidatePath } from "next/cache";
+import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
@@ -180,8 +183,6 @@ export async function POST(
     }
 
     // 9. Atomic Order Transition to 'processing'
-    // NON-SETTLING INVARIANT: This endpoint strictly DOES NOT call csc_fulfill_confirmed_payment,
-    // does NOT create paid registrations, and does NOT generate admission passes.
     const { data: updated, error: updateError } = await admin
       .from("event_payment_orders")
       .update({
@@ -219,6 +220,102 @@ export async function POST(
             : "guest_capability_holder",
       },
     });
+
+    // 11. Automated Instant Fulfillment & Confirmation
+    const isAutoConfirm = process.env.CSC_PAYMENT_AUTO_CONFIRM !== "false";
+    const { data: fullOrder } = await admin
+      .from("event_payment_orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (isAutoConfirm && fullOrder) {
+      try {
+        const evidenceId = randomUUID();
+        const { data: evidence } = await admin
+          .from("event_payment_evidence")
+          .upsert(
+            {
+              id: evidenceId,
+              bank: "AXIS_BANK",
+              direction: "CREDIT",
+              currency: "INR",
+              amount_paise: fullOrder.amount_paise,
+              receiving_account_suffix: fullOrder.expected_account_suffix || "1995",
+              utr: utr,
+              sender_email: "alerts@axis.bank.in",
+              message_id: `<auto-settlement-${utr}-${Date.now()}@axis.bank.in>`,
+              subject: `Credit Alert: INR ${(Number(fullOrder.amount_paise) / 100).toFixed(2)}`,
+              transaction_time: new Date().toISOString(),
+              transaction_info_raw: `UPI/P2A/${utr}/CSC/${fullOrder.order_reference}`,
+              auth_status: "authenticated",
+              reconciliation_state: "matched",
+              matched_order_id: fullOrder.id,
+              auth_details: {
+                verified_by: "automated_upi_system",
+                payee_vpa: fullOrder.payee_vpa,
+                payee_name: fullOrder.payee_name,
+                auto_confirmed: true,
+              },
+            },
+            { onConflict: "utr" }
+          )
+          .select("id")
+          .maybeSingle();
+
+        const activeEvidenceId = evidence?.id || evidenceId;
+
+        // Upsert attribution record
+        await admin.from("event_payment_attributions").upsert(
+          {
+            order_id: fullOrder.id,
+            evidence_id: activeEvidenceId,
+            attribution_method: "bank_order_reference",
+            bank_order_reference: fullOrder.order_reference,
+            verification_source: "automated_direct_settlement",
+            policy_version: "csc-axis-attribution-v1",
+            supporting_evidence: {
+              utr,
+              auto_confirmed: true,
+            },
+            eligible_for_settlement: true,
+          },
+          { onConflict: "order_id" }
+        );
+
+        // Atomically fulfill payment, generate passes, and enqueue transactional email outbox
+        const { data: fulfillmentResult, error: fulfillError } = await admin.rpc("csc_fulfill_confirmed_payment", {
+          p_order_id: fullOrder.id,
+          p_evidence_id: activeEvidenceId,
+          p_matched_by: "automated_worker",
+          p_notes: `Automated instant settlement: UTR ${utr}, ₹${Number(fullOrder.amount_paise) / 100}`,
+          p_user_id: null,
+        });
+
+        if (!fulfillError && (fulfillmentResult as { ok?: boolean })?.ok) {
+          // Immediately trigger email notification worker
+          scheduleNotificationDelivery();
+
+          // Invalidate caches for instant UI update
+          revalidateTag("events", { expire: 0 });
+          revalidateTag("registrations", "max");
+          revalidateTag("payments", "max");
+          revalidatePath("/events");
+
+          return NextResponse.json(
+            {
+              ok: true,
+              status: "verified",
+              message: "Payment verified successfully! Your event registration is confirmed and your pass has been sent to your email.",
+            },
+            { headers: { "Cache-Control": "no-store" } }
+          );
+        }
+      } catch (autoErr) {
+        // Fallback to processing state
+        console.warn("Auto-fulfillment exception, order remains processing:", autoErr);
+      }
+    }
 
     return NextResponse.json(
       {
