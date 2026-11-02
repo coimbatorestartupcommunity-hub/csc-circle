@@ -140,6 +140,8 @@ export interface EventRecord {
   format?: "offline" | "online" | "hybrid";
   featured?: boolean;
   isFixture?: boolean;
+  isTestEvent?: boolean;
+  testRunId?: string;
 }
 
 /* -------------------------------------------------------------------------- */

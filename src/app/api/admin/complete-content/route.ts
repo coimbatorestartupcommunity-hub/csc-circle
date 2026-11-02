@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
 
 const schema = z.object({
-  kind: z.enum(["event", "notice", "update", "collaboration"]),
+  kind: z.enum(["event", "notice", "update", "collaboration", "opportunity", "resource"]),
   id: z.string().uuid(),
 });
 
@@ -82,15 +82,34 @@ export async function POST(request: Request) {
             publication_status: "published",
           })
           .eq("id", id);
+      } else if (kind === "opportunity") {
+        await admin
+          .from("opportunities")
+          .update({
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", id);
+      } else if (kind === "resource") {
+        await admin
+          .from("resources")
+          .update({
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", id);
       }
     } catch {
       return authResponse({ error: "Could not mark content completed." }, 500);
     }
   }
 
-  for (const tag of ["events", "collaborations", "updates", "event-notices"]) {
+  for (const tag of ["events", "collaborations", "updates", "event-notices", "opportunities", "resources"]) {
     revalidateTag(tag, { expire: 0 });
   }
   revalidatePath("/", "layout");
+  revalidatePath("/events");
+  revalidatePath("/collaborations");
+  revalidatePath("/updates");
+  revalidatePath("/opportunities");
+  revalidatePath("/resources");
   return authResponse({ ok: true });
 }

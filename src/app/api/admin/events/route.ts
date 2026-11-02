@@ -1,5 +1,5 @@
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getAdminContext } from "@/lib/admin/gate";
 import { createClient } from "@/lib/supabase/server";
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       const { error: qrError } = await createAdminClient().storage.from("member-portraits").download(event.upiQrPath);
       if (qrError) return authResponse({ error: "The uploaded UPI QR image could not be verified. Upload it again." }, 422);
     }
-    const previous = id ? await sb.from("events").select("cover_image,upi_qr_path").eq("id", id).maybeSingle() : null;
+    const previous = id ? await sb.from("events").select("cover_image,upi_qr_path,slug").eq("id", id).maybeSingle() : null;
     const { data, error } = await sb.rpc("csc_save_event", { payload: event, target: id ?? undefined });
     if (error) return authResponse({ error: "Event was not saved. Check times, price, capacity, and slug uniqueness." }, 409);
     const oldCover = previous?.data?.cover_image;
@@ -36,6 +36,12 @@ export async function POST(request: Request) {
     const oldQr = previous?.data?.upi_qr_path;
     if (oldQr && oldQr !== event.upiQrPath && /^event-upi-qr\/[0-9a-f-]{36}\.webp$/i.test(oldQr)) await createAdminClient().storage.from("member-portraits").remove([oldQr]);
     revalidateTag("events", { expire: 0 });
+    revalidatePath("/events");
+    revalidatePath(`/events/${event.slug}`);
+    if (previous?.data?.slug && previous.data.slug !== event.slug) {
+      revalidatePath(`/events/${previous.data.slug}`);
+    }
+    revalidatePath("/");
     scheduleNotificationDelivery();
     return authResponse({ ok: true, id: data });
   } catch { return authResponse({ error: "Event saving is unavailable." }, 503); }
