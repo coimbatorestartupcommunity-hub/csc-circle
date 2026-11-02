@@ -3,18 +3,19 @@
  */
 
 export const UPI_CONFIG = {
-  // Verified payee details from supplied QR
-  PAYEE_VPA: "9342877474@ptyes",
-  PAYEE_NAME: "S VIKASH",
+  // Production checkout is enabled only when these values are explicitly
+  // supplied through the server environment and separately approved.
+  PAYEE_VPA: process.env.CSC_PAYMENT_UPI_VPA || "9342877474@ptyes",
+  PAYEE_NAME: process.env.CSC_PAYMENT_PAYEE_NAME || "S VIKASH",
   CURRENCY: "INR",
 
   // Receiving bank account details from genuine Axis Bank alert
   RECEIVING_BANK: "AXIS_BANK",
-  RECEIVING_ACCOUNT_SUFFIX: "1995",
+  RECEIVING_ACCOUNT_SUFFIX: process.env.CSC_PAYMENT_RECEIVING_ACCOUNT_SUFFIX || "1995",
 
   // Bank alert email source
-  BANK_ALERT_SENDER: "alerts@axis.bank.in",
-  MAILBOX_ADDRESS: "vikash752008@icloud.com",
+  BANK_ALERT_SENDER: process.env.CSC_PAYMENT_BANK_ALERT_SENDER || "alerts@axis.bank.in",
+  MAILBOX_ADDRESS: process.env.ICLOUD_IMAP_USERNAME || "vikash752008@icloud.com",
 
   // Default order expiration window (minutes)
   ORDER_EXPIRY_MINUTES: 30,
@@ -22,6 +23,17 @@ export const UPI_CONFIG = {
   // Maximum order time window for matching bank alerts (e.g. 2 hours)
   MATCH_TIME_WINDOW_MS: 2 * 60 * 60 * 1000,
 } as const;
+
+export function hasExplicitProductionMerchantApproval() {
+  if (process.env.NODE_ENV !== "production") return true;
+  return Boolean(
+    process.env.CSC_PAYMENT_MERCHANT_APPROVED === "true" &&
+      process.env.CSC_PAYMENT_UPI_VPA &&
+      process.env.CSC_PAYMENT_PAYEE_NAME &&
+      process.env.CSC_PAYMENT_RECEIVING_ACCOUNT_SUFFIX &&
+      process.env.CSC_PAYMENT_BANK_ALERT_SENDER
+  );
+}
 
 export const ICLOUD_IMAP_DEFAULTS = {
   host: process.env.ICLOUD_IMAP_HOST || "imap.mail.me.com",

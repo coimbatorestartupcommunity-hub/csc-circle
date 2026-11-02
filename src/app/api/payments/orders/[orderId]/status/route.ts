@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { verifyOrderAccess } from "@/lib/payments/orders";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
 
 export async function GET(
   request: Request,
@@ -15,8 +15,10 @@ export async function GET(
       return NextResponse.json({ ok: false, error: "Invalid order ID." }, { status: 404 });
     }
 
+    const admin = createAdminClient();
     const ip = clientIp(request);
-    if (!rateLimit(`order-status:${orderId}:${ip}`, 40, 60_000).allowed) {
+    const limited = await distributedRateLimit(admin, "order-status", `${orderId}:${ip}`, 40, 60_000);
+    if (!limited.allowed) {
       return NextResponse.json(
         { ok: false, error: "Too many status requests. Please wait a moment." },
         { status: 429, headers: { "Cache-Control": "private, no-store" } }
@@ -32,21 +34,15 @@ export async function GET(
       if (user?.id) {
         sessionUserId = user.id;
         const { data: roles } = await supabase.from("admin_roles").select("role").eq("user_id", user.id);
-        if (roles && roles.length > 0) {
-          isAdmin = true;
-        }
+        isAdmin = (roles ?? []).some(({ role }) => role === "super_admin" || role === "finance_reviewer");
       }
     } catch {
       // Unauthenticated session
     }
 
-    const headerToken = request.headers.get("x-guest-token");
-    const authHeader = request.headers.get("authorization");
-    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
-    // Guest tokens are strictly accepted via headers to prevent URL leakage in history/referrers
-    const guestToken = headerToken?.trim() || bearerToken || null;
+    const cookieToken = request.headers.get("cookie")?.match(/(?:^|;\s*)csc_payment_guest=([^;]+)/)?.[1];
+    const guestToken = cookieToken ? decodeURIComponent(cookieToken) : null;
 
-    const admin = createAdminClient();
     const { data: order, error } = await admin
       .from("event_payment_orders")
       .select("id,order_reference,status,amount_paise,paid_registration_id,claimed_utr,matched_at,event_id,user_id,guest_token_hash")

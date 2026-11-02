@@ -19,7 +19,7 @@ describe("Axis Bank alert parsing and authentication", () => {
   it("authenticates valid Axis Bank email headers", () => {
     const auth = verifyEmailAuthentication({
       from: "Axis Bank Alerts <alerts@axis.bank.in>",
-      "authentication-results": "mx.icloud.com; dkim=pass (header.i=@axis.bank.in); spf=pass (smtp.mailfrom=alerts@axis.bank.in)",
+      "authentication-results": "mx.icloud.com; dkim=pass header.d=axis.bank.in header.i=@axis.bank.in; spf=pass (smtp.mailfrom=alerts@axis.bank.in)",
     });
     expect(auth.status).toBe("authenticated");
     expect(auth.dkimPass).toBe(true);
@@ -68,7 +68,7 @@ describe("Axis Bank alert parsing and authentication", () => {
       from: "Axis Bank Alerts <alerts@axis.bank.in>",
       headers: {
         from: "Axis Bank Alerts <alerts@axis.bank.in>",
-        "authentication-results": "mx.icloud.com; dkim=pass (header.i=@axis.bank.in); spf=pass (smtp.mailfrom=alerts@axis.bank.in)",
+        "authentication-results": "mx.icloud.com; dkim=pass header.d=axis.bank.in header.i=@axis.bank.in; spf=pass (smtp.mailfrom=alerts@axis.bank.in)",
       },
       html: fixtureHtml,
     });
@@ -101,7 +101,7 @@ describe("Axis Bank alert parsing and authentication", () => {
       from: "alerts@axis.bank.in",
       headers: {
         from: "alerts@axis.bank.in",
-        "authentication-results": "dkim=pass (header.d=axis.bank.in); spf=pass",
+        "authentication-results": "mx.icloud.com; dkim=pass header.d=axis.bank.in; spf=pass",
       },
       text: fixtureText,
     });
@@ -131,6 +131,89 @@ describe("Axis Bank alert parsing and authentication", () => {
     expect(alert).toBeNull();
   });
 
+  it("parses three-letter month abbreviations and 12-hour AM/PM formats accurately", () => {
+    // DD-Mon-YY
+    expect(parseAxisTimestamp("02-Nov-26, 00:14:02 IST")).toBe("2026-11-01T18:44:02.000Z");
+    // DD-Mon-YYYY
+    expect(parseAxisTimestamp("02-Nov-2026 00:14:02 IST")).toBe("2026-11-01T18:44:02.000Z");
+    // 12-hour AM
+    expect(parseAxisTimestamp("02-11-26 10:30:00 AM IST")).toBe("2026-11-02T05:00:00.000Z");
+    // 12-hour PM
+    expect(parseAxisTimestamp("02-11-26 10:30:00 PM IST")).toBe("2026-11-02T17:00:00.000Z");
+  });
+
+  it("extracts 12-digit UTR at index 3 without corrupting payerName", () => {
+    // Index 3 with numeric channel/batch sub-code: UPI/CR/01/<UTR>/<PAYER>/<BANK>/UPI
+    const parsed1 = parseTransactionInfo("UPI/CR/01/630722119955/VIKASH S/IOBA/UPI");
+    expect(parsed1.utr).toBe("630722119955");
+    expect(parsed1.payerName).toBe("VIKASH S");
+    expect(parsed1.sourceBank).toBe("IOBA");
+    expect(parsed1.channel).toBe("UPI");
+
+    // Index 3 with order reference: UPI/CR/CSC-ORD-ABC123DEF456/<UTR>/<PAYER>/<BANK>
+    const parsed2 = parseTransactionInfo("UPI/CR/CSC-ORD-ABC123DEF456/630722119955/VIKASH S/IOBA");
+    expect(parsed2.utr).toBe("630722119955");
+    expect(parsed2.payerName).toBe("VIKASH S");
+    expect(parsed2.sourceBank).toBe("IOBA");
+    expect(parsed2.orderReference).toBe("CSC-ORD-ABC123DEF456");
+  });
+
+  it("converts amounts with ₹ sign and integer paise avoiding IEEE 754 drift", () => {
+    const fixtureText = `
+      Dear Customer,
+      ₹ 180.00 was credited to your A/c XX1995 on 02-Nov-2026.
+      Amount Credited: ₹ 180.00
+      Transaction Info: UPI/CR/01/630799887766/VIKASH S/IOBA/UPI
+    `;
+
+    const alert = parseAxisCreditAlert({
+      messageId: "<axis-rupee-test@axis.bank.in>",
+      subject: "₹ 180.00 was credited to your A/c.",
+      from: "alerts@axis.bank.in",
+      headers: {
+        from: "alerts@axis.bank.in",
+        "authentication-results": "mx.icloud.com; dkim=pass header.d=axis.bank.in; spf=pass",
+      },
+      text: fixtureText,
+    });
+
+    expect(alert).not.toBeNull();
+    expect(alert?.amountPaise).toBe(18000);
+    expect(alert?.utr).toBe("630799887766");
+    expect(alert?.payerName).toBe("VIKASH S");
+    expect(alert?.isEligibleForAutoReconcile).toBe(false);
+  });
+
+  it("extracts receiving account suffix with strict word boundaries", () => {
+    // Matches 4-digit suffix
+    const fixture1 = "credited to your A/c XX1995. Amount: INR 180.00. Transaction Info: UPI/P2A/630722119955/PAYER/UPI";
+    const alert1 = parseAxisCreditAlert({
+      messageId: "<acc-1@axis.bank.in>",
+      subject: "INR 180.00 was credited",
+      from: "alerts@axis.bank.in",
+      headers: {
+        from: "alerts@axis.bank.in",
+        "authentication-results": "mx.icloud.com; dkim=pass header.d=axis.bank.in; spf=pass",
+      },
+      text: fixture1,
+    });
+    expect(alert1?.receivingAccountSuffix).toBe("1995");
+
+    // Matches 'ending in 1995'
+    const fixture2 = "credited to Account ending in 1995. Amount: INR 180.00. Transaction Info: UPI/P2A/630722119955/PAYER/UPI";
+    const alert2 = parseAxisCreditAlert({
+      messageId: "<acc-2@axis.bank.in>",
+      subject: "INR 180.00 was credited",
+      from: "alerts@axis.bank.in",
+      headers: {
+        from: "alerts@axis.bank.in",
+        "authentication-results": "mx.icloud.com; dkim=pass header.d=axis.bank.in; spf=pass",
+      },
+      text: fixture2,
+    });
+    expect(alert2?.receivingAccountSuffix).toBe("1995");
+  });
+
   it("disallows auto-reconcile for mismatched receiving account suffix", () => {
     const fixtureText = `
       INR 180.00 was credited to your A/c.
@@ -146,7 +229,7 @@ describe("Axis Bank alert parsing and authentication", () => {
       from: "alerts@axis.bank.in",
       headers: {
         from: "alerts@axis.bank.in",
-        "authentication-results": "dkim=pass (header.d=axis.bank.in); spf=pass",
+        "authentication-results": "mx.icloud.com; dkim=pass header.d=axis.bank.in; spf=pass",
       },
       text: fixtureText,
     });

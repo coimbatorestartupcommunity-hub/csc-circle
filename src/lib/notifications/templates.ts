@@ -2,6 +2,7 @@ import { emailConfiguration } from "@/lib/notifications/config";
 
 /** CSC versions of the reference collection's transactional and lifecycle families. */
 export const definitions = {
+  GuestEmailVerification: ["Verify Your Email for CSC Event Checkout", "Use the verification code below to continue your CSC event payment. The code expires in 10 minutes. If you did not request it, you can ignore this message.", "/events", "verification", "light"],
   EventReviewRequest: ["How Was Your CSC Event?", "Thank you for attending. Share your rating and experience in My Ratings and Reviews. Your feedback helps CSC plan future events.", "/member/reviews", "support", "light"],
   FirstLoginWelcome: ["Welcome to CSC Circle", "Welcome to Coimbatore Startup Community. Connect with founders, discover events, and build your profile at your own pace.", "/member/profile", "welcome", "orange"],
   MembershipApplicationReceived: ["Membership Application Received", "We received your CSC membership application. Membership is free; your card will be available after the community team approves your claim.", "/member/claim", "onboarding", "sky"],
@@ -89,6 +90,7 @@ function detailValue(key: string, value: string) {
 }
 
 const detailFields: Array<[string, string, number]> = [
+  ["verificationCode", "Verification code", 12],
   ["name", "Name", 100], ["reference", "UID", 100], ["email", "Email", 180],
   ["membershipNumber", "Membership number", 80], ["status", "Status", 80],
   ["eventTitle", "Event", 180], ["eventCategory", "Event type", 100],

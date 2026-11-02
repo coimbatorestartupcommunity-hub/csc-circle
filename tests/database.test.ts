@@ -823,6 +823,16 @@ describe("resources & opportunities CMS", () => {
           'INR 180.00 was credited to your A/c.',
           'authenticated'
         ) on conflict (id) do nothing;
+
+        insert into public.event_payment_attributions(
+          order_id, evidence_id, attribution_method, bank_order_reference,
+          verification_source, policy_version, eligible_for_settlement
+        ) values (
+          '22222222-2222-4222-8222-222222222222',
+          '33333333-3333-4333-8333-333333333333',
+          'bank_order_reference', 'CSC-ORD-ATOMIC01',
+          'pglite-regression-test', 'test-v1', true
+        ) on conflict (order_id) do nothing;
       `);
 
       // 2. Call atomic fulfillment RPC as service_role
@@ -914,6 +924,7 @@ describe("resources & opportunities CMS", () => {
           'INR 180.00 was credited to your A/c.',
           'authenticated'
         ) on conflict (id) do nothing;
+
       `);
 
       await expect(
@@ -1019,6 +1030,16 @@ describe("resources & opportunities CMS", () => {
           'INR 300.00 was credited to your A/c.',
           'authenticated'
         ) on conflict (id) do nothing;
+
+        insert into public.event_payment_attributions(
+          order_id, evidence_id, attribution_method, bank_order_reference,
+          verification_source, policy_version, eligible_for_settlement
+        ) values (
+          '77777777-7777-4777-8777-777777777777',
+          '88888888-8888-4888-8888-888888888888',
+          'bank_order_reference', 'CSC-ORD-GROUP003',
+          'pglite-regression-test', 'test-v1', true
+        ) on conflict (order_id) do nothing;
       `);
 
       const res = await db.query<{ res: { ok: boolean; attendee_count: number } }>(`
@@ -1091,6 +1112,16 @@ describe("resources & opportunities CMS", () => {
           'INR 300.00 was credited to your A/c.',
           'authenticated'
         ) on conflict (id) do nothing;
+
+        insert into public.event_payment_attributions(
+          order_id, evidence_id, attribution_method, bank_order_reference,
+          verification_source, policy_version, eligible_for_settlement
+        ) values (
+          '77777777-8888-4888-8888-888888888888',
+          '88888888-9999-4999-8999-999999999999',
+          'bank_order_reference', 'CSC-ORD-MISSINGNAMES',
+          'pglite-regression-test', 'test-v1', true
+        ) on conflict (order_id) do nothing;
       `);
 
       await expect(
@@ -1144,6 +1175,7 @@ describe("resources & opportunities CMS", () => {
           'INR 100.00 was credited to your A/c.',
           'authenticated'
         ) on conflict (id) do nothing;
+
       `);
 
       await expect(
@@ -1197,6 +1229,16 @@ describe("resources & opportunities CMS", () => {
           'INR 100.00 was credited to your A/c.',
           'authenticated'
         ) on conflict (id) do nothing;
+
+        insert into public.event_payment_attributions(
+          order_id, evidence_id, attribution_method, bank_order_reference,
+          verification_source, policy_version, eligible_for_settlement
+        ) values (
+          '77777777-1111-4111-8111-111111111111',
+          '88888888-1111-4111-8111-111111111111',
+          'bank_order_reference', 'CSC-ORD-NOREFMEMO',
+          'pglite-regression-test', 'test-v1', true
+        ) on conflict (order_id) do nothing;
       `);
 
       await expect(

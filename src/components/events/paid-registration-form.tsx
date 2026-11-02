@@ -36,6 +36,11 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
   const [checkoutModalOpen, setCheckoutModalOpen] = React.useState(false);
   const [activeOrder, setActiveOrder] = React.useState<OrderInfo | null>(null);
   const [activeDeepLinks, setActiveDeepLinks] = React.useState<PaymentDeepLinks | null>(null);
+  const [guestVerificationId, setGuestVerificationId] = React.useState<string | null>(null);
+  const [guestVerificationToken, setGuestVerificationToken] = React.useState<string | null>(null);
+  const [guestVerificationEmail, setGuestVerificationEmail] = React.useState<string | null>(null);
+  const [guestVerificationCode, setGuestVerificationCode] = React.useState("");
+  const [verifyingEmail, setVerifyingEmail] = React.useState(false);
 
   const {
     register,
@@ -58,7 +63,46 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
   const values = useWatch({ control });
   const total = calculatePaidRegistrationTotal(event.pricePerAttendee ?? 0, Number(values.attendeeCount ?? 1));
 
-  // Handler for Automated Instant UPI Checkout
+  const requestGuestEmailVerification = async (email: string) => {
+    const response = await fetch("/api/payments/guest-email/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, eventId: event.id }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || "Could not send the verification code.");
+    setGuestVerificationId(result.verificationId);
+    setGuestVerificationToken(null);
+    setGuestVerificationEmail(email.toLowerCase());
+    setGuestVerificationCode("");
+    toast.success("A verification code was sent to your email address.");
+  };
+
+  const handleVerifyGuestEmail = async () => {
+    const email = String(getValues("email") || "").trim().toLowerCase();
+    if (!guestVerificationId || email !== guestVerificationEmail || !/^\d{6}$/.test(guestVerificationCode)) {
+      toast.error("Enter the six-digit code sent to this email address.");
+      return;
+    }
+    setVerifyingEmail(true);
+    try {
+      const response = await fetch("/api/payments/guest-email/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verificationId: guestVerificationId, email, code: guestVerificationCode }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || "The verification code could not be confirmed.");
+      setGuestVerificationToken(result.verificationToken);
+      toast.success("Email verified. You can now create the payment order.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Email verification failed.");
+    } finally {
+      setVerifyingEmail(false);
+    }
+  };
+
+  // Handler for the order-scoped UPI checkout
   const handleProceedToUpi = async () => {
     // Validate attendee fields first
     const isValid = await trigger([
@@ -78,15 +122,13 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
     }
 
     const currentValues = getValues();
-    const savedToken = typeof window !== "undefined" ? sessionStorage.getItem(`csc_guest_token_${event.id}`) : null;
+    const normalizedEmail = String(currentValues.email || "").trim().toLowerCase();
+    const usableVerification = guestVerificationEmail === normalizedEmail;
     setSaving(true);
     try {
       const res = await fetch("/api/payments/create-order", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(savedToken ? { "x-guest-token": savedToken } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           eventId: event.id,
           fullName: currentValues.fullName,
@@ -100,23 +142,21 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
           dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
           consentContact: currentValues.consentContact,
           consentPaymentTerms: currentValues.consentPaymentTerms,
-          existingGuestToken: savedToken || undefined,
+          guestVerificationId: usableVerification ? guestVerificationId || undefined : undefined,
+          guestEmailVerificationToken: usableVerification ? guestVerificationToken || undefined : undefined,
         }),
       });
 
       const data = await res.json();
       if (!res.ok || !data.ok) {
+        if (res.status === 403 && String(data.error || "").startsWith("Verify your email")) {
+          await requestGuestEmailVerification(normalizedEmail);
+          return;
+        }
         throw new Error(data.error || "Unable to initialize UPI payment.");
       }
 
-      if (typeof window !== "undefined" && data.guestCheckoutToken) {
-        sessionStorage.setItem(`csc_guest_token_${event.id}`, data.guestCheckoutToken);
-      }
-
-      setActiveOrder({
-        ...data.order,
-        guestCheckoutToken: data.guestCheckoutToken || savedToken || undefined,
-      });
+      setActiveOrder(data.order);
       setActiveDeepLinks(data.deepLinks);
       setCheckoutModalOpen(true);
     } catch (err) {
@@ -180,7 +220,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
             }`}
           >
             <Smartphone className="size-3.5 text-teal-600" />
-            Instant UPI Checkout (Recommended)
+            UPI Checkout (Recommended)
           </button>
           <button
             type="button"
@@ -341,16 +381,37 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
           </label>
 
           {paymentMode === "automated" ? (
-            <Button
-              type="button"
-              onClick={handleProceedToUpi}
-              disabled={saving}
-              className="h-12 gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm"
-            >
-              {saving ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4" />}
-              {saving ? "Preparing UPI Checkout…" : "Continue to UPI Payment"}
-              {!saving && <ArrowRight className="size-4" />}
-            </Button>
+            <div className="flex flex-col gap-3">
+              {guestVerificationId && !guestVerificationToken && (
+                <div className="rounded-xl border border-teal-200 bg-teal-50 p-3" role="status" aria-live="polite">
+                  <p className="text-xs font-medium text-teal-900">Verify {guestVerificationEmail} before creating this payment order.</p>
+                  <div className="mt-2 flex gap-2">
+                    <Input
+                      aria-label="Email verification code"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={guestVerificationCode}
+                      onChange={(event) => setGuestVerificationCode(event.target.value.replace(/\D/g, ""))}
+                      placeholder="6-digit code"
+                    />
+                    <Button type="button" onClick={handleVerifyGuestEmail} disabled={verifyingEmail || guestVerificationCode.length !== 6}>
+                      {verifyingEmail ? <Loader2 className="size-4 animate-spin" /> : "Verify"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <Button
+                type="button"
+                onClick={handleProceedToUpi}
+                disabled={saving || Boolean(guestVerificationId && !guestVerificationToken)}
+                className="h-12 gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm"
+              >
+                {saving ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4" />}
+                {saving ? "Preparing UPI Checkout…" : "Continue to UPI Payment"}
+                {!saving && <ArrowRight className="size-4" />}
+              </Button>
+            </div>
           ) : (
             <Button type="submit" disabled={saving} className="h-11 gap-2">
               {saving ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
@@ -360,7 +421,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
 
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 mt-1">
             <ShieldCheck className="size-3.5 text-teal-600" />
-            <span>Bank-grade verified UPI settlement · Zero convenience fees</span>
+            <span>Order-scoped UPI checkout · Payment is confirmed only after authorized bank-evidence review</span>
           </div>
         </form>
       </div>

@@ -6,6 +6,7 @@ import { parseAxisCreditAlert, type RawEmailInput } from "./axis-parser";
 import { fetchRecentBankAlerts } from "./imap-client";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
+import { containsExactOrderReference } from "./orders";
 
 export interface ReconciliationSummary {
   ok: boolean;
@@ -27,9 +28,42 @@ export async function processReconciliationBatch(
   const errors: string[] = [];
 
   for (const email of emails) {
+    let workerMessageId: string | null = null;
     try {
+      if (email.imapUid && email.imapUidValidity !== undefined && email.imapMailbox) {
+        const { data: workerMessage, error: workerMessageError } = await admin
+          .from("payment_worker_messages")
+          .upsert(
+            {
+              mailbox_name: email.imapMailbox,
+              uid_validity: email.imapUidValidity,
+              imap_uid: email.imapUid,
+              message_id: email.messageId || null,
+              status: "parsing",
+              updated_at: new Date().toISOString(),
+              last_error: null,
+            },
+            { onConflict: "mailbox_name,uid_validity,imap_uid" }
+          )
+          .select("id")
+          .single();
+        if (workerMessageError || !workerMessage) {
+          throw new Error(`Could not persist IMAP processing state for UID ${email.imapUid}`);
+        }
+        workerMessageId = workerMessage.id;
+      }
+
       const parsed = parseAxisCreditAlert(email);
-      if (!parsed) continue; // Not an Axis credit alert, skip
+      if (!parsed) {
+        if (workerMessageId) {
+          await admin.from("payment_worker_messages").update({
+            status: "skipped",
+            processed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }).eq("id", workerMessageId);
+        }
+        continue;
+      }
 
       // Check if evidence already recorded
       const { data: existing } = await admin
@@ -38,7 +72,17 @@ export async function processReconciliationBatch(
         .or(`utr.eq.${parsed.utr},message_id.eq.${parsed.messageId}`)
         .maybeSingle();
 
-      if (existing) continue; // Already processed
+      if (existing) {
+        if (workerMessageId) {
+          await admin.from("payment_worker_messages").update({
+            status: "duplicate",
+            evidence_id: existing.id,
+            processed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }).eq("id", workerMessageId);
+        }
+        continue;
+      }
 
       const { data: insertedEvidence, error: insertError } = await admin
         .from("event_payment_evidence")
@@ -68,16 +112,33 @@ export async function processReconciliationBatch(
         .single();
 
       if (insertError || !insertedEvidence) {
-        errors.push(`Failed to insert evidence for UTR ${parsed.utr}: ${insertError?.message}`);
-        continue;
+        throw new Error(`Failed to insert evidence for UTR ${parsed.utr}: ${insertError?.message}`);
       }
       evidenceRecorded++;
+
+      if (workerMessageId) {
+        const { error: ledgerError } = await admin.from("payment_worker_messages").update({
+          status: "processed",
+          evidence_id: insertedEvidence.id,
+          processed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq("id", workerMessageId);
+        if (ledgerError) throw new Error(`Could not finalize IMAP processing state for UID ${email.imapUid}`);
+      }
 
       if (!parsed.isEligibleForAutoReconcile) {
         continue; // Unverified email or mismatched receiving account
       }
     } catch (err) {
-      errors.push(err instanceof Error ? err.message : String(err));
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(message);
+      if (workerMessageId) {
+        await admin.from("payment_worker_messages").update({
+          status: "failed",
+          last_error: message.slice(0, 500),
+          updated_at: new Date().toISOString(),
+        }).eq("id", workerMessageId);
+      }
     }
   }
 
@@ -124,7 +185,7 @@ export async function processReconciliationBatch(
       const refMatch = candidates.find(
         (o) =>
           o.order_reference &&
-          evidence.transaction_info_raw.toUpperCase().includes(o.order_reference.toUpperCase())
+          containsExactOrderReference(evidence.transaction_info_raw, o.order_reference)
       );
 
       // Candidate with claimed UTR
@@ -181,6 +242,29 @@ export async function processReconciliationBatch(
         continue;
       }
 
+      const { error: attributionError } = await admin
+        .from("event_payment_attributions")
+        .upsert(
+          {
+            order_id: matchedOrder.id,
+            evidence_id: evidence.id,
+            attribution_method: "bank_order_reference",
+            bank_order_reference: matchedOrder.order_reference,
+            verification_source: "cryptographically_authenticated_axis_alert",
+            policy_version: "csc-axis-attribution-v1",
+            supporting_evidence: {
+              message_id: evidence.message_id,
+              authentication_policy: evidence.auth_details,
+            },
+            eligible_for_settlement: true,
+          },
+          { onConflict: "order_id" }
+        );
+      if (attributionError) {
+        errors.push(`Failed to persist verified attribution for order ${matchedOrder.id}: ${attributionError.message}`);
+        continue;
+      }
+
       if (!isAutoConfirmEnabled) {
         // Auto-confirmation feature flag is disabled: link evidence to order for admin review
         await admin
@@ -228,20 +312,14 @@ export async function fulfillConfirmedPayment(
   matchedBy: "automated_worker" | "user_utr_claim" = "automated_worker"
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    // 1. Resolve User ID if available in auth.users
-    let userId = order.user_id;
-    if (!userId) {
-      const { data: users } = await admin.auth.admin.listUsers({ perPage: 100 });
-      userId = users?.users.find((u) => u.email?.toLowerCase() === order.email.toLowerCase())?.id || null;
-    }
-
-    // 2. Call atomic PostgreSQL function
+    // The settlement actor is not the attendee. The database uses the owner
+    // already bound to the order and keeps guest identity null.
     const { data: result, error: rpcError } = await admin.rpc("csc_fulfill_confirmed_payment", {
       p_order_id: order.id,
       p_evidence_id: evidence.id,
       p_matched_by: matchedBy,
       p_notes: `Axis Bank alert reconciliation: UTR ${evidence.utr}, ₹${Number(evidence.amount_paise) / 100}`,
-      p_user_id: userId,
+      p_user_id: null,
     });
 
     if (rpcError) {
@@ -253,10 +331,14 @@ export async function fulfillConfirmedPayment(
       return { ok: false, error: "Atomic fulfillment did not succeed." };
     }
 
-    // 3. Queue Pass Email and schedule delivery
+    // 3. Queue Pass Email and schedule delivery (isolated from settlement commitment)
     if (resObj.primary_pass_id) {
-      await ensureEventPassEmail(admin, resObj.primary_pass_id);
-      scheduleNotificationDelivery();
+      try {
+        await ensureEventPassEmail(admin, resObj.primary_pass_id);
+        scheduleNotificationDelivery();
+      } catch (emailErr) {
+        console.error("CSC_EVENT_PASS_EMAIL_ENQUEUE_FAILED", emailErr);
+      }
     }
 
     return { ok: true };
@@ -339,7 +421,9 @@ export async function reconcilePayments(): Promise<ReconciliationSummary> {
       p_status: errors.length > 0 ? "error" : "success",
       p_message_count: messagesFetched,
       p_matched_count: ordersMatched,
-      p_last_uid: highestUid,
+      // Never advance past a message that failed parsing or persistence. Safe
+      // reprocessing is idempotent; skipping a bank alert is not recoverable.
+      p_last_uid: errors.length === 0 ? highestUid : null,
       p_error: errors.length > 0 ? errors.join("; ").slice(0, 500) : null,
       p_uid_validity: uidValidity,
       p_mailbox_name: mailboxName,

@@ -1,7 +1,99 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { UPI_CONFIG } from "./config";
+import { UPI_CONFIG, hasExplicitProductionMerchantApproval } from "./config";
+
+export const GUEST_VERIFICATION_COOKIE_NAME = "csc_guest_verification";
+export const GUEST_ORDER_TOKEN_COOKIE_PREFIX = "csc_guest_order_token_";
+
+export function getGuestVerificationSecret(): string {
+  const secret =
+    process.env.CSC_GUEST_EMAIL_VERIFICATION_SECRET ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    "";
+  if (secret.length < 32) {
+    if (process.env.NODE_ENV !== "production") {
+      return "csc-guest-verification-dev-secret-32-chars-minimum!";
+    }
+    throw new Error("Guest email verification secret is not configured");
+  }
+  return secret;
+}
+
+export function hashGuestVerificationCode(code: string): string {
+  return createHash("sha256").update(code.trim()).digest("hex");
+}
+
+export function hashGuestVerificationToken(token: string): string {
+  return createHash("sha256").update(token.trim()).digest("hex");
+}
+
+export function signGuestVerificationCookie(payload: {
+  email: string;
+  eventId?: string;
+  token: string;
+}): string {
+  const normalizedEmail = payload.email.trim().toLowerCase();
+  const issuedAt = Date.now();
+  const expiresAt = issuedAt + 15 * 60_000; // 15 minutes
+  const data = JSON.stringify({
+    email: normalizedEmail,
+    eventId: payload.eventId || null,
+    token: payload.token,
+    issuedAt,
+    expiresAt,
+  });
+  const dataBase64 = Buffer.from(data).toString("base64url");
+  const signature = createHmac("sha256", getGuestVerificationSecret())
+    .update(dataBase64)
+    .digest("base64url");
+  return `${dataBase64}.${signature}`;
+}
+
+export function verifyGuestVerificationCookie(
+  cookieValue: string | null | undefined,
+  expectedEmail?: string
+): { valid: boolean; email?: string; eventId?: string; token?: string } {
+  if (!cookieValue || typeof cookieValue !== "string") return { valid: false };
+  const parts = cookieValue.split(".");
+  if (parts.length !== 2) return { valid: false };
+  const [dataBase64, signature] = parts;
+
+  const expectedSignature = createHmac("sha256", getGuestVerificationSecret())
+    .update(dataBase64)
+    .digest("base64url");
+
+  if (
+    signature.length !== expectedSignature.length ||
+    !timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
+  ) {
+    return { valid: false };
+  }
+
+  try {
+    const raw = Buffer.from(dataBase64, "base64url").toString("utf-8");
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return { valid: false };
+    if (typeof parsed.expiresAt !== "number" || Date.now() > parsed.expiresAt) {
+      return { valid: false };
+    }
+    if (typeof parsed.email !== "string" || !parsed.email) {
+      return { valid: false };
+    }
+    const normalizedEmail = parsed.email.trim().toLowerCase();
+    if (expectedEmail && normalizedEmail !== expectedEmail.trim().toLowerCase()) {
+      return { valid: false };
+    }
+    return {
+      valid: true,
+      email: normalizedEmail,
+      eventId: parsed.eventId || undefined,
+      token: parsed.token || undefined,
+    };
+  } catch {
+    return { valid: false };
+  }
+}
 
 export interface CreateOrderParams {
   eventId: string;
@@ -31,6 +123,12 @@ export interface PaymentDeepLinks {
 export function generateOrderReference(): string {
   const hex = randomBytes(6).toString("hex").toUpperCase();
   return `CSC-ORD-${hex}`;
+}
+
+export function containsExactOrderReference(value: string, orderReference: string): boolean {
+  if (!/^CSC-ORD-[0-9A-Z]{8,32}$/.test(orderReference)) return false;
+  const escaped = orderReference.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|[^A-Z0-9-])${escaped}(?:[^A-Z0-9-]|$)`, "i").test(value);
 }
 
 export function generateGuestCheckoutToken(): string {
@@ -139,6 +237,13 @@ export async function createPaymentOrder(
   admin: SupabaseClient<Database>,
   params: CreateOrderParams
 ) {
+  if (!hasExplicitProductionMerchantApproval()) {
+    return {
+      ok: false as const,
+      error: "UPI checkout is unavailable until the production merchant configuration is explicitly approved.",
+      status: 503,
+    };
+  }
   const {
     eventId,
     fullName,
@@ -169,11 +274,18 @@ export async function createPaymentOrder(
       status: 422,
     };
   }
+  if (new Set(attendees.map((name) => name.toLocaleLowerCase("en-IN"))).size !== attendees.length) {
+    return {
+      ok: false as const,
+      error: "Each attendee must have a distinct name.",
+      status: 422,
+    };
+  }
 
   // 1. Fetch and validate event
   const { data: event, error: eventError } = await admin
     .from("events")
-    .select("id,title,status,registration_state,starts_at,registration_deadline,admission,registration_mode,price_per_attendee,max_attendees_per_registration,upi_vpa,upi_payee_name")
+    .select("id,title,status,registration_state,starts_at,registration_deadline,admission,registration_mode,price_per_attendee,max_attendees_per_registration,upi_vpa,upi_payee_name,capacity")
     .eq("id", eventId)
     .maybeSingle();
 
@@ -185,11 +297,22 @@ export async function createPaymentOrder(
   if (
     event.status !== "published" ||
     event.admission !== "paid" ||
-    (event.registration_state !== "open" && event.registration_state !== "coming-soon") ||
+    event.registration_state !== "open" ||
     Date.parse(event.starts_at) <= now ||
     (event.registration_deadline && Date.parse(event.registration_deadline) <= now)
   ) {
     return { ok: false as const, error: "Registration is not open for this event.", status: 409 };
+  }
+
+  if (event.capacity != null) {
+    const { count: confirmedCount } = await admin
+      .from("event_registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("event_id", event.id)
+      .in("status", ["confirmed", "checked_in"]);
+    if ((confirmedCount ?? 0) + attendeeCount > event.capacity) {
+      return { ok: false as const, error: "Event is sold out or has insufficient capacity.", status: 409 };
+    }
   }
 
   if (attendeeCount > (event.max_attendees_per_registration ?? 10)) {
@@ -265,18 +388,19 @@ export async function createPaymentOrder(
   }
 
   // Generate capability token for new guest checkout access
-  const guestCheckoutToken = generateGuestCheckoutToken();
-  const guestTokenHash = hashGuestToken(guestCheckoutToken);
+  const guestCheckoutToken = userId ? undefined : generateGuestCheckoutToken();
+  const guestTokenHash = guestCheckoutToken ? hashGuestToken(guestCheckoutToken) : null;
 
-  // 3. Calculate amount
-  const totalRupees = Math.round(pricePerAttendee * 100) * attendeeCount / 100;
-  const amountPaise = Math.round(totalRupees * 100);
+  // 3. Calculate amount with exact server-side integer paise arithmetic
+  const pricePerAttendeePaise = Math.round(pricePerAttendee * 100);
+  const amountPaise = pricePerAttendeePaise * attendeeCount;
+  const totalRupees = amountPaise / 100;
 
   // 4. Generate unique order reference & dynamic UPI URI
   const orderReference = generateOrderReference();
   const upiUri = buildUpiUri({
-    vpa: event.upi_vpa || UPI_CONFIG.PAYEE_VPA,
-    payeeName: event.upi_payee_name || UPI_CONFIG.PAYEE_NAME,
+    vpa: UPI_CONFIG.PAYEE_VPA,
+    payeeName: UPI_CONFIG.PAYEE_NAME,
     amountRupees: totalRupees,
     orderReference,
     eventTitle: event.title,
@@ -302,8 +426,8 @@ export async function createPaymentOrder(
       dietary_accessibility_notes: dietaryAccessibilityNotes?.trim() || null,
       amount_paise: amountPaise,
       currency: "INR",
-      payee_vpa: event.upi_vpa || UPI_CONFIG.PAYEE_VPA,
-      payee_name: event.upi_payee_name || UPI_CONFIG.PAYEE_NAME,
+      payee_vpa: UPI_CONFIG.PAYEE_VPA,
+      payee_name: UPI_CONFIG.PAYEE_NAME,
       expected_account_suffix: UPI_CONFIG.RECEIVING_ACCOUNT_SUFFIX,
       upi_uri: upiUri,
       status: "pending",
@@ -315,6 +439,13 @@ export async function createPaymentOrder(
     .single();
 
   if (insertError || !newOrder) {
+    if (insertError?.code === "23505" || insertError?.message?.includes("idx_active_orders_per_email")) {
+      return {
+        ok: false as const,
+        error: "A payment order is already in progress for this email address. Please resume from your active checkout session or wait for it to expire.",
+        status: 409,
+      };
+    }
     return { ok: false as const, error: "Failed to initialize payment order.", status: 500 };
   }
 

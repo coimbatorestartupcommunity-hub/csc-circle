@@ -30,6 +30,13 @@ import type {
   MediaAsset,
   NotificationRecord,
 } from "@/types/admin";
+import type {
+  EnrichedAdminPaymentRow,
+  EvidenceAuthStatus,
+  AttributionStatus,
+  PaymentEvidenceSummary,
+  PaymentTimelineItem,
+} from "@/types/admin-payments";
 import { getAdminContext, type AdminContext } from "@/lib/admin/gate";
 import type { Permission } from "@/lib/admin/permissions";
 import { createClient } from "@/lib/supabase/server";
@@ -490,21 +497,57 @@ export const adminServices = {
     });
   },
 
-  listPayments(): Promise<ServiceResult<AdminPaymentRow[]>> {
-    return guard("payments.verify", demoPayments, async () => {
+  listPayments(): Promise<ServiceResult<EnrichedAdminPaymentRow[]>> {
+    const demoEnriched: EnrichedAdminPaymentRow[] = demoPayments.map((p) => ({
+      ...p,
+      evidenceAuthStatus: "unlinked",
+      attributionStatus: "unattributed",
+      timeline: [],
+    }));
+
+    return guard("payments.verify", demoEnriched, async () => {
       const sb = await createClient();
-      const [{ data: legacy, error: legacyError }, { data: upiOrders, error: upiError }, { data: events }] = await Promise.all([
+      const [
+        { data: legacy, error: legacyError },
+        { data: upiOrders, error: upiError },
+        { data: events },
+        { data: allEvidence },
+        { data: attributions },
+        { data: reconciliations },
+        { data: auditEvents },
+      ] = await Promise.all([
         sb.from("payments").select("*").order("created_at", { ascending: false }),
-        sb.from("event_payment_orders").select("*").order("created_at", { ascending: false }).limit(100),
+        sb.from("event_payment_orders").select("*").order("created_at", { ascending: false }).limit(200),
         sb.from("events").select("id, title"),
+        sb.from("event_payment_evidence").select("*").order("transaction_time", { ascending: false }).limit(200),
+        sb.from("event_payment_attributions").select("*").limit(200),
+        sb.from("event_payment_reconciliation").select("*").limit(200),
+        sb.from("event_payment_events").select("*").order("created_at", { ascending: true }).limit(500),
       ]);
 
       if (legacyError && upiError) return fail("unknown", "Could not load payments.");
 
       const eventMap = new Map((events ?? []).map((e) => [e.id, e.title]));
+      const evidenceMap = new Map((allEvidence ?? []).map((ev) => [ev.id, ev]));
+      const attributionMap = new Map((attributions ?? []).map((a) => [a.order_id, a]));
+      const reconciliationMap = new Map((reconciliations ?? []).map((r) => [r.order_id, r]));
 
-      const legacyRows: AdminPaymentRow[] = (legacy ?? []).map((p) => ({
+      const eventsByOrder = new Map<string, Array<{ id: string; order_id: string | null; event_type: string; details: unknown; created_at: string }>>();
+      for (const ev of (auditEvents ?? []) as Array<{ id: string; order_id: string | null; event_type: string; details: unknown; created_at: string }>) {
+        if (ev.order_id) {
+          const list = eventsByOrder.get(ev.order_id) || [];
+          list.push(ev);
+          eventsByOrder.set(ev.order_id, list);
+        }
+      }
+
+      const unmatchedEvidence = (allEvidence ?? []).filter(
+        (ev) => ev.reconciliation_state === "unmatched" || ev.reconciliation_state === "ambiguous"
+      );
+
+      const legacyRows: EnrichedAdminPaymentRow[] = (legacy ?? []).map((p) => ({
         id: p.id,
+        isUpiOrder: false,
         reference: p.reference ?? p.id,
         registrationReference: p.registration_id,
         attendee: "Restricted to registration detail",
@@ -515,24 +558,183 @@ export const adminServices = {
         status: p.status as AdminPaymentRow["status"],
         verifiedAt: p.reviewed_at ?? undefined,
         verifiedBy: p.reviewed_by ?? undefined,
+        evidenceAuthStatus: "unlinked",
+        attributionStatus: "unattributed",
+        timeline: [],
       }));
 
-      const upiRows: AdminPaymentRow[] = (upiOrders ?? []).map((o) => {
-        let status: AdminPaymentRow["status"] = "pending_verification";
-        if (o.status === "reconciled" || o.status === "verified") status = "verified";
-        else if (o.status === "failed" || o.status === "expired" || o.status === "cancelled") status = "failed";
+      const upiRows: EnrichedAdminPaymentRow[] = (upiOrders ?? []).map((o) => {
+        const matchedEv = o.matched_evidence_id ? evidenceMap.get(o.matched_evidence_id) : null;
+        const attr = attributionMap.get(o.id);
+        const recon = reconciliationMap.get(o.id);
+        const rawEvents = eventsByOrder.get(o.id) || [];
+
+        let authStatus: EvidenceAuthStatus = "unlinked";
+        if (matchedEv) {
+          authStatus = matchedEv.auth_status as EvidenceAuthStatus;
+        } else if (o.claimed_utr) {
+          const candidate = (allEvidence ?? []).find(
+            (ev) => ev.utr && o.claimed_utr && ev.utr.trim().toLowerCase() === o.claimed_utr.trim().toLowerCase()
+          );
+          if (candidate) authStatus = candidate.auth_status as EvidenceAuthStatus;
+        }
+
+        let attributionStatus: AttributionStatus = "unattributed";
+        if (recon?.matched_by === "admin_manual" || attr?.attribution_method === "admin_bank_record_review") {
+          attributionStatus = "manual_attributed";
+        } else if (o.status === "reconciled" || recon?.matched_by === "automated_worker" || attr?.eligible_for_settlement) {
+          attributionStatus = "attributed";
+        }
+
+        const timeline: PaymentTimelineItem[] = [];
+
+        timeline.push({
+          id: `created-${o.id}`,
+          stage: "order_created",
+          title: "Order Initialized",
+          description: `Order ${o.order_reference} created for ₹${(o.amount_paise / 100).toFixed(2)} (${o.attendee_count} attendee${o.attendee_count > 1 ? "s" : ""})`,
+          timestamp: o.created_at,
+          status: "info",
+          metadata: { payeeVpa: o.payee_vpa, upiUri: o.upi_uri },
+        });
+
+        if (o.claimed_utr) {
+          const utrLog = rawEvents.find((e) => e.event_type === "utr_claimed");
+          timeline.push({
+            id: `utr-${o.id}`,
+            stage: "utr_claimed",
+            title: "Customer Claimed UTR",
+            description: `Claimed UTR reference: ${o.claimed_utr}`,
+            timestamp: utrLog?.created_at || o.updated_at,
+            status: "pending",
+            metadata: (utrLog?.details as Record<string, unknown>) || undefined,
+          });
+        }
+
+        if (matchedEv) {
+          timeline.push({
+            id: `ev-${matchedEv.id}`,
+            stage: "bank_evidence_received",
+            title: "Bank Credit Alert Received",
+            description: `${matchedEv.bank} credited ₹${(matchedEv.amount_paise / 100).toFixed(2)} to account XX${matchedEv.receiving_account_suffix} (UTR: ${matchedEv.utr})`,
+            timestamp: matchedEv.transaction_time,
+            status: "info",
+            metadata: { memo: matchedEv.transaction_info_raw, sender: matchedEv.sender_email },
+          });
+
+          timeline.push({
+            id: `auth-${matchedEv.id}`,
+            stage: "auth_evaluated",
+            title: `Evidence Authentication: ${matchedEv.auth_status.toUpperCase()}`,
+            description:
+              matchedEv.auth_status === "authenticated"
+                ? "DKIM verified with Axis Bank domain alignment; Apple/iCloud MTA provenance confirmed."
+                : matchedEv.auth_status === "needs_review"
+                ? "Partial authentication; requires manual admin review of bank record."
+                : "Untrusted / forged email headers detected. Automatic and manual settlement blocked.",
+            timestamp: matchedEv.created_at,
+            status:
+              matchedEv.auth_status === "authenticated"
+                ? "success"
+                : matchedEv.auth_status === "needs_review"
+                ? "warning"
+                : "error",
+            metadata: (matchedEv.auth_details as Record<string, unknown>) || undefined,
+          });
+        }
+
+        if (attr) {
+          timeline.push({
+            id: `attr-${attr.id}`,
+            stage: "manual_attribution",
+            title: attr.attribution_method === "admin_bank_record_review" ? "Manual Review Attribution" : "Bank Reference Attribution",
+            description: `Verified by authorized administrator under policy ${attr.policy_version}.`,
+            timestamp: attr.verified_at,
+            status: attr.eligible_for_settlement ? "success" : "warning",
+            metadata: (attr.supporting_evidence as Record<string, unknown>) || undefined,
+          });
+        }
+
+        if (recon || o.status === "reconciled" || o.status === "verified") {
+          const reconLog = rawEvents.find((e) => e.event_type === "payment_reconciled");
+          timeline.push({
+            id: `recon-${o.id}`,
+            stage: "payment_reconciled",
+            title: recon?.matched_by === "admin_manual" ? "Manual Admin Fulfillment" : "Automated Reconciliation",
+            description: recon?.notes || "Settlement atomic RPC committed: paid registration and passes issued.",
+            timestamp: recon?.reconciled_at || o.matched_at || o.updated_at,
+            status: "success",
+            metadata: (reconLog?.details as Record<string, unknown>) || undefined,
+          });
+        }
+
+        const candidateEvidences = unmatchedEvidence
+          .filter((ev) => ev.amount_paise === o.amount_paise)
+          .map((ev) => ({
+            id: ev.id,
+            bank: ev.bank,
+            direction: ev.direction as "CREDIT",
+            amountPaise: ev.amount_paise,
+            amountRupees: ev.amount_paise / 100,
+            utr: ev.utr,
+            receivingAccountSuffix: ev.receiving_account_suffix,
+            transactionTime: ev.transaction_time,
+            transactionInfoRaw: ev.transaction_info_raw,
+            senderEmail: ev.sender_email,
+            payerName: ev.payer_name || null,
+            authStatus: ev.auth_status as EvidenceAuthStatus,
+            authDetails: (ev.auth_details as PaymentEvidenceSummary["authDetails"]) || undefined,
+            reconciliationState: ev.reconciliation_state as PaymentEvidenceSummary["reconciliationState"],
+            matchedOrderId: ev.matched_order_id,
+          }));
+
+        let displayStatus: AdminPaymentRow["status"] = "pending_verification";
+        if (o.status === "reconciled" || o.status === "verified") displayStatus = "verified";
+        else if (o.status === "failed" || o.status === "expired" || o.status === "cancelled") displayStatus = "failed";
 
         return {
           id: o.id,
+          isUpiOrder: true,
           reference: o.order_reference,
           registrationReference: o.paid_registration_id ? o.paid_registration_id.slice(0, 13) : "Pending match",
-          attendee: o.full_name,
+          eventId: o.event_id,
           event: eventMap.get(o.event_id) || "CSC Event",
+          attendee: o.full_name,
+          email: o.email,
+          whatsapp: o.whatsapp,
+          organization: o.organization,
+          attendeeCount: o.attendee_count,
           amount: Number(o.amount_paise) / 100,
           currency: o.currency,
           method: o.claimed_utr ? `UPI (UTR: ${o.claimed_utr})` : "UPI (Axis Bank)",
-          status,
+          status: displayStatus,
           verifiedAt: o.matched_at ?? undefined,
+          claimedUtr: o.claimed_utr,
+          evidenceId: o.matched_evidence_id,
+          evidenceAuthStatus: authStatus,
+          attributionStatus,
+          matchedAt: o.matched_at,
+          matchedBy: (recon?.matched_by as "automated_worker" | "user_utr_claim" | "admin_manual" | null) ?? null,
+          notes: recon?.notes,
+          evidence: matchedEv ? {
+            id: matchedEv.id,
+            bank: matchedEv.bank,
+            direction: matchedEv.direction as "CREDIT" | "DEBIT",
+            amountPaise: matchedEv.amount_paise,
+            amountRupees: matchedEv.amount_paise / 100,
+            utr: matchedEv.utr,
+            receivingAccountSuffix: matchedEv.receiving_account_suffix,
+            transactionTime: matchedEv.transaction_time,
+            transactionInfoRaw: matchedEv.transaction_info_raw,
+            senderEmail: matchedEv.sender_email,
+            payerName: matchedEv.payer_name || null,
+            authStatus: matchedEv.auth_status as EvidenceAuthStatus,
+            authDetails: (matchedEv.auth_details as PaymentEvidenceSummary["authDetails"]) || undefined,
+            reconciliationState: matchedEv.reconciliation_state as PaymentEvidenceSummary["reconciliationState"],
+            matchedOrderId: matchedEv.matched_order_id,
+          } : null,
+          timeline,
+          candidateEvidences,
         };
       });
 

@@ -48,6 +48,10 @@ CSC community.jpg
 Vikash's approved portrait.heic
 Vikash's approved biography.heic
 
+# Internal agent working directories and prompt drafts
+.agents/
+CSC_Circle_Complete_Member_Profile_Resume_Header_Master_Prompt.md
+
 # Supabase CLI local state
 /supabase/.temp/
 
