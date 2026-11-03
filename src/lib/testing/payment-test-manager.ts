@@ -25,6 +25,8 @@ export interface PaymentTestRunReceipt {
   };
   auditPreserved: boolean;
   mode: "synthetic_purged" | "production_archived";
+  /** Financial-preflight blockers that forced archive instead of purge. Empty when purged. */
+  eligibility?: { eligible: boolean; blockers: string[] };
 }
 
 /**
@@ -250,6 +252,10 @@ export async function cleanupPaymentTestEvent(options?: {
   testRunId?: string;
   eventId?: string;
   adminUserId?: string;
+  /**
+   * Legacy staging flag. Recorded in the audit trail only — it can NEVER
+   * override the financial preflight. Purge requires zero blockers.
+   */
   forceStagingPurge?: boolean;
 }): Promise<PaymentTestRunReceipt> {
   const admin = createAdminClient();
@@ -291,17 +297,68 @@ export async function cleanupPaymentTestEvent(options?: {
     })
     .eq("id", eventId);
 
-  // Step 2: Query orders
+  // Step 2: Query orders with claim and evidence linkage
   const { data: orders } = await admin
     .from("event_payment_orders")
-    .select("id, status")
+    .select("id, status, claimed_utr, matched_evidence_id")
     .eq("event_id", eventId);
 
-  const orderIds = (orders ?? []).map((o) => o.id);
+  const orderList = (orders ?? []) as {
+    id: string;
+    status: string;
+    claimed_utr: string | null;
+    matched_evidence_id: string | null;
+  }[];
+  const orderIds = orderList.map((o) => o.id);
 
-  // Step 3: Check if real payments exist
-  const hasReconciledOrders = (orders ?? []).some((o) => o.status === "reconciled" || o.status === "verified");
-  const isPureSynthetic = options?.forceStagingPurge || !hasReconciledOrders;
+  // Step 3: Verified financial preflight. options.forceStagingPurge can
+  // NEVER override this decision: a pending, processing, or expired order
+  // may still correspond to a genuine transfer not yet imported. Purge is
+  // allowed only when every linked order is safe-terminal (expired or
+  // cancelled) with no UTR claim and no matched evidence, and no bank
+  // evidence, attributions, or fulfilled registrations reference this run.
+  const UNSAFE_ORDER_STATUSES = [
+    "pending",
+    "processing",
+    "needs_review",
+    "verified",
+    "reconciled",
+    "underpaid",
+    "unmatched",
+  ];
+  const unsafeOrders = orderList.filter(
+    (o) => UNSAFE_ORDER_STATUSES.includes(o.status) || o.claimed_utr || o.matched_evidence_id
+  );
+
+  let linkedEvidenceCount = 0;
+  let linkedAttributionsCount = 0;
+  if (orderIds.length > 0) {
+    const [ev, at] = await Promise.all([
+      admin.from("event_payment_evidence").select("id", { count: "exact", head: true }).in("matched_order_id", orderIds),
+      admin.from("event_payment_attributions").select("order_id", { count: "exact", head: true }).in("order_id", orderIds),
+    ]);
+    linkedEvidenceCount = ev.count ?? 0;
+    linkedAttributionsCount = at.count ?? 0;
+  }
+  const { count: fulfilledRegsCount } = await admin
+    .from("paid_event_registrations")
+    .select("id", { count: "exact", head: true })
+    .eq("event_id", eventId);
+
+  const blockers: string[] = [];
+  if (unsafeOrders.length > 0) {
+    blockers.push(`${unsafeOrders.length} order(s) are active, claimed, or evidence-linked`);
+  }
+  if (linkedEvidenceCount > 0) {
+    blockers.push(`${linkedEvidenceCount} bank evidence record(s) reference these orders`);
+  }
+  if (linkedAttributionsCount > 0) {
+    blockers.push(`${linkedAttributionsCount} attribution record(s) reference these orders`);
+  }
+  if ((fulfilledRegsCount ?? 0) > 0) {
+    blockers.push(`${fulfilledRegsCount} fulfilled registration(s) exist for this event`);
+  }
+  const isPureSynthetic = blockers.length === 0;
 
   const cleanedCounts = {
     registrationsCount: 0,
@@ -348,12 +405,18 @@ export async function cleanupPaymentTestEvent(options?: {
     // Remove the test event
     await admin.from("events").delete().eq("id", eventId);
   } else {
-    // Production safety: mark orders as test_completed and event archived
-    if (orderIds.length > 0) {
+    // Preflight blockers found: cancel only orders that are provably safe —
+    // status pending AND no UTR claim AND no matched evidence. Everything
+    // else stays untouched for reconciliation or review.
+    const cancellableIds = orderList
+      .filter((o) => o.status === "pending" && !o.claimed_utr && !o.matched_evidence_id)
+      .map((o) => o.id);
+
+    if (cancellableIds.length > 0) {
       await admin
         .from("event_payment_orders")
         .update({ status: "cancelled" })
-        .eq("event_id", eventId)
+        .in("id", cancellableIds)
         .eq("status", "pending");
     }
   }
@@ -364,7 +427,13 @@ export async function cleanupPaymentTestEvent(options?: {
     actor_id: options?.adminUserId || null,
     target_type: "event",
     target_id: eventId,
-    after: { testRunId, mode: isPureSynthetic ? "synthetic_purged" : "production_archived", cleanedCounts },
+    after: {
+      testRunId,
+      mode: isPureSynthetic ? "synthetic_purged" : "production_archived",
+      cleanedCounts,
+      eligibility: { eligible: isPureSynthetic, blockers },
+      forceRequested: options?.forceStagingPurge === true,
+    },
   });
 
   revalidateTag("events", { expire: 0 });
@@ -382,5 +451,6 @@ export async function cleanupPaymentTestEvent(options?: {
     cleanedRecords: cleanedCounts,
     auditPreserved: true,
     mode: isPureSynthetic ? "synthetic_purged" : "production_archived",
+    eligibility: { eligible: isPureSynthetic, blockers },
   };
 }

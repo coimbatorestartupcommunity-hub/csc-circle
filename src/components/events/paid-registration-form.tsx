@@ -284,7 +284,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
               className="h-12 w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm"
             >
               {saving ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4" />}
-              {saving ? "Generating Payment Session…" : "Pay VAA UPI Instant Confirmation."}
+              {saving ? "Generating Payment Session…" : "Pay using UPI instant confirmation."}
               {!saving && <ArrowRight className="size-4" />}
             </Button>
           </div>

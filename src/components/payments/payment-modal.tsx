@@ -995,7 +995,7 @@ export function PaymentModal({
 
                 <h4 className="text-xl font-bold text-slate-900 tracking-tight">Payment Successful!</h4>
                 <p className="mt-1 text-sm font-semibold text-teal-700">
-                  Your CSC Circle Event Registration Is Confirmed
+                  Your payment has been received and your CSC Circle event registration is confirmed.
                 </p>
 
                 {/* Details Card */}
@@ -1091,12 +1091,16 @@ export function PaymentModal({
                 <h4 className="text-base font-bold text-slate-900">
                   {failureReason === "expired"
                     ? "Checkout Session Expired"
-                    : "Payment Verification Failed"}
+                    : failureReason === "cancelled"
+                    ? "Payment Session Cancelled"
+                    : "Payment Unsuccessful"}
                 </h4>
                 <p className="mt-2 text-xs text-slate-600 max-w-sm leading-relaxed">
                   {failureReason === "expired"
                     ? "Payment sessions are limited to ensure event ticket allocation. If money left your account, it will be automatically reconciled."
-                    : "The transaction reference could not be verified automatically with this order reference."}
+                    : failureReason === "cancelled"
+                    ? "This payment session was cancelled and no payment was confirmed for this attempt. If money left your account, email support with your order reference and 12-digit UTR."
+                    : "You have not paid for this registration. No successful payment was confirmed for this attempt."}
                 </p>
 
                 <div className="mt-5 w-full max-w-sm rounded-xl bg-slate-50 p-3.5 border border-slate-200 text-left text-xs">
@@ -1114,15 +1118,25 @@ export function PaymentModal({
                     }}
                     className="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs h-10 gap-1.5"
                   >
-                    <RotateCcw className="size-3.5" /> Start New Checkout
+                    <RotateCcw className="size-3.5" />
+                    {failureReason === "expired" ? "Start New Checkout" : "Try Again"}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={onClose}
                     className="w-full text-slate-700 text-xs h-10"
                   >
-                    Close
+                    {failureReason === "expired" ? "Close" : "Choose Another UPI App"}
                   </Button>
+                  {failureReason !== "expired" && (
+                    <Button
+                      variant="ghost"
+                      onClick={onClose}
+                      className="w-full text-slate-600 text-xs h-10"
+                    >
+                      Return to Event
+                    </Button>
+                  )}
                 </div>
               </motion.div>
             )}
