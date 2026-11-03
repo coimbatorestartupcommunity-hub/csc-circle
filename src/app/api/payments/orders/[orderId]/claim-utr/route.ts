@@ -220,7 +220,8 @@ export async function POST(
       },
     });
 
-    // 11. Automated Instant Fulfillment & Confirmation.
+    // 11. Evidence classification on every claim (independent of the
+    // auto-confirm flag) + automated fulfillment only when enabled.
     // A customer-entered UTR alone NEVER authorizes settlement. Automatic
     // fulfillment runs only when explicitly enabled AND genuine authenticated
     // bank evidence uniquely matches this order (exact UTR, exact amount,
@@ -236,7 +237,7 @@ export async function POST(
       .eq("id", orderId)
       .maybeSingle();
 
-    if (isAutoConfirm && fullOrder) {
+    if (fullOrder) {
       const eventTitle = (fullOrder.event as { title?: string } | null)?.title || "CSC Circle Event";
       try {
         const { data: candidateEvidence } = await admin
@@ -247,7 +248,7 @@ export async function POST(
 
         const nowMs = Date.now();
         const matchWindowMs = 2 * 60 * 60 * 1000;
-        const genuineMatches = (candidateEvidence ?? []).filter((row) => {
+        const amountAccountMatches = (candidateEvidence ?? []).filter((row) => {
           const typed = row as {
             id: string;
             amount_paise: number;
@@ -265,6 +266,10 @@ export async function POST(
           const txMs = Date.parse(typed.transaction_time);
           if (!Number.isFinite(txMs) || txMs > nowMs + 5 * 60 * 1000) return false;
           if (nowMs - txMs > matchWindowMs) return false;
+          return true;
+        });
+        const genuineMatches = amountAccountMatches.filter((row) => {
+          const typed = row as { transaction_info_raw: string | null };
           // The authenticated bank note must independently contain this
           // order's exact reference. A UTR/amount match alone (including a
           // stolen UTR on someone else's credit) is only a candidate.
@@ -282,6 +287,29 @@ export async function POST(
             details: {
               claimed_utr: utr,
               candidate_evidence_count: genuineMatches.length,
+              amount_account_match_count: amountAccountMatches.length,
+              auto_confirm_enabled: isAutoConfirm,
+            },
+          });
+        } else if (!isAutoConfirm) {
+          // Exactly one genuine match but auto-confirm is off: link the
+          // evidence for admin review without settling (mirrors the worker's
+          // manual-review path). No passes, no success email.
+          await admin
+            .from("event_payment_orders")
+            .update({
+              status: "processing",
+              matched_evidence_id: (genuineMatches[0] as { id: string }).id,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", orderId);
+          await admin.from("event_payment_events").insert({
+            order_id: orderId,
+            event_type: "utr_claim_evidence_linked",
+            details: {
+              claimed_utr: utr,
+              evidence_id: (genuineMatches[0] as { id: string }).id,
+              auto_confirm_enabled: false,
             },
           });
         } else {

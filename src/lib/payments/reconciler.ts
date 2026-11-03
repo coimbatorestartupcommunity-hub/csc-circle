@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseAxisCreditAlert, type RawEmailInput } from "./axis-parser";
-import { fetchRecentBankAlerts } from "./imap-client";
+import { fetchMessagesById, fetchRecentBankAlerts } from "./imap-client";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { containsExactOrderReference } from "./orders";
@@ -13,19 +13,106 @@ export interface ReconciliationSummary {
   leaseAcquired: boolean;
   messagesFetched: number;
   evidenceRecorded: number;
+  evidenceReverified?: number;
   ordersMatched: number;
   ambiguousCredits: number;
   errors: string[];
 }
 
+/** Exact reason recorded when no DKIM allowlist was configured at import time. */
+export const STRANDED_ALLOWLIST_REASON = "No approved Axis Bank DKIM signing domain is configured";
+const STRANDED_REVERIFY_LIMIT = 20;
+
+/**
+ * One-time catch-up for evidence stranded as `needs_review`/`ignored` while
+ * no DKIM allowlist was configured. Re-fetches the original message by
+ * Message-ID, re-runs cryptographic verification under the CURRENT policy,
+ * and promotes the row only when verification now passes. Rows with any
+ * other status (forged, untrusted) are never touched.
+ */
+export async function reverifyStrandedEvidence(
+  admin: SupabaseClient<Database>
+): Promise<{ reverified: number; errors: string[] }> {
+  const allowlist = (process.env.CSC_PAYMENT_APPROVED_DKIM_DOMAINS ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (allowlist.length === 0) return { reverified: 0, errors: [] };
+
+  const { data: stranded, error: queryError } = await admin
+    .from("event_payment_evidence")
+    .select("id, utr, message_id, auth_details")
+    .eq("auth_status", "needs_review")
+    .eq("reconciliation_state", "ignored")
+    .limit(STRANDED_REVERIFY_LIMIT);
+  if (queryError) return { reverified: 0, errors: [queryError.message] };
+
+  const rows = (stranded ?? []).filter((row) => {
+    const reasons = (row.auth_details as { reasons?: unknown } | null)?.reasons;
+    return (
+      Array.isArray(reasons) &&
+      reasons.includes(STRANDED_ALLOWLIST_REASON) &&
+      typeof row.message_id === "string" &&
+      row.message_id.length > 0
+    );
+  });
+  if (rows.length === 0) return { reverified: 0, errors: [] };
+
+  const { messages, errors } = await fetchMessagesById(
+    rows.map((row) => row.message_id as string),
+    { maxMessages: STRANDED_REVERIFY_LIMIT }
+  );
+  const byMessageId = new Map(messages.map((message) => [message.messageId, message]));
+
+  let reverified = 0;
+  for (const row of rows) {
+    const email = byMessageId.get(row.message_id as string);
+    if (!email) continue;
+    const parsed = parseAxisCreditAlert(email);
+    if (!parsed || parsed.utr !== row.utr || parsed.messageId !== row.message_id) {
+      errors.push(`Re-verification parse mismatch for evidence ${row.id}; row left untouched`);
+      continue;
+    }
+    const { error: updateError } = await admin
+      .from("event_payment_evidence")
+      .update({
+        auth_status: parsed.auth.status,
+        auth_details: {
+          dkim: parsed.auth.dkimPass,
+          spf: parsed.auth.spfPass,
+          reasons: parsed.auth.reasons,
+          details: parsed.auth.details as Record<string, string | number | boolean>,
+        },
+        reconciliation_state: parsed.isEligibleForAutoReconcile ? "unmatched" : "ignored",
+      })
+      .eq("id", row.id);
+    if (updateError) {
+      errors.push(`Failed to update re-verified evidence ${row.id}: ${updateError.message}`);
+    } else {
+      reverified++;
+    }
+  }
+  return { reverified, errors };
+}
+
 export async function processReconciliationBatch(
   admin: SupabaseClient<Database>,
   emails: RawEmailInput[]
-): Promise<{ evidenceRecorded: number; ordersMatched: number; ambiguousCredits: number; errors: string[] }> {
+): Promise<{ evidenceRecorded: number; evidenceReverified: number; ordersMatched: number; ambiguousCredits: number; errors: string[] }> {
   let evidenceRecorded = 0;
+  let evidenceReverified = 0;
   let ordersMatched = 0;
   let ambiguousCredits = 0;
   const errors: string[] = [];
+
+  // Catch-up first so re-verified rows are matchable in this same run.
+  try {
+    const catchUp = await reverifyStrandedEvidence(admin);
+    evidenceReverified = catchUp.reverified;
+    errors.push(...catchUp.errors);
+  } catch (err) {
+    errors.push(err instanceof Error ? err.message : String(err));
+  }
 
   for (const email of emails) {
     let workerMessageId: string | null = null;
@@ -151,7 +238,7 @@ export async function processReconciliationBatch(
     .eq("auth_status", "authenticated");
 
   if (!unmatchedEvidence || unmatchedEvidence.length === 0) {
-    return { evidenceRecorded, ordersMatched, ambiguousCredits, errors };
+    return { evidenceRecorded, evidenceReverified, ordersMatched, ambiguousCredits, errors };
   }
 
   // Get active pending orders
@@ -161,7 +248,7 @@ export async function processReconciliationBatch(
     .in("status", ["pending", "processing"]);
 
   if (!pendingOrders || pendingOrders.length === 0) {
-    return { evidenceRecorded, ordersMatched, ambiguousCredits, errors };
+    return { evidenceRecorded, evidenceReverified, ordersMatched, ambiguousCredits, errors };
   }
 
   const isAutoConfirmEnabled = process.env.CSC_PAYMENT_AUTO_CONFIRM === "true";
@@ -299,7 +386,7 @@ export async function processReconciliationBatch(
     }
   }
 
-  return { evidenceRecorded, ordersMatched, ambiguousCredits, errors };
+  return { evidenceRecorded, evidenceReverified, ordersMatched, ambiguousCredits, errors };
 }
 
 /**
@@ -387,6 +474,7 @@ export async function reconcilePayments(): Promise<ReconciliationSummary> {
       leaseAcquired: false,
       messagesFetched: 0,
       evidenceRecorded: 0,
+      evidenceReverified: 0,
       ordersMatched: 0,
       ambiguousCredits: 0,
       errors: ["Could not acquire worker lease. Another instance is currently executing."],
@@ -395,6 +483,7 @@ export async function reconcilePayments(): Promise<ReconciliationSummary> {
 
   let messagesFetched = 0;
   let evidenceRecorded = 0;
+  let evidenceReverified = 0;
   let ordersMatched = 0;
   let ambiguousCredits = 0;
   const errors: string[] = [];
@@ -425,14 +514,14 @@ export async function reconcilePayments(): Promise<ReconciliationSummary> {
     uidValidity = fetchResult.uidValidity;
     mailboxName = fetchResult.mailboxName;
 
-    // 4. Process and reconcile
-    if (fetchResult.messages.length > 0) {
-      const batchResult = await processReconciliationBatch(admin, fetchResult.messages);
-      evidenceRecorded = batchResult.evidenceRecorded;
-      ordersMatched = batchResult.ordersMatched;
-      ambiguousCredits = batchResult.ambiguousCredits;
-      errors.push(...batchResult.errors);
-    }
+    // 4. Process and reconcile (runs even with zero new messages so
+    // stranded needs_review evidence is reconsidered every run)
+    const batchResult = await processReconciliationBatch(admin, fetchResult.messages);
+    evidenceRecorded = batchResult.evidenceRecorded;
+    evidenceReverified = batchResult.evidenceReverified;
+    ordersMatched = batchResult.ordersMatched;
+    ambiguousCredits = batchResult.ambiguousCredits;
+    errors.push(...batchResult.errors);
   } catch (err) {
     errors.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -456,6 +545,7 @@ export async function reconcilePayments(): Promise<ReconciliationSummary> {
     leaseAcquired: true,
     messagesFetched,
     evidenceRecorded,
+    evidenceReverified,
     ordersMatched,
     ambiguousCredits,
     errors,
