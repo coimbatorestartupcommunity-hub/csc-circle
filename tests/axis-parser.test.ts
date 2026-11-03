@@ -113,6 +113,38 @@ describe("Axis Bank alert parsing and authentication", () => {
     expect(alert?.isEligibleForAutoReconcile).toBe(true);
   });
 
+  it("parses the reported live Rs 1.00 alert with the P2A/Passf note end to end", () => {
+    const fixtureText = `
+      INR 1.00 was credited to your A/c.
+      Amount Credited: INR 1.00
+      Account Number: XX1995
+      Date & Time: 03-11-26, 09:15:00 IST
+      Transaction Info: UPI/P2A/219603774862/S VIKASH/IOBA/Passf
+    `;
+
+    const alert = parseAxisCreditAlert({
+      messageId: "<axis-live-219603774862@axis.bank.in>",
+      subject: "INR 1.00 was credited to your A/c.",
+      from: "Axis Bank Alerts <alerts@axis.bank.in>",
+      headers: {
+        from: "Axis Bank Alerts <alerts@axis.bank.in>",
+        "authentication-results": "mx.icloud.com; dkim=pass header.d=axis.bank.in header.i=@axis.bank.in; spf=pass (smtp.mailfrom=alerts@axis.bank.in)",
+      },
+      text: fixtureText,
+    });
+
+    expect(alert).not.toBeNull();
+    expect(alert?.direction).toBe("CREDIT");
+    expect(alert?.amountPaise).toBe(100);
+    expect(alert?.receivingAccountSuffix).toBe("1995");
+    expect(alert?.utr).toBe("219603774862");
+    expect(alert?.payerName).toBe("S VIKASH");
+    expect(alert?.sourceBank).toBe("IOBA");
+    expect(alert?.transactionInfoRaw).toContain("UPI/P2A/219603774862/S VIKASH/IOBA/Passf");
+    expect(alert?.auth.status).toBe("authenticated");
+    expect(alert?.isEligibleForAutoReconcile).toBe(true);
+  });
+
   it("ignores debit alerts", () => {
     const fixtureText = `
       INR 500.00 was debited from your A/c.
@@ -238,5 +270,30 @@ describe("Axis Bank alert parsing and authentication", () => {
     expect(alert?.receivingAccountSuffix).toBe("4444");
     expect(alert?.isEligibleForAutoReconcile).toBe(false);
     expect(alert?.rejectionReason).toContain("does not match expected CSC account");
+  });
+
+  it("parses the live P2A fixture UPI/P2A/219603774862/S VIKASH/IOBA/Passf", () => {
+    const info = parseTransactionInfo("UPI/P2A/219603774862/S VIKASH/IOBA/Passf");
+    expect(info.utr).toBe("219603774862");
+    expect(info.payerName).toBe("S VIKASH");
+    expect(info.sourceBank).toBe("IOBA");
+    expect(info.channel).toBe("UPI");
+    // The bank abbreviation is a source bank, never a transaction identifier,
+    // and this note carries no CSC order reference.
+    expect(info.orderReference).toBeUndefined();
+    expect(info.raw).toBe("UPI/P2A/219603774862/S VIKASH/IOBA/Passf");
+  });
+
+  it("does not mistake the P2A fixture fragment for an order reference or UTR", () => {
+    const info = parseTransactionInfo("UPI/P2A/219603774862/S VIKASH/IOBA/Passf");
+    expect(info.utr).not.toBe("IOBA");
+    expect(info.utr).not.toBe("Passf");
+    expect(info.payerName).not.toMatch(/CSC/i);
+  });
+
+  it("extracts a CSC order reference when the bank note preserves one", () => {
+    const info = parseTransactionInfo("UPI/CR/CSC-ORD-A1B2C3D4E5F6/630722119955/VIKASH S/IOBA/UPI");
+    expect(info.orderReference).toBe("CSC-ORD-A1B2C3D4E5F6");
+    expect(info.utr).toBe("630722119955");
   });
 });
