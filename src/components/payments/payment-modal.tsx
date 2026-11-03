@@ -631,7 +631,7 @@ export function PaymentModal({
                     Pay using supported UPI app:
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {/* Position 1: Google Pay */}
+                    {/* Position 1: Google Pay (official supplied artwork) */}
                     <button
                       type="button"
                       aria-label="Pay with Google Pay"
@@ -645,11 +645,12 @@ export function PaymentModal({
                       className="group flex h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                     >
                       <Image
-                        src="/images/payments/gpay-logo.svg"
+                        src="/images/payments/gpay-icon.png"
                         alt=""
                         width={90}
                         height={24}
                         className="h-6 w-auto max-w-[85%] object-contain"
+                        unoptimized
                       />
                     </button>
 

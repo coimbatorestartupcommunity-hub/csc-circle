@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Activity, Loader2, PlugZap } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Activity, Loader2, Play, PlugZap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -48,7 +49,9 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: "wa
  * (admin session authorized, read-only, no credentials leave the server).
  */
 export function ReconciliationHealthPanel({ initial }: { initial: ReconciliationHealthSnapshot }) {
+  const router = useRouter();
   const [checking, setChecking] = React.useState(false);
+  const [running, setRunning] = React.useState(false);
   const [imap, setImap] = React.useState<ImapCheckResult | null>(null);
 
   const checkConnection = async () => {
@@ -73,10 +76,38 @@ export function ReconciliationHealthPanel({ initial }: { initial: Reconciliation
           <Activity className="size-4 text-teal-600" />
           <h2 className="text-sm font-bold text-slate-900">CSC Payment Reconciliation Health</h2>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={checkConnection} disabled={checking} className="gap-2">
-          {checking ? <Loader2 className="size-4 animate-spin" /> : <PlugZap className="size-4" />}
-          {checking ? "Checking…" : "Check iCloud Connection"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={checkConnection} disabled={checking || running} className="gap-2">
+            {checking ? <Loader2 className="size-4 animate-spin" /> : <PlugZap className="size-4" />}
+            {checking ? "Checking…" : "Check iCloud Connection"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={async () => {
+              setRunning(true);
+              try {
+                const res = await fetch("/api/admin/payments/reconcile-now", { method: "POST", cache: "no-store" });
+                const data = (await res.json()) as { ok?: boolean; error?: string } & Record<string, unknown>;
+                if (res.ok) {
+                  toast.success("Reconciliation run finished; counts refresh below.");
+                  router.refresh();
+                } else {
+                  toast.error(typeof data.error === "string" ? data.error : "Reconciliation run failed.");
+                }
+              } catch {
+                toast.error("Could not start the reconciliation run.");
+              } finally {
+                setRunning(false);
+              }
+            }}
+            disabled={checking || running}
+            className="gap-2"
+          >
+            {running ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
+            {running ? "Running…" : "Run Reconciliation Now"}
+          </Button>
+        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
