@@ -51,7 +51,16 @@ export async function DELETE(request: Request) {
     testRunId?: string;
     eventId?: string;
     forceStagingPurge?: boolean;
+    totalPurge?: boolean;
+    purgeAll?: boolean;
   };
+
+  // Automated total QA history purge
+  if (body.purgeAll) {
+    const { purgeAllQaTestHistoryAutomated } = await import("@/lib/testing/payment-test-manager");
+    const result = await purgeAllQaTestHistoryAutomated({ adminUserId: ctx.userId ?? undefined });
+    return authResponse(result);
+  }
 
   try {
     const receipt = await cleanupPaymentTestEvent({
@@ -59,6 +68,7 @@ export async function DELETE(request: Request) {
       eventId: body.eventId,
       adminUserId: ctx.userId ?? undefined,
       forceStagingPurge: body.forceStagingPurge,
+      totalPurge: body.totalPurge,
     });
     return authResponse(receipt);
   } catch (err: unknown) {
