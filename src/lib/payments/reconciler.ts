@@ -335,6 +335,27 @@ export async function fulfillConfirmedPayment(
     if (resObj.primary_pass_id) {
       try {
         await ensureEventPassEmail(admin, resObj.primary_pass_id);
+        try {
+          await admin.from("notifications").insert({
+            type: "email",
+            channel: "email",
+            audience: "admin",
+            template_key: "EventRSVPAdminAlert",
+            status: "queued",
+            payload: {
+              eventTitle: "CSC Circle Event",
+              reference: order.order_reference,
+              name: order.full_name,
+              totalAmountPaid: Number(order.amount_paise) / 100,
+              attendeeCount: order.attendee_count,
+              status: "verified",
+              utr: evidence.utr,
+            },
+            dedupe_key: `paid-order-admin-${order.id}`,
+          });
+        } catch {
+          // Best effort admin notification
+        }
         scheduleNotificationDelivery();
       } catch (emailErr) {
         console.error("CSC_EVENT_PASS_EMAIL_ENQUEUE_FAILED", emailErr);

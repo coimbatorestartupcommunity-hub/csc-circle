@@ -1,11 +1,10 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, Upload, Smartphone, ArrowRight, ShieldCheck } from "lucide-react";
+import { Loader2, Smartphone, ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +14,7 @@ import {
   paidRegistrationReferrals,
   paidRegistrationRoles,
   paidRegistrationSchema,
-  isAllowedPaymentProof,
+  toCreateOrderBody,
 } from "@/lib/validations/paid-registration";
 import { UpiCheckoutModal, type OrderInfo } from "@/components/events/upi-checkout-modal";
 import type { PaymentDeepLinks } from "@/lib/payments/orders";
@@ -27,10 +26,7 @@ const selectClass =
   "h-10 w-full rounded-lg border border-input bg-brand-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function PaidRegistrationForm({ event }: { event: EventRecord }) {
-  const [paymentMode, setPaymentMode] = React.useState<"automated" | "manual">("automated");
   const [saving, setSaving] = React.useState(false);
-  const [success, setSuccess] = React.useState(false);
-  const [paymentProof, setPaymentProof] = React.useState<File | null>(null);
 
   // Automated UPI Checkout state
   const [checkoutModalOpen, setCheckoutModalOpen] = React.useState(false);
@@ -44,7 +40,6 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
 
   const {
     register,
-    handleSubmit,
     control,
     trigger,
     getValues,
@@ -129,22 +124,24 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
       const res = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: event.id,
-          fullName: currentValues.fullName,
-          email: currentValues.email,
-          whatsapp: currentValues.whatsapp,
-          organization: currentValues.organization,
-          role: currentValues.role,
-          attendeeCount: Number(currentValues.attendeeCount || 1),
-          additionalAttendeeNames: currentValues.additionalAttendeeNames,
-          referralSource: currentValues.referralSource,
-          dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
-          consentContact: currentValues.consentContact,
-          consentPaymentTerms: currentValues.consentPaymentTerms,
-          guestVerificationId: usableVerification ? guestVerificationId || undefined : undefined,
-          guestEmailVerificationToken: usableVerification ? guestVerificationToken || undefined : undefined,
-        }),
+        body: JSON.stringify(
+          toCreateOrderBody({
+            eventId: event.id,
+            fullName: currentValues.fullName,
+            email: currentValues.email,
+            whatsapp: currentValues.whatsapp,
+            organization: currentValues.organization,
+            role: currentValues.role,
+            attendeeCount: currentValues.attendeeCount,
+            additionalAttendeeNames: currentValues.additionalAttendeeNames,
+            referralSource: currentValues.referralSource,
+            dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
+            consentContact: currentValues.consentContact,
+            consentPaymentTerms: currentValues.consentPaymentTerms,
+            guestVerificationId: usableVerification ? guestVerificationId : null,
+            guestEmailVerificationToken: usableVerification ? guestVerificationToken : null,
+          })
+        ),
       });
 
       const data = await res.json();
@@ -166,121 +163,9 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
     }
   };
 
-  // Handler for Legacy Manual Submission
-  async function onSubmitManual(data: Values) {
-    const file = paymentProof;
-    if (!file || !isAllowedPaymentProof(file)) {
-      toast.error("Upload a JPEG, PNG, WebP, or PDF file under 5 MB.");
-      return;
-    }
-    const body = new FormData();
-    for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined && value !== "") body.append(key, String(value));
-    }
-    body.set("totalAmountPaid", String(total));
-    body.append("paymentScreenshot", file);
-    setSaving(true);
-    try {
-      const response = await fetch("/api/registrations", { method: "POST", body });
-      const result = await response.json();
-      if (!response.ok || !result.ok) throw new Error(result.error ?? "Registration could not be submitted.");
-      setSuccess(true);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Registration could not be submitted.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (success) {
-    return (
-      <div role="status" className="rounded-2xl bg-emerald-50 p-6 text-emerald-950 ring-1 ring-emerald-200">
-        <CheckCircle2 className="mb-3 size-7 text-emerald-600" />
-        <h4 className="font-semibold">Registration received</h4>
-        <p className="mt-1 text-sm">
-          Your payment proof is pending verification. A registration receipt will be emailed to you. Your place is
-          confirmed only after CSC verifies the payment.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="flex flex-col gap-5">
-        {/* Verified Direct UPI Payment Card with QR Code and App Options */}
-        <div className="rounded-2xl border border-teal-200/90 bg-gradient-to-br from-teal-50/80 via-white to-sky-50/70 p-5 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-center gap-5">
-            <div className="flex flex-col items-center shrink-0">
-              <div className="size-[170px] overflow-hidden rounded-xl bg-white p-2 shadow-sm ring-1 ring-slate-200 flex items-center justify-center">
-                <Image
-                  src="/images/payments/vikash-upi-qr.png"
-                  alt="UPI Payment QR Code"
-                  width={150}
-                  height={150}
-                  unoptimized
-                  className="size-full object-contain"
-                />
-              </div>
-              <span className="mt-1.5 text-[11px] font-medium text-slate-500">Scan with any UPI app</span>
-            </div>
-
-            <div className="flex-1 flex flex-col gap-2.5 text-xs text-slate-700 w-full">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Authorized UPI Payee</span>
-                  <p className="font-bold text-slate-900 text-base">S VIKASH</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Amount</span>
-                  <p className="font-extrabold text-teal-800 text-lg">₹{total.toFixed(2)}</p>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-slate-400 text-[11px]">UPI ID (VPA):</span>
-                <div className="mt-0.5 inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 font-mono text-xs font-semibold text-slate-900 ring-1 ring-slate-200">
-                  <span>9342877474@ptyes</span>
-                </div>
-              </div>
-
-              <div className="pt-1">
-                <p className="text-[11px] font-semibold text-slate-600 mb-1.5">Or tap your installed UPI app to pay:</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <a
-                    href={`upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=${total.toFixed(2)}&cu=INR`}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
-                  >
-                    <Image src="/images/payments/gpay-icon.png" alt="Google Pay" width={16} height={16} className="shrink-0" />
-                    <span>Google Pay</span>
-                  </a>
-                  <a
-                    href={`upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=${total.toFixed(2)}&cu=INR`}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
-                  >
-                    <Image src="/images/payments/phonepe-icon.png" alt="PhonePe" width={16} height={16} className="shrink-0" />
-                    <span>PhonePe</span>
-                  </a>
-                  <a
-                    href={`upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=${total.toFixed(2)}&cu=INR`}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
-                  >
-                    <Image src="/images/payments/paytm-icon.png" alt="Paytm" width={16} height={16} className="shrink-0" />
-                    <span>Paytm</span>
-                  </a>
-                  <a
-                    href={`upi://pay?pa=9342877474@ptyes&pn=S%20VIKASH&am=${total.toFixed(2)}&cu=INR`}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 px-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition"
-                  >
-                    <Image src="/images/payments/bhim-icon.png" alt="BHIM" width={16} height={16} className="shrink-0" />
-                    <span>BHIM</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <form
           onSubmit={(e) => { e.preventDefault(); handleProceedToUpi(); }}
           className="flex flex-col gap-4"
@@ -295,6 +180,29 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
               <FieldLabel htmlFor="paid-email">Email</FieldLabel>
               <Input id="paid-email" type="email" autoComplete="email" {...register("email")} aria-invalid={!!errors.email} />
               {errors.email && <FieldError>{errors.email.message}</FieldError>}
+              {guestVerificationId && !guestVerificationToken && (
+                <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-teal-200 bg-teal-50/70 p-3 text-xs">
+                  <span className="font-semibold text-teal-900">Enter 6-digit code sent to your email:</span>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="6-digit code"
+                      maxLength={6}
+                      value={guestVerificationCode}
+                      onChange={(e) => setGuestVerificationCode(e.target.value.replace(/\D/g, ""))}
+                      className="h-9 bg-white text-xs font-mono"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleVerifyGuestEmail}
+                      disabled={verifyingEmail || guestVerificationCode.length !== 6}
+                      className="h-9 px-3 bg-teal-600 hover:bg-teal-700 text-white text-xs shrink-0"
+                    >
+                      {verifyingEmail ? <Loader2 className="size-3.5 animate-spin" /> : "Verify Email"}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Field>
             <Field>
               <FieldLabel htmlFor="paid-whatsapp">WhatsApp number</FieldLabel>
@@ -329,7 +237,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
           </div>
 
           <div className="rounded-xl bg-brand-cloud p-4 text-lg font-semibold text-brand-ink flex items-center justify-between" aria-live="polite">
-            <span>Total payable: ₹{total.toLocaleString("en-IN")}</span>
+            <span>Total payable: ₹{total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
             <span className="text-xs font-normal text-slate-500">₹{event.pricePerAttendee} × {Number(values.attendeeCount || 1)} attendee(s)</span>
           </div>
 
@@ -373,10 +281,10 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
             <Button
               type="submit"
               disabled={saving}
-              className="h-12 gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm"
+              className="h-12 w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm"
             >
               {saving ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4" />}
-              {saving ? "Generating Payment Session…" : `Pay ₹${total.toFixed(2)} via UPI · Instant Confirmation`}
+              {saving ? "Generating Payment Session…" : "Pay VAA UPI Instant Confirmation."}
               {!saving && <ArrowRight className="size-4" />}
             </Button>
           </div>

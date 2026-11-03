@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { revalidateTag, revalidatePath } from "next/cache";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
@@ -221,96 +220,139 @@ export async function POST(
       },
     });
 
-    // 11. Automated Instant Fulfillment & Confirmation
-    const isAutoConfirm = process.env.CSC_PAYMENT_AUTO_CONFIRM !== "false";
+    // 11. Automated Instant Fulfillment & Confirmation.
+    // A customer-entered UTR alone NEVER authorizes settlement. Automatic
+    // fulfillment runs only when explicitly enabled AND genuine authenticated
+    // bank evidence uniquely matches this order (exact UTR, exact amount,
+    // correct receiving account, unmatched, fresh). Otherwise the claim stays
+    // in "processing" for the reconcile worker / admin review.
+    const isAutoConfirm = process.env.CSC_PAYMENT_AUTO_CONFIRM === "true";
     const { data: fullOrder } = await admin
       .from("event_payment_orders")
-      .select("*")
+      .select("*, event:events(title)")
       .eq("id", orderId)
       .maybeSingle();
 
     if (isAutoConfirm && fullOrder) {
+      const eventTitle = (fullOrder.event as { title?: string } | null)?.title || "CSC Circle Event";
       try {
-        const evidenceId = randomUUID();
-        const { data: evidence } = await admin
+        const { data: candidateEvidence } = await admin
           .from("event_payment_evidence")
-          .upsert(
-            {
-              id: evidenceId,
-              bank: "AXIS_BANK",
-              direction: "CREDIT",
-              currency: "INR",
-              amount_paise: fullOrder.amount_paise,
-              receiving_account_suffix: fullOrder.expected_account_suffix || "1995",
-              utr: utr,
-              sender_email: "alerts@axis.bank.in",
-              message_id: `<auto-settlement-${utr}-${Date.now()}@axis.bank.in>`,
-              subject: `Credit Alert: INR ${(Number(fullOrder.amount_paise) / 100).toFixed(2)}`,
-              transaction_time: new Date().toISOString(),
-              transaction_info_raw: `UPI/P2A/${utr}/CSC/${fullOrder.order_reference}`,
-              auth_status: "authenticated",
-              reconciliation_state: "matched",
-              matched_order_id: fullOrder.id,
-              auth_details: {
-                verified_by: "automated_upi_system",
-                payee_vpa: fullOrder.payee_vpa,
-                payee_name: fullOrder.payee_name,
-                auto_confirmed: true,
-              },
-            },
-            { onConflict: "utr" }
-          )
-          .select("id")
-          .maybeSingle();
+          .select("id,amount_paise,receiving_account_suffix,transaction_time,reconciliation_state,matched_order_id")
+          .eq("utr", utr)
+          .eq("auth_status", "authenticated");
 
-        const activeEvidenceId = evidence?.id || evidenceId;
-
-        // Upsert attribution record
-        await admin.from("event_payment_attributions").upsert(
-          {
-            order_id: fullOrder.id,
-            evidence_id: activeEvidenceId,
-            attribution_method: "bank_order_reference",
-            bank_order_reference: fullOrder.order_reference,
-            verification_source: "automated_direct_settlement",
-            policy_version: "csc-axis-attribution-v1",
-            supporting_evidence: {
-              utr,
-              auto_confirmed: true,
-            },
-            eligible_for_settlement: true,
-          },
-          { onConflict: "order_id" }
-        );
-
-        // Atomically fulfill payment, generate passes, and enqueue transactional email outbox
-        const { data: fulfillmentResult, error: fulfillError } = await admin.rpc("csc_fulfill_confirmed_payment", {
-          p_order_id: fullOrder.id,
-          p_evidence_id: activeEvidenceId,
-          p_matched_by: "automated_worker",
-          p_notes: `Automated instant settlement: UTR ${utr}, ₹${Number(fullOrder.amount_paise) / 100}`,
-          p_user_id: null,
+        const nowMs = Date.now();
+        const matchWindowMs = 2 * 60 * 60 * 1000;
+        const genuineMatches = (candidateEvidence ?? []).filter((row) => {
+          const typed = row as {
+            id: string;
+            amount_paise: number;
+            receiving_account_suffix: string | null;
+            transaction_time: string | null;
+            reconciliation_state: string | null;
+            matched_order_id: string | null;
+          };
+          if (Number(typed.amount_paise) !== Number(fullOrder.amount_paise)) return false;
+          if ((typed.receiving_account_suffix ?? "") !== (fullOrder.expected_account_suffix ?? "")) return false;
+          if (typed.matched_order_id) return false;
+          if (typed.reconciliation_state && !["pending", "unmatched"].includes(typed.reconciliation_state)) return false;
+          if (!typed.transaction_time) return false;
+          const txMs = Date.parse(typed.transaction_time);
+          if (!Number.isFinite(txMs) || txMs > nowMs + 5 * 60 * 1000) return false;
+          if (nowMs - txMs > matchWindowMs) return false;
+          return true;
         });
 
-        if (!fulfillError && (fulfillmentResult as { ok?: boolean })?.ok) {
-          // Immediately trigger email notification worker
-          scheduleNotificationDelivery();
-
-          // Invalidate caches for instant UI update
-          revalidateTag("events", { expire: 0 });
-          revalidateTag("registrations", "max");
-          revalidateTag("payments", "max");
-          revalidatePath("/events");
-
-          return NextResponse.json(
-            {
-              ok: true,
-              status: "verified",
-              message: "Payment verified successfully! Your event registration is confirmed and your pass has been sent to your email.",
+        // Ambiguous or missing genuine evidence: stay in processing, never settle.
+        if (genuineMatches.length !== 1) {
+          await admin.from("event_payment_events").insert({
+            order_id: orderId,
+            event_type: "utr_claim_unmatched_evidence",
+            details: {
+              claimed_utr: utr,
+              candidate_evidence_count: genuineMatches.length,
             },
-            { headers: { "Cache-Control": "no-store" } }
+          });
+        } else {
+          const matchedEvidence = genuineMatches[0] as { id: string };
+          const activeEvidenceId = matchedEvidence.id;
+
+          // Upsert attribution record for the genuinely matched bank credit
+          await admin.from("event_payment_attributions").upsert(
+            {
+              order_id: fullOrder.id,
+              evidence_id: activeEvidenceId,
+              attribution_method: "bank_order_reference",
+              bank_order_reference: fullOrder.order_reference,
+              verification_source: "claim_utr_genuine_evidence",
+              policy_version: "csc-axis-attribution-v1",
+              supporting_evidence: {
+                utr,
+                evidence_id: activeEvidenceId,
+                auto_confirmed: true,
+              },
+              eligible_for_settlement: true,
+            },
+            { onConflict: "order_id" }
           );
-        }
+
+          // Atomically fulfill payment, generate passes, and enqueue transactional email outbox
+          const { data: fulfillmentResult, error: fulfillError } = await admin.rpc("csc_fulfill_confirmed_payment", {
+            p_order_id: fullOrder.id,
+            p_evidence_id: activeEvidenceId,
+            p_matched_by: "claim_utr_auto_confirm",
+            p_notes: `Automated settlement on genuine bank evidence: UTR ${utr}, ₹${Number(fullOrder.amount_paise) / 100}`,
+            p_user_id: null,
+          });
+
+          if (!fulfillError && (fulfillmentResult as { ok?: boolean })?.ok) {
+            // Enqueue admin notification alert for paid event registration
+            try {
+              await admin.from("notifications").insert({
+                type: "email",
+                channel: "email",
+                audience: "admin",
+                template_key: "EventRSVPAdminAlert",
+                status: "queued",
+                payload: {
+                  eventTitle,
+                  reference: fullOrder.order_reference,
+                  name: fullOrder.full_name,
+                  totalAmountPaid: Number(fullOrder.amount_paise) / 100,
+                  attendeeCount: fullOrder.attendee_count,
+                  status: "verified",
+                  utr,
+                },
+                dedupe_key: `paid-order-admin-${fullOrder.id}`,
+              });
+            } catch (notifErr) {
+              console.warn("Could not enqueue admin notification:", notifErr);
+            }
+
+            // Immediately trigger email notification worker (best effort)
+            try {
+              scheduleNotificationDelivery();
+            } catch (deliveryErr) {
+              console.warn("Could not schedule notification delivery:", deliveryErr);
+            }
+
+            // Invalidate caches for instant UI update
+            revalidateTag("events", { expire: 0 });
+            revalidateTag("registrations", "max");
+            revalidateTag("payments", "max");
+            revalidatePath("/events");
+
+            return NextResponse.json(
+              {
+                ok: true,
+                status: "verified",
+                message: "Payment verified successfully! Your event registration is confirmed and your pass has been sent to your email.",
+              },
+              { headers: { "Cache-Control": "no-store" } }
+            );
+            }
+          }
       } catch (autoErr) {
         // Fallback to processing state
         console.warn("Auto-fulfillment exception, order remains processing:", autoErr);

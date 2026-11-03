@@ -55,6 +55,7 @@ interface MockOrder {
   paid_registration_id?: string | null;
   matched_at?: string | null;
   expires_at?: string | null;
+  verification_started_at?: string | null;
   upi_uri: string;
 }
 
@@ -90,6 +91,8 @@ class MockDatabaseState {
   paymentEvents: any[] = [];
   paidRegistrations: any[] = [];
   eventRegistrations: any[] = [];
+  evidence: any[] = [];
+  attributions: any[] = [];
   
   // Inspection Spies
   tableAccessLog: string[] = [];
@@ -104,6 +107,8 @@ class MockDatabaseState {
     this.paymentEvents = [];
     this.paidRegistrations = [];
     this.eventRegistrations = [];
+    this.evidence = [];
+    this.attributions = [];
     this.tableAccessLog = [];
     this.rpcCallLog = [];
     this.orderUpdateLog = [];
@@ -115,6 +120,11 @@ const dbState = new MockDatabaseState();
 // Active mock session user for createClient()
 let mockSessionUser: { id: string; email?: string; email_confirmed_at?: string } | null = null;
 let mockAdminRoles: { role: string }[] = [];
+
+vi.mock("next/cache", () => ({
+  revalidateTag: () => {},
+  revalidatePath: () => {},
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -207,6 +217,10 @@ vi.mock("@/lib/supabase/admin", () => ({
                   rows = dbState.paidRegistrations;
                 } else if (selectedTable === "event_registrations") {
                   rows = dbState.eventRegistrations;
+                } else if (selectedTable === "event_payment_evidence") {
+                  rows = dbState.evidence;
+                } else if (selectedTable === "event_payment_attributions") {
+                  rows = dbState.attributions;
                 }
 
                 return rows.filter((r) => {
@@ -239,6 +253,36 @@ vi.mock("@/lib/supabase/admin", () => ({
             };
 
             return builder;
+          },
+
+          upsert: (recordOrRecords: any, _options?: any) => {
+            const records = Array.isArray(recordOrRecords) ? recordOrRecords : [recordOrRecords];
+
+            if (table === "event_payment_evidence") {
+              for (const r of records) {
+                const id = r.id || `evidence-${Date.now()}-${Math.random()}`;
+                const existingIdx = dbState.evidence.findIndex((e) => e.utr === r.utr || e.id === id);
+                const full = { ...r, id };
+                if (existingIdx >= 0) dbState.evidence[existingIdx] = { ...dbState.evidence[existingIdx], ...full };
+                else dbState.evidence.push(full);
+              }
+            } else if (table === "event_payment_attributions") {
+              for (const r of records) {
+                const existingIdx = dbState.attributions.findIndex((a) => a.order_id === r.order_id);
+                if (existingIdx >= 0) dbState.attributions[existingIdx] = { ...dbState.attributions[existingIdx], ...r };
+                else dbState.attributions.push({ ...r });
+              }
+            }
+
+            const first = records[0] || {};
+            return {
+              select: () => ({
+                maybeSingle: async () => ({
+                  data: { ...first, id: first.id || `${table}-id-1` },
+                  error: null,
+                }),
+              }),
+            };
           },
 
           insert: (recordOrRecords: any) => {
@@ -315,6 +359,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 // Import Next.js route handlers after vi.mock declarations
+import { POST as startVerificationRoute } from "@/app/api/payments/orders/[orderId]/start-verification/route";
 import { POST as claimUtrRoute } from "@/app/api/payments/orders/[orderId]/claim-utr/route";
 import { POST as createOrderRoute } from "@/app/api/payments/create-order/route";
 import { GET as orderStatusRoute } from "@/app/api/payments/orders/[orderId]/status/route";
@@ -464,6 +509,119 @@ describe("Milestone M3 Adversarial Challenger Verification Suite", () => {
       expect(auditEvents.length).toBe(1);
       expect(auditEvents[0].details.claimed_utr).toBe(validUtr);
       expect(auditEvents[0].details.claim_source).toBe("guest_capability_holder");
+    });
+
+    it("1.4b Auto-Confirm Enabled But No Genuine Bank Evidence: valid UTR claim stays 'processing' and never settles", async () => {
+      const previousFlag = process.env.CSC_PAYMENT_AUTO_CONFIRM;
+      process.env.CSC_PAYMENT_AUTO_CONFIRM = "true";
+      try {
+        const validGuestToken = generateGuestCheckoutToken();
+        const guestHash = hashGuestToken(validGuestToken);
+
+        dbState.orders.set(validOrderId, {
+          id: validOrderId,
+          order_reference: "CSC-ORD-FLAGON-NOEVID",
+          event_id: "event-1",
+          user_id: null,
+          email: "guest@example.com",
+          full_name: "Guest Buyer",
+          status: "pending",
+          claimed_utr: null,
+          guest_token_hash: guestHash,
+          amount_paise: 50000,
+          upi_uri: "upi://pay?pa=test@upi",
+        });
+
+        const req = new Request(`http://localhost:3000/api/payments/orders/${validOrderId}/claim-utr`, {
+          method: "POST",
+          headers: {
+            origin: "http://localhost:3000",
+            "content-type": "application/json",
+            cookie: `csc_guest_order_token_${validOrderId}=${validGuestToken}`,
+          },
+          body: JSON.stringify({ utr: "630711112233" }),
+        });
+
+        const res = await claimUtrRoute(req, { params: Promise.resolve({ orderId: validOrderId }) });
+
+        expect(res.status).toBe(200);
+        const json = await res.json();
+        expect(json.ok).toBe(true);
+        expect(json.status).toBe("processing");
+
+        // No settlement RPC even with the flag enabled: UTR alone is not bank evidence
+        const fulfillmentCalls = dbState.rpcCallLog.filter((c) => c.name === "csc_fulfill_confirmed_payment");
+        expect(fulfillmentCalls.length).toBe(0);
+        expect(dbState.paidRegistrations.length).toBe(0);
+      } finally {
+        if (previousFlag === undefined) delete process.env.CSC_PAYMENT_AUTO_CONFIRM;
+        else process.env.CSC_PAYMENT_AUTO_CONFIRM = previousFlag;
+      }
+    });
+
+    it("1.4c Auto-Confirm Enabled With Genuine Bank Evidence: uniquely matched credit settles exactly once", async () => {
+      const previousFlag = process.env.CSC_PAYMENT_AUTO_CONFIRM;
+      process.env.CSC_PAYMENT_AUTO_CONFIRM = "true";
+      try {
+        const validGuestToken = generateGuestCheckoutToken();
+        const guestHash = hashGuestToken(validGuestToken);
+
+        dbState.orders.set(validOrderId, {
+          id: validOrderId,
+          order_reference: "CSC-ORD-FLAGON-EVID",
+          event_id: "event-1",
+          user_id: null,
+          email: "guest@example.com",
+          full_name: "Guest Buyer",
+          status: "pending",
+          claimed_utr: null,
+          guest_token_hash: guestHash,
+          amount_paise: 50000,
+          upi_uri: "upi://pay?pa=test@upi",
+        });
+
+        // Seed one genuine authenticated bank credit matching UTR + exact amount + account
+        dbState.evidence.push({
+          id: "evidence-genuine-1",
+          utr: "630711445566",
+          auth_status: "authenticated",
+          amount_paise: 50000,
+          receiving_account_suffix: undefined,
+          transaction_time: new Date().toISOString(),
+          reconciliation_state: "pending",
+          matched_order_id: null,
+        });
+
+        const req = new Request(`http://localhost:3000/api/payments/orders/${validOrderId}/claim-utr`, {
+          method: "POST",
+          headers: {
+            origin: "http://localhost:3000",
+            "content-type": "application/json",
+            cookie: `csc_guest_order_token_${validOrderId}=${validGuestToken}`,
+          },
+          body: JSON.stringify({ utr: "630711445566" }),
+        });
+
+        const res = await claimUtrRoute(req, { params: Promise.resolve({ orderId: validOrderId }) });
+
+        expect(res.status).toBe(200);
+        const json = await res.json();
+        expect(json.ok).toBe(true);
+        expect(json.status).toBe("verified");
+
+        // Settlement RPC called exactly once against the genuine evidence id
+        const fulfillmentCalls = dbState.rpcCallLog.filter((c) => c.name === "csc_fulfill_confirmed_payment");
+        expect(fulfillmentCalls.length).toBe(1);
+        expect(fulfillmentCalls[0].args.p_evidence_id).toBe("evidence-genuine-1");
+
+        // Attribution recorded for the genuine bank credit
+        expect(dbState.attributions.length).toBe(1);
+        expect(dbState.attributions[0].order_id).toBe(validOrderId);
+        expect(dbState.attributions[0].evidence_id).toBe("evidence-genuine-1");
+      } finally {
+        if (previousFlag === undefined) delete process.env.CSC_PAYMENT_AUTO_CONFIRM;
+        else process.env.CSC_PAYMENT_AUTO_CONFIRM = previousFlag;
+      }
     });
 
     it("1.5 Rate Limiter: 5 rapid UTR claims succeed, 6th is rejected with HTTP 429 and Retry-After header", async () => {
@@ -1010,6 +1168,97 @@ describe("Milestone M3 Adversarial Challenger Verification Suite", () => {
       expect(json.orderId).toBe(order2Id);
       expect(json.status).toBe("pending");
       expect(json.amountRupees).toBe(750);
+    });
+  });
+
+  // ============================================================================
+  // Task 5: Server-Persisted Five-Minute Verification Window
+  // ============================================================================
+  describe("Task 5: Server-Persisted Verification Window (start-verification + status)", () => {
+    const verifyOrderId = "66666666-6666-4666-8666-666666666666";
+
+    function seedVerifiableOrder() {
+      const token = generateGuestCheckoutToken();
+      dbState.orders.set(verifyOrderId, {
+        id: verifyOrderId,
+        order_reference: "CSC-ORD-VERIFYWIN01",
+        event_id: "event-1",
+        user_id: null,
+        email: "guest@example.com",
+        full_name: "Guest Buyer",
+        status: "pending",
+        claimed_utr: null,
+        guest_token_hash: hashGuestToken(token),
+        amount_paise: 50000,
+        verification_started_at: null,
+        upi_uri: "upi://pay?pa=test@upi",
+      });
+      return token;
+    }
+
+    it("5.1 Start records a server timestamp once; a second start returns the identical instant", async () => {
+      const token = seedVerifiableOrder();
+
+      const first = new Request(`http://localhost:3000/api/payments/orders/${verifyOrderId}/start-verification`, {
+        method: "POST",
+        headers: {
+          origin: "http://localhost:3000",
+          cookie: `csc_guest_order_token_${verifyOrderId}=${token}`,
+        },
+      });
+      const res1 = await startVerificationRoute(first, { params: Promise.resolve({ orderId: verifyOrderId }) });
+      expect(res1.status).toBe(200);
+      const json1 = await res1.json();
+      expect(json1.ok).toBe(true);
+      expect(json1.persisted).toBe(true);
+      expect(Date.parse(json1.verificationStartedAt)).not.toBeNaN();
+      expect(Date.parse(json1.serverNow)).not.toBeNaN();
+
+      const second = new Request(`http://localhost:3000/api/payments/orders/${verifyOrderId}/start-verification`, {
+        method: "POST",
+        headers: {
+          origin: "http://localhost:3000",
+          cookie: `csc_guest_order_token_${verifyOrderId}=${token}`,
+        },
+      });
+      const res2 = await startVerificationRoute(second, { params: Promise.resolve({ orderId: verifyOrderId }) });
+      const json2 = await res2.json();
+      expect(json2.ok).toBe(true);
+      // Idempotent: the recorded start is never overwritten
+      expect(json2.verificationStartedAt).toBe(json1.verificationStartedAt);
+    });
+
+    it("5.2 Start without any credential is rejected before any timestamp is written", async () => {
+      seedVerifiableOrder();
+
+      const req = new Request(`http://localhost:3000/api/payments/orders/${verifyOrderId}/start-verification`, {
+        method: "POST",
+        headers: { origin: "http://localhost:3000" },
+      });
+      const res = await startVerificationRoute(req, { params: Promise.resolve({ orderId: verifyOrderId }) });
+      expect(res.status).toBe(401);
+
+      expect(dbState.orders.get(verifyOrderId)?.verification_started_at ?? null).toBe(null);
+    });
+
+    it("5.3 Status exposes the server-recorded window start and server time for countdown derivation", async () => {
+      const token = seedVerifiableOrder();
+      const startedAt = new Date().toISOString();
+      dbState.orders.get(verifyOrderId)!.verification_started_at = startedAt;
+
+      const req = new Request(`http://localhost:3000/api/payments/orders/${verifyOrderId}/status`, {
+        method: "GET",
+        headers: {
+          origin: "http://localhost:3000",
+          cookie: `csc_payment_guest=${token}`,
+        },
+      });
+      const res = await orderStatusRoute(req, { params: Promise.resolve({ orderId: verifyOrderId }) });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.ok).toBe(true);
+      expect(json.verificationStartedAt).toBe(startedAt);
+      expect(Date.parse(json.serverNow)).not.toBeNaN();
     });
   });
 

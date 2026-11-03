@@ -55,8 +55,9 @@ function mapEvent(r: Row): EventRecord {
           : undefined,
     maxAttendeesPerRegistration: Number(r.max_attendees_per_registration ?? 10),
     upiPayeeName: (r.upi_payee_name as string) ?? undefined,
-    upiVpa: (r.upi_vpa as string) ?? undefined,
-    upiQrImage: typeof r.upi_qr_path === "string" && r.upi_qr_path ? `/api/events/${String(r.id)}/upi-qr` : undefined,
+    // The payee VPA and static QR reference are never shipped to public
+    // clients: checkout uses the server-issued order payload exclusively,
+    // and nothing on the public site renders these fields.
     paymentNote: (r.payment_note as string) ?? undefined,
     summary: (r.summary as string) ?? undefined,
     organizer: (r.organizer as string) ?? undefined,

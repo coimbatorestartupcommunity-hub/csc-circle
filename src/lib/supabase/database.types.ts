@@ -1297,6 +1297,7 @@ export type Database = {
           consent_payment_terms: boolean
           matched_evidence_id: string | null
           matched_at: string | null
+          verification_started_at: string | null
           expires_at: string
           created_at: string
           updated_at: string
@@ -1329,6 +1330,7 @@ export type Database = {
           consent_payment_terms?: boolean
           matched_evidence_id?: string | null
           matched_at?: string | null
+          verification_started_at?: string | null
           expires_at?: string
           created_at?: string
           updated_at?: string
@@ -1361,6 +1363,7 @@ export type Database = {
           consent_payment_terms?: boolean
           matched_evidence_id?: string | null
           matched_at?: string | null
+          verification_started_at?: string | null
           expires_at?: string
           created_at?: string
           updated_at?: string
