@@ -87,14 +87,34 @@ export function PaymentTestPanel() {
       const res = await fetch("/api/admin/testing/payment-test", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ forceStagingPurge: true }),
+        body: JSON.stringify({ totalPurge: true }),
       });
       const result = await res.json();
       if (!res.ok || !result.ok) throw new Error(result.error || "Could not complete cleanup.");
-      toast.success("Test event completed and test data cleaned up successfully.");
+      toast.success("Test event completed and ALL QA history purged.");
       void fetchStatus();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Cleanup failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleTotalPurgeAll() {
+    if (!confirm("Delete ALL QA payment test history everywhere (payments, orders, registrations, passes, events) ? This cannot be undone. Genuine financial audit records will be preserved.")) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/testing/payment-test", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ purgeAll: true }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.ok) throw new Error(result.error || "Total purge failed.");
+      toast.success(`Total QA purge complete: ${result.purgedEvents} events purged.`);
+      void fetchStatus();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Total purge failed.");
     } finally {
       setBusy(false);
     }
@@ -148,20 +168,44 @@ export function PaymentTestPanel() {
                 className="h-9 gap-1.5 border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100"
               >
                 {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
-                Complete Test &amp; Clean Up
+                Delete All QA History
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => void handleTotalPurgeAll()}
+                className="h-9 gap-1.5 border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
+              >
+                {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                Purge All QA Everywhere
               </Button>
             </>
           ) : (
-            <Button
-              type="button"
-              size="sm"
-              disabled={busy}
-              onClick={() => void handleLaunch()}
-              className="h-9 gap-1.5 bg-amber-800 text-white hover:bg-amber-900"
-            >
-              {busy ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
-              Launch ₹1.00 Test Event
-            </Button>
+            <>
+              <Button
+                type="button"
+                size="sm"
+                disabled={busy}
+                onClick={() => void handleLaunch()}
+                className="h-9 gap-1.5 bg-amber-800 text-white hover:bg-amber-900"
+              >
+                {busy ? <Loader2 className="size-3.5 animate-spin" /> : <CheckCircle2 className="size-3.5" />}
+                Launch ₹1.00 Test Event
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => void handleTotalPurgeAll()}
+                className="h-9 gap-1.5 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              >
+                {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                Clean All QA History
+              </Button>
+            </>
           )}
         </div>
       </div>

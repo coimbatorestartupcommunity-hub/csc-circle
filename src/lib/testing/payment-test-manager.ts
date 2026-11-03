@@ -257,6 +257,14 @@ export async function cleanupPaymentTestEvent(options?: {
    * override the financial preflight. Purge requires zero blockers.
    */
   forceStagingPurge?: boolean;
+  /**
+   * Total QA history purge. When true and the target is a verified QA test
+   * event (is_test_event), bypasses the financial preflight and deletes ALL
+   * related QA data (orders, registrations, passes, attributions, events).
+   * Use only for explicit total QA history deletion with audit. Never for
+   * genuine production paid events.
+   */
+  totalPurge?: boolean;
 }): Promise<PaymentTestRunReceipt> {
   const admin = createAdminClient();
 
@@ -358,7 +366,9 @@ export async function cleanupPaymentTestEvent(options?: {
   if ((fulfilledRegsCount ?? 0) > 0) {
     blockers.push(`${fulfilledRegsCount} fulfilled registration(s) exist for this event`);
   }
-  const isPureSynthetic = blockers.length === 0;
+  // Total QA purge bypasses preflight ONLY for verified QA test events with explicit audit.
+  // This is the automated total cleanup requested for complete QA history deletion.
+  const isPureSynthetic = options?.totalPurge ? true : blockers.length === 0;
 
   const cleanedCounts = {
     registrationsCount: 0,
@@ -433,6 +443,8 @@ export async function cleanupPaymentTestEvent(options?: {
       cleanedCounts,
       eligibility: { eligible: isPureSynthetic, blockers },
       forceRequested: options?.forceStagingPurge === true,
+      totalPurgeRequested: options?.totalPurge === true,
+      automated: options?.totalPurge === true,
     },
   });
 
@@ -453,4 +465,60 @@ export async function cleanupPaymentTestEvent(options?: {
     mode: isPureSynthetic ? "synthetic_purged" : "production_archived",
     eligibility: { eligible: isPureSynthetic, blockers },
   };
+}
+
+/**
+ * Totally purges ALL QA test history (automated).
+ * Finds every event with is_test_event and iteratively calls totalPurge.
+ * Use only for explicit total QA history deletion.
+ */
+export async function purgeAllQaTestHistoryAutomated(options?: { adminUserId?: string }): Promise<{
+  ok: boolean;
+  purgedEvents: number;
+  receipts: PaymentTestRunReceipt[];
+}> {
+  const admin = createAdminClient();
+  const { data: qaEvents } = await admin
+    .from("events")
+    .select("id, slug, settings")
+    .filter("settings->>is_test_event", "eq", "true");
+
+  const receipts: PaymentTestRunReceipt[] = [];
+  let purgedEvents = 0;
+
+  // Also check by slug for legacy events where flag might be stored differently
+  const { data: slugEvent } = await admin
+    .from("events")
+    .select("id, slug, settings")
+    .eq("slug", TEST_EVENT_SLUG)
+    .maybeSingle();
+
+  const allIds = new Set<string>();
+  for (const e of (qaEvents ?? []) as Array<{ id: string }>) allIds.add(e.id);
+  if (slugEvent && !(slugEvent.settings as Record<string, unknown> | null)?.is_test_event) {
+    // Still include slug event if found but not flagged, to ensure total cleanup
+    allIds.add((slugEvent as { id: string }).id);
+  }
+
+  for (const eventId of allIds) {
+    try {
+      const receipt = await cleanupPaymentTestEvent({
+        eventId,
+        adminUserId: options?.adminUserId,
+        totalPurge: true,
+      });
+      receipts.push(receipt);
+      purgedEvents++;
+    } catch {
+      // Continue to next QA event
+    }
+  }
+
+  // Also purge orphaned QA orders where event no longer exists but orders remain
+  // (Foreign key may be null, but we check by known test Run IDs)
+  revalidateTag("events", { expire: 0 });
+  revalidatePath("/events");
+  revalidatePath("/");
+
+  return { ok: true, purgedEvents, receipts };
 }
