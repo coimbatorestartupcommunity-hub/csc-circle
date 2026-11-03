@@ -742,6 +742,61 @@ export const adminServices = {
     });
   },
 
+  getReconciliationHealth(): Promise<ServiceResult<{
+    pendingOrders: number;
+    processingOrders: number;
+    reconciledOrders: number;
+    authenticatedEvidence: number;
+    unmatchedEvidence: number;
+    ambiguousEvidence: number;
+    recentFailures: { id: string; reason: string; at: string }[];
+    workerStatus: string;
+    lastSyncCompletedAt?: string;
+    lastError?: string;
+  }>> {
+    const empty = {
+      pendingOrders: 0,
+      processingOrders: 0,
+      reconciledOrders: 0,
+      authenticatedEvidence: 0,
+      unmatchedEvidence: 0,
+      ambiguousEvidence: 0,
+      recentFailures: [] as { id: string; reason: string; at: string }[],
+      workerStatus: "idle",
+      lastSyncCompletedAt: undefined as string | undefined,
+      lastError: undefined as string | undefined,
+    };
+    return guard("payments.verify", empty, async () => {
+      const sb = await createClient();
+      const [pending, processing, reconciled, authEv, unmatchedEv, ambiguousEv, workerRow, failures] = await Promise.all([
+        sb.from("event_payment_orders").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        sb.from("event_payment_orders").select("id", { count: "exact", head: true }).eq("status", "processing"),
+        sb.from("event_payment_orders").select("id", { count: "exact", head: true }).in("status", ["verified", "reconciled"]),
+        sb.from("event_payment_evidence").select("id", { count: "exact", head: true }).eq("auth_status", "authenticated"),
+        sb.from("event_payment_evidence").select("id", { count: "exact", head: true }).eq("reconciliation_state", "unmatched"),
+        sb.from("event_payment_evidence").select("id", { count: "exact", head: true }).eq("reconciliation_state", "ambiguous"),
+        sb.from("payment_worker_state").select("last_sync_status,last_sync_completed_at,last_error").eq("id", "primary").maybeSingle(),
+        sb.from("payment_worker_messages").select("id,last_error,created_at").not("last_error", "is", null).order("created_at", { ascending: false }).limit(5),
+      ]);
+      return ok({
+        pendingOrders: pending.count ?? 0,
+        processingOrders: processing.count ?? 0,
+        reconciledOrders: reconciled.count ?? 0,
+        authenticatedEvidence: authEv.count ?? 0,
+        unmatchedEvidence: unmatchedEv.count ?? 0,
+        ambiguousEvidence: ambiguousEv.count ?? 0,
+        recentFailures: (failures.data ?? []).map((f) => ({
+          id: String((f as { id: unknown }).id),
+          reason: String((f as { last_error: unknown }).last_error ?? "unknown"),
+          at: String((f as { created_at: unknown }).created_at ?? ""),
+        })),
+        workerStatus: (workerRow.data as { last_sync_status?: string } | null)?.last_sync_status || "idle",
+        lastSyncCompletedAt: (workerRow.data as { last_sync_completed_at?: string } | null)?.last_sync_completed_at ?? undefined,
+        lastError: (workerRow.data as { last_error?: string } | null)?.last_error ?? undefined,
+      });
+    });
+  },
+
   getPaymentWorkerStatus(): Promise<ServiceResult<{
     status: string;
     lastSyncCompletedAt?: string;

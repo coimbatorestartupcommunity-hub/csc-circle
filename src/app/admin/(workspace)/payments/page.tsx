@@ -3,21 +3,35 @@ import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 import { AdminPaymentsClient } from "@/components/admin/payments/admin-payments-client";
 import { PaymentTestPanel } from "@/components/admin/payments/payment-test-panel";
+import { ReconciliationHealthPanel } from "@/components/admin/payments/reconciliation-health-panel";
 import { ShieldCheck, Mail, RefreshCw, Smartphone } from "lucide-react";
 
 export const metadata = { title: "Payments & UPI Reconciliation" };
 
 export default async function AdminPaymentsPage() {
   const ctx = await requireAdminPagePermission("payments.verify");
-  const [res, workerRes] = await Promise.all([
+  const [res, workerRes, healthRes] = await Promise.all([
     adminServices.listPayments(),
     adminServices.getPaymentWorkerStatus(),
+    adminServices.getReconciliationHealth(),
   ]);
 
   const rows = res.ok ? res.data : [];
   const worker = workerRes.ok
     ? workerRes.data
     : { status: "idle", lastSyncMessageCount: 0, lastSyncMatchedCount: 0 };
+  const health = healthRes.ok
+    ? healthRes.data
+    : {
+        pendingOrders: 0,
+        processingOrders: 0,
+        reconciledOrders: 0,
+        authenticatedEvidence: 0,
+        unmatchedEvidence: 0,
+        ambiguousEvidence: 0,
+        recentFailures: [],
+        workerStatus: "idle",
+      };
 
   const canVerify = can(ctx, "payments.verify") || can(ctx, "registrations.approve");
 
@@ -31,6 +45,9 @@ export default async function AdminPaymentsPage() {
 
       {/* Internal QA Payment Test & Automated Cleanup Panel */}
       <PaymentTestPanel />
+
+      {/* CSC Payment Reconciliation Health */}
+      <ReconciliationHealthPanel initial={health} />
 
       {/* Operational Overview Bar */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

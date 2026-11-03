@@ -568,7 +568,7 @@ describe("Milestone M3 Adversarial Challenger Verification Suite", () => {
 
         dbState.orders.set(validOrderId, {
           id: validOrderId,
-          order_reference: "CSC-ORD-FLAGON-EVID",
+          order_reference: "CSC-ORD-A1B2C3D4E5F6",
           event_id: "event-1",
           user_id: null,
           email: "guest@example.com",
@@ -580,7 +580,8 @@ describe("Milestone M3 Adversarial Challenger Verification Suite", () => {
           upi_uri: "upi://pay?pa=test@upi",
         });
 
-        // Seed one genuine authenticated bank credit matching UTR + exact amount + account
+        // Seed one genuine authenticated bank credit matching UTR + exact
+        // amount + account, whose bank note carries this order's reference
         dbState.evidence.push({
           id: "evidence-genuine-1",
           utr: "630711445566",
@@ -588,6 +589,7 @@ describe("Milestone M3 Adversarial Challenger Verification Suite", () => {
           amount_paise: 50000,
           receiving_account_suffix: undefined,
           transaction_time: new Date().toISOString(),
+          transaction_info_raw: "UPI/P2A/630711445566/CSC/CSC-ORD-A1B2C3D4E5F6",
           reconciliation_state: "pending",
           matched_order_id: null,
         });
@@ -618,6 +620,69 @@ describe("Milestone M3 Adversarial Challenger Verification Suite", () => {
         expect(dbState.attributions.length).toBe(1);
         expect(dbState.attributions[0].order_id).toBe(validOrderId);
         expect(dbState.attributions[0].evidence_id).toBe("evidence-genuine-1");
+      } finally {
+        if (previousFlag === undefined) delete process.env.CSC_PAYMENT_AUTO_CONFIRM;
+        else process.env.CSC_PAYMENT_AUTO_CONFIRM = previousFlag;
+      }
+    });
+
+    it("1.4d Stolen-UTR Defense: genuine credit WITHOUT the order reference in its bank note never settles", async () => {
+      const previousFlag = process.env.CSC_PAYMENT_AUTO_CONFIRM;
+      process.env.CSC_PAYMENT_AUTO_CONFIRM = "true";
+      try {
+        const validGuestToken = generateGuestCheckoutToken();
+        const guestHash = hashGuestToken(validGuestToken);
+
+        // Attacker claims a UTR that belongs to someone else's genuine credit:
+        // amount and account match, but the bank note names another order.
+        dbState.orders.set(validOrderId, {
+          id: validOrderId,
+          order_reference: "CSC-ORD-C1D2E3F4A5B6",
+          event_id: "event-1",
+          user_id: null,
+          email: "victim@example.com",
+          full_name: "Victim Buyer",
+          status: "pending",
+          claimed_utr: null,
+          guest_token_hash: guestHash,
+          amount_paise: 50000,
+          upi_uri: "upi://pay?pa=test@upi",
+        });
+
+        dbState.evidence.push({
+          id: "evidence-other-credit",
+          utr: "630711778899",
+          auth_status: "authenticated",
+          amount_paise: 50000,
+          receiving_account_suffix: undefined,
+          transaction_time: new Date().toISOString(),
+          transaction_info_raw: "UPI/P2A/630711778899/CSC/CSC-ORD-F1E2D3C4B5A6",
+          reconciliation_state: "pending",
+          matched_order_id: null,
+        });
+
+        const req = new Request(`http://localhost:3000/api/payments/orders/${validOrderId}/claim-utr`, {
+          method: "POST",
+          headers: {
+            origin: "http://localhost:3000",
+            "content-type": "application/json",
+            cookie: `csc_guest_order_token_${validOrderId}=${validGuestToken}`,
+          },
+          body: JSON.stringify({ utr: "630711778899" }),
+        });
+
+        const res = await claimUtrRoute(req, { params: Promise.resolve({ orderId: validOrderId }) });
+
+        expect(res.status).toBe(200);
+        const json = await res.json();
+        expect(json.ok).toBe(true);
+        expect(json.status).toBe("processing");
+
+        // No settlement and no bank_order_reference attribution for a
+        // reference-less credit, even with the flag enabled
+        const fulfillmentCalls = dbState.rpcCallLog.filter((c) => c.name === "csc_fulfill_confirmed_payment");
+        expect(fulfillmentCalls.length).toBe(0);
+        expect(dbState.attributions.length).toBe(0);
       } finally {
         if (previousFlag === undefined) delete process.env.CSC_PAYMENT_AUTO_CONFIRM;
         else process.env.CSC_PAYMENT_AUTO_CONFIRM = previousFlag;
