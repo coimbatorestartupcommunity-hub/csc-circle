@@ -239,4 +239,29 @@ describe("Axis Bank alert parsing and authentication", () => {
     expect(alert?.isEligibleForAutoReconcile).toBe(false);
     expect(alert?.rejectionReason).toContain("does not match expected CSC account");
   });
+
+  it("parses the live P2A fixture UPI/P2A/219603774862/S VIKASH/IOBA/Passf", () => {
+    const info = parseTransactionInfo("UPI/P2A/219603774862/S VIKASH/IOBA/Passf");
+    expect(info.utr).toBe("219603774862");
+    expect(info.payerName).toBe("S VIKASH");
+    expect(info.sourceBank).toBe("IOBA");
+    expect(info.channel).toBe("UPI");
+    // The bank abbreviation is a source bank, never a transaction identifier,
+    // and this note carries no CSC order reference.
+    expect(info.orderReference).toBeUndefined();
+    expect(info.raw).toBe("UPI/P2A/219603774862/S VIKASH/IOBA/Passf");
+  });
+
+  it("does not mistake the P2A fixture fragment for an order reference or UTR", () => {
+    const info = parseTransactionInfo("UPI/P2A/219603774862/S VIKASH/IOBA/Passf");
+    expect(info.utr).not.toBe("IOBA");
+    expect(info.utr).not.toBe("Passf");
+    expect(info.payerName).not.toMatch(/CSC/i);
+  });
+
+  it("extracts a CSC order reference when the bank note preserves one", () => {
+    const info = parseTransactionInfo("UPI/CR/CSC-ORD-A1B2C3D4E5F6/630722119955/VIKASH S/IOBA/UPI");
+    expect(info.orderReference).toBe("CSC-ORD-A1B2C3D4E5F6");
+    expect(info.utr).toBe("630722119955");
+  });
 });
