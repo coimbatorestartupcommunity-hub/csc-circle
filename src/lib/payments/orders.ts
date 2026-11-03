@@ -196,6 +196,65 @@ export function verifyOrderAccess(
   return false;
 }
 
+/**
+ * Browser form values as produced by react-hook-form. Checkbox inputs carry
+ * value="true", so consents arrive as the string "true"; untouched optional
+ * selects/textareas arrive as "".
+ */
+export interface BrowserRegistrationValues {
+  eventId: unknown;
+  fullName: unknown;
+  email: unknown;
+  whatsapp: unknown;
+  organization: unknown;
+  role: unknown;
+  attendeeCount: unknown;
+  additionalAttendeeNames?: unknown;
+  referralSource?: unknown;
+  dietaryAccessibilityNotes?: unknown;
+  consentContact: unknown;
+  consentPaymentTerms: unknown;
+  guestVerificationId?: string | null;
+  guestEmailVerificationToken?: string | null;
+}
+
+/**
+ * Coerces browser registration values into the create-order API contract.
+ * The order endpoint requires real booleans for consents and rejects empty
+ * strings for enum-typed optionals, so this boundary converts "true" to true
+ * and "" to undefined. Without it every checkout submission fails with 422.
+ */
+export function toCreateOrderBody(values: BrowserRegistrationValues): Record<string, unknown> {
+  const text = (value: unknown): string => (typeof value === "string" ? value : "");
+  const optionalText = (value: unknown): string | undefined => {
+    const trimmed = text(value).trim();
+    return trimmed ? trimmed : undefined;
+  };
+  const body: Record<string, unknown> = {
+    eventId: text(values.eventId),
+    fullName: text(values.fullName),
+    email: text(values.email),
+    whatsapp: text(values.whatsapp),
+    organization: text(values.organization),
+    role: text(values.role),
+    attendeeCount: Number(values.attendeeCount || 1),
+    consentContact: values.consentContact === "true" || values.consentContact === true,
+    consentPaymentTerms:
+      values.consentPaymentTerms === "true" || values.consentPaymentTerms === true,
+  };
+  const additionalNames = optionalText(values.additionalAttendeeNames);
+  if (additionalNames !== undefined) body.additionalAttendeeNames = additionalNames;
+  const referral = optionalText(values.referralSource);
+  if (referral !== undefined) body.referralSource = referral;
+  const notes = optionalText(values.dietaryAccessibilityNotes);
+  if (notes !== undefined) body.dietaryAccessibilityNotes = notes;
+  if (values.guestVerificationId) body.guestVerificationId = values.guestVerificationId;
+  if (values.guestEmailVerificationToken) {
+    body.guestEmailVerificationToken = values.guestEmailVerificationToken;
+  }
+  return body;
+}
+
 export function buildUpiUri(params: {
   vpa?: string;
   payeeName?: string;

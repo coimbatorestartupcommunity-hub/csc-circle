@@ -16,7 +16,7 @@ import {
   paidRegistrationSchema,
 } from "@/lib/validations/paid-registration";
 import { UpiCheckoutModal, type OrderInfo } from "@/components/events/upi-checkout-modal";
-import type { PaymentDeepLinks } from "@/lib/payments/orders";
+import { toCreateOrderBody, type PaymentDeepLinks } from "@/lib/payments/orders";
 import type { EventRecord } from "@/types";
 import { z } from "zod";
 
@@ -123,22 +123,24 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
       const res = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: event.id,
-          fullName: currentValues.fullName,
-          email: currentValues.email,
-          whatsapp: currentValues.whatsapp,
-          organization: currentValues.organization,
-          role: currentValues.role,
-          attendeeCount: Number(currentValues.attendeeCount || 1),
-          additionalAttendeeNames: currentValues.additionalAttendeeNames,
-          referralSource: currentValues.referralSource,
-          dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
-          consentContact: currentValues.consentContact,
-          consentPaymentTerms: currentValues.consentPaymentTerms,
-          guestVerificationId: usableVerification ? guestVerificationId || undefined : undefined,
-          guestEmailVerificationToken: usableVerification ? guestVerificationToken || undefined : undefined,
-        }),
+        body: JSON.stringify(
+          toCreateOrderBody({
+            eventId: event.id,
+            fullName: currentValues.fullName,
+            email: currentValues.email,
+            whatsapp: currentValues.whatsapp,
+            organization: currentValues.organization,
+            role: currentValues.role,
+            attendeeCount: currentValues.attendeeCount,
+            additionalAttendeeNames: currentValues.additionalAttendeeNames,
+            referralSource: currentValues.referralSource,
+            dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
+            consentContact: currentValues.consentContact,
+            consentPaymentTerms: currentValues.consentPaymentTerms,
+            guestVerificationId: usableVerification ? guestVerificationId : null,
+            guestEmailVerificationToken: usableVerification ? guestVerificationToken : null,
+          })
+        ),
       });
 
       const data = await res.json();

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { calculatePaidRegistrationTotal, isAllowedPaymentProof, isPaidRegistrationAmountValid, paidRegistrationSchema } from "@/lib/validations/paid-registration";
+import { toCreateOrderBody } from "@/lib/payments/orders";
 import { eventEditorSchema } from "@/lib/validations/admin";
 import { parseGoogleFormCsv, validateGoogleFormResponse } from "@/lib/import/google-form-csv";
 
@@ -36,6 +37,40 @@ describe("paid event registration", () => {
     const draft = { title: "Event Name", slug: "event-name", description: "A valid event description.", category: "networking", date: "2026-11-01", startTime: "11:30", endTime: "14:30", format: "offline", approvalMode: "manual", allowWaitlist: false, admission: "paid", price: "180", currency: "INR", registrationMode: "paid_upi", pricePerAttendee: "180", maxAttendeesPerRegistration: 10, status: "published" };
     expect(eventEditorSchema.safeParse(draft).success).toBe(false);
     expect(eventEditorSchema.safeParse({ ...draft, upiVpa: "verified@bank", upiPayeeName: "CSC", upiQrPath: "event-upi-qr/11111111-1111-4111-8111-111111111111.webp" }).success).toBe(true);
+  });
+
+  it("coerces browser checkbox strings to real booleans for the order API", () => {
+    const body = toCreateOrderBody({ ...valid, attendeeCount: 2 });
+    expect(body.consentContact).toBe(true);
+    expect(body.consentPaymentTerms).toBe(true);
+    expect(typeof body.consentContact).toBe("boolean");
+    expect(typeof body.consentPaymentTerms).toBe("boolean");
+    expect(body.attendeeCount).toBe(2);
+  });
+
+  it("drops empty optionals so the order API enum validation passes", () => {
+    const body = toCreateOrderBody({
+      ...valid,
+      additionalAttendeeNames: "",
+      referralSource: "",
+      dietaryAccessibilityNotes: "   ",
+    });
+    expect("referralSource" in body).toBe(false);
+    expect("additionalAttendeeNames" in body).toBe(false);
+    expect("dietaryAccessibilityNotes" in body).toBe(false);
+  });
+
+  it("passes through filled optionals and guest verification tokens untouched", () => {
+    const body = toCreateOrderBody({
+      ...valid,
+      referralSource: "Instagram",
+      dietaryAccessibilityNotes: "Vegetarian meal",
+      guestVerificationId: "11111111-1111-4111-8111-111111111111",
+      guestEmailVerificationToken: "t".repeat(64),
+    });
+    expect(body.referralSource).toBe("Instagram");
+    expect(body.dietaryAccessibilityNotes).toBe("Vegetarian meal");
+    expect(body.guestVerificationId).toBe("11111111-1111-4111-8111-111111111111");
   });
 
   it("keeps proof storage private and review policies permission-gated", () => {
