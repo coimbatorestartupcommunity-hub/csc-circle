@@ -637,6 +637,15 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
       expect(img?.className || "").toContain("object-contain");
     });
 
+    it("renders the official supplied Google Pay artwork in the first position", () => {
+      renderModal({ order: { ...dummyOrder, status: "pending" } });
+      const gpay = screen.getByRole("button", { name: "Pay with Google Pay" });
+      const img = gpay.querySelector("img");
+      // The supplied Google Pay PNG, never the mislabeled Paytm SVG
+      expect(img?.getAttribute("src") || "").toContain("gpay-icon.png");
+      expect(img?.getAttribute("src") || "").not.toContain("gpay-logo.svg");
+    });
+
     it("renders the official logo on the confirmed success state", () => {
       renderModal({ order: { ...dummyOrder, status: "verified" } });
       expect(screen.getByText("Payment Successful!")).toBeInTheDocument();
