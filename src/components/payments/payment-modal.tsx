@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { Input } from "@/components/ui/input";
 import {
   type PaymentDeepLinks,
@@ -423,8 +424,10 @@ export function PaymentModal({
           ? deepLinks.phonepe
           : appName === "Paytm" && deepLinks?.paytm
           ? deepLinks.paytm
-          : (appName === "GPay" || appName === "Google Pay") && deepLinks?.gpay
+          : appName === "Google Pay" && deepLinks?.gpay
           ? deepLinks.gpay
+          : appName === "BHIM" && deepLinks?.bhim
+          ? deepLinks.bhim
           : `${iosScheme}?${query}`;
       window.location.assign(schemeUri);
 
@@ -547,9 +550,7 @@ export function PaymentModal({
         {/* Top Header: Complete Your UPI Payment */}
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-5 sm:px-6 py-4 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-teal-600 text-white font-bold text-xs shadow-sm">
-              CSC
-            </div>
+            <BrandLogo showWordmark={false} href={null} markSize={36} priority={false} />
             <div>
               <h3 id="payment-modal-title" className="text-base font-bold text-slate-900 tracking-tight">
                 {modalState === "confirmed"
@@ -630,13 +631,13 @@ export function PaymentModal({
                     Pay using supported UPI app:
                   </span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {/* Position 1: GPay */}
+                    {/* Position 1: Google Pay */}
                     <button
                       type="button"
-                      aria-label="GPay"
+                      aria-label="Pay with Google Pay"
                       onClick={() =>
                         handleAppLaunch(
-                          "GPay",
+                          "Google Pay",
                           ANDROID_UPI_PACKAGES.GPAY,
                           "gpay://upi/pay"
                         )
@@ -644,19 +645,18 @@ export function PaymentModal({
                       className="group flex h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                     >
                       <Image
-                        src="/images/payments/gpay-icon.png"
+                        src="/images/payments/gpay-logo.svg"
                         alt=""
                         width={90}
                         height={24}
                         className="h-6 w-auto max-w-[85%] object-contain"
-                        unoptimized
                       />
                     </button>
 
                     {/* Position 2: PhonePe */}
                     <button
                       type="button"
-                      aria-label="PhonePe"
+                      aria-label="Pay with PhonePe"
                       onClick={() =>
                         handleAppLaunch(
                           "PhonePe",
@@ -676,32 +676,33 @@ export function PaymentModal({
                       />
                     </button>
 
-                    {/* Position 3: Google Pay */}
+                    {/* Position 3: BHIM */}
                     <button
                       type="button"
-                      aria-label="Google Pay"
+                      aria-label="Pay with BHIM"
                       onClick={() =>
                         handleAppLaunch(
-                          "Google Pay",
-                          ANDROID_UPI_PACKAGES.GPAY,
-                          "gpay://upi/pay"
+                          "BHIM",
+                          ANDROID_UPI_PACKAGES.BHIM,
+                          "bhim://pay"
                         )
                       }
                       className="group flex h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                     >
                       <Image
-                        src="/images/payments/gpay-logo.svg"
+                        src="/images/payments/bhim-icon.png"
                         alt=""
                         width={90}
                         height={24}
                         className="h-6 w-auto max-w-[85%] object-contain"
+                        unoptimized
                       />
                     </button>
 
                     {/* Position 4: Paytm */}
                     <button
                       type="button"
-                      aria-label="Paytm"
+                      aria-label="Pay with Paytm"
                       onClick={() =>
                         handleAppLaunch(
                           "Paytm",
@@ -952,6 +953,10 @@ export function PaymentModal({
                 transition={{ duration: 0.4 }}
                 className="flex flex-col items-center text-center py-6 px-2"
               >
+                {/* Official CSC Circle mark above the success animation */}
+                <div className="mb-4">
+                  <BrandLogo showWordmark={false} href={null} markSize={56} priority={false} />
+                </div>
                 {/* Celebratory Checkmark Animation */}
                 <div className="relative flex size-20 items-center justify-center mb-5">
                   <svg className="size-20" viewBox="0 0 52 52">

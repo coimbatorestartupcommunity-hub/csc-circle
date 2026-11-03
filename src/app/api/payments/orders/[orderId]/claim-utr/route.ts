@@ -5,7 +5,7 @@ import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
-import { verifyOrderAccess } from "@/lib/payments/orders";
+import { containsExactOrderReference, verifyOrderAccess } from "@/lib/payments/orders";
 
 const claimUtrSchema = z.object({
   utr: z.string().trim().regex(/^\d{12}$/, "UTR must be a 12-digit numeric reference"),
@@ -224,8 +224,11 @@ export async function POST(
     // A customer-entered UTR alone NEVER authorizes settlement. Automatic
     // fulfillment runs only when explicitly enabled AND genuine authenticated
     // bank evidence uniquely matches this order (exact UTR, exact amount,
-    // correct receiving account, unmatched, fresh). Otherwise the claim stays
-    // in "processing" for the reconcile worker / admin review.
+    // correct receiving account, unmatched, fresh) AND the authenticated bank
+    // transaction note independently contains this order's exact reference.
+    // A UTR match without a bank-note order reference is only a candidate:
+    // it stays in "processing" for the reconcile worker / admin review and
+    // must never be labeled bank_order_reference attribution.
     const isAutoConfirm = process.env.CSC_PAYMENT_AUTO_CONFIRM === "true";
     const { data: fullOrder } = await admin
       .from("event_payment_orders")
@@ -238,7 +241,7 @@ export async function POST(
       try {
         const { data: candidateEvidence } = await admin
           .from("event_payment_evidence")
-          .select("id,amount_paise,receiving_account_suffix,transaction_time,reconciliation_state,matched_order_id")
+          .select("id,amount_paise,receiving_account_suffix,transaction_time,transaction_info_raw,reconciliation_state,matched_order_id")
           .eq("utr", utr)
           .eq("auth_status", "authenticated");
 
@@ -250,6 +253,7 @@ export async function POST(
             amount_paise: number;
             receiving_account_suffix: string | null;
             transaction_time: string | null;
+            transaction_info_raw: string | null;
             reconciliation_state: string | null;
             matched_order_id: string | null;
           };
@@ -261,10 +265,16 @@ export async function POST(
           const txMs = Date.parse(typed.transaction_time);
           if (!Number.isFinite(txMs) || txMs > nowMs + 5 * 60 * 1000) return false;
           if (nowMs - txMs > matchWindowMs) return false;
+          // The authenticated bank note must independently contain this
+          // order's exact reference. A UTR/amount match alone (including a
+          // stolen UTR on someone else's credit) is only a candidate.
+          if (!typed.transaction_info_raw) return false;
+          if (!containsExactOrderReference(typed.transaction_info_raw, fullOrder.order_reference)) return false;
           return true;
         });
 
-        // Ambiguous or missing genuine evidence: stay in processing, never settle.
+        // Ambiguous, missing, or reference-less genuine evidence: stay in
+        // processing, never settle, never label bank_order_reference.
         if (genuineMatches.length !== 1) {
           await admin.from("event_payment_events").insert({
             order_id: orderId,
@@ -278,7 +288,8 @@ export async function POST(
           const matchedEvidence = genuineMatches[0] as { id: string };
           const activeEvidenceId = matchedEvidence.id;
 
-          // Upsert attribution record for the genuinely matched bank credit
+          // Upsert attribution record: the bank note verifiably carries this
+          // order's reference, so the bank_order_reference label is truthful.
           await admin.from("event_payment_attributions").upsert(
             {
               order_id: fullOrder.id,
@@ -297,11 +308,14 @@ export async function POST(
             { onConflict: "order_id" }
           );
 
-          // Atomically fulfill payment, generate passes, and enqueue transactional email outbox
+          // Atomically fulfill payment, generate passes, and enqueue transactional email outbox.
+          // p_matched_by 'user_utr_claim' is the only claim pathway the
+          // settlement function accepts; it re-verifies claimed-UTR equality
+          // and the bank-note reference independently before settling.
           const { data: fulfillmentResult, error: fulfillError } = await admin.rpc("csc_fulfill_confirmed_payment", {
             p_order_id: fullOrder.id,
             p_evidence_id: activeEvidenceId,
-            p_matched_by: "claim_utr_auto_confirm",
+            p_matched_by: "user_utr_claim",
             p_notes: `Automated settlement on genuine bank evidence: UTR ${utr}, ₹${Number(fullOrder.amount_paise) / 100}`,
             p_user_id: null,
           });

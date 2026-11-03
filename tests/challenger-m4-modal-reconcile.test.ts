@@ -602,6 +602,49 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
   });
 
   // ============================================================================
+  // Task 6: Official CSC branding and unique four-app button grid
+  // ============================================================================
+  describe("Task 6: Official branding and unique app-button grid", () => {
+    it("renders the official CSC Circle logo in the checkout header, never a text placeholder", () => {
+      renderModal({ order: { ...dummyOrder, status: "pending" } });
+      const logo = screen.getByAltText("Coimbatore Startup Community logo");
+      expect(logo).toBeInTheDocument();
+      expect(logo.getAttribute("src") || "").toContain("csc-logo.png");
+      expect(screen.queryByText("CAC")).not.toBeInTheDocument();
+    });
+
+    it("renders exactly four unique app buttons in Google Pay, PhonePe, BHIM, Paytm order", () => {
+      renderModal({ order: { ...dummyOrder, status: "pending" } });
+      const labels = ["Pay with Google Pay", "Pay with PhonePe", "Pay with BHIM", "Pay with Paytm"];
+      const buttons = labels.map((name) => screen.getByRole("button", { name }));
+      expect(buttons.length).toBe(4);
+      // No duplicate Google entries and a single Paytm
+      expect(screen.queryAllByRole("button", { name: /Google Pay/ }).length).toBe(1);
+      expect(screen.queryAllByRole("button", { name: /Paytm/ }).length).toBe(1);
+      expect(screen.queryByRole("button", { name: "GPay" })).not.toBeInTheDocument();
+      // DOM order matches the required visual order
+      const positions = buttons.map((b) =>
+        [...b.parentElement!.children].indexOf(b)
+      );
+      expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+    });
+
+    it("renders the BHIM icon asset in the third position without stretching", () => {
+      renderModal({ order: { ...dummyOrder, status: "pending" } });
+      const bhim = screen.getByRole("button", { name: "Pay with BHIM" });
+      const img = bhim.querySelector("img");
+      expect(img?.getAttribute("src") || "").toContain("bhim-icon.png");
+      expect(img?.className || "").toContain("object-contain");
+    });
+
+    it("renders the official logo on the confirmed success state", () => {
+      renderModal({ order: { ...dummyOrder, status: "verified" } });
+      expect(screen.getByText("Payment Successful!")).toBeInTheDocument();
+      expect(screen.getAllByAltText("Coimbatore Startup Community logo").length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  // ============================================================================
   // Task 2: Admin Manual Reconciliation RBAC & Guarded Controls (/api/admin/payments/manual-reconcile)
   // ============================================================================
   describe("Task 2: Admin Manual Reconciliation Security & Guarded Controls (F20)", () => {
