@@ -336,3 +336,76 @@ export async function fetchRecentBankAlerts(options: FetchBankAlertsOptions = {}
     hasMore,
   };
 }
+
+export interface FetchMessagesByIdResult {
+  messages: RawEmailInput[];
+  errors: string[];
+}
+
+/**
+ * Targeted re-fetch of specific messages by RFC 822 Message-ID.
+ * Used to re-verify stranded `needs_review` evidence after configuration
+ * changes (for example a DKIM allowlist added after the original import).
+ * Read-only: it never advances the UID cursor.
+ */
+export async function fetchMessagesById(
+  messageIds: string[],
+  options: { timeLimitMs?: number; maxMessages?: number } = {}
+): Promise<FetchMessagesByIdResult> {
+  const ids = [...new Set(messageIds.filter(Boolean))].slice(0, Math.max(1, options.maxMessages ?? 20));
+  const timeLimitMs = options.timeLimitMs ?? 20_000;
+  const startTime = Date.now();
+  const messages: RawEmailInput[] = [];
+  const errors: string[] = [];
+  if (ids.length === 0) return { messages, errors };
+
+  await connectWithFallback(async (client) => {
+    const lock = await client.getMailboxLock("INBOX", { readOnly: true });
+    try {
+      if (!client.mailbox) return;
+      const mailboxName = client.mailbox.path || "INBOX";
+      const rawValidity = client.mailbox.uidValidity;
+      const uidValidity = typeof rawValidity === "bigint" ? Number(rawValidity) : Number(rawValidity ?? 0);
+
+      for (const id of ids) {
+        if (Date.now() - startTime >= timeLimitMs && messages.length > 0) break;
+        try {
+          const found = await client.search({ header: { "message-id": id } }, { uid: true });
+          const uids = (Array.isArray(found) ? found : []).filter(
+            (uid): uid is number => typeof uid === "number"
+          );
+          if (uids.length === 0) {
+            errors.push(`Message not found in mailbox: ${id}`);
+            continue;
+          }
+          const fetched = await client.fetchAll(
+            uids.slice(0, 3),
+            { envelope: true, bodyStructure: true, source: true },
+            { uid: true }
+          );
+          for (const msg of fetched) {
+            if (!msg.source) continue;
+            const emailInput = await parseMimeEmail(msg.source);
+            emailInput.cryptographicAuth = await verifyRawEmailAuthentication(msg.source);
+            emailInput.imapUid = msg.uid;
+            emailInput.imapUidValidity = uidValidity;
+            emailInput.imapMailbox = mailboxName;
+            if (msg.envelope?.messageId) emailInput.messageId = msg.envelope.messageId;
+            if (msg.envelope?.date) emailInput.date = msg.envelope.date;
+            if (msg.envelope?.subject && !emailInput.subject) emailInput.subject = msg.envelope.subject;
+            if (msg.envelope?.from?.[0]?.address && !emailInput.from) {
+              emailInput.from = msg.envelope.from[0].address;
+            }
+            messages.push(emailInput);
+          }
+        } catch (err) {
+          errors.push(err instanceof Error ? err.message : String(err));
+        }
+      }
+    } finally {
+      lock.release();
+    }
+  });
+
+  return { messages, errors };
+}
