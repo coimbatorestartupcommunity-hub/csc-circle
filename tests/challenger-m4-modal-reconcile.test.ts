@@ -194,7 +194,7 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
       it("derives confirmed state when order status is 'verified'", () => {
         renderModal({ order: { ...dummyOrder, status: "verified" } });
         expect(screen.getByText("Payment Successful!")).toBeInTheDocument();
-        expect(screen.getByText("Your CSC Circle Event Registration Is Confirmed")).toBeInTheDocument();
+        expect(screen.getByText("Your payment has been received and your CSC Circle event registration is confirmed.")).toBeInTheDocument();
       });
 
       it("derives confirmed state when order status is 'reconciled'", () => {
@@ -210,11 +210,16 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
 
       it("derives failed state when order status is 'failed' or 'cancelled'", () => {
         const { unmount } = renderModal({ order: { ...dummyOrder, status: "failed" } });
-        expect(screen.getByText("Payment Verification Failed")).toBeInTheDocument();
+        expect(screen.getByText("Payment Unsuccessful")).toBeInTheDocument();
+        expect(screen.getByText("You have not paid for this registration. No successful payment was confirmed for this attempt.")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Try Again" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Choose Another UPI App" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Return to Event" })).toBeInTheDocument();
         unmount();
 
         renderModal({ order: { ...dummyOrder, status: "cancelled" } });
-        expect(screen.getByText("Payment Verification Failed")).toBeInTheDocument();
+        expect(screen.getByText("Payment Session Cancelled")).toBeInTheDocument();
+        expect(screen.queryByText("Payment Unsuccessful")).not.toBeInTheDocument();
       });
 
       it("derives pending_review state when order status is 'needs_review'", () => {
