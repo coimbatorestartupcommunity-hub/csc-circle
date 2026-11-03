@@ -24,12 +24,14 @@ export async function POST(request: Request) {
   const body = (await readAuthBody(request).catch(() => ({}))) as {
     upiVpa?: string;
     upiPayeeName?: string;
+    upiQrPath?: string;
   };
 
   try {
     const result = await createPaymentTestEvent({
       upiVpa: body.upiVpa,
       upiPayeeName: body.upiPayeeName,
+      upiQrPath: body.upiQrPath,
       adminUserId: ctx.userId ?? undefined,
     });
     return authResponse(result);

@@ -254,6 +254,7 @@ export async function POST(request: NextRequest) {
           upiUri: result.order.upi_uri,
           status: result.order.status,
           expiresAt: result.order.expires_at,
+          attendeeCount: result.order.attendee_count,
         },
         deepLinks: result.deepLinks,
       },

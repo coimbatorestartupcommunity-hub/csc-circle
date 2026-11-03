@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { UPI_CONFIG } from "@/lib/payments/config";
 
 export const TEST_EVENT_SLUG = "csc-upi-payment-system-test";
 export const TEST_EVENT_TITLE = "CSC Circle — UPI Payment System Test";
@@ -32,6 +33,7 @@ export interface PaymentTestRunReceipt {
 export async function createPaymentTestEvent(options?: {
   upiVpa?: string;
   upiPayeeName?: string;
+  upiQrPath?: string;
   adminUserId?: string;
 }) {
   const admin = createAdminClient();
@@ -44,9 +46,35 @@ export async function createPaymentTestEvent(options?: {
     .eq("slug", TEST_EVENT_SLUG)
     .maybeSingle();
 
-  const upiVpa = options?.upiVpa || process.env.CSC_PAYMENT_UPI_VPA || process.env.CSC_UPI_VPA || "6379326671@superyes";
-  const upiPayeeName = options?.upiPayeeName || process.env.CSC_PAYMENT_PAYEE_NAME || process.env.CSC_UPI_PAYEE_NAME || "KISHORE C";
-  const upiQrPath = "event-upi-qr/8c4616c7-d8a1-42a9-b4d0-1388cba57c08.webp";
+  // Fail closed: the test event must advertise exactly the authoritative
+  // recipient that live payment orders (and their dynamic QR payloads) encode.
+  // No hardcoded fallback recipient is permitted here.
+  const upiVpa =
+    options?.upiVpa?.trim() || process.env.CSC_PAYMENT_UPI_VPA || process.env.CSC_UPI_VPA || UPI_CONFIG.PAYEE_VPA;
+  const upiPayeeName =
+    options?.upiPayeeName?.trim() ||
+    process.env.CSC_PAYMENT_PAYEE_NAME ||
+    process.env.CSC_UPI_PAYEE_NAME ||
+    UPI_CONFIG.PAYEE_NAME;
+
+  if (upiVpa !== UPI_CONFIG.PAYEE_VPA || upiPayeeName !== UPI_CONFIG.PAYEE_NAME) {
+    throw new Error(
+      "Test-event payee must match the authorized merchant configuration. Refusing to create a test destination that diverges from the payable QR recipient."
+    );
+  }
+
+  // A verified QR image reference for the authorized payee is required before
+  // enabling test transfers. Stale static QR paths are never reused silently.
+  const upiQrPath = options?.upiQrPath?.trim() || process.env.CSC_PAYMENT_UPI_QR_PATH || "";
+  if (!/^event-upi-qr\/[0-9a-f-]{36}\.webp$/i.test(upiQrPath)) {
+    throw new Error(
+      "A verified UPI QR image reference (event-upi-qr/<id>.webp) for the authorized payee is required before enabling test transfers."
+    );
+  }
+  const { error: qrMissing } = await admin.storage.from("member-portraits").download(upiQrPath);
+  if (qrMissing) {
+    throw new Error("The configured test-event UPI QR image could not be verified in storage. Upload the QR for the authorized payee first.");
+  }
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -57,7 +85,6 @@ export async function createPaymentTestEvent(options?: {
     visibility: "unlisted",
     created_by_admin: options?.adminUserId || "system",
     expires_at: expiresAt,
-    onlineInfo: "https://meet.google.com/test-csc-payment",
     format: "online",
     price: "1",
     pricePerAttendee: "1",
@@ -94,7 +121,7 @@ export async function createPaymentTestEvent(options?: {
         starts_at: "2026-11-07T05:30:00.000Z", // 11:00 AM IST
         ends_at: "2026-11-07T06:30:00.000Z",   // 12:00 PM IST
         registration_deadline: "2026-11-06T17:30:00.000Z", // 11:00 PM IST
-        location: "Online (Google Meet)",
+        location: "Online (Internal System Test)",
         venue: "Internal System Test",
         format: "online",
         status: "published",
@@ -123,7 +150,7 @@ export async function createPaymentTestEvent(options?: {
       starts_at: "2026-11-07T05:30:00.000Z",
       ends_at: "2026-11-07T06:30:00.000Z",
       registration_deadline: "2026-11-06T17:30:00.000Z",
-      location: "Online (Google Meet)",
+      location: "Online (Internal System Test)",
       venue: "Internal System Test",
       format: "online",
       status: "published",

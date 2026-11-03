@@ -31,7 +31,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
   if (!event) notFound();
   // Paid UPI events support verified guest OTP registration as well as authenticated members.
   // Free RSVP events require a signed-in account.
-  const canRegister = Boolean(user) || event.registrationMode === "paid_upi";
+  const canRegister = Boolean(user) || event.registrationMode === "paid_upi" || event.admission === "paid" || (event.pricePerAttendee ?? 0) > 0;
   return <section className="py-10 sm:py-14"><Container className="flex flex-col gap-6">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Link href="/events" className="inline-flex min-h-10 w-fit items-center gap-2 rounded-lg text-sm font-medium text-brand-secondary hover:text-brand-ink"><ArrowLeft className="size-4" />Back to Events &amp; Booking</Link>

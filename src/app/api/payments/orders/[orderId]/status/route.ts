@@ -45,7 +45,7 @@ export async function GET(
 
     const { data: order, error } = await admin
       .from("event_payment_orders")
-      .select("id,order_reference,status,amount_paise,paid_registration_id,claimed_utr,matched_at,event_id,user_id,guest_token_hash")
+      .select("id,order_reference,status,amount_paise,paid_registration_id,claimed_utr,matched_at,verification_started_at,event_id,user_id,guest_token_hash")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -98,6 +98,8 @@ export async function GET(
         amountRupees: Number(order.amount_paise) / 100,
         claimedUtr: order.claimed_utr,
         matchedAt: order.matched_at,
+        verificationStartedAt: (order as { verification_started_at?: string | null }).verification_started_at ?? null,
+        serverNow: new Date().toISOString(),
         registrationReference,
         passHref,
       },

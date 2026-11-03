@@ -194,7 +194,7 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
       it("derives confirmed state when order status is 'verified'", () => {
         renderModal({ order: { ...dummyOrder, status: "verified" } });
         expect(screen.getByText("Payment Successful!")).toBeInTheDocument();
-        expect(screen.getByText("Your CSC Event Registration Is Confirmed")).toBeInTheDocument();
+        expect(screen.getByText("Your CSC Circle Event Registration Is Confirmed")).toBeInTheDocument();
       });
 
       it("derives confirmed state when order status is 'reconciled'", () => {
@@ -221,7 +221,7 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
         renderModal({ order: { ...dummyOrder, status: "needs_review" } });
         expect(screen.getByText("Payment Confirmation Pending")).toBeInTheDocument();
         expect(
-          screen.getByText(/An authorized bank-evidence review must link the credit/i)
+          screen.getByText(/avoid paying again while we continue reconciling/i)
         ).toBeInTheDocument();
       });
 
@@ -233,8 +233,8 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
 
       it("derives awaiting_payment state when order status is 'pending'", () => {
         renderModal({ order: { ...dummyOrder, status: "pending" } });
-        expect(screen.getByText("CSC UPI Checkout")).toBeInTheDocument();
-        expect(screen.getByText(/Already paid\? Enter 12-digit UPI reference/i)).toBeInTheDocument();
+        expect(screen.getByText("Complete Your UPI Payment")).toBeInTheDocument();
+        expect(screen.getByText("I Have Paid — Enter UTR")).toBeInTheDocument();
       });
 
       it("renders creating state when initialState is 'creating' without an order", () => {
@@ -516,7 +516,7 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
         expect(screen.queryByText("Google Cal")).not.toBeInTheDocument();
       });
 
-      it("guarantees pending_review explicitly blocks pass access and warns user that UTR alone does not confirm payment", () => {
+      it("guarantees pending_review explicitly blocks pass access and warns the payment remains pending and unconfirmed", () => {
         renderModal({
           order: { ...dummyOrder, status: "needs_review" },
           eventDates: { startsAt: "2026-11-20T10:00:00Z" },
@@ -524,8 +524,9 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
 
         expect(screen.queryByText(/View and Download Event Pass/i)).not.toBeInTheDocument();
         expect(screen.queryByText("Google Cal")).not.toBeInTheDocument();
+        expect(screen.queryByText("Payment Successful!")).not.toBeInTheDocument();
         expect(
-          screen.getByText(/Your UTR claim alone cannot confirm payment/i)
+          screen.getByText(/avoid paying again while we continue reconciling/i)
         ).toBeInTheDocument();
       });
 
@@ -534,7 +535,7 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
 
         expect(screen.queryByText("Payment Successful!")).not.toBeInTheDocument();
         expect(screen.queryByText(/View and Download Event Pass/i)).not.toBeInTheDocument();
-        expect(screen.getByText("CSC UPI Checkout")).toBeInTheDocument();
+        expect(screen.getByText("Complete Your UPI Payment")).toBeInTheDocument();
       });
 
       it("renders verified pass link and calendar CTAs ONLY when status is authoritative 'verified'", () => {
@@ -573,27 +574,29 @@ describe("Milestone M4 Challenger: UI Modal State Machine & Admin Manual Reconci
         expect(onCloseMock).toHaveBeenCalledOnce();
       });
 
-      it("auto-transitions to failed state when 15-minute countdown timer expires", async () => {
+      it("keeps the order pending with a verification-delay notice when the five-minute window expires", async () => {
         vi.useFakeTimers();
-        const baseTime = Date.now();
-        // Order expiring in 2 seconds
-        const expiringOrder: PaymentOrderDetails = {
-          ...dummyOrder,
-          status: "pending",
-          expiresAt: new Date(baseTime + 2000).toISOString(),
-        };
+        const timerKey = `csc_verify_timer_${dummyOrder.id}`;
+        try {
+          // Verification window started 6 minutes ago: countdown is at 00:00
+          window.sessionStorage.setItem(timerKey, String(Date.now() - 6 * 60 * 1000));
 
-        renderModal({ order: expiringOrder });
+          renderModal({ order: { ...dummyOrder, status: "pending" } });
 
-        expect(screen.getByText("CSC UPI Checkout")).toBeInTheDocument();
+          expect(screen.getByText("Complete Your UPI Payment")).toBeInTheDocument();
 
-        // Advance 3 seconds past expiry
-        await act(async () => {
-          await vi.advanceTimersByTimeAsync(3000);
-        });
+          await act(async () => {
+            await vi.advanceTimersByTimeAsync(1500);
+          });
 
-        expect(screen.getByText("Checkout Unavailable")).toBeInTheDocument();
-        vi.useRealTimers();
+          // Expired verification windows must NOT mark a genuine transfer failed
+          expect(screen.getByText("Payment Verification Is Taking Longer")).toBeInTheDocument();
+          expect(screen.queryByText("Payment Successful!")).not.toBeInTheDocument();
+          expect(screen.queryByText("Checkout Unavailable")).not.toBeInTheDocument();
+        } finally {
+          window.sessionStorage.removeItem(timerKey);
+          vi.useRealTimers();
+        }
       });
     });
   });
