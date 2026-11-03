@@ -14,9 +14,10 @@ import {
   paidRegistrationReferrals,
   paidRegistrationRoles,
   paidRegistrationSchema,
+  toCreateOrderBody,
 } from "@/lib/validations/paid-registration";
 import { UpiCheckoutModal, type OrderInfo } from "@/components/events/upi-checkout-modal";
-import { toCreateOrderBody, type PaymentDeepLinks } from "@/lib/payments/orders";
+import type { PaymentDeepLinks } from "@/lib/payments/orders";
 import type { EventRecord } from "@/types";
 import { z } from "zod";
 

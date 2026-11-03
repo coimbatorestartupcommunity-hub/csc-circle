@@ -43,3 +43,65 @@ export const paidRegistrationSchema = z.object({
 export function isAllowedPaymentProof(file: Pick<File, "size" | "type">) {
   return file.size > 0 && file.size <= 5 * 1024 * 1024 && ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type);
 }
+
+/**
+ * Browser form values as produced by react-hook-form. Checkbox inputs carry
+ * value="true", so consents arrive as the string "true"; untouched optional
+ * selects/textareas arrive as "".
+ */
+export interface BrowserRegistrationValues {
+  eventId: unknown;
+  fullName: unknown;
+  email: unknown;
+  whatsapp: unknown;
+  organization: unknown;
+  role: unknown;
+  attendeeCount: unknown;
+  additionalAttendeeNames?: unknown;
+  referralSource?: unknown;
+  dietaryAccessibilityNotes?: unknown;
+  consentContact: unknown;
+  consentPaymentTerms: unknown;
+  guestVerificationId?: string | null;
+  guestEmailVerificationToken?: string | null;
+}
+
+/**
+ * Coerces browser registration values into the create-order API contract.
+ * The order endpoint requires real booleans for consents and rejects empty
+ * strings for enum-typed optionals, so this boundary converts "true" to true
+ * and "" to undefined. Without it every checkout submission fails with 422.
+ *
+ * Lives in the client-safe validations module (never imports node:crypto),
+ * so the checkout form can bundle it.
+ */
+export function toCreateOrderBody(values: BrowserRegistrationValues): Record<string, unknown> {
+  const text = (value: unknown): string => (typeof value === "string" ? value : "");
+  const optionalText = (value: unknown): string | undefined => {
+    const trimmed = text(value).trim();
+    return trimmed ? trimmed : undefined;
+  };
+  const body: Record<string, unknown> = {
+    eventId: text(values.eventId),
+    fullName: text(values.fullName),
+    email: text(values.email),
+    whatsapp: text(values.whatsapp),
+    organization: text(values.organization),
+    role: text(values.role),
+    attendeeCount: Number(values.attendeeCount || 1),
+    consentContact: values.consentContact === "true" || values.consentContact === true,
+    consentPaymentTerms:
+      values.consentPaymentTerms === "true" || values.consentPaymentTerms === true,
+  };
+  const additionalNames = optionalText(values.additionalAttendeeNames);
+  if (additionalNames !== undefined) body.additionalAttendeeNames = additionalNames;
+  const referral = optionalText(values.referralSource);
+  if (referral !== undefined) body.referralSource = referral;
+  const notes = optionalText(values.dietaryAccessibilityNotes);
+  if (notes !== undefined) body.dietaryAccessibilityNotes = notes;
+  if (values.guestVerificationId) body.guestVerificationId = values.guestVerificationId;
+  if (values.guestEmailVerificationToken) {
+    body.guestEmailVerificationToken = values.guestEmailVerificationToken;
+  }
+  return body;
+}
