@@ -518,7 +518,7 @@ export const adminServices = {
       ] = await Promise.all([
         sb.from("payments").select("*").order("created_at", { ascending: false }),
         sb.from("event_payment_orders").select("*").order("created_at", { ascending: false }).limit(200),
-        sb.from("events").select("id, title"),
+        sb.from("events").select("id, title, settings"),
         sb.from("event_payment_evidence").select("*").order("transaction_time", { ascending: false }).limit(200),
         sb.from("event_payment_attributions").select("*").limit(200),
         sb.from("event_payment_reconciliation").select("*").limit(200),
@@ -527,7 +527,13 @@ export const adminServices = {
 
       if (legacyError && upiError) return fail("unknown", "Could not load payments.");
 
-      const eventMap = new Map((events ?? []).map((e) => [e.id, e.title]));
+      const eventMap = new Map((events ?? []).map((e) => [e.id, (e as { title: string }) .title]));
+      const eventSettingsMap = new Map((events ?? []).map((e) => [e.id, (e as { settings: unknown }).settings as Record<string, unknown> | null]));
+      const isQaEvent = (eventId: string | null | undefined) => {
+        if (!eventId) return false;
+        const s = eventSettingsMap.get(eventId);
+        return Boolean(s?.is_test_event || s?.isTestEvent) || ((events ?? []).find((ev) => (ev as { id: string }).id === eventId) as { slug?: string } | undefined)?.slug === "csc-upi-payment-system-test";
+      };
       const evidenceMap = new Map((allEvidence ?? []).map((ev) => [ev.id, ev]));
       const attributionMap = new Map((attributions ?? []).map((a) => [a.order_id, a]));
       const reconciliationMap = new Map((reconciliations ?? []).map((r) => [r.order_id, r]));
@@ -563,7 +569,8 @@ export const adminServices = {
         timeline: [],
       }));
 
-      const upiRows: EnrichedAdminPaymentRow[] = (upiOrders ?? []).map((o) => {
+      const filteredUpiOrders = (upiOrders ?? []).filter((o) => !isQaEvent((o as { event_id: string | null }).event_id));
+      const upiRows: EnrichedAdminPaymentRow[] = filteredUpiOrders.map((o) => {
         const matchedEv = o.matched_evidence_id ? evidenceMap.get(o.matched_evidence_id) : null;
         const attr = attributionMap.get(o.id);
         const recon = reconciliationMap.get(o.id);
