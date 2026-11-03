@@ -113,6 +113,38 @@ describe("Axis Bank alert parsing and authentication", () => {
     expect(alert?.isEligibleForAutoReconcile).toBe(true);
   });
 
+  it("parses the reported live Rs 1.00 alert with the P2A/Passf note end to end", () => {
+    const fixtureText = `
+      INR 1.00 was credited to your A/c.
+      Amount Credited: INR 1.00
+      Account Number: XX1995
+      Date & Time: 03-11-26, 09:15:00 IST
+      Transaction Info: UPI/P2A/219603774862/S VIKASH/IOBA/Passf
+    `;
+
+    const alert = parseAxisCreditAlert({
+      messageId: "<axis-live-219603774862@axis.bank.in>",
+      subject: "INR 1.00 was credited to your A/c.",
+      from: "Axis Bank Alerts <alerts@axis.bank.in>",
+      headers: {
+        from: "Axis Bank Alerts <alerts@axis.bank.in>",
+        "authentication-results": "mx.icloud.com; dkim=pass header.d=axis.bank.in header.i=@axis.bank.in; spf=pass (smtp.mailfrom=alerts@axis.bank.in)",
+      },
+      text: fixtureText,
+    });
+
+    expect(alert).not.toBeNull();
+    expect(alert?.direction).toBe("CREDIT");
+    expect(alert?.amountPaise).toBe(100);
+    expect(alert?.receivingAccountSuffix).toBe("1995");
+    expect(alert?.utr).toBe("219603774862");
+    expect(alert?.payerName).toBe("S VIKASH");
+    expect(alert?.sourceBank).toBe("IOBA");
+    expect(alert?.transactionInfoRaw).toContain("UPI/P2A/219603774862/S VIKASH/IOBA/Passf");
+    expect(alert?.auth.status).toBe("authenticated");
+    expect(alert?.isEligibleForAutoReconcile).toBe(true);
+  });
+
   it("ignores debit alerts", () => {
     const fixtureText = `
       INR 500.00 was debited from your A/c.
