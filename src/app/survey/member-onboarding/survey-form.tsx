@@ -312,12 +312,12 @@ export function SurveyForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email Address <span aria-hidden>*</span></Label>
-            <Input id="email" type="email" inputMode="email" autoComplete="email" placeholder="e.g., name@example.com" maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "email-error" : undefined} className={inputClass} {...register("email")} />
+            <Input id="email" type="email" inputMode="email" autoComplete="email" placeholder="eg: name@example.com" maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "email-error" : undefined} className={inputClass} {...register("email")} />
             <ErrorMessage id="email-error" message={errors.email?.message} />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="city">City / Location <span aria-hidden>*</span></Label>
-            <Input id="city" autoComplete="address-level2" placeholder="Enter your city (e.g., Coimbatore)" maxLength={120} aria-invalid={Boolean(errors.city)} aria-describedby={errors.city ? "city-error" : undefined} className={inputClass} {...register("city")} />
+            <Input id="city" autoComplete="address-level2" placeholder="Enter your city (eg: Coimbatore)" maxLength={120} aria-invalid={Boolean(errors.city)} aria-describedby={errors.city ? "city-error" : undefined} className={inputClass} {...register("city")} />
             <ErrorMessage id="city-error" message={errors.city?.message} />
           </div>
         </div>
@@ -413,10 +413,10 @@ export function SurveyForm() {
           <div className="space-y-2 sm:col-span-2">
             <div className="flex items-end justify-between gap-3">
               <Label htmlFor="description">Tell Us About Your Business or Idea <span aria-hidden>*</span></Label>
-              <span className="shrink-0 text-xs text-brand-muted" aria-live="polite">{description.length}/3000</span>
+              <span className="shrink-0 text-xs text-brand-muted" aria-live="polite">{description.length}/1000</span>
             </div>
-            <Textarea id="description" rows={7} maxLength={3000} placeholder={descriptionPlaceholders[category ?? "none"]} aria-invalid={Boolean(errors.description)} aria-describedby={`description-help${errors.description ? " description-error" : ""}`} className="min-h-36 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("description")} />
-            <p id="description-help" className="text-xs text-brand-muted">Please do not include passwords, payment details, or unrelated sensitive information.</p>
+            <Textarea id="description" rows={7} maxLength={1000} placeholder={descriptionPlaceholders[category ?? "none"]} aria-invalid={Boolean(errors.description)} aria-describedby={`description-help${errors.description ? " description-error" : ""}`} className="min-h-36 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("description")} />
+            <p id="description-help" className="text-xs text-brand-muted">A brief overview of your idea is enough. Please do not include passwords, payment details, or unrelated sensitive information.</p>
             <ErrorMessage id="description-error" message={errors.description?.message} />
           </div>
         </div>
