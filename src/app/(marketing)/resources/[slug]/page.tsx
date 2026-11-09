@@ -4,6 +4,10 @@ import { ResourceDetailContent } from "./detail-content";
 import { getPublishedResource, cmsImageUrl } from "@/lib/services/cms-public";
 import { siteConfig } from "@/lib/content/site";
 
+// Per-slug database lookup with a pre-render existence check: this route
+// blocks on the server so missing slugs return a real 404 status.
+export const instant = false;
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const r = await getPublishedResource(slug);
