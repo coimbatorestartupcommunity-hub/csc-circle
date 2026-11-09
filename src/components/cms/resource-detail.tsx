@@ -62,7 +62,7 @@ export function ResourceInfoPanel({ resource }: { resource: ResourceRecord }) {
   const hasDownload = resource.resourceType !== "link" && !!resource.documentPath;
   const isExternal = (resource.resourceType === "link" || resource.resourceType === "video") && !!resource.externalUrl;
   return (
-    <aside aria-label="Resource information" className="flex flex-col gap-4 rounded-2xl border border-brand-border bg-brand-white p-6 lg:sticky lg:top-24">
+    <aside aria-label="Resource information" className="flex flex-col gap-4 rounded-2xl border border-brand-border bg-brand-white p-6">
       <h2 className="text-base font-bold text-brand-ink">{resource.title}</h2>
       <dl className="flex flex-col gap-2 text-sm">
         {rows.map(([label, value]) => (

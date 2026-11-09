@@ -61,10 +61,9 @@ export async function ResourceDetailContent({ resource: r }: { resource: Resourc
         </Container>
       </section>
       <section className="bg-brand-white py-12 sm:py-14">
-        <Container className="mx-auto flex max-w-5xl flex-col gap-8">
+        <Container className="mx-auto flex max-w-3xl flex-col gap-8">
           <ResourceBackLink />
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="flex min-w-0 flex-col gap-10">
+          <div className="flex min-w-0 flex-col gap-10">
               {cover ? (
                 <figure className="overflow-hidden rounded-2xl bg-brand-cloud ring-1 ring-brand-border">
                   <div className="relative aspect-[5/3] w-full">
@@ -119,9 +118,8 @@ export async function ResourceDetailContent({ resource: r }: { resource: Resourc
               <ResourceTags tags={r.tags} />
               <ResourceAttribution resource={r} />
             </div>
-            <ResourceInfoPanel resource={r} />
-          </div>
           <RelatedResources resources={[...related, ...fallback]} />
+          <ResourceInfoPanel resource={r} />
         </Container>
       </section>
     </>
