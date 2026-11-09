@@ -8,15 +8,19 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import type { CommunityDataFilter } from "@/lib/community-data/schema";
 import type { CommunityMember } from "@/lib/community-data/service";
 
-const PAGE_WIDTH = 841.89;
-const PAGE_HEIGHT = 595.28;
-const MARGIN = 20;
-const TABLE_WIDTH = PAGE_WIDTH - MARGIN * 2;
-const TABLE_BOTTOM = 30;
-const HEADER_HEIGHT = 20;
-const CELL_PADDING = 4;
-const FONT_SIZE = 6.7;
-const LINE_HEIGHT = 8.5;
+const PAGE_WIDTH = 595.28;
+const PAGE_HEIGHT = 841.89;
+const MARGIN = 40;
+const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+const PAGE_BOTTOM = 46;
+const HEADING_SIZE = 10;
+const BODY_SIZE = 8.5;
+const SMALL_SIZE = 7.5;
+const LABEL_SIZE = 7;
+const LINE_HEIGHT = 11.5;
+const LABEL_HEIGHT = 10;
+const FIELD_GAP = 5;
+const HEADING_BAR_HEIGHT = 22;
 
 const NAVY = rgb(17 / 255, 24 / 255, 39 / 255);
 const PURPLE = rgb(105 / 255, 82 / 255, 213 / 255);
@@ -25,15 +29,7 @@ const BORDER = rgb(220 / 255, 224 / 255, 232 / 255);
 const MUTED = rgb(89 / 255, 98 / 255, 116 / 255);
 const WHITE = rgb(1, 1, 1);
 
-const columns = [
-  { key: "full_name", label: "Full Name", width: 82 },
-  { key: "contact_number", label: "Contact Number", width: 76 },
-  { key: "email", label: "Email", width: 118 },
-  { key: "member_category", label: "Category", width: 80 },
-  { key: "business_or_idea_name", label: "Business / Idea", width: 100 },
-  { key: "description", label: "Description", width: 262 },
-  { key: "created_at", label: "Submitted On", width: TABLE_WIDTH - 718 },
-] as const;
+const NOT_PROVIDED = "Not provided";
 
 export class CommunityDataPdfFontError extends Error {
   constructor() {
@@ -89,7 +85,7 @@ function drawTextRuns(
 }
 
 function wrapText(value: string, primary: PDFFont, fallback: PDFFont, size: number, width: number): string[] {
-  const maxWidth = Math.max(1, width - CELL_PADDING * 2);
+  const maxWidth = Math.max(1, width);
   const result: string[] = [];
   for (const paragraph of clean(value).replaceAll("\r", "").split("\n")) {
     const words = paragraph.split(/\s+/).filter(Boolean);
@@ -123,6 +119,16 @@ function wrapText(value: string, primary: PDFFont, fallback: PDFFont, size: numb
   return result.length ? result : [""];
 }
 
+function fitLine(value: string, primary: PDFFont, fallback: PDFFont, size: number, width: number): string {
+  const cleaned = clean(value);
+  if (textWidth(cleaned, primary, fallback, size) <= width) return cleaned;
+  let output = cleaned;
+  while (output.length > 1 && textWidth(`${output}…`, primary, fallback, size) > width) {
+    output = output.slice(0, -1);
+  }
+  return `${output}…`;
+}
+
 function dateLabel(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -131,6 +137,111 @@ function dateLabel(value: string) {
     timeStyle: "short",
     timeZone: "Asia/Kolkata",
   }).format(date);
+}
+
+function display(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return NOT_PROVIDED;
+  const text = String(value).trim();
+  return text ? String(value) : NOT_PROVIDED;
+}
+
+function displayList(value: readonly string[] | null | undefined): string {
+  return value && value.length > 0 ? value.join("; ") : NOT_PROVIDED;
+}
+
+function displayWithOther(value: string | null | undefined, other: string | null | undefined): string {
+  if (!value) return NOT_PROVIDED;
+  if (value === "Other") return other?.trim() ? `Other — ${other.trim()}` : "Other";
+  return value;
+}
+
+function displayListWithOther(value: readonly string[] | null | undefined, other: string | null | undefined): string {
+  if (!value || value.length === 0) return NOT_PROVIDED;
+  const shown = value.includes("Other") && other?.trim()
+    ? value.map((item) => (item === "Other" ? `Other (${other.trim()})` : item))
+    : value;
+  return shown.join("; ");
+}
+
+interface MemberSection {
+  title: string;
+  fields: { label: string; value: string }[];
+}
+
+function memberSections(row: CommunityMember): MemberSection[] {
+  const sections: MemberSection[] = [
+    {
+      title: "Personal Details",
+      fields: [
+        { label: "Contact Number", value: display(row.contact_number) },
+        { label: "Email Address", value: display(row.email) },
+        { label: "City", value: display(row.city) },
+      ],
+    },
+    {
+      title: "Business / Idea",
+      fields: [
+        { label: "Member Category", value: display(row.member_category) },
+        { label: "Business / Idea Name", value: display(row.business_or_idea_name) },
+        { label: "Industry Sector", value: displayWithOther(row.industry_sector, row.industry_other) },
+        { label: "Current Stage", value: display(row.current_stage) },
+        { label: "Description", value: display(row.description) },
+        { label: "Website URL", value: display(row.website_url) },
+      ],
+    },
+  ];
+  if (row.member_category === "Established Business") {
+    sections.push({
+      title: "Established Business Details",
+      fields: [
+        { label: "Established Year", value: display(row.established_year) },
+        { label: "Business Team Size", value: display(row.business_team_size) },
+        { label: "Business Connections", value: displayListWithOther(row.business_connections, row.business_connections_other) },
+      ],
+    });
+  } else if (row.member_category === "Startup Founder") {
+    sections.push({
+      title: "Startup Details",
+      fields: [
+        { label: "Startup Team Structure", value: display(row.startup_team_structure) },
+        { label: "Startup Support", value: displayListWithOther(row.startup_support, row.startup_support_other) },
+        { label: "Startup Current Focus", value: display(row.startup_current_focus) },
+      ],
+    });
+  } else {
+    sections.push({
+      title: "Idea Stage Details",
+      fields: [
+        { label: "Seeking Co-founder", value: display(row.seeking_cofounder) },
+        { label: "Idea Support", value: displayListWithOther(row.idea_support, row.idea_support_other) },
+        { label: "Idea Problem Statement", value: display(row.idea_problem_statement) },
+      ],
+    });
+  }
+  sections.push(
+    {
+      title: "Community & Support",
+      fields: [
+        { label: "Support Needed", value: displayListWithOther(row.support_needed, row.support_needed_other) },
+        { label: "Biggest Challenge", value: display(row.biggest_challenge) },
+      ],
+    },
+    {
+      title: "Additional Details",
+      fields: [
+        { label: "Discovery Source", value: displayWithOther(row.discovery_source, row.discovery_source_other) },
+        { label: "Preferred Contact Method", value: display(row.preferred_contact_method) },
+      ],
+    },
+    {
+      title: "Submission",
+      fields: [
+        { label: "Submitted On", value: dateLabel(row.created_at) },
+        { label: "Privacy Consent Recorded", value: dateLabel(row.consent_at) },
+      ],
+    },
+  );
+  return sections;
 }
 
 export async function createCommunityDataPdf(
@@ -150,7 +261,7 @@ export async function createCommunityDataPdf(
 
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
-  document.setTitle("CSC Community Member Data Report");
+  document.setTitle("CSC Circle Community Member Information Report");
   document.setAuthor("Coimbatore Startup Community");
   document.setSubject("Private administrative member-onboarding survey report");
   const regular = await document.embedFont(regularBytes, { subset: true });
@@ -163,134 +274,179 @@ export async function createCommunityDataPdf(
     row.full_name,
     row.contact_number,
     row.email,
+    row.city ?? "",
     row.member_category,
     row.business_or_idea_name,
+    row.industry_sector ?? "",
+    row.industry_other ?? "",
+    row.current_stage ?? "",
     row.description,
+    displayList(row.support_needed),
+    row.support_needed_other ?? "",
+    row.biggest_challenge ?? "",
+    row.website_url ?? "",
+    row.discovery_source ?? "",
+    row.discovery_source_other ?? "",
+    row.preferred_contact_method ?? "",
+    String(row.established_year ?? ""),
+    row.business_team_size ?? "",
+    displayList(row.business_connections),
+    row.business_connections_other ?? "",
+    row.startup_team_structure ?? "",
+    displayList(row.startup_support),
+    row.startup_support_other ?? "",
+    row.startup_current_focus ?? "",
+    row.seeking_cofounder ?? "",
+    displayList(row.idea_support),
+    row.idea_support_other ?? "",
+    row.idea_problem_statement ?? "",
   ]);
-  ensureSupported(regular, tamilRegular, [...values, filter.search ?? ""]);
+  ensureSupported(regular, tamilRegular, [
+    ...values,
+    filter.search ?? "",
+    filter.city ?? "",
+    filter.category ?? "",
+    filter.industry ?? "",
+    filter.stage ?? "",
+    filter.support ?? "",
+  ]);
 
   const pages: PDFPage[] = [];
   let page!: PDFPage;
   let y = 0;
 
-  const drawTableHeader = () => {
-    page.drawRectangle({ x: MARGIN, y: y - HEADER_HEIGHT, width: TABLE_WIDTH, height: HEADER_HEIGHT, color: NAVY });
-    let x = MARGIN;
-    for (const column of columns) {
-      page.drawText(column.label, { x: x + CELL_PADDING, y: y - 13, size: 6.5, font: bold, color: WHITE });
-      x += column.width;
-    }
-    y -= HEADER_HEIGHT;
+  const ensureSpace = (needed: number) => {
+    if (y - needed < PAGE_BOTTOM) addPage(false);
   };
 
-  const addPage = (first: boolean) => {
+  const drawBodyLine = (value: string, font: PDFFont, size: number, color: ReturnType<typeof rgb>, x = MARGIN) => {
+    y -= size + 4;
+    drawTextRuns(page, value, font, font === bold ? tamilBold : tamilRegular, { x, y, size, color });
+  };
+
+  const drawWrapped = (value: string, size: number, color: ReturnType<typeof rgb>) => {
+    for (const line of wrapText(value, regular, tamilRegular, size, CONTENT_WIDTH)) {
+      ensureSpace(size + 4);
+      y -= size + 4;
+      drawTextRuns(page, line || " ", regular, tamilRegular, { x: MARGIN, y, size, color });
+    }
+  };
+
+  const drawField = (label: string, value: string) => {
+    const shown = value.trim() ? value : NOT_PROVIDED;
+    const lines = wrapText(shown, regular, tamilRegular, BODY_SIZE, CONTENT_WIDTH);
+    ensureSpace(LABEL_HEIGHT + lines.length * LINE_HEIGHT + FIELD_GAP + 2);
+    y -= LABEL_HEIGHT;
+    page.drawText(label.toUpperCase(), { x: MARGIN, y, size: LABEL_SIZE, font: bold, color: MUTED });
+    for (const line of lines) {
+      y -= LINE_HEIGHT;
+      drawTextRuns(page, line || " ", regular, tamilRegular, { x: MARGIN, y, size: BODY_SIZE, color: NAVY });
+    }
+    y -= FIELD_GAP;
+  };
+
+  const drawSectionTitle = (title: string) => {
+    ensureSpace(HEADING_SIZE + 12);
+    y -= HEADING_SIZE + 6;
+    page.drawText(title.toUpperCase(), { x: MARGIN, y, size: HEADING_SIZE, font: bold, color: PURPLE });
+    y -= 4;
+    page.drawLine({ start: { x: MARGIN, y }, end: { x: MARGIN + CONTENT_WIDTH, y }, thickness: 0.6, color: BORDER });
+    y -= 8;
+  };
+
+  function addPage(first: boolean) {
     page = document.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     pages.push(page);
-    page.drawImage(logo, { x: MARGIN, y: PAGE_HEIGHT - 55, width: 36, height: 36 });
-    page.drawText("Coimbatore Startup Community", { x: 64, y: PAGE_HEIGHT - 34, size: 12, font: bold, color: NAVY });
-    page.drawText("Community Member Data Report", { x: 64, y: PAGE_HEIGHT - 49, size: 9, font: regular, color: PURPLE });
-    page.drawText(first ? "Private administrative report" : "Continued", {
-      x: PAGE_WIDTH - 150,
-      y: PAGE_HEIGHT - 38,
-      size: 7,
+    page.drawImage(logo, { x: MARGIN, y: PAGE_HEIGHT - 62, width: 34, height: 34 });
+    page.drawText("Coimbatore Startup Community", { x: MARGIN + 42, y: PAGE_HEIGHT - 40, size: 11, font: bold, color: NAVY });
+    page.drawText("CSC Circle Community Member Information Report", { x: MARGIN + 42, y: PAGE_HEIGHT - 55, size: 8, font: regular, color: PURPLE });
+    const sideLabel = first ? "Private administrative report" : "Continued";
+    page.drawText(sideLabel, {
+      x: PAGE_WIDTH - MARGIN - regular.widthOfTextAtSize(sideLabel, SMALL_SIZE),
+      y: PAGE_HEIGHT - 44,
+      size: SMALL_SIZE,
       font: bold,
       color: MUTED,
     });
-
+    y = PAGE_HEIGHT - 78;
     if (first) {
       const generated = dateLabel(new Date().toISOString());
-      const category = filter.category ?? "All Members";
-      const search = filter.search ? `Search: ${filter.search}` : "Search: None";
-      page.drawText(`Generated: ${generated}`, { x: MARGIN, y: PAGE_HEIGHT - 76, size: 7.3, font: regular, color: MUTED });
-      page.drawText(`Category: ${category}`, { x: 230, y: PAGE_HEIGHT - 76, size: 7.3, font: regular, color: MUTED });
-      drawTextRuns(page, search, regular, tamilRegular, { x: 430, y: PAGE_HEIGHT - 76, size: 7.3, color: MUTED });
-      page.drawText(`Matching submissions: ${total} · Records included: ${rows.length}`, {
-        x: MARGIN,
-        y: PAGE_HEIGHT - 90,
-        size: 7.3,
-        font: bold,
-        color: NAVY,
+      const filters = [
+        `Category: ${filter.category ?? "All Members"}`,
+        `Search: ${filter.search?.trim() ? filter.search.trim() : "None"}`,
+        `City: ${filter.city?.trim() ? filter.city.trim() : "All Cities"}`,
+        `Industry: ${filter.industry ?? "All Industries"}`,
+        `Stage: ${filter.stage ?? "All Stages"}`,
+        `Support: ${filter.support ?? "Any Support"}`,
+        `Submitted: ${filter.from ?? "…"} to ${filter.to ?? "…"}`,
+      ];
+      drawBodyLine(`Generated: ${generated}`, regular, SMALL_SIZE, MUTED);
+      for (const line of filters) drawBodyLine(line, regular, SMALL_SIZE, MUTED);
+      y -= 2;
+      drawBodyLine(`Matching submissions: ${total} · Records included: ${rows.length}`, bold, SMALL_SIZE + 0.5, NAVY);
+      y -= 8;
+
+      const counts: { label: string; value: number }[] = [
+        { label: "Total submissions", value: rows.length },
+        { label: "Established Business", value: rows.filter((row) => row.member_category === "Established Business").length },
+        { label: "Startup Founder", value: rows.filter((row) => row.member_category === "Startup Founder").length },
+        { label: "Idea Stage", value: rows.filter((row) => row.member_category === "Idea Stage").length },
+      ];
+      drawSectionTitle("Summary");
+      const labelColumn = CONTENT_WIDTH - 110;
+      const rowHeight = 18;
+      ensureSpace(rowHeight * (counts.length + 1) + 8);
+      page.drawRectangle({ x: MARGIN, y: y - rowHeight, width: CONTENT_WIDTH, height: rowHeight, color: NAVY });
+      page.drawText("Category", { x: MARGIN + 8, y: y - 12.5, size: SMALL_SIZE, font: bold, color: WHITE });
+      page.drawText("Submissions", { x: MARGIN + labelColumn + 8, y: y - 12.5, size: SMALL_SIZE, font: bold, color: WHITE });
+      y -= rowHeight;
+      counts.forEach((entry, index) => {
+        const fill = index % 2 === 0 ? WHITE : PALE_PURPLE;
+        page.drawRectangle({ x: MARGIN, y: y - rowHeight, width: CONTENT_WIDTH, height: rowHeight, color: fill, borderColor: BORDER, borderWidth: 0.5 });
+        page.drawText(entry.label, { x: MARGIN + 8, y: y - 12.5, size: SMALL_SIZE, font: index === 0 ? bold : regular, color: NAVY });
+        page.drawText(String(entry.value), { x: MARGIN + labelColumn + 8, y: y - 12.5, size: SMALL_SIZE, font: bold, color: NAVY });
+        y -= rowHeight;
       });
-      y = PAGE_HEIGHT - 103;
-    } else {
-      y = PAGE_HEIGHT - 67;
+      y -= 14;
     }
-    drawTableHeader();
-  };
+  }
 
   addPage(true);
 
-  rows.forEach((row, rowIndex) => {
-    const cellValues = [
-      row.full_name,
-      row.contact_number,
-      row.email,
-      row.member_category,
-      row.business_or_idea_name,
-      row.description,
-      dateLabel(row.created_at),
-    ];
-    const lines = cellValues.map((value, index) => wrapText(value, regular, tamilRegular, FONT_SIZE, columns[index].width));
-    const totalLines = Math.max(...lines.map((cell) => cell.length), 1);
-    let lineOffset = 0;
-
-    while (lineOffset < totalLines) {
-      const availableLines = Math.floor((y - TABLE_BOTTOM - CELL_PADDING * 2) / LINE_HEIGHT);
-      if (availableLines < 1) {
-        addPage(false);
-        continue;
-      }
-      const lineCount = Math.min(totalLines - lineOffset, availableLines);
-      const rowHeight = Math.max(20, lineCount * LINE_HEIGHT + CELL_PADDING * 2);
-      const fill = rowIndex % 2 === 0 ? WHITE : PALE_PURPLE;
-      page.drawRectangle({ x: MARGIN, y: y - rowHeight, width: TABLE_WIDTH, height: rowHeight, color: fill, borderColor: BORDER, borderWidth: 0.5 });
-
-      let x = MARGIN;
-      lines.forEach((cellLines, columnIndex) => {
-        const width = columns[columnIndex].width;
-        if (columnIndex > 0) {
-          page.drawLine({ start: { x, y }, end: { x, y: y - rowHeight }, thickness: 0.4, color: BORDER });
-        }
-        cellLines.slice(lineOffset, lineOffset + lineCount).forEach((line, index) => {
-          drawTextRuns(page, line, columnIndex === 0 && lineOffset === 0 ? bold : regular, columnIndex === 0 && lineOffset === 0 ? tamilBold : tamilRegular, {
-            x: x + CELL_PADDING,
-            y: y - CELL_PADDING - FONT_SIZE - index * LINE_HEIGHT,
-            size: FONT_SIZE,
-            color: NAVY,
-          });
-        });
-        x += width;
-      });
-
-      y -= rowHeight;
-      lineOffset += lineCount;
-      if (lineOffset < totalLines) addPage(false);
-    }
-  });
-
   if (rows.length === 0) {
-    page.drawText("No survey submissions match the selected filters.", {
-      x: MARGIN + 12,
-      y: y - 28,
-      size: 9,
-      font: regular,
-      color: MUTED,
-    });
+    drawWrapped("No survey submissions match the selected filters.", BODY_SIZE + 0.5, MUTED);
   }
+
+  rows.forEach((row, rowIndex) => {
+    ensureSpace(HEADING_BAR_HEIGHT + 30);
+    page.drawRectangle({ x: MARGIN, y: y - HEADING_BAR_HEIGHT, width: CONTENT_WIDTH, height: HEADING_BAR_HEIGHT, color: NAVY });
+    const heading = fitLine(`${rowIndex + 1}. ${row.full_name} — ${row.member_category}`, bold, tamilBold, HEADING_SIZE, CONTENT_WIDTH - 16);
+    drawTextRuns(page, heading, bold, tamilBold, { x: MARGIN + 8, y: y - 15, size: HEADING_SIZE, color: WHITE });
+    y -= HEADING_BAR_HEIGHT + 2;
+    y -= 6;
+    for (const section of memberSections(row)) {
+      drawSectionTitle(section.title);
+      for (const field of section.fields) drawField(field.label, field.value);
+      y -= 4;
+    }
+    y -= 2;
+    page.drawLine({ start: { x: MARGIN, y }, end: { x: MARGIN + CONTENT_WIDTH, y }, thickness: 0.8, color: BORDER });
+    y -= 14;
+  });
 
   pages.forEach((currentPage, index) => {
     const label = `Page ${index + 1} of ${pages.length}`;
     currentPage.drawText(label, {
-      x: PAGE_WIDTH - MARGIN - regular.widthOfTextAtSize(label, 7),
-      y: 14,
-      size: 7,
+      x: PAGE_WIDTH - MARGIN - regular.widthOfTextAtSize(label, SMALL_SIZE),
+      y: 18,
+      size: SMALL_SIZE,
       font: regular,
       color: MUTED,
     });
     currentPage.drawText("Confidential — CSC administrative use only", {
       x: MARGIN,
-      y: 14,
-      size: 7,
+      y: 18,
+      size: SMALL_SIZE,
       font: regular,
       color: MUTED,
     });

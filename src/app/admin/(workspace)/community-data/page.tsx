@@ -36,6 +36,12 @@ export default async function CommunityDataPage({
   const parsed = communityDataFilterSchema.safeParse({
     category: typeof incoming.category === "string" && incoming.category ? incoming.category : undefined,
     search: typeof incoming.search === "string" && incoming.search ? incoming.search : undefined,
+    city: typeof incoming.city === "string" && incoming.city ? incoming.city : undefined,
+    industry: typeof incoming.industry === "string" && incoming.industry ? incoming.industry : undefined,
+    stage: typeof incoming.stage === "string" && incoming.stage ? incoming.stage : undefined,
+    support: typeof incoming.support === "string" && incoming.support ? incoming.support : undefined,
+    from: typeof incoming.from === "string" && incoming.from ? incoming.from : undefined,
+    to: typeof incoming.to === "string" && incoming.to ? incoming.to : undefined,
     sort: typeof incoming.sort === "string" ? incoming.sort : undefined,
     page: typeof incoming.page === "string" ? incoming.page : undefined,
     pageSize: typeof incoming.pageSize === "string" ? incoming.pageSize : undefined,
