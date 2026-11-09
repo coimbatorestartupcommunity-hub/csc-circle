@@ -115,43 +115,112 @@ export type Database = {
       }
       csc_members: {
         Row: {
+          biggest_challenge: string | null
+          business_connections: string[] | null
+          business_connections_other: string | null
           business_or_idea_name: string
+          business_team_size: string | null
+          city: string | null
           consent_at: string
           contact_number: string
           created_at: string
+          current_stage: string | null
           description: string
+          discovery_source: string | null
+          discovery_source_other: string | null
           email: string
+          established_year: number | null
           full_name: string
           id: string
+          idea_problem_statement: string | null
+          idea_support: string[] | null
+          idea_support_other: string | null
+          industry_other: string | null
+          industry_sector: string | null
           member_category: string
+          preferred_contact_method: string | null
+          seeking_cofounder: string | null
+          startup_current_focus: string | null
+          startup_support: string[] | null
+          startup_support_other: string | null
+          startup_team_structure: string | null
           submission_source: string
           submission_token: string
+          support_needed: string[] | null
+          support_needed_other: string | null
+          website_url: string | null
         }
         Insert: {
+          biggest_challenge?: string | null
+          business_connections?: string[] | null
+          business_connections_other?: string | null
           business_or_idea_name: string
+          business_team_size?: string | null
+          city?: string | null
           consent_at?: string
           contact_number: string
           created_at?: string
+          current_stage?: string | null
           description: string
+          discovery_source?: string | null
+          discovery_source_other?: string | null
           email: string
+          established_year?: number | null
           full_name: string
           id?: string
+          idea_problem_statement?: string | null
+          idea_support?: string[] | null
+          idea_support_other?: string | null
+          industry_other?: string | null
+          industry_sector?: string | null
           member_category: string
+          preferred_contact_method?: string | null
+          seeking_cofounder?: string | null
+          startup_current_focus?: string | null
+          startup_support?: string[] | null
+          startup_support_other?: string | null
+          startup_team_structure?: string | null
           submission_source?: string
           submission_token: string
+          support_needed?: string[] | null
+          support_needed_other?: string | null
+          website_url?: string | null
         }
         Update: {
+          biggest_challenge?: string | null
+          business_connections?: string[] | null
+          business_connections_other?: string | null
           business_or_idea_name?: string
+          business_team_size?: string | null
+          city?: string | null
           consent_at?: string
           contact_number?: string
           created_at?: string
+          current_stage?: string | null
           description?: string
+          discovery_source?: string | null
+          discovery_source_other?: string | null
           email?: string
+          established_year?: number | null
           full_name?: string
           id?: string
+          idea_problem_statement?: string | null
+          idea_support?: string[] | null
+          idea_support_other?: string | null
+          industry_other?: string | null
+          industry_sector?: string | null
           member_category?: string
+          preferred_contact_method?: string | null
+          seeking_cofounder?: string | null
+          startup_current_focus?: string | null
+          startup_support?: string[] | null
+          startup_support_other?: string | null
+          startup_team_structure?: string | null
           submission_source?: string
           submission_token?: string
+          support_needed?: string[] | null
+          support_needed_other?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -1611,23 +1680,52 @@ export type Database = {
       csc_list_member_survey_responses: {
         Args: {
           p_category?: string
+          p_city?: string
+          p_from?: string
+          p_industry?: string
           p_limit?: number
           p_offset?: number
           p_search?: string
           p_sort?: string
+          p_stage?: string
+          p_support?: string
+          p_to?: string
         }
         Returns: {
+          biggest_challenge: string | null
+          business_connections: string[] | null
+          business_connections_other: string | null
           business_or_idea_name: string
+          business_team_size: string | null
+          city: string | null
           consent_at: string
           contact_number: string
           created_at: string
+          current_stage: string | null
           description: string
+          discovery_source: string | null
+          discovery_source_other: string | null
           email: string
+          established_year: number | null
           full_name: string
           id: string
+          idea_problem_statement: string | null
+          idea_support: string[] | null
+          idea_support_other: string | null
+          industry_other: string | null
+          industry_sector: string | null
           member_category: string
+          preferred_contact_method: string | null
+          seeking_cofounder: string | null
+          startup_current_focus: string | null
+          startup_support: string[] | null
+          startup_support_other: string | null
+          startup_team_structure: string | null
           submission_source: string
+          support_needed: string[] | null
+          support_needed_other: string | null
           total_count: number
+          website_url: string | null
         }[]
       }
       csc_complete_content: { Args: { content_kind: string; target: string }; Returns: undefined }

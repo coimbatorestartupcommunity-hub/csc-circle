@@ -54,6 +54,12 @@ export async function GET(request: Request): Promise<Response> {
   const parsed = communityDataFilterSchema.safeParse({
     category: url.searchParams.get("category") || undefined,
     search: url.searchParams.get("search") || undefined,
+    city: url.searchParams.get("city") || undefined,
+    industry: url.searchParams.get("industry") || undefined,
+    stage: url.searchParams.get("stage") || undefined,
+    support: url.searchParams.get("support") || undefined,
+    from: url.searchParams.get("from") || undefined,
+    to: url.searchParams.get("to") || undefined,
     sort: url.searchParams.get("sort") || undefined,
     page: 1,
     pageSize: 25,
@@ -87,9 +93,32 @@ export async function GET(request: Request): Promise<Response> {
       + row.full_name.length
       + row.contact_number.length
       + row.email.length
+      + (row.city?.length ?? 0)
       + row.member_category.length
       + row.business_or_idea_name.length
-      + row.description.length, 0);
+      + (row.industry_sector?.length ?? 0)
+      + (row.industry_other?.length ?? 0)
+      + (row.current_stage?.length ?? 0)
+      + row.description.length
+      + (row.support_needed?.join("; ").length ?? 0)
+      + (row.support_needed_other?.length ?? 0)
+      + (row.biggest_challenge?.length ?? 0)
+      + (row.website_url?.length ?? 0)
+      + (row.discovery_source?.length ?? 0)
+      + (row.discovery_source_other?.length ?? 0)
+      + (row.preferred_contact_method?.length ?? 0)
+      + String(row.established_year ?? "").length
+      + (row.business_team_size?.length ?? 0)
+      + (row.business_connections?.join("; ").length ?? 0)
+      + (row.business_connections_other?.length ?? 0)
+      + (row.startup_team_structure?.length ?? 0)
+      + (row.startup_support?.join("; ").length ?? 0)
+      + (row.startup_support_other?.length ?? 0)
+      + (row.startup_current_focus?.length ?? 0)
+      + (row.seeking_cofounder?.length ?? 0)
+      + (row.idea_support?.join("; ").length ?? 0)
+      + (row.idea_support_other?.length ?? 0)
+      + (row.idea_problem_statement?.length ?? 0), 0);
     if (textCharacters > MAX_PDF_TEXT_CHARACTERS) {
       return Response.json(
         { error: "This PDF contains too much text for a direct report. Narrow the active filters and try again." },
