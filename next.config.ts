@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingIncludes: {
     "/api/member/resume/pdf": ["./node_modules/dejavu-fonts-ttf/ttf/DejaVuSans*.ttf"],
+    "/api/admin/community-data/export": [
+      "./node_modules/dejavu-fonts-ttf/ttf/DejaVuSans*.ttf",
+      "./node_modules/@fontsource/noto-sans-tamil/files/noto-sans-tamil-tamil-*.woff2",
+      "./public/brand/csc-logo.png",
+    ],
   },
   async headers() {
     return [

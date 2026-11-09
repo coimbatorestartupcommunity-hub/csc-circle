@@ -16,7 +16,7 @@ export default function SecurityPage() {
       <PageHero eyebrow="Trust and safety" title="Security at CSC Circle" />
       <section className="py-14">
         <Container className="mx-auto flex max-w-2xl flex-col gap-4 text-brand-secondary">
-          <p className="text-sm text-brand-muted">Last updated October 20, 2026.</p>
+          <p className="text-sm text-brand-muted">Last updated November 9, 2026.</p>
           <p>
             CSC Circle works to protect community accounts and information through
             safeguards appropriate to the service. Security is an ongoing
@@ -31,6 +31,14 @@ export default function SecurityPage() {
             access rules for the relevant records. Administrative changes are
             designed to be auditable. Credentials and server-only configuration
             are not intended to be exposed in the public website.
+          </p>
+          <p>
+            Unlisted public forms are treated as public entry points, not as
+            secrets. Survey submissions are validated and rate limited on the
+            server, stored in a private Row-Level Security protected table, and
+            available only to provisioned administrators with the required
+            permission. Survey exports are generated on demand and are not
+            published to public storage.
           </p>
           <h2 className="text-lg font-semibold text-brand-ink">Use your account safely</h2>
           <ul className="list-disc space-y-2 pl-5">

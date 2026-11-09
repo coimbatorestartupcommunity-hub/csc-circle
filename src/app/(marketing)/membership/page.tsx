@@ -68,6 +68,10 @@ export default function MembershipPage() {
               services — a member profile, a digital membership card, the founder directory, and event registration.
               Membership is reviewed and approved by CSC administrators so the community stays trusted and authentic.
             </p>
+            <p className="rounded-xl bg-brand-cloud p-4 text-sm leading-relaxed text-brand-secondary">
+              A CSC member-information survey is not a membership application. Survey responses help the team understand
+              the community, but they do not create an account, change membership status, or issue a membership card.
+            </p>
           </div>
 
           <div className="flex flex-col gap-3">

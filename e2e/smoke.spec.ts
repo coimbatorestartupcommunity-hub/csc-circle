@@ -11,7 +11,7 @@ for (const route of ["/member/profile", "/member/startups", "/member/resume", "/
   });
 }
 
-for (const route of ["/", "/about", "/directory", "/collaborations", "/members", "/admin/accept-invitation"]) {
+for (const route of ["/", "/about", "/directory", "/collaborations", "/members", "/admin/accept-invitation", "/survey/member-onboarding"]) {
   test(`${route} is available without an authenticated session`, async ({ page }) => {
     const response = await page.goto(route);
     expect(response?.status()).toBe(200);
@@ -80,8 +80,31 @@ test("unauthorized admin APIs and recovery are denied", async ({ request }) => {
   expect(await response.json()).toEqual({ ok: false });
   const attendanceExport = await request.get("/api/admin/attendance/export");
   expect(attendanceExport.status()).toBe(403);
+  const communityDataExport = await request.get("/api/admin/community-data/export?format=csv");
+  expect(communityDataExport.status()).toBe(404);
   const eventSurfaces = await request.post("/api/admin/events/00000000-0000-4000-8000-000000000001/publish-surfaces", { data: { publicationConsent: true } });
   expect(eventSurfaces.status()).toBe(403);
+});
+
+test("member survey is complete, unindexed and responsive at required viewports", async ({ page }) => {
+  const widths = [320, 360, 375, 390, 414, 430, 768, 1024, 1440];
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/survey/member-onboarding");
+    await expect(page.getByRole("heading", { name: "CSC Circle — Member Information Form" })).toBeVisible();
+    await expect(page.getByLabel("Full Name")).toBeVisible();
+    await expect(page.getByLabel("Contact Number")).toHaveAttribute("type", "tel");
+    await expect(page.getByLabel("Email Address")).toHaveAttribute("type", "email");
+    await expect(page.getByLabel("Which category best describes you?")).toBeVisible();
+    await expect(page.getByLabel("Business, Startup, or Idea Name")).toBeVisible();
+    await expect(page.getByLabel("Tell Us About Your Business or Idea")).toBeVisible();
+    await expect(page.getByLabel(/I understand that Coimbatore Startup Community/)).not.toBeChecked();
+    await expect(page.getByRole("button", { name: "Submit Information" })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  }
+  const robots = await page.locator('meta[name="robots"]').getAttribute("content");
+  expect(robots).toContain("noindex");
+  expect(robots).toContain("nofollow");
 });
 
 for (const width of [320, 360, 375, 390, 430, 768, 820, 1024, 1280, 1440, 1920]) {

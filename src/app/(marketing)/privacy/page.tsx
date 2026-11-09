@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       <PageHero eyebrow="Legal" title="Privacy Policy" />
       <section className="py-14">
         <Container className="mx-auto flex max-w-2xl flex-col gap-4 text-brand-secondary">
-          <p className="text-sm text-brand-muted">Last updated October 20, 2026.</p>
+          <p className="text-sm text-brand-muted">Last updated November 9, 2026.</p>
           <p>
             Coimbatore Startup Community (CSC) operates CSC Circle to support
             community membership, startup discovery, events, consultations,
@@ -28,7 +28,8 @@ export default function PrivacyPage() {
             Depending on the service you use, this can include account and
             profile details, contact information, startup and membership
             application information, event registrations, consultation
-            requests, reviews, consent choices, and basic operational records
+            requests, reviews, voluntary member-information survey responses,
+            consent choices, and basic operational records
             needed to protect the platform. Google sign-in returns account
             identifiers and profile information allowed by the permissions you
             approve. Do not submit passwords, payment card details, or unrelated
@@ -39,7 +40,12 @@ export default function PrivacyPage() {
             CSC uses information to authenticate accounts, review membership
             claims, manage event registrations and attendance, respond to
             consultations, moderate reviews, provide requested notifications,
-            and secure and maintain the service. Selected profile, startup, or
+            understand the businesses, startups, and ideas represented in the
+            CSC community, communicate about relevant community activities,
+            and secure and maintain the service. Completing a member-information
+            survey does not create a CSC membership account and does not
+            guarantee funding, partnership, opportunities, or membership
+            approval. Selected profile, startup, or
             review details are shown publicly only where the relevant feature
             and your visibility choices permit it. Operational messages may be
             sent when needed to complete a request or communicate an account or
@@ -53,7 +59,10 @@ export default function PrivacyPage() {
             to provide their services. CSC retains records for as long as they
             are needed to operate the community, meet legitimate recordkeeping
             needs, resolve disputes, and protect the service, subject to
-            applicable law.
+            applicable law. Survey contact details are retained only while they
+            remain necessary for community review and follow-up, and are
+            periodically reviewed for deletion or anonymisation when that
+            purpose no longer applies.
           </p>
           <h2 className="text-lg font-semibold text-brand-ink">Your control</h2>
           <p>

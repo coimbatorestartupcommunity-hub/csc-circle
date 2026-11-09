@@ -60,6 +60,7 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
     heading: "Community",
     items: [
       { href: "/admin/members", label: "Members", icon: Users, perm: "members.read" },
+      { href: "/admin/community-data", label: "Community Data", icon: ClipboardList, perm: "members.read" },
       { href: "/admin/membership-claims", label: "Claims", icon: FileCheck, perm: "members.approve" },
       { href: "/admin/startups", label: "Startups", icon: Building2, perm: "directory.manage" },
       { href: "/admin/startups/revisions", label: "Startup Revisions", icon: FileCheck, perm: "directory.manage" },

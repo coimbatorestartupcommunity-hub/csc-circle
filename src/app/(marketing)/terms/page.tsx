@@ -16,7 +16,7 @@ export default function TermsPage() {
       <PageHero eyebrow="Legal" title="Terms of Use" />
       <section className="py-14">
         <Container className="prose-brand mx-auto flex max-w-2xl flex-col gap-4 text-brand-secondary">
-          <p className="text-sm text-brand-muted">Last updated October 20, 2026.</p>
+          <p className="text-sm text-brand-muted">Last updated November 9, 2026.</p>
           <p>
             These Terms and Conditions govern your use of CSC Circle, operated
             by Coimbatore Startup Community (CSC). By using the website or
@@ -39,6 +39,15 @@ export default function TermsPage() {
             revoked for material violations of these terms, unsafe conduct, or
             misuse of community services. Creating a website account does not
             itself grant CSC membership or an active membership credential.
+          </p>
+          <h2 className="text-lg font-semibold text-brand-ink">Information surveys</h2>
+          <p>
+            CSC may invite people to provide basic contact, business, startup,
+            or idea information through an unlisted survey. A survey response is
+            reviewed separately from the CSC membership process. It does not
+            create an account, approve membership, or promise funding,
+            partnership, introductions, participation, or any other outcome.
+            Submit only accurate information that you are authorised to share.
           </p>
           <h2 className="text-lg font-semibold text-brand-ink">Submissions and community conduct</h2>
           <p>

@@ -29,11 +29,13 @@ const faq: { category: string; items: { q: string; a: React.ReactNode }[] }[] = 
   {
     category: "Account & membership",
     items: [
+      { q: "Is the member information survey a membership application?", a: "No. The unlisted member information survey is a separate community data-collection form. Submitting it does not create an account, approve membership, issue a membership card, or guarantee an opportunity. To apply for CSC membership, use the normal account and membership flow." },
       { q: "How do I create an account?", a: <>Choose <Link href="/signup" className="font-semibold text-brand-accent underline underline-offset-2">Join the Community</Link>, sign up with a verified email account, then complete your membership details.</> },
       { q: "Why is my membership application pending?", a: "Membership applications are reviewed by CSC administrators. A pending status means your application has been received and is awaiting review. You can check its current status any time by signing in." },
       { q: "How do I update my profile?", a: "Sign in and open your member profile, where you can keep your details current. Some changes may be reviewed before they appear publicly." },
       { q: "When does my membership card become available?", a: "A digital membership card becomes available after your membership is approved by CSC administrators. You can view and download it from your account once it is issued." },
       { q: "What should I do if my account information is incorrect?", a: <>Update it from your profile where possible. If something cannot be corrected, email <a href={`mailto:${email}`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a> with the details.</> },
+      { q: "How do I correct or delete information submitted through a survey?", a: <>Email <a href={`mailto:${email}?subject=CSC%20survey%20data%20request`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a> from the address used in the submission. CSC may ask for reasonable identity verification before correcting or deleting private contact information, subject to applicable recordkeeping requirements.</> },
     ],
   },
   {

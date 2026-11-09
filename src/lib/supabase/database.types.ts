@@ -113,6 +113,48 @@ export type Database = {
         }
         Relationships: []
       }
+      csc_members: {
+        Row: {
+          business_or_idea_name: string
+          consent_at: string
+          contact_number: string
+          created_at: string
+          description: string
+          email: string
+          full_name: string
+          id: string
+          member_category: string
+          submission_source: string
+          submission_token: string
+        }
+        Insert: {
+          business_or_idea_name: string
+          consent_at?: string
+          contact_number: string
+          created_at?: string
+          description: string
+          email: string
+          full_name: string
+          id?: string
+          member_category: string
+          submission_source?: string
+          submission_token: string
+        }
+        Update: {
+          business_or_idea_name?: string
+          consent_at?: string
+          contact_number?: string
+          created_at?: string
+          description?: string
+          email?: string
+          full_name?: string
+          id?: string
+          member_category?: string
+          submission_source?: string
+          submission_token?: string
+        }
+        Relationships: []
+      }
       collaboration_media: {
         Row: {
           alt_text: string | null
@@ -1566,6 +1608,28 @@ export type Database = {
       csc_release_payment_worker_lease: { Args: { p_lease_holder: string; p_status?: string; p_message_count?: number; p_matched_count?: number; p_last_uid?: number | null; p_error?: string | null; p_uid_validity?: number | null; p_mailbox_name?: string | null }; Returns: boolean }
       csc_fulfill_confirmed_payment: { Args: { p_order_id: string; p_evidence_id: string; p_matched_by?: string; p_notes?: string | null; p_user_id?: string | null }; Returns: Json }
       csc_check_rate_limit: { Args: { p_scope: string; p_key: string; p_limit: number; p_window_seconds: number }; Returns: Json }
+      csc_list_member_survey_responses: {
+        Args: {
+          p_category?: string | null
+          p_limit?: number
+          p_offset?: number
+          p_search?: string | null
+          p_sort?: string
+        }
+        Returns: {
+          business_or_idea_name: string
+          consent_at: string
+          contact_number: string
+          created_at: string
+          description: string
+          email: string
+          full_name: string
+          id: string
+          member_category: string
+          submission_source: string
+          total_count: number
+        }[]
+      }
       csc_complete_content: { Args: { content_kind: string; target: string }; Returns: undefined }
       csc_schedule_event_review_requests: { Args: Record<string, never>; Returns: number }
       get_member_resume: { Args: never; Returns: Json }
