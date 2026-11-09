@@ -35,6 +35,13 @@ export const resourceSaveSchema = z.object({
   summary: optionalText(400),
   description: optionalText(8000),
   tags: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
+  language: optionalText(60),
+  pageCount: z.number().int().min(1).max(100000).optional().nullable(),
+  publicationDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")).transform((v) => (v ? v : null)),
+  topics: z.array(z.object({
+    title: z.string().trim().min(1).max(120),
+    body: z.string().trim().min(1).max(2000),
+  })).max(12).default([]),
   audience: optionalText(200),
   coverImagePath: mediaPath,
   documentPath: mediaPath,

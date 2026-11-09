@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CommunityUpdateSaveValues, ResourceSaveValues, OpportunitySaveValues } from "@/lib/validations/cms";
 import type { CommunityUpdateRecord, OpportunityRecord, ResourceRecord, UpdateGalleryImage } from "@/types/cms";
+import { mapResourceTopics } from "@/types/cms";
 
 type Row = Record<string, unknown>;
 type Action = "publish" | "unpublish" | "archive" | "delete";
@@ -37,7 +38,9 @@ async function audit(action: string, actorId: string | null, targetType: string,
 function resourceRow(v: ResourceSaveValues, userId: string) {
   return {
     slug: v.slug, title: v.title, category: v.category, resource_type: v.resourceType,
-    summary: v.summary, description: v.description, tags: v.tags, audience: v.audience,
+    summary: v.summary, description: v.description, tags: v.tags,
+    language: v.language, page_count: v.pageCount ?? null, publication_date: v.publicationDate, topics: v.topics,
+    audience: v.audience,
     cover_image_path: v.coverImagePath, document_path: v.documentPath, document_filename: v.documentFilename,
     document_mime: v.documentMime, document_size: v.documentSize ?? null, external_url: v.externalUrl,
     source_name: v.sourceName, source_organization: v.sourceOrganization, source_url: v.sourceUrl,
@@ -288,7 +291,10 @@ function mapResourceAdmin(r: Row): ResourceRecord {
   return {
     id: String(r.id), slug: String(r.slug), title: String(r.title ?? ""), category: String(r.category ?? ""),
     resourceType: (s(r.resource_type) as ResourceRecord["resourceType"]) ?? "document", summary: s(r.summary), description: s(r.description),
-    tags: Array.isArray(r.tags) ? (r.tags as string[]) : [], audience: s(r.audience), coverImagePath: s(r.cover_image_path),
+    tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
+    language: s(r.language), pageCount: typeof r.page_count === "number" ? r.page_count : null,
+    publicationDate: s(r.publication_date), topics: mapResourceTopics(r.topics),
+    audience: s(r.audience), coverImagePath: s(r.cover_image_path),
     documentPath: s(r.document_path), documentFilename: s(r.document_filename), documentMime: s(r.document_mime),
     documentSize: typeof r.document_size === "number" ? r.document_size : null, externalUrl: s(r.external_url),
     sourceName: s(r.source_name), sourceOrganization: s(r.source_organization), sourceUrl: s(r.source_url), author: s(r.author),

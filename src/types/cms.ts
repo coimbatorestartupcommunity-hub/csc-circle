@@ -61,6 +61,19 @@ export interface CommunityUpdateRecord {
   updatedAt: string | null;
 }
 
+export interface ResourceTopic {
+  title: string;
+  body: string;
+}
+
+/** Defensive parse for the resources.topics JSONB column (malformed entries are dropped). */
+export function mapResourceTopics(value: unknown): ResourceTopic[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+    .filter((item) => typeof item.title === "string" && item.title.trim() && typeof item.body === "string" && item.body.trim())
+    .map((item) => ({ title: String(item.title), body: String(item.body) }));
+}
+
 export interface ResourceRecord {
   id: string;
   slug: string;
@@ -70,6 +83,10 @@ export interface ResourceRecord {
   summary: string | null;
   description: string | null;
   tags: string[];
+  language: string | null;
+  pageCount: number | null;
+  publicationDate: string | null;
+  topics: ResourceTopic[];
   audience: string | null;
   coverImagePath: string | null;
   documentPath: string | null;

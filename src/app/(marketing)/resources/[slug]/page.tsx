@@ -1,23 +1,69 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Download, ExternalLink } from "lucide-react";
-import { PageHero } from "@/components/common/page-hero";
+import { Download, ExternalLink } from "lucide-react";
 import { Container } from "@/components/common/container";
 import { CtaLink } from "@/components/common/cta-link";
-import { getPublishedResource, cmsImageUrl } from "@/lib/services/cms-public";
+import { ResourceContentRenderer, ResourceSectionHeading } from "@/components/cms/resource-content-renderer";
+import {
+  RelatedResources,
+  ResourceAttribution,
+  ResourceBackLink,
+  ResourceHero,
+  ResourceInfoPanel,
+  ResourceTags,
+  ResourceTopics,
+} from "@/components/cms/resource-detail";
+import { getPublishedResource, listPublishedResources, cmsImageUrl } from "@/lib/services/cms-public";
+import { siteConfig } from "@/lib/content/site";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const r = await getPublishedResource(slug);
   if (!r) return { title: "Resource", robots: { index: false, follow: false } };
+  const cover = cmsImageUrl(r.coverImagePath);
+  const absoluteCover = cover ? `${siteConfig.url}${cover}` : null;
+  const description = r.metaDescription || r.summary || undefined;
   return {
     title: r.seoTitle || r.title,
-    description: r.metaDescription || r.summary || undefined,
+    description,
     alternates: { canonical: `/resources/${r.slug}` },
-    openGraph: { title: r.title, description: r.summary || undefined, url: `/resources/${r.slug}` },
+    openGraph: {
+      title: r.title,
+      description,
+      url: `/resources/${r.slug}`,
+      type: "article",
+      ...(absoluteCover ? { images: [{ url: absoluteCover, alt: r.title }] } : {}),
+      ...(r.publicationDate ? { publishedTime: r.publicationDate } : {}),
+    },
+    twitter: {
+      card: absoluteCover ? "summary_large_image" : "summary",
+      title: r.title,
+      description,
+      ...(absoluteCover ? { images: [absoluteCover] } : {}),
+    },
+  };
+}
+
+function structuredData(r: NonNullable<Awaited<ReturnType<typeof getPublishedResource>>>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: r.title,
+    description: r.summary || undefined,
+    url: `${siteConfig.url}/resources/${r.slug}`,
+    inLanguage: r.language || undefined,
+    datePublished: r.publicationDate || r.publishedAt || undefined,
+    dateModified: r.updatedAt || undefined,
+    author: r.author || r.sourceOrganization
+      ? { "@type": "Organization", name: r.author || r.sourceOrganization }
+      : undefined,
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.legalName,
+      url: siteConfig.url,
+    },
   };
 }
 
@@ -27,51 +73,88 @@ async function ResourceDetailContent({ params }: { params: Promise<{ slug: strin
   if (!r) notFound();
   const cover = cmsImageUrl(r.coverImagePath);
   const hasDownload = r.resourceType !== "link" && !!r.documentPath;
+  const isExternal = (r.resourceType === "link" || r.resourceType === "video") && !!r.externalUrl;
+  const all = await listPublishedResources();
+  const related = (all ?? [])
+    .filter((item) => item.slug !== r.slug && item.category === r.category)
+    .slice(0, 2);
+  const fallback = related.length < 2
+    ? (all ?? []).filter((item) => item.slug !== r.slug && item.category !== r.category).slice(0, 2 - related.length)
+    : [];
 
   return (
     <>
-      <PageHero eyebrow={r.category} title={r.title} description={r.summary || undefined} />
-      <section className="py-14">
-        <Container className="mx-auto flex max-w-3xl flex-col gap-6">
-          <Link href="/resources" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-accent"><ArrowLeft className="size-4" /> Back to resources</Link>
-          {cover ? (
-            <div className="relative aspect-[5/3] w-full overflow-hidden rounded-2xl bg-brand-cloud ring-1 ring-brand-border">
-              <Image src={cover} alt={r.title} fill unoptimized sizes="(max-width: 768px) 100vw, 768px" className="object-cover" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData(r)) }}
+      />
+      <section className="border-b border-brand-border bg-brand-white">
+        <Container className="mx-auto max-w-3xl py-14 sm:py-16">
+          <ResourceHero resource={r} />
+        </Container>
+      </section>
+      <section className="bg-brand-white py-12 sm:py-14">
+        <Container className="mx-auto flex max-w-5xl flex-col gap-8">
+          <ResourceBackLink />
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="flex min-w-0 flex-col gap-10">
+              {cover ? (
+                <figure className="overflow-hidden rounded-2xl bg-brand-cloud ring-1 ring-brand-border">
+                  <div className="relative aspect-[5/3] w-full">
+                    <Image
+                      src={cover}
+                      alt={`${r.title} cover`}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 1024px) 100vw, 640px"
+                      className="object-contain"
+                      priority
+                    />
+                  </div>
+                </figure>
+              ) : null}
+              {(hasDownload || isExternal) && (
+                <div className="flex flex-wrap gap-3">
+                  {hasDownload ? (
+                    <CtaLink href={`/api/resources/${r.slug}/download`} size="md" arrow={false}>
+                      <Download className="size-4" aria-hidden /> Download {r.documentFilename ? "PDF" : "resource"}
+                    </CtaLink>
+                  ) : null}
+                  {isExternal && r.externalUrl ? (
+                    <a
+                      href={r.externalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-brand-ink px-5 text-sm font-medium text-brand-white hover:bg-brand-accent h-10"
+                    >
+                      Open resource <ExternalLink className="size-4" aria-hidden />
+                    </a>
+                  ) : null}
+                </div>
+              )}
+              {r.description ? (
+                <section aria-labelledby="resource-about" className="flex flex-col gap-4">
+                  <ResourceSectionHeading>
+                    <span id="resource-about">About This Resource</span>
+                  </ResourceSectionHeading>
+                  <ResourceContentRenderer content={r.description} />
+                </section>
+              ) : null}
+              <ResourceTopics topics={r.topics} />
+              {r.audience ? (
+                <section aria-labelledby="resource-audience" className="flex flex-col gap-3">
+                  <ResourceSectionHeading>
+                    <span id="resource-audience">Who Should Read This?</span>
+                  </ResourceSectionHeading>
+                  <p className="whitespace-pre-line text-[16px] leading-[1.8] text-brand-secondary">{r.audience}</p>
+                </section>
+              ) : null}
+              <ResourceTags tags={r.tags} />
+              <ResourceAttribution resource={r} />
             </div>
-          ) : null}
-          {r.description ? <div className="whitespace-pre-line text-sm leading-relaxed text-brand-secondary">{r.description}</div> : null}
-          {r.audience ? <p className="text-sm text-brand-secondary"><span className="font-semibold text-brand-ink">Who it is for: </span>{r.audience}</p> : null}
-          {r.tags.length ? (
-            <ul aria-label="Tags" className="flex flex-wrap gap-2">
-              {r.tags.map((tag) => (
-                <li key={tag} className="rounded-full bg-brand-cloud px-3 py-1 text-xs font-semibold text-brand-secondary ring-1 ring-brand-border">{tag}</li>
-              ))}
-            </ul>
-          ) : null}
-
-          <div className="flex flex-wrap gap-3">
-            {hasDownload ? (
-              <CtaLink href={`/api/resources/${r.slug}/download`} size="md" arrow={false}><Download className="size-4" /> Download</CtaLink>
-            ) : null}
-          {(r.resourceType === "link" || r.resourceType === "video") && r.externalUrl ? (
-              <a href={r.externalUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-xl bg-brand-ink px-5 py-2.5 text-sm font-semibold text-brand-white hover:bg-brand-accent">
-                Open resource <ExternalLink className="size-4" />
-              </a>
-            ) : null}
+            <ResourceInfoPanel resource={r} />
           </div>
-
-          {(r.sourceOrganization || r.sourceName || r.author || r.attribution || r.license) ? (
-            <div className="rounded-2xl bg-brand-cloud p-5 text-sm text-brand-secondary">
-              <p className="text-xs font-semibold uppercase tracking-wide text-brand-muted">Source &amp; attribution</p>
-              <dl className="mt-2 flex flex-col gap-1">
-                {r.sourceOrganization ? <div><dt className="inline font-semibold text-brand-ink">Organization: </dt><dd className="inline">{r.sourceOrganization}</dd></div> : null}
-                {r.author ? <div><dt className="inline font-semibold text-brand-ink">Author: </dt><dd className="inline">{r.author}</dd></div> : null}
-                {r.sourceUrl ? <div><dt className="inline font-semibold text-brand-ink">Source: </dt><dd className="inline"><a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-brand-accent underline underline-offset-2 break-words">{r.sourceUrl}</a></dd></div> : null}
-                {r.license ? <div><dt className="inline font-semibold text-brand-ink">License: </dt><dd className="inline">{r.license}</dd></div> : null}
-                {r.attribution ? <p className="mt-1">{r.attribution}</p> : null}
-              </dl>
-            </div>
-          ) : null}
+          <RelatedResources resources={[...related, ...fallback]} />
         </Container>
       </section>
     </>
