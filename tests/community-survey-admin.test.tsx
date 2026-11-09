@@ -138,6 +138,17 @@ describe("community data admin dashboard", () => {
     expect(target).toContain("to=2026-11-09");
   });
 
+  it("renders one vertical card per row that opens the same drawer", async () => {
+    renderDashboard();
+    const card = screen.getByRole("button", { name: "View details for Startup Member" });
+    expect(within(card).getByText("Startup Member")).toBeInTheDocument();
+    expect(within(card).getByText("startup@example.test")).toBeInTheDocument();
+    expect(within(card).getByText(/Coimbatore/)).toBeInTheDocument();
+    fireEvent.click(card);
+    const drawer = await screen.findByRole("dialog");
+    expect(within(drawer).getByText("Personal Information")).toBeInTheDocument();
+  });
+
   it("opens a sectioned detail drawer with history-safe fallbacks", async () => {
     renderDashboard();
     fireEvent.click(screen.getByRole("button", { name: "Startup Member" }));

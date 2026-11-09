@@ -162,6 +162,38 @@ function CategorySpecificFields({ row }: { row: CommunityMember }) {
 
 const selectClass = "h-10 w-full min-w-0 rounded-lg border border-brand-border bg-white px-3 text-sm text-brand-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50";
 
+/**
+ * Vertical card for small screens: every column of the desktop table stacked
+ * so the page scrolls vertically and no information hides behind a
+ * horizontal scroll. Long values wrap; the full record opens in the drawer.
+ */
+function MemberCard({ row, onSelect }: { row: CommunityMember; onSelect: (row: CommunityMember) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(row)}
+      aria-label={`View details for ${row.full_name}`}
+      className="flex w-full min-w-0 flex-col gap-1.5 rounded-2xl border border-brand-border bg-white p-4 text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent"
+    >
+      <span className="flex items-start justify-between gap-2">
+        <span className="min-w-0 text-base font-bold break-words text-brand-ink">{row.full_name}</span>
+        <span className="inline-flex shrink-0 rounded-full bg-brand-purple/50 px-2.5 py-1 text-xs font-medium text-brand-ink">{row.member_category}</span>
+      </span>
+      <span className="text-sm break-all text-brand-secondary">{row.email}</span>
+      <span className="text-sm break-words text-brand-secondary">{[row.contact_number, text(row.city)].filter((part) => part !== NOT_PROVIDED).join(" · ") || NOT_PROVIDED}</span>
+      <span className="text-sm break-words text-brand-ink"><span className="font-semibold">Business / Idea: </span>{row.business_or_idea_name}</span>
+      <span className="text-sm break-words text-brand-secondary"><span className="font-semibold text-brand-ink">Industry: </span>{text(row.industry_sector)}</span>
+      <span className="text-sm break-words text-brand-secondary"><span className="font-semibold text-brand-ink">Stage: </span>{text(row.current_stage)}</span>
+      <span className="text-sm break-words text-brand-secondary"><span className="font-semibold text-brand-ink">Support: </span>{list(row.support_needed)}</span>
+      <span className="line-clamp-3 text-sm leading-5 break-words text-brand-secondary">{row.description}</span>
+      <span className="flex items-center justify-between gap-2 pt-1 text-xs text-brand-muted">
+        <span>Submitted {displayDate(row.created_at)}</span>
+        <span className="inline-flex items-center gap-1 font-semibold text-brand-accent">View full details<ChevronRight className="size-4" aria-hidden /></span>
+      </span>
+    </button>
+  );
+}
+
 export function CommunityDataDashboard({
   initialFilter,
   page,
@@ -320,7 +352,14 @@ export function CommunityDataDashboard({
         ) : null}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm">
+      <div className="flex flex-col gap-3 md:hidden">
+        {page.rows.map((row) => (
+          <MemberCard key={row.id} row={row} onSelect={setSelected} />
+        ))}
+        {page.rows.length === 0 ? <p className="rounded-2xl border border-brand-border bg-white px-4 py-14 text-center text-sm text-brand-muted">No survey submissions match the selected filters.</p> : null}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm md:block">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1500px] border-collapse text-left text-sm">
             <caption className="sr-only">Private CSC Circle member onboarding survey submissions</caption>
