@@ -3,6 +3,7 @@ import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { connection } from "next/server";
 import type { CommunityUpdateRecord, OpportunityRecord, ResourceRecord, UpdateGalleryImage } from "@/types/cms";
+import { cachedPublic } from "@/lib/redis/cache";
 
 /** Anon client WITHOUT the generated Database generic so the new CMS tables are
  *  queryable before types are regenerated. RLS restricts anon reads to published. */
@@ -96,49 +97,57 @@ function mapOpportunity(r: Row): OpportunityRecord {
 
 export async function listPublishedResources(): Promise<ResourceRecord[] | null> {
   await connection();
-  const db = anon();
-  if (!db) return null;
-  try {
-    const { data, error } = await db.from("resources").select(RESOURCE_PUBLIC_FIELDS).eq("publication_status", "published").order("published_at", { ascending: false }).limit(60);
-    if (error || !data) return null;
-    return (data as Row[]).map(mapResource);
-  } catch { return null; }
+  return cachedPublic("resources", "list", async () => {
+    const db = anon();
+    if (!db) return null;
+    try {
+      const { data, error } = await db.from("resources").select(RESOURCE_PUBLIC_FIELDS).eq("publication_status", "published").order("published_at", { ascending: false }).limit(60);
+      if (error || !data) return null;
+      return (data as Row[]).map(mapResource);
+    } catch { return null; }
+  });
 }
 
 export async function getPublishedResource(slug: string): Promise<ResourceRecord | null> {
   await connection();
-  const db = anon();
-  if (!db) return null;
-  try {
-    const { data, error } = await db.from("resources").select(RESOURCE_PUBLIC_FIELDS).eq("slug", slug).eq("publication_status", "published").maybeSingle();
-    if (error || !data) return null;
-    return mapResource(data as Row);
-  } catch { return null; }
+  return cachedPublic("resources", slug, async () => {
+    const db = anon();
+    if (!db) return null;
+    try {
+      const { data, error } = await db.from("resources").select(RESOURCE_PUBLIC_FIELDS).eq("slug", slug).eq("publication_status", "published").maybeSingle();
+      if (error || !data) return null;
+      return mapResource(data as Row);
+    } catch { return null; }
+  });
 }
 
 /** Published and not past its deadline (expired opportunities are not "active"). */
 export async function listPublishedOpportunities(): Promise<OpportunityRecord[] | null> {
   await connection();
-  const db = anon();
-  if (!db) return null;
-  try {
-    const today = indiaToday();
-    const { data, error } = await db.from("opportunities").select(OPPORTUNITY_PUBLIC_FIELDS).eq("publication_status", "published").or(`deadline.is.null,deadline.gte.${today}`).order("deadline", { ascending: true, nullsFirst: false }).limit(60);
-    if (error || !data) return null;
-    return (data as Row[]).map(mapOpportunity);
-  } catch { return null; }
+  return cachedPublic("opportunities", "list", async () => {
+    const db = anon();
+    if (!db) return null;
+    try {
+      const today = indiaToday();
+      const { data, error } = await db.from("opportunities").select(OPPORTUNITY_PUBLIC_FIELDS).eq("publication_status", "published").or(`deadline.is.null,deadline.gte.${today}`).order("deadline", { ascending: true, nullsFirst: false }).limit(60);
+      if (error || !data) return null;
+      return (data as Row[]).map(mapOpportunity);
+    } catch { return null; }
+  });
 }
 
 export async function getPublishedOpportunity(slug: string): Promise<OpportunityRecord | null> {
   await connection();
-  const db = anon();
-  if (!db) return null;
-  try {
-    const today = indiaToday();
-    const { data, error } = await db.from("opportunities").select(OPPORTUNITY_PUBLIC_FIELDS).eq("slug", slug).eq("publication_status", "published").or(`deadline.is.null,deadline.gte.${today}`).maybeSingle();
-    if (error || !data) return null;
-    return mapOpportunity(data as Row);
-  } catch { return null; }
+  return cachedPublic("opportunities", slug, async () => {
+    const db = anon();
+    if (!db) return null;
+    try {
+      const today = indiaToday();
+      const { data, error } = await db.from("opportunities").select(OPPORTUNITY_PUBLIC_FIELDS).eq("slug", slug).eq("publication_status", "published").or(`deadline.is.null,deadline.gte.${today}`).maybeSingle();
+      if (error || !data) return null;
+      return mapOpportunity(data as Row);
+    } catch { return null; }
+  });
 }
 
 function mapUpdate(row: Row): CommunityUpdateRecord {
@@ -169,25 +178,33 @@ function mapUpdate(row: Row): CommunityUpdateRecord {
 
 export async function listPublishedUpdates(limit = 30): Promise<CommunityUpdateRecord[] | null> {
   await connection();
-  const db = anon();
-  if (!db) return null;
-  try {
-    const { data, error } = await db.from("community_updates").select(UPDATE_PUBLIC_FIELDS)
-      .eq("publication_status", "published").order("featured", { ascending: false })
-      .order("published_at", { ascending: false }).limit(Math.min(Math.max(limit, 1), 60));
-    if (error || !data) return null;
-    return (data as Row[]).map(mapUpdate);
-  } catch { return null; }
+  const bounded = Math.min(Math.max(limit, 1), 60);
+  // One canonical cached list; callers slice. Keeps invalidation to one key.
+  const full = await cachedPublic("updates", "list", async () => {
+    const db = anon();
+    if (!db) return null;
+    try {
+      const { data, error } = await db.from("community_updates").select(UPDATE_PUBLIC_FIELDS)
+        .eq("publication_status", "published").order("featured", { ascending: false })
+        .order("published_at", { ascending: false }).limit(60);
+      if (error || !data) return null;
+      return (data as Row[]).map(mapUpdate);
+    } catch { return null; }
+  });
+  if (!full) return null;
+  return full.slice(0, bounded);
 }
 
 export async function getPublishedUpdate(slug: string): Promise<CommunityUpdateRecord | null> {
   await connection();
-  const db = anon();
-  if (!db) return null;
-  try {
-    const { data, error } = await db.from("community_updates").select(UPDATE_PUBLIC_FIELDS)
-      .eq("slug", slug).eq("publication_status", "published").maybeSingle();
-    if (error || !data) return null;
-    return mapUpdate(data as Row);
-  } catch { return null; }
+  return cachedPublic("updates", slug, async () => {
+    const db = anon();
+    if (!db) return null;
+    try {
+      const { data, error } = await db.from("community_updates").select(UPDATE_PUBLIC_FIELDS)
+        .eq("slug", slug).eq("publication_status", "published").maybeSingle();
+      if (error || !data) return null;
+      return mapUpdate(data as Row);
+    } catch { return null; }
+  });
 }

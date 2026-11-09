@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
+import { cachedPublic } from "@/lib/redis/cache";
 import { createAnonClient } from "@/lib/supabase/anon";
 import type { Collaboration } from "@/types/collaboration";
 import {
@@ -124,19 +125,22 @@ export async function getLivePublishedEvents(): Promise<EventRecord[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag("events");
-  const sb = createAnonClient();
-  if (!sb) return [];
-  const { data } = await sb
-    .from("events")
-    .select("*")
-    .eq("status", "published")
-    .order("starts_at", { ascending: true });
-  return (data ?? [])
-    .filter((r) => {
-      const s = (r.settings as Record<string, unknown> | null) ?? {};
-      return s.visibility !== "unlisted";
-    })
-    .map((r) => mapEvent(r as Row));
+  // Shared Redis layer inside the per-region Next cache; Supabase authoritative.
+  return cachedPublic("events", "list", async () => {
+    const sb = createAnonClient();
+    if (!sb) return [];
+    const { data } = await sb
+      .from("events")
+      .select("*")
+      .eq("status", "published")
+      .order("starts_at", { ascending: true });
+    return (data ?? [])
+      .filter((r) => {
+        const s = (r.settings as Record<string, unknown> | null) ?? {};
+        return s.visibility !== "unlisted";
+      })
+      .map((r) => mapEvent(r as Row));
+  });
 }
 
 export async function getLivePublishedStartups(): Promise<Startup[]> {
@@ -210,16 +214,18 @@ export async function getPublicEventBySlug(slug: string): Promise<EventRecord | 
   if (matched) return matched;
 
   // Direct fetch for unlisted or authorized private test events accessible by slug
-  const sb = createAnonClient();
-  if (!sb) return null;
-  const { data } = await sb
-    .from("events")
-    .select("*")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
-  if (!data) return null;
-  return mapEvent(data as Row);
+  return cachedPublic("events", slug, async () => {
+    const sb = createAnonClient();
+    if (!sb) return null;
+    const { data } = await sb
+      .from("events")
+      .select("*")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .maybeSingle();
+    if (!data) return null;
+    return mapEvent(data as Row);
+  });
 }
 
 export async function getPublicTestimonials(): Promise<Testimonial[]> {
@@ -303,14 +309,16 @@ export async function getPublicCollaborations(): Promise<Collaboration[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag("collaborations");
-  const sb = createAnonClient();
-  if (!sb) return [];
-  const { data } = await sb
-    .from("collaborations")
-    .select(COLLAB_SELECT)
-    .eq("publication_status", "published")
-    .order("published_at", { ascending: false });
-  return (data ?? []).map((r) => mapCollaboration(r as Row));
+  return cachedPublic("collaborations", "list", async () => {
+    const sb = createAnonClient();
+    if (!sb) return [];
+    const { data } = await sb
+      .from("collaborations")
+      .select(COLLAB_SELECT)
+      .eq("publication_status", "published")
+      .order("published_at", { ascending: false });
+    return (data ?? []).map((r) => mapCollaboration(r as Row));
+  });
 }
 
 export async function getCollaborationBySlug(
@@ -319,13 +327,15 @@ export async function getCollaborationBySlug(
   "use cache";
   cacheLife("minutes");
   cacheTag("collaborations");
-  const sb = createAnonClient();
-  if (!sb) return null;
-  const { data } = await sb
-    .from("collaborations")
-    .select(COLLAB_SELECT)
-    .eq("publication_status", "published")
-    .eq("slug", slug)
-    .maybeSingle();
-  return data ? mapCollaboration(data as Row) : null;
+  return cachedPublic("collaborations", slug, async () => {
+    const sb = createAnonClient();
+    if (!sb) return null;
+    const { data } = await sb
+      .from("collaborations")
+      .select(COLLAB_SELECT)
+      .eq("publication_status", "published")
+      .eq("slug", slug)
+      .maybeSingle();
+    return data ? mapCollaboration(data as Row) : null;
+  });
 }

@@ -5,6 +5,8 @@ import { getAdminContext, can } from "@/lib/admin/gate";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
+import { invalidatePublicContent } from "@/lib/redis/cache";
+import type { PublicCacheFeature } from "@/lib/redis/config";
 
 const schema = z.object({
   kind: z.enum(["event", "notice", "update", "collaboration", "opportunity", "resource"]),
@@ -111,5 +113,15 @@ export async function POST(request: Request) {
   revalidatePath("/updates");
   revalidatePath("/opportunities");
   revalidatePath("/resources");
+  const featureForKind: Record<string, PublicCacheFeature> = {
+    event: "events",
+    notice: "events",
+    update: "updates",
+    collaboration: "collaborations",
+    opportunity: "opportunities",
+    resource: "resources",
+  };
+  const feature = featureForKind[kind];
+  if (feature) await invalidatePublicContent(feature);
   return authResponse({ ok: true });
 }

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { isIP } from "node:net";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import { redisPrecheck } from "@/lib/redis/throttle";
 
 /**
  * Result structure returned by distributed rate limiter.
@@ -45,6 +46,10 @@ export function rateLimit(
 /**
  * Distributed rate limiter backed by atomic PostgreSQL RPC `csc_check_rate_limit`.
  * Enforces sliding/fixed window request limits across distributed serverless instances.
+ *
+ * When `CSC_REDIS_ENABLED` + `CSC_REDIS_RATE_LIMIT` are on, an additive Redis
+ * first layer may deny early; Postgres is always consulted otherwise and stays
+ * authoritative (financial flows included). Redis outage defers to Postgres.
  */
 export async function distributedRateLimit(
   admin: SupabaseClient<Database>,
@@ -53,6 +58,11 @@ export async function distributedRateLimit(
   limit = 5,
   windowMs = 60_000
 ): Promise<RateLimitResult> {
+  const precheck = await redisPrecheck(scope, key, limit, windowMs);
+  if (!precheck.deferred && !precheck.allowed) {
+    return { allowed: false, retryAfter: precheck.retryAfter };
+  }
+
   const digest = createHash("sha256").update(`${scope}:${key}`).digest("hex");
   const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
 

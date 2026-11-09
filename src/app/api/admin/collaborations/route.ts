@@ -3,6 +3,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { can, getAdminContext } from "@/lib/admin/gate";
 import { createClient } from "@/lib/supabase/server";
 import { collaborationSaveSchema } from "@/lib/validations/collaboration";
+import { invalidatePublicContent } from "@/lib/redis/cache";
 
 export async function POST(request: Request) {
   if (request.headers.get("origin") !== new URL(request.url).origin) {
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
   revalidateTag("collaborations", "max");
   revalidatePath("/collaborations");
   revalidatePath(`/collaborations/${value.slug}`);
+  await invalidatePublicContent("collaborations", [value.slug]);
   revalidatePath("/admin/collaborations");
   return NextResponse.json({ id, slug: value.slug });
 }
