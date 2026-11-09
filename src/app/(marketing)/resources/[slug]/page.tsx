@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Download, ExternalLink } from "lucide-react";
@@ -67,10 +66,7 @@ function structuredData(r: NonNullable<Awaited<ReturnType<typeof getPublishedRes
   };
 }
 
-async function ResourceDetailContent({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const r = await getPublishedResource(slug);
-  if (!r) notFound();
+export async function ResourceDetailContent({ resource: r }: { resource: NonNullable<Awaited<ReturnType<typeof getPublishedResource>>> }) {
   const cover = cmsImageUrl(r.coverImagePath);
   const hasDownload = r.resourceType !== "link" && !!r.documentPath;
   const isExternal = (r.resourceType === "link" || r.resourceType === "video") && !!r.externalUrl;
@@ -161,6 +157,11 @@ async function ResourceDetailContent({ params }: { params: Promise<{ slug: strin
   );
 }
 
-export default function ResourceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  return <Suspense fallback={<section aria-busy="true" className="py-20"><Container className="max-w-3xl"><p className="text-sm text-brand-muted">Loading resource…</p></Container></section>}><ResourceDetailContent params={params} /></Suspense>;
+// The existence check runs before any Suspense boundary so missing or
+// unpublished slugs return a real 404 status instead of a 200 shell.
+export default async function ResourceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const resource = await getPublishedResource(slug);
+  if (!resource) notFound();
+  return <ResourceDetailContent resource={resource} />;
 }
