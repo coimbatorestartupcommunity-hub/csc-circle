@@ -3,6 +3,7 @@ import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { connection } from "next/server";
 import type { CommunityUpdateRecord, OpportunityRecord, ResourceRecord, UpdateGalleryImage } from "@/types/cms";
+import { mapResourceTopics } from "@/types/cms";
 import { cachedPublic } from "@/lib/redis/cache";
 
 /** Anon client WITHOUT the generated Database generic so the new CMS tables are
@@ -21,7 +22,7 @@ const indiaToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolk
 // Deliberately exclude audit data and private storage/administrative fields
 // from anonymous Supabase reads. Media and downloads are served by routes that
 // re-check the record's current publication state.
-const RESOURCE_PUBLIC_FIELDS = "id,slug,title,category,resource_type,summary,description,tags,audience,cover_image_path,document_path,document_filename,document_mime,external_url,source_name,source_organization,source_url,author,license,attribution,seo_title,meta_description,publication_status,published_at,updated_at";
+const RESOURCE_PUBLIC_FIELDS = "id,slug,title,category,resource_type,summary,description,tags,language,page_count,publication_date,topics,audience,cover_image_path,document_path,document_filename,document_mime,external_url,source_name,source_organization,source_url,author,license,attribution,seo_title,meta_description,publication_status,published_at,updated_at";
 const OPPORTUNITY_PUBLIC_FIELDS = "id,slug,title,category,summary,description,organization,audience,eligibility,skills,location,participation_mode,starts_on,deadline,ends_on,application_url,application_instructions,contact,banner_path,org_logo_path,source,seo_title,meta_description,publication_status,published_at,updated_at";
 const UPDATE_PUBLIC_FIELDS = "id,slug,title,category,summary,body,featured,cover_image_path,cover_image_alt,gallery,author,source,related_event_id,related_collaboration_id,seo_title,meta_description,publication_status,published_at,updated_at";
 
@@ -40,6 +41,10 @@ function mapResource(r: Row): ResourceRecord {
     summary: str(r.summary),
     description: str(r.description),
     tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
+    language: str(r.language),
+    pageCount: typeof r.page_count === "number" ? r.page_count : null,
+    publicationDate: str(r.publication_date),
+    topics: mapResourceTopics(r.topics),
     audience: str(r.audience),
     coverImagePath: str(r.cover_image_path),
     documentPath: str(r.document_path),
