@@ -28,7 +28,8 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-import ResourceDetailPage, { ResourceDetailContent } from "@/app/(marketing)/resources/[slug]/page";
+import ResourceDetailPage from "@/app/(marketing)/resources/[slug]/page";
+import { ResourceDetailContent } from "@/app/(marketing)/resources/[slug]/detail-content";
 import { ResourceContentRenderer } from "@/components/cms/resource-content-renderer";
 import { ResourceCard, formatResourceDate, resourceMetaLine } from "@/components/cms/resource-card";
 import { mapResourceTopics, type ResourceRecord } from "@/types/cms";
