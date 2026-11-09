@@ -13,10 +13,23 @@ vi.mock("next/image", () => ({
     <img src={src} alt={alt} {...props} />
   ),
 }));
+const { mockGetPublishedResource, mockListPublishedResources } = vi.hoisted(() => ({
+  mockGetPublishedResource: vi.fn(),
+  mockListPublishedResources: vi.fn(),
+}));
 vi.mock("@/lib/services/cms-public", () => ({
   cmsImageUrl: (path: string | null) => (path ? `/img?path=${encodeURIComponent(path)}` : null),
+  getPublishedResource: (...args: unknown[]) => mockGetPublishedResource(...args),
+  listPublishedResources: (...args: unknown[]) => mockListPublishedResources(...args),
+}));
+vi.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
 }));
 
+import ResourceDetailPage from "@/app/(marketing)/resources/[slug]/page";
+import { ResourceDetailContent } from "@/app/(marketing)/resources/[slug]/detail-content";
 import { ResourceContentRenderer } from "@/components/cms/resource-content-renderer";
 import { ResourceCard, formatResourceDate, resourceMetaLine } from "@/components/cms/resource-card";
 import { mapResourceTopics, type ResourceRecord } from "@/types/cms";
@@ -138,6 +151,32 @@ describe("ResourceCard", () => {
     expect(
       resourceMetaLine(record({ pageCount: 178, language: "English", documentMime: "application/pdf" })),
     ).toBe("PDF Document · 178 pages · English");
+  });
+});
+
+describe("ResourceDetailPage", () => {
+  it("invokes notFound for missing slugs before rendering", async () => {
+    mockGetPublishedResource.mockResolvedValue(null);
+    await expect(
+      ResourceDetailPage({ params: Promise.resolve({ slug: "no-such-resource" }) }),
+    ).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("renders the published resource hero and sections", async () => {
+    const published = record({
+      description: "## About\n\nBody copy.",
+      topics: [{ title: "Topic One", body: "Topic body." }],
+      audience: "Founders",
+      tags: ["AI"],
+    });
+    mockGetPublishedResource.mockResolvedValue(published);
+    mockListPublishedResources.mockResolvedValue([published]);
+    const element = await ResourceDetailContent({ resource: published });
+    const { container } = render(element);
+    expect(screen.getByRole("heading", { level: 1, name: "The AI Economy Handbook" })).not.toBeNull();
+    expect(screen.getByText("What You Will Learn")).not.toBeNull();
+    expect(screen.getByText("Topic One")).not.toBeNull();
+    expect(container.querySelector('script[type="application/ld+json"]')).not.toBeNull();
   });
 });
 
