@@ -40,6 +40,14 @@ async function ResourceDetailContent({ params }: { params: Promise<{ slug: strin
             </div>
           ) : null}
           {r.description ? <div className="whitespace-pre-line text-sm leading-relaxed text-brand-secondary">{r.description}</div> : null}
+          {r.audience ? <p className="text-sm text-brand-secondary"><span className="font-semibold text-brand-ink">Who it is for: </span>{r.audience}</p> : null}
+          {r.tags.length ? (
+            <ul aria-label="Tags" className="flex flex-wrap gap-2">
+              {r.tags.map((tag) => (
+                <li key={tag} className="rounded-full bg-brand-cloud px-3 py-1 text-xs font-semibold text-brand-secondary ring-1 ring-brand-border">{tag}</li>
+              ))}
+            </ul>
+          ) : null}
 
           <div className="flex flex-wrap gap-3">
             {hasDownload ? (

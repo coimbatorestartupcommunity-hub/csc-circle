@@ -3,7 +3,7 @@ import { rsvpSchema, reviewSchema } from "@/lib/validations/forms";
 import { claimSchema, onboardingStep2Schema } from "@/lib/validations/member";
 import { memberStartupSchema } from "@/lib/validations/member-startup";
 import { eventEditorSchema } from "@/lib/validations/admin";
-import { communityUpdateSaveSchema } from "@/lib/validations/cms";
+import { communityUpdateSaveSchema, opportunitySaveSchema, resourceSaveSchema } from "@/lib/validations/cms";
 
 describe("RSVP schema", () => {
   const valid = {
@@ -108,6 +108,61 @@ describe("community update schema", () => {
     expect(communityUpdateSaveSchema.safeParse({ ...valid, slug: "Unsafe slug" }).success).toBe(false);
     expect(communityUpdateSaveSchema.safeParse({ ...valid, category: "Made up category" }).success).toBe(false);
     expect(communityUpdateSaveSchema.safeParse({ ...valid, gallery: [{ path: valid.gallery[0].path, alt: "" }] }).success).toBe(false);
+  });
+});
+
+describe("resource save schema (full-content publishing)", () => {
+  const handbook = {
+    slug: "the-ai-economy-handbook",
+    title: "The AI Economy Handbook",
+    category: "Technology",
+    resourceType: "document" as const,
+    summary: "A 178-page practical handbook exploring AI, employment and income resilience.",
+    description: "Full handbook description. ".repeat(120).trim(),
+    tags: ["Artificial Intelligence", "AI Economy", "Future of Work", "Employment", "Career Development",
+      "Future-Ready Skills", "Financial Literacy", "Financial Resilience", "Entrepreneurship", "Startup Ecosystem",
+      "Business Resilience", "Business Continuity", "Income Security", "AI Agents", "Robotics",
+      "Economic Transformation", "Job Market", "Business Strategy", "Customer Acquisition", "Personal Finance",
+      "Startup Founders", "MSMEs", "India", "Coimbatore Startup Community", "Logic Intelligence Technologies", "CSC Circle"],
+    audience: "Students, professionals, founders, MSMEs and educators.",
+    externalUrl: "https://",
+    sourceUrl: "https://",
+    sourceOrganization: "Coimbatore Startup Community (CSC) × Logic Intelligence Technologies (LIT)",
+    author: "Coimbatore Startup Community & Logic Intelligence Technologies",
+    license: "Collaborative publication. ".repeat(14).trim(),
+    attribution: "Collaborative educational publication with institutional acknowledgments. ".repeat(7).trim(),
+    publicationConsent: true,
+  };
+
+  it("accepts the complete handbook payload without forcing content cuts", () => {
+    expect(handbook.tags).toHaveLength(26);
+    expect(handbook.license.length).toBeGreaterThan(300);
+    expect(handbook.attribution.length).toBeGreaterThan(400);
+    const parsed = resourceSaveSchema.safeParse(handbook);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.externalUrl).toBeNull();
+      expect(parsed.data.sourceUrl).toBeNull();
+      expect(parsed.data.tags).toHaveLength(26);
+    }
+  });
+
+  it("still rejects genuinely invalid URLs and oversized payloads", () => {
+    expect(resourceSaveSchema.safeParse({ ...handbook, externalUrl: "javascript:alert(1)" }).success).toBe(false);
+    expect(resourceSaveSchema.safeParse({ ...handbook, sourceUrl: "notaurl" }).success).toBe(false);
+    expect(resourceSaveSchema.safeParse({ ...handbook, tags: Array.from({ length: 31 }, (_, i) => `tag-${i}`) }).success).toBe(false);
+    expect(resourceSaveSchema.safeParse({ ...handbook, license: "L".repeat(2001) }).success).toBe(false);
+    expect(resourceSaveSchema.safeParse({ ...handbook, attribution: "A".repeat(2001) }).success).toBe(false);
+  });
+
+  it("forgives a bare scheme placeholder on opportunity URLs too", () => {
+    const base = {
+      slug: "founder-office-hours", title: "Founder office hours", category: "Mentorship",
+      description: "A complete opportunity description with enough detail to pass.",
+      organization: "CSC", source: "Community board",
+    };
+    expect(opportunitySaveSchema.safeParse({ ...base, applicationUrl: "https://" }).success).toBe(true);
+    expect(opportunitySaveSchema.safeParse({ ...base, applicationUrl: "javascript:alert(1)" }).success).toBe(false);
   });
 });
 

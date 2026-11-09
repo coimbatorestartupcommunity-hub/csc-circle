@@ -28,6 +28,68 @@ begin
   from public.event_payment_orders
   where event_id = any(qa_event_ids);
 
+  -- 0. Delete registration- and event-level dependents first. In particular
+  -- public.payments references event_registrations, so registrations cannot
+  -- be removed before their payments. Every delete is scoped to QA events.
+  begin
+    delete from public.payments
+    where registration_id in (
+      select r.id from public.event_registrations r where r.event_id = any(qa_event_ids)
+    );
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
+  end;
+  begin
+    delete from public.attendance_checkins
+    where event_id = any(qa_event_ids)
+       or registration_id in (
+         select r.id from public.event_registrations r where r.event_id = any(qa_event_ids)
+       );
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
+  end;
+  begin
+    delete from public.event_registration_import_metadata
+    where registration_id in (
+      select r.id from public.event_registrations r where r.event_id = any(qa_event_ids)
+    );
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
+  end;
+  begin
+    delete from public.rsvp_submissions where event_id = any(qa_event_ids);
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
+  end;
+  begin
+    delete from public.reviews where event_id = any(qa_event_ids);
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
+  end;
+  begin
+    delete from public.event_staff where event_id = any(qa_event_ids);
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
+  end;
+  begin
+    delete from public.guest_email_verifications where event_id = any(qa_event_ids);
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
+  end;
+  begin
+    delete from public.collaborations where event_id = any(qa_event_ids);
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
+  end;
+
   -- 1. Delete attributions
   if qa_order_ids is not null then
     delete from public.event_payment_attributions where order_id = any(qa_order_ids);
@@ -35,11 +97,15 @@ begin
     -- reconciliation table may have different name, try both
     begin
       delete from public.event_payment_reconciliation where order_id = any(qa_order_ids);
-    exception when undefined_table then null;
+    exception
+      when undefined_table then null;
+      when undefined_column then null;
     end;
     begin
       delete from public.payment_reconciliations where order_id = any(qa_order_ids);
-    exception when undefined_table then null;
+    exception
+      when undefined_table then null;
+      when undefined_column then null;
     end;
   end if;
 
@@ -50,7 +116,9 @@ begin
   -- guest verification records for QA event
   begin
     delete from public.guest_verifications where event_id = any(qa_event_ids);
-  exception when undefined_table then null;
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
   end;
 
   -- 3. Delete QA payment orders (even with claimed UTRs - total purge)
@@ -63,7 +131,9 @@ begin
     delete from public.notifications
     where dedupe_key like 'paid-order-admin-%'
       and dedupe_key in (select 'paid-order-admin-' || id::text from unnest(qa_order_ids) as id);
-  exception when undefined_table then null;
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
   end;
   begin
     delete from public.notification_deliveries
@@ -71,17 +141,23 @@ begin
       select id from public.notifications
       where dedupe_key in (select 'paid-order-admin-' || id::text from unnest(qa_order_ids) as id)
     );
-  exception when undefined_table then null;
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
   end;
 
   -- 5. Delete QA event notices / updates / highlights if they reference QA event
   begin
     delete from public.event_notices where event_id = any(qa_event_ids);
-  exception when undefined_table then null;
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
   end;
   begin
     delete from public.community_updates where event_id = any(qa_event_ids);
-  exception when undefined_table then null;
+  exception
+    when undefined_table then null;
+    when undefined_column then null;
   end;
 
   -- 6. Finally delete the QA event itself

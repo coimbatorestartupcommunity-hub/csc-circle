@@ -3,7 +3,26 @@ import { RESOURCE_TYPES, UPDATE_CATEGORIES } from "@/types/cms";
 
 const slug = z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and hyphens.").min(3).max(90);
 const optionalText = (max: number) => z.string().trim().max(max).optional().or(z.literal("")).transform((v) => (v ? v : null));
-const optionalUrl = z.string().trim().url().max(500).refine((v) => /^https?:\/\//i.test(v), "Use an HTTP or HTTPS link.").optional().or(z.literal("")).transform((v) => (v ? v : null));
+// A bare scheme ("https://") is the editor placeholder left in the field, not a
+// link. Treat it as empty instead of failing the whole save.
+const bareScheme = /^(https?:\/{0,2})$/i;
+const httpUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+const optionalUrl = z.string().trim().max(500).refine((v) => v === "" || bareScheme.test(v) || httpUrl(v), "Use an HTTP or HTTPS link.").optional().or(z.literal("")).transform((v) => (!v || bareScheme.test(v) ? null : v));
+
+export function cmsValidationMessage(error: z.ZodError, fallback: string): string {
+  const details = error.issues.slice(0, 3).map((issue) => {
+    const field = issue.path.map(String).filter(Boolean).join(".") || "value";
+    return `${field}: ${issue.message}`;
+  });
+  return details.length ? `${fallback} ${details.join(" ")}` : fallback;
+}
 const optionalUuid = z.string().uuid().optional().nullable().or(z.literal("")).transform((v) => v || null);
 const mediaPath = z.string().trim().max(200).regex(/^(resource-media|resource-docs|opportunity-media)\/[0-9a-f-]{36}(?:\.[a-z0-9]+)?$/i).optional().or(z.literal("")).transform((v) => (v ? v : null));
 
@@ -15,7 +34,7 @@ export const resourceSaveSchema = z.object({
   resourceType: z.enum(RESOURCE_TYPES),
   summary: optionalText(400),
   description: optionalText(8000),
-  tags: z.array(z.string().trim().min(1).max(40)).max(12).default([]),
+  tags: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
   audience: optionalText(200),
   coverImagePath: mediaPath,
   documentPath: mediaPath,
@@ -27,8 +46,8 @@ export const resourceSaveSchema = z.object({
   sourceOrganization: optionalText(140),
   sourceUrl: optionalUrl,
   author: optionalText(140),
-  license: optionalText(200),
-  attribution: optionalText(300),
+  license: optionalText(2000),
+  attribution: optionalText(2000),
   publicationConsent: z.boolean().default(false),
   seoTitle: optionalText(140),
   metaDescription: optionalText(300),
