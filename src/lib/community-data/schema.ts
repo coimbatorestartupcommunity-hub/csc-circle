@@ -255,7 +255,7 @@ export const memberSurveyFieldsSchema = z.object({
   industry_sector: z.enum(industrySectors, { error: "Select your industry." }),
   industry_other: blankableText("Industry details", 120),
   current_stage: z.enum(allCurrentStages, { error: "Select your current stage." }),
-  description: normalizedText("Description", 10, 3000),
+  description: normalizedText("Description", 10, 1000),
   support_needed: z.array(supportNeededOptionSchema, {
     error: "Select at least one area where you need support.",
   }).min(1, "Select at least one area where you need support.").max(supportNeededOptions.length),

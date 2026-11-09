@@ -159,7 +159,8 @@ describe("community member survey validation", () => {
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, member_category: "Other" }).success).toBe(false);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, consent: false }).success).toBe(false);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, website: "bot.example" }).success).toBe(false);
-    expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, description: "x".repeat(3001) }).success).toBe(false);
+    expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, description: "x".repeat(1001) }).success).toBe(false);
+    expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, description: "x".repeat(1000) }).success).toBe(true);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, description: "short" }).success).toBe(false);
   });
 
