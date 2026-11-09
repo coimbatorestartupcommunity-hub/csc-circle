@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RESOURCE_TYPES, RESOURCE_CATEGORIES, type ResourceRecord } from "@/types/cms";
+import { RESOURCE_TYPES, RESOURCE_CATEGORIES, type ResourceRecord, type ResourceTopic } from "@/types/cms";
 import { createClient } from "@/lib/supabase/client";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 90);
@@ -24,6 +24,10 @@ export function ResourceEditor({ initial }: { initial?: ResourceRecord }) {
     description: initial?.description ?? "",
     audience: initial?.audience ?? "",
     tags: (initial?.tags ?? []).join(", "),
+    language: initial?.language ?? "",
+    pageCount: initial?.pageCount ?? null as number | null,
+    publicationDate: initial?.publicationDate ?? "",
+    topics: initial?.topics ?? [] as ResourceTopic[],
     coverImagePath: initial?.coverImagePath ?? "",
     documentPath: initial?.documentPath ?? "",
     documentFilename: initial?.documentFilename ?? "",
@@ -75,6 +79,7 @@ export function ResourceEditor({ initial }: { initial?: ResourceRecord }) {
       const payload = {
         ...v,
         tags: v.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        topics: v.topics.filter((t) => t.title.trim() || t.body.trim()),
       };
       const res = await fetch("/api/admin/resources", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
       const data = await res.json();
@@ -120,8 +125,29 @@ export function ResourceEditor({ initial }: { initial?: ResourceRecord }) {
         <div className="flex flex-col gap-1.5"><Label htmlFor="r-type">Resource type</Label><select id="r-type" value={v.resourceType} onChange={(e) => set("resourceType", e.target.value)} className="h-11 rounded-lg border border-brand-border bg-white px-3 text-sm capitalize">{RESOURCE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
         <div className="flex flex-col gap-1.5"><Label htmlFor="r-aud">Intended audience</Label><Input id="r-aud" value={v.audience} onChange={(e) => set("audience", e.target.value)} maxLength={200} /></div>
         <div className="flex flex-col gap-1.5 sm:col-span-2"><Label htmlFor="r-sum">Short summary</Label><Textarea id="r-sum" rows={2} value={v.summary} onChange={(e) => set("summary", e.target.value)} maxLength={400} /></div>
-        <div className="flex flex-col gap-1.5 sm:col-span-2"><Label htmlFor="r-desc">Detailed description</Label><Textarea id="r-desc" rows={6} value={v.description} onChange={(e) => set("description", e.target.value)} maxLength={8000} /></div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2"><Label htmlFor="r-desc">Detailed description</Label><Textarea id="r-desc" rows={6} value={v.description} onChange={(e) => set("description", e.target.value)} maxLength={8000} /><p className="text-xs text-brand-muted">Supports Markdown: headings, bold, lists, links and tables. Raw HTML is never rendered.</p></div>
         <div className="flex flex-col gap-1.5 sm:col-span-2"><Label htmlFor="r-tags">Tags (comma-separated)</Label><Input id="r-tags" value={v.tags} onChange={(e) => set("tags", e.target.value)} /></div>
+      </section>
+
+      <section className="grid gap-4 rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:grid-cols-3">
+        <div className="flex flex-col gap-1.5"><Label htmlFor="r-lang">Language</Label><Input id="r-lang" value={v.language} onChange={(e) => set("language", e.target.value)} placeholder="English" maxLength={60} /></div>
+        <div className="flex flex-col gap-1.5"><Label htmlFor="r-pages">Page count</Label><Input id="r-pages" type="number" min={1} value={v.pageCount ?? ""} onChange={(e) => set("pageCount", e.target.value === "" ? null : Number(e.target.value))} placeholder="178" /></div>
+        <div className="flex flex-col gap-1.5"><Label htmlFor="r-pubdate">Publication date</Label><Input id="r-pubdate" type="date" value={v.publicationDate} onChange={(e) => set("publicationDate", e.target.value)} /></div>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-2xl bg-white p-5 ring-1 ring-brand-border">
+        <div><Label>What You Will Learn topics (up to 12)</Label><p className="mt-1 text-xs text-brand-muted">Explicit topic cards for the detail page. Leave empty when the resource has no topical structure.</p></div>
+        {v.topics.map((topic, index) => (
+          <div key={index} className="grid gap-2 rounded-xl border border-brand-border p-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold tracking-widest text-brand-muted">TOPIC {String(index + 1).padStart(2, "0")}</span>
+              <Button type="button" variant="outline" onClick={() => set("topics", v.topics.filter((_, i) => i !== index))}>Remove</Button>
+            </div>
+            <Input value={topic.title} onChange={(e) => set("topics", v.topics.map((t, i) => i === index ? { ...t, title: e.target.value } : t))} placeholder="Topic title" maxLength={120} aria-label={`Topic ${index + 1} title`} />
+            <Textarea value={topic.body} rows={3} onChange={(e) => set("topics", v.topics.map((t, i) => i === index ? { ...t, body: e.target.value } : t))} placeholder="Topic description" maxLength={2000} aria-label={`Topic ${index + 1} description`} />
+          </div>
+        ))}
+        {v.topics.length < 12 ? <div><Button type="button" variant="outline" onClick={() => set("topics", [...v.topics, { title: "", body: "" }])}>Add topic</Button></div> : null}
       </section>
 
       <section className="grid gap-4 rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:grid-cols-2">

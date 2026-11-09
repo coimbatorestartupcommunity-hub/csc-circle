@@ -1,6 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CommunityUpdateRecord, OpportunityRecord, ResourceRecord } from "@/types/cms";
+import { ResourceContentRenderer, ResourceSectionHeading } from "@/components/cms/resource-content-renderer";
+import { ResourceAttribution, ResourceTags, ResourceTopics } from "@/components/cms/resource-detail";
+import { formatResourceDate, resourceMetaLine } from "@/components/cms/resource-card";
 
 export function CommunityUpdateAdminPreview({ update }: { update: CommunityUpdateRecord }) {
   return <article className="mx-auto flex max-w-3xl flex-col gap-5 rounded-2xl border border-brand-border bg-white p-5 sm:p-8">
@@ -17,17 +20,33 @@ export function CommunityUpdateAdminPreview({ update }: { update: CommunityUpdat
 
 export function ResourceAdminPreview({ resource }: { resource: ResourceRecord }) {
   const image = resource.coverImagePath ? `/api/admin/cms/media?path=${encodeURIComponent(resource.coverImagePath)}` : null;
+  const date = formatResourceDate(resource.publicationDate ?? resource.publishedAt);
   return (
-    <article className="mx-auto flex max-w-3xl flex-col gap-5 rounded-2xl border border-brand-border bg-white p-5 sm:p-8">
+    <article className="mx-auto flex max-w-3xl flex-col gap-6 rounded-2xl border border-brand-border bg-white p-5 sm:p-8">
       <div className="flex items-center justify-between gap-3"><span className="rounded-full bg-brand-purple/20 px-3 py-1 text-xs font-semibold text-brand-ink">{resource.status}</span><span className="text-sm text-brand-muted">{resource.category} · {resource.resourceType}</span></div>
-      <h1 className="text-3xl font-bold text-brand-ink">{resource.title}</h1>
-      {resource.summary ? <p className="text-lg leading-relaxed text-brand-secondary">{resource.summary}</p> : null}
-      {image ? <div className="relative aspect-[5/3] overflow-hidden rounded-xl bg-brand-cloud"><Image src={image} alt={resource.title} fill unoptimized className="object-cover" /></div> : null}
-      {resource.description ? <p className="whitespace-pre-line text-sm leading-7 text-brand-secondary">{resource.description}</p> : null}
-      {resource.audience ? <p className="text-sm text-brand-secondary"><span className="font-semibold text-brand-ink">Who it is for: </span>{resource.audience}</p> : null}
-      {resource.tags.length ? <p className="text-xs text-brand-muted">Tags: {resource.tags.join(" · ")}</p> : null}
+      <div className="flex flex-col items-center gap-4 text-center">
+        <p className="text-xs font-semibold tracking-[0.18em] text-brand-accent uppercase">{resource.category}</p>
+        <h1 className="text-3xl font-extrabold tracking-tight text-balance text-brand-ink sm:text-4xl">{resource.title}</h1>
+        {resource.summary ? <p className="max-w-2xl leading-relaxed text-brand-secondary">{resource.summary}</p> : null}
+        <p className="text-sm font-medium text-brand-muted">{[resourceMetaLine(resource), date].filter(Boolean).join("  |  ")}</p>
+      </div>
+      {image ? <div className="relative aspect-[5/3] overflow-hidden rounded-xl bg-brand-cloud"><Image src={image} alt={`${resource.title} cover`} fill unoptimized className="object-contain" /></div> : null}
+      {resource.description ? (
+        <section className="flex flex-col gap-4">
+          <ResourceSectionHeading>About This Resource</ResourceSectionHeading>
+          <ResourceContentRenderer content={resource.description} />
+        </section>
+      ) : null}
+      <ResourceTopics topics={resource.topics} />
+      {resource.audience ? (
+        <section className="flex flex-col gap-3">
+          <ResourceSectionHeading>Who Should Read This?</ResourceSectionHeading>
+          <p className="whitespace-pre-line leading-[1.8] text-brand-secondary">{resource.audience}</p>
+        </section>
+      ) : null}
+      <ResourceTags tags={resource.tags} />
       {resource.documentPath ? <a className="w-fit rounded-xl border border-brand-border px-4 py-2 text-sm font-semibold text-brand-ink" href={`/api/admin/resources/${resource.id}/download`}>Preview PDF · {resource.documentFilename || "PDF document"}</a> : null}
-      {(resource.sourceOrganization || resource.author || resource.attribution || resource.license) ? <p className="text-sm text-brand-muted">{[resource.sourceOrganization, resource.author, resource.attribution, resource.license].filter(Boolean).join(" · ")}</p> : null}
+      <ResourceAttribution resource={resource} />
       {resource.externalUrl ? <p className="break-all text-xs text-brand-muted">Reference: {resource.externalUrl}</p> : null}
       <Link href={`/admin/resources/${resource.id}`} className="w-fit text-sm font-semibold text-brand-accent underline underline-offset-4">Return to editor</Link>
     </article>
