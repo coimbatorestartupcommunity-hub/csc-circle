@@ -40,6 +40,16 @@ beforeEach(() => {
 });
 
 describe("member survey category experience", () => {
+  it("highlights the brief-overview note in the description block", () => {
+    render(<SurveyForm />);
+    const note = screen.getByText("A brief overview of your idea is enough.");
+    expect(note.closest('[role="note"]')).not.toBeNull();
+    expect(screen.getByLabelText(/tell us about your business or idea/i)).toHaveAttribute(
+      "aria-describedby",
+      expect.stringContaining("description-note"),
+    );
+  });
+
   it("starts with no preselected category and a guidance hint", () => {
     render(<SurveyForm />);
     expect(screen.getByLabelText(/which category best describes you/i)).toHaveValue("");

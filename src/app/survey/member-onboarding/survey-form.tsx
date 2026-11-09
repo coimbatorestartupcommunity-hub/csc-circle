@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch, type DefaultValues } from "react-hook-form";
-import { AlertCircle, CheckCircle2, LoaderCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Lightbulb, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -415,8 +415,12 @@ export function SurveyForm() {
               <Label htmlFor="description">Tell Us About Your Business or Idea <span aria-hidden>*</span></Label>
               <span className="shrink-0 text-xs text-brand-muted" aria-live="polite">{description.length}/1000</span>
             </div>
-            <Textarea id="description" rows={7} maxLength={1000} placeholder={descriptionPlaceholders[category ?? "none"]} aria-invalid={Boolean(errors.description)} aria-describedby={`description-help${errors.description ? " description-error" : ""}`} className="min-h-36 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("description")} />
-            <p id="description-help" className="text-xs text-brand-muted">A brief overview of your idea is enough. Please do not include passwords, payment details, or unrelated sensitive information.</p>
+            <p role="note" id="description-note" className="flex items-start gap-2.5 rounded-xl border border-brand-accent/30 bg-brand-purple/15 px-3.5 py-3 text-sm leading-6 text-brand-ink">
+              <Lightbulb className="mt-0.5 size-5 shrink-0 text-brand-accent" aria-hidden />
+              <span><strong className="font-semibold">A brief overview of your idea is enough.</strong></span>
+            </p>
+            <Textarea id="description" rows={7} maxLength={1000} placeholder={descriptionPlaceholders[category ?? "none"]} aria-invalid={Boolean(errors.description)} aria-describedby={`description-note description-help${errors.description ? " description-error" : ""}`} className="min-h-36 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("description")} />
+            <p id="description-help" className="text-xs text-brand-muted">Please do not include passwords, payment details, or unrelated sensitive information.</p>
             <ErrorMessage id="description-error" message={errors.description?.message} />
           </div>
         </div>
