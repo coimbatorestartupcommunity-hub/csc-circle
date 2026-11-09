@@ -12,17 +12,21 @@ function fillCommon(category: string) {
   fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: "Switch Tester" } });
   fireEvent.change(screen.getByLabelText(/contact number/i), { target: { value: "+91 98765 43210" } });
   fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: "tester@example.test" } });
-  fireEvent.change(screen.getByLabelText(/^city/i), { target: { value: "Coimbatore" } });
+  fireEvent.change(screen.getByLabelText(/city \/ location/i), { target: { value: "Coimbatore" } });
   fireEvent.change(screen.getByLabelText(/which category best describes you/i), { target: { value: category } });
   fireEvent.change(screen.getByLabelText(/business, startup, or idea name/i), { target: { value: "Test Venture" } });
-  fireEvent.change(screen.getByLabelText(/industry sector/i), { target: { value: "Manufacturing" } });
+  fireEvent.change(screen.getByLabelText(/which industry or sector are you involved in/i), { target: { value: "Manufacturing" } });
   fireEvent.change(screen.getByLabelText(/tell us about your business or idea/i), {
     target: { value: "A sufficiently detailed description of the test venture and its goals." },
   });
 }
 
 function supportGroup() {
-  return screen.getByRole("group", { name: /what kind of support do you need from csc/i });
+  return screen.getByRole("group", { name: /what support are you looking for from csc circle/i });
+}
+
+function stageField() {
+  return screen.getByLabelText(/what is your current (business|startup) stage|have you started developing your idea/i);
 }
 
 beforeEach(() => {
@@ -39,25 +43,26 @@ describe("member survey category experience", () => {
   it("starts with no preselected category and a guidance hint", () => {
     render(<SurveyForm />);
     expect(screen.getByLabelText(/which category best describes you/i)).toHaveValue("");
-    expect(screen.getByText(/select a category in step 2/i)).toBeInTheDocument();
-    expect(screen.queryByText("Established Business Details")).not.toBeInTheDocument();
-    expect(screen.queryByText("Startup Details")).not.toBeInTheDocument();
-    expect(screen.queryByText("Idea Stage Details")).not.toBeInTheDocument();
+    expect(screen.getByText(/select your member category to view questions/i)).toBeInTheDocument();
+    expect(screen.queryByText("Tell Us More About Your Business")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tell Us More About Your Startup")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tell Us More About Your Idea")).not.toBeInTheDocument();
   });
 
   it("shows the established business block with adaptive stages and submits its values", async () => {
     render(<SurveyForm />);
     fillCommon("Established Business");
-    expect(screen.getByText("Established Business Details")).toBeInTheDocument();
-    const stage = screen.getByLabelText(/current stage/i);
+    expect(screen.getByText("Tell Us More About Your Business")).toBeInTheDocument();
+    expect(screen.getByLabelText(/what is your current business stage/i)).toBeInTheDocument();
+    const stage = stageField();
     expect(within(stage as HTMLElement).getByRole("option", { name: "Scaling to New Markets" })).toBeInTheDocument();
     expect(within(stage as HTMLElement).queryByRole("option", { name: "Building a Prototype" })).not.toBeInTheDocument();
     fireEvent.change(stage, { target: { value: "Scaling to New Markets" } });
-    fireEvent.change(screen.getByLabelText(/year of establishment/i), { target: { value: "2019" } });
-    fireEvent.click(within(screen.getByRole("group", { name: "Business Team Size" })).getByRole("radio", { name: "2-5" }));
-    const connections = screen.getByRole("group", { name: /what business connections/i });
+    fireEvent.change(screen.getByLabelText(/in which year was your business established/i), { target: { value: "2019" } });
+    fireEvent.change(screen.getByLabelText(/how many people are currently working in your business/i), { target: { value: "1–5 Employees" } });
+    const connections = screen.getByRole("group", { name: /what type of business connections/i });
     fireEvent.click(within(connections).getByRole("checkbox", { name: "Investors" }));
-    fireEvent.click(within(supportGroup()).getByRole("checkbox", { name: "Mentorship" }));
+    fireEvent.click(within(supportGroup()).getByRole("checkbox", { name: "Startup Mentorship" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /i understand that coimbatore/i }));
     fireEvent.click(screen.getByRole("button", { name: "Submit Information" }));
     await waitFor(() => expect(mockedSubmit).toHaveBeenCalledTimes(1));
@@ -66,7 +71,7 @@ describe("member survey category experience", () => {
       member_category: "Established Business",
       current_stage: "Scaling to New Markets",
       established_year: 2019,
-      business_team_size: "2-5",
+      business_team_size: "1–5 Employees",
       business_connections: ["Investors"],
       full_name: "Switch Tester",
     });
@@ -78,32 +83,34 @@ describe("member survey category experience", () => {
   it("shows the startup block with startup-only stages", () => {
     render(<SurveyForm />);
     fillCommon("Startup Founder");
-    expect(screen.getByText("Startup Details")).toBeInTheDocument();
-    const stage = screen.getByLabelText(/current stage/i);
+    expect(screen.getByText("Tell Us More About Your Startup")).toBeInTheDocument();
+    expect(screen.getByLabelText(/what is your current startup stage/i)).toBeInTheDocument();
+    const stage = stageField();
     expect(within(stage as HTMLElement).getByRole("option", { name: "Prototype / MVP" })).toBeInTheDocument();
     expect(within(stage as HTMLElement).queryByRole("option", { name: "Scaling to New Markets" })).not.toBeInTheDocument();
-    fireEvent.click(within(screen.getByRole("group", { name: "Startup Team Structure" })).getByRole("radio", { name: "Solo Founder" }));
-    expect(screen.getByLabelText(/what is your startup focused on right now/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/do you currently have a startup team/i), { target: { value: "Solo Founder" } });
+    expect(screen.getByLabelText(/what are you currently working on/i)).toBeInTheDocument();
   });
 
   it("shows the idea block with idea-only stages", () => {
     render(<SurveyForm />);
     fillCommon("Idea Stage");
-    expect(screen.getByText("Idea Stage Details")).toBeInTheDocument();
-    const stage = screen.getByLabelText(/current stage/i);
+    expect(screen.getByText("Tell Us More About Your Idea")).toBeInTheDocument();
+    expect(screen.getByLabelText(/have you started developing your idea/i)).toBeInTheDocument();
+    const stage = stageField();
     expect(within(stage as HTMLElement).getByRole("option", { name: "Building a Prototype" })).toBeInTheDocument();
     expect(within(stage as HTMLElement).queryByRole("option", { name: "Prototype / MVP" })).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/what problem does your idea solve/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/what problem are you hoping to solve/i)).toBeInTheDocument();
   });
 
   it("reveals and requires the industry specification only for Other", async () => {
     render(<SurveyForm />);
     fillCommon("Startup Founder");
-    fireEvent.change(screen.getByLabelText(/industry sector/i), { target: { value: "Other" } });
+    fireEvent.change(screen.getByLabelText(/which industry or sector are you involved in/i), { target: { value: "Other" } });
     const other = screen.getByLabelText(/please specify your industry/i);
     expect(other).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/current stage/i), { target: { value: "Launched" } });
-    fireEvent.click(within(supportGroup()).getByRole("checkbox", { name: "Mentorship" }));
+    fireEvent.change(stageField(), { target: { value: "Launched" } });
+    fireEvent.click(within(supportGroup()).getByRole("checkbox", { name: "Startup Mentorship" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /i understand that coimbatore/i }));
     fireEvent.click(screen.getByRole("button", { name: "Submit Information" }));
     expect(await screen.findByText("Please specify your industry.")).toBeInTheDocument();
@@ -116,7 +123,7 @@ describe("member survey category experience", () => {
   it("requires at least one support option", async () => {
     render(<SurveyForm />);
     fillCommon("Idea Stage");
-    fireEvent.change(screen.getByLabelText(/current stage/i), { target: { value: "Researching" } });
+    fireEvent.change(stageField(), { target: { value: "Researching" } });
     fireEvent.click(screen.getByRole("checkbox", { name: /i understand that coimbatore/i }));
     fireEvent.click(screen.getByRole("button", { name: "Submit Information" }));
     expect(await screen.findByText("Select at least one area where you need support.")).toBeInTheDocument();
@@ -126,24 +133,24 @@ describe("member survey category experience", () => {
   it("clears stale category data and the stage on switch while preserving common fields", async () => {
     render(<SurveyForm />);
     fillCommon("Established Business");
-    fireEvent.change(screen.getByLabelText(/current stage/i), { target: { value: "Scaling to New Markets" } });
-    fireEvent.change(screen.getByLabelText(/year of establishment/i), { target: { value: "2019" } });
-    fireEvent.click(within(screen.getByRole("group", { name: "Business Team Size" })).getByRole("radio", { name: "2-5" }));
-    fireEvent.click(within(screen.getByRole("group", { name: /what business connections/i })).getByRole("checkbox", { name: "Investors" }));
+    fireEvent.change(stageField(), { target: { value: "Scaling to New Markets" } });
+    fireEvent.change(screen.getByLabelText(/in which year was your business established/i), { target: { value: "2019" } });
+    fireEvent.change(screen.getByLabelText(/how many people are currently working in your business/i), { target: { value: "1–5 Employees" } });
+    fireEvent.click(within(screen.getByRole("group", { name: /what type of business connections/i })).getByRole("checkbox", { name: "Investors" }));
 
     fireEvent.change(screen.getByLabelText(/which category best describes you/i), { target: { value: "Idea Stage" } });
-    expect(screen.queryByText("Established Business Details")).not.toBeInTheDocument();
-    expect(screen.getByText("Idea Stage Details")).toBeInTheDocument();
-    expect(screen.getByLabelText(/current stage/i)).toHaveValue("");
+    expect(screen.queryByText("Tell Us More About Your Business")).not.toBeInTheDocument();
+    expect(screen.getByText("Tell Us More About Your Idea")).toBeInTheDocument();
+    expect(stageField()).toHaveValue("");
     expect(screen.getByLabelText(/full name/i)).toHaveValue("Switch Tester");
     expect(screen.getByLabelText(/tell us about your business or idea/i)).toHaveValue(
       "A sufficiently detailed description of the test venture and its goals.",
     );
 
-    fireEvent.change(screen.getByLabelText(/current stage/i), { target: { value: "Validating the Idea" } });
-    fireEvent.click(within(screen.getByRole("group", { name: /are you looking for a co-founder/i })).getByRole("radio", { name: "Yes, Actively Looking" }));
-    fireEvent.click(within(screen.getByRole("group", { name: /what support would help you develop your idea/i })).getByRole("checkbox", { name: "Mentorship" }));
-    fireEvent.click(within(supportGroup()).getByRole("checkbox", { name: "Networking Opportunities" }));
+    fireEvent.change(stageField(), { target: { value: "Validating the Idea" } });
+    fireEvent.change(screen.getByLabelText(/are you looking for a co-founder or team/i), { target: { value: "Yes, Actively Looking" } });
+    fireEvent.click(within(screen.getByRole("group", { name: /what would help you move forward with your idea/i })).getByRole("checkbox", { name: "Startup Mentorship" }));
+    fireEvent.click(within(supportGroup()).getByRole("checkbox", { name: "Professional Networking" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /i understand that coimbatore/i }));
     fireEvent.click(screen.getByRole("button", { name: "Submit Information" }));
     await waitFor(() => expect(mockedSubmit).toHaveBeenCalledTimes(1));

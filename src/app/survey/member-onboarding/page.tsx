@@ -23,11 +23,14 @@ export default function MemberOnboardingSurveyPage() {
             <h1 className="mt-3 text-2xl font-bold tracking-tight text-brand-ink sm:text-3xl lg:text-4xl">
               CSC Circle — Member Information Form
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-brand-secondary sm:text-base sm:leading-7">
-              Help us understand your business, startup, or idea so we can connect you with relevant opportunities within the Coimbatore Startup Community.
+            <p className="mt-3 text-lg font-semibold text-brand-ink sm:text-xl">
+              Tell Us About Yourself &amp; Your Journey
             </p>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-brand-muted">
-              Please provide your basic information and tell us about your business or idea. This information will help the CSC team better understand our community members and their interests.
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-brand-secondary sm:text-base sm:leading-7">
+              We want to understand who you are, what you&apos;re building, and how CSC Circle can support your entrepreneurial journey. Complete this short form to help us identify relevant connections, learning opportunities, and community activities.
+            </p>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 font-medium text-brand-muted">
+              Estimated completion time: 3–4 minutes
             </p>
           </div>
           <SurveyForm />

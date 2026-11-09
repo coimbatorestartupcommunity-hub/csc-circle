@@ -16,11 +16,11 @@ const fullRow: CommunityMember = {
   city: "Coimbatore",
   member_category: "Startup Founder",
   business_or_idea_name: "Sample Startup",
-  industry_sector: "Technology / Software",
+  industry_sector: "Technology & Artificial Intelligence",
   industry_other: null,
   current_stage: "Prototype / MVP",
   description: "Building an education product.",
-  support_needed: ["Mentorship", "Funding / Investment"],
+  support_needed: ["Startup Mentorship", "Investor / Funding Connections"],
   support_needed_other: null,
   biggest_challenge: "Finding customers.",
   website_url: "https://example.test",
@@ -32,7 +32,7 @@ const fullRow: CommunityMember = {
   business_connections: null,
   business_connections_other: null,
   startup_team_structure: "Solo Founder",
-  startup_support: ["Mentorship"],
+  startup_support: ["Startup Mentorship"],
   startup_support_other: null,
   startup_current_focus: "Finishing the MVP.",
   seeking_cofounder: null,
@@ -118,18 +118,18 @@ describe("community data admin dashboard", () => {
   it("navigates with every active filter when applying", () => {
     renderDashboard();
     fireEvent.change(screen.getByLabelText("City"), { target: { value: "Coimbatore" } });
-    fireEvent.change(screen.getByLabelText("Industry"), { target: { value: "Technology / Software" } });
+    fireEvent.change(screen.getByLabelText("Industry"), { target: { value: "Technology & Artificial Intelligence" } });
     fireEvent.change(screen.getByLabelText("Stage"), { target: { value: "Prototype / MVP" } });
-    fireEvent.change(screen.getByLabelText("Support Needed"), { target: { value: "Mentorship" } });
+    fireEvent.change(screen.getByLabelText("Support Needed"), { target: { value: "Startup Mentorship" } });
     fireEvent.change(screen.getByLabelText("Submitted From"), { target: { value: "2026-11-01" } });
     fireEvent.change(screen.getByLabelText("Submitted To"), { target: { value: "2026-11-09" } });
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(push).toHaveBeenCalledTimes(1);
     const target = String(push.mock.calls[0][0]);
     expect(target).toContain("city=Coimbatore");
-    expect(target).toContain("industry=Technology+%2F+Software");
+    expect(target).toContain("industry=Technology+%26+Artificial+Intelligence");
     expect(target).toContain("stage=Prototype+%2F+MVP");
-    expect(target).toContain("support=Mentorship");
+    expect(target).toContain("support=Startup+Mentorship");
     expect(target).toContain("from=2026-11-01");
     expect(target).toContain("to=2026-11-09");
   });
@@ -138,25 +138,25 @@ describe("community data admin dashboard", () => {
     renderDashboard();
     fireEvent.click(screen.getByRole("button", { name: "Startup Member" }));
     const drawer = await screen.findByRole("dialog");
-    expect(within(drawer).getByText("Personal Details")).toBeInTheDocument();
-    expect(within(drawer).getByText("Business / Idea")).toBeInTheDocument();
-    expect(within(drawer).getByText("Startup Founder Details")).toBeInTheDocument();
-    expect(within(drawer).getByText("Community & Support")).toBeInTheDocument();
-    expect(within(drawer).getByText("Additional Details")).toBeInTheDocument();
-    expect(within(drawer).getByText("Submission")).toBeInTheDocument();
+    expect(within(drawer).getByText("Personal Information")).toBeInTheDocument();
+    expect(within(drawer).getByText("Business Information")).toBeInTheDocument();
+    expect(within(drawer).getByText("Category-Specific Information")).toBeInTheDocument();
+    expect(within(drawer).getByText("Community Interests")).toBeInTheDocument();
+    expect(within(drawer).getByText("Additional Information")).toBeInTheDocument();
+    expect(within(drawer).getByText("Submission Information")).toBeInTheDocument();
     expect(within(drawer).getByText("Solo Founder")).toBeInTheDocument();
     fireEvent.click(within(drawer).getByRole("button", { name: "Done" }));
     fireEvent.click(screen.getByRole("button", { name: "Legacy Member" }));
     const legacyDrawer = await screen.findByRole("dialog");
-    expect(within(legacyDrawer).getByText("Established Business Details")).toBeInTheDocument();
+    expect(within(legacyDrawer).getByText("Category-Specific Information")).toBeInTheDocument();
     expect(within(legacyDrawer).getAllByText("Not provided").length).toBeGreaterThan(5);
   });
 
   it("keeps export links on the active filtered query", () => {
-    renderDashboard({ ...baseFilter, city: "Coimbatore", industry: "Technology / Software" });
+    renderDashboard({ ...baseFilter, city: "Coimbatore", industry: "Technology & Artificial Intelligence" });
     const csv = screen.getByRole("link", { name: /export csv/i });
     expect(csv.getAttribute("href")).toContain("format=csv");
     expect(csv.getAttribute("href")).toContain("city=Coimbatore");
-    expect(csv.getAttribute("href")).toContain("industry=Technology+%2F+Software");
+    expect(csv.getAttribute("href")).toContain("industry=Technology+%26+Artificial+Intelligence");
   });
 });

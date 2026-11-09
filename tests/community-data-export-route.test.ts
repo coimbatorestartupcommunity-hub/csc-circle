@@ -24,11 +24,11 @@ const fullRow: CommunityMember = {
   city: "Coimbatore",
   member_category: "Startup Founder",
   business_or_idea_name: "Sample Startup",
-  industry_sector: "Technology / Software",
+  industry_sector: "Technology & Artificial Intelligence",
   industry_other: null,
   current_stage: "Prototype / MVP",
   description: "Building an education product.",
-  support_needed: ["Mentorship", "Funding / Investment"],
+  support_needed: ["Startup Mentorship", "Investor / Funding Connections"],
   support_needed_other: null,
   biggest_challenge: null,
   website_url: null,
@@ -40,7 +40,7 @@ const fullRow: CommunityMember = {
   business_connections: null,
   business_connections_other: null,
   startup_team_structure: "Solo Founder",
-  startup_support: ["Mentorship"],
+  startup_support: ["Startup Mentorship"],
   startup_support_other: null,
   startup_current_focus: null,
   seeking_cofounder: null,
@@ -97,9 +97,9 @@ describe("community data export route", () => {
       category: "Startup Founder",
       search: "sample",
       city: "Coimbatore",
-      industry: "Technology / Software",
+      industry: "Technology & Artificial Intelligence",
       stage: "Prototype / MVP",
-      support: "Mentorship",
+      support: "Startup Mentorship",
       from: "2026-11-01",
       to: "2026-11-09",
     })));
@@ -110,16 +110,16 @@ describe("community data export route", () => {
     expect(Array.from(raw.slice(0, 3))).toEqual([0xef, 0xbb, 0xbf]);
     const body = await response.text();
     expect(body).toContain("Élodie Founder");
-    expect(body).toContain("\"Mentorship; Funding / Investment\"");
+    expect(body).toContain("\"Startup Mentorship; Investor / Funding Connections\"");
     expect(vi.mocked(getCommunityExportRows)).toHaveBeenCalledTimes(1);
     const filter = vi.mocked(getCommunityExportRows).mock.calls[0][0];
     expect(filter).toMatchObject({
       category: "Startup Founder",
       search: "sample",
       city: "Coimbatore",
-      industry: "Technology / Software",
+      industry: "Technology & Artificial Intelligence",
       stage: "Prototype / MVP",
-      support: "Mentorship",
+      support: "Startup Mentorship",
       from: "2026-11-01",
       to: "2026-11-09",
     });

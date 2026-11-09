@@ -371,28 +371,25 @@ export function CommunityDataDashboard({
               <SheetDescription>Survey submission received {displayDate(selected.created_at)}</SheetDescription>
             </SheetHeader>
             <div className="space-y-5 px-4 pb-4">
-              <DetailSection title="Personal Details">
+              <DetailSection title="Personal Information">
                 <DetailField label="Full Name" value={text(selected.full_name)} />
                 <DetailField label="City" value={text(selected.city)} />
                 <DetailField label="Contact Number" value={text(selected.contact_number)} href={`tel:${selected.contact_number}`} />
                 <DetailField label="Email Address" value={text(selected.email)} href={`mailto:${selected.email}`} />
               </DetailSection>
-              <DetailSection title="Business / Idea">
+              <DetailSection title="Business Information">
                 <DetailField label="Member Category" value={text(selected.member_category)} />
                 <DetailField label="Business / Idea Name" value={text(selected.business_or_idea_name)} />
                 <DetailField label="Industry Sector" value={withOther(selected.industry_sector, selected.industry_other)} />
                 <DetailField label="Current Stage" value={text(selected.current_stage)} />
                 <div className="sm:col-span-2">
-                  <DetailField label="Website" value={text(selected.website_url)} href={selected.website_url ?? undefined} />
-                </div>
-                <div className="sm:col-span-2">
                   <div className="rounded-xl bg-brand-cloud/70 p-3"><dt className="text-xs font-semibold tracking-wide text-brand-muted uppercase">Description</dt><dd className="mt-2 whitespace-pre-wrap text-sm leading-6 text-brand-ink">{selected.description}</dd></div>
                 </div>
               </DetailSection>
-              <DetailSection title={`${selected.member_category} Details`}>
+              <DetailSection title="Category-Specific Information">
                 <CategorySpecificFields row={selected} />
               </DetailSection>
-              <DetailSection title="Community & Support">
+              <DetailSection title="Community Interests">
                 <div className="sm:col-span-2">
                   <DetailField label="Support Needed" value={listWithOther(selected.support_needed, selected.support_needed_other)} />
                 </div>
@@ -400,11 +397,12 @@ export function CommunityDataDashboard({
                   <DetailField label="Biggest Challenge" value={text(selected.biggest_challenge)} />
                 </div>
               </DetailSection>
-              <DetailSection title="Additional Details">
+              <DetailSection title="Additional Information">
+                <DetailField label="Website / LinkedIn" value={text(selected.website_url)} href={selected.website_url ?? undefined} />
                 <DetailField label="Discovery Source" value={withOther(selected.discovery_source, selected.discovery_source_other)} />
                 <DetailField label="Preferred Contact Method" value={text(selected.preferred_contact_method)} />
               </DetailSection>
-              <DetailSection title="Submission">
+              <DetailSection title="Submission Information">
                 <DetailField label="Submitted On" value={displayDate(selected.created_at)} />
                 <DetailField label="Privacy Consent Recorded" value={displayDate(selected.consent_at)} />
               </DetailSection>

@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  allCurrentStages,
   businessConnectionOptions,
   businessTeamSizes,
   discoverySources,
@@ -54,10 +53,16 @@ function SectionHeading({ id, step, title, hint }: { id: string; step: string; t
 }
 
 const descriptionPlaceholders: Record<MemberCategory | "none", string> = {
-  none: "Briefly describe what your business does, what your startup is building, or what idea you are planning to develop.",
-  "Established Business": "Describe your established business — what you offer, who you serve, and how long you have been operating.",
-  "Startup Founder": "Describe your startup — the problem you are solving, what your product or MVP does, and your current traction.",
-  "Idea Stage": "Describe your idea — the problem you have noticed, who faces it, and what you would like to build.",
+  none: "Describe your business, startup, or idea.",
+  "Established Business": "Describe the products or services your business offers, your target customers, and what makes your business unique.",
+  "Startup Founder": "What problem is your startup solving, who are your target users, and what are you currently building?",
+  "Idea Stage": "Describe your idea, the problem you want to solve, and who might benefit from your solution.",
+};
+
+const stageLabels: Record<MemberCategory, string> = {
+  "Established Business": "What is your current business stage?",
+  "Startup Founder": "What is your current startup stage?",
+  "Idea Stage": "Have you started developing your idea?",
 };
 
 const DEFAULT_VALUES: DefaultValues<MemberSurveyFields> = {
@@ -95,7 +100,7 @@ const DEFAULT_VALUES: DefaultValues<MemberSurveyFields> = {
 
 type ArrayFieldName = "support_needed" | "business_connections" | "startup_support" | "idea_support";
 type OtherFieldName = "support_needed_other" | "business_connections_other" | "startup_support_other" | "idea_support_other";
-type RadioFieldName = "business_team_size" | "startup_team_structure" | "seeking_cofounder" | "preferred_contact_method";
+type SelectFieldName = "business_team_size" | "startup_team_structure" | "seeking_cofounder" | "preferred_contact_method";
 
 export function SurveyForm() {
   const [status, setStatus] = useState<"form" | "success" | "error">("form");
@@ -131,7 +136,7 @@ export function SurveyForm() {
   const businessConnections = useWatch({ control, name: "business_connections" }) ?? [];
   const startupSupport = useWatch({ control, name: "startup_support" }) ?? [];
   const ideaSupport = useWatch({ control, name: "idea_support" }) ?? [];
-  const stageOptions = category ? stagesForCategory[category] : allCurrentStages;
+  const stageOptions = category ? stagesForCategory[category] : [];
 
   function clearCategoryFields(next: MemberCategory | undefined) {
     if (next !== "Established Business") {
@@ -207,16 +212,26 @@ export function SurveyForm() {
     );
   }
 
-  function radioGroup(name: RadioFieldName, options: readonly string[], errorId: string) {
+  function selectField(name: SelectFieldName, id: string, placeholder: string, options: readonly string[], errorId: string) {
     return (
-      <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-describedby={errors[name] ? errorId : undefined}>
-        {options.map((option) => (
-          <label key={option} className={optionCardClass}>
-            <input type="radio" className={checkboxClass} value={option} {...register(name)} />
-            <span>{option}</span>
-          </label>
-        ))}
-      </div>
+      <Controller
+        name={name}
+        control={control}
+        render={({ field }) => (
+          <select
+            id={id}
+            aria-invalid={Boolean(errors[name])}
+            aria-describedby={errors[name] ? errorId : undefined}
+            className={selectClass}
+            value={field.value ?? ""}
+            onChange={(event) => field.onChange(event.target.value || undefined)}
+            onBlur={field.onBlur}
+          >
+            <option value="">{placeholder}</option>
+            {options.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        )}
+      />
     );
   }
 
@@ -281,7 +296,7 @@ export function SurveyForm() {
       ) : null}
 
       <section aria-labelledby="survey-section-personal" className="space-y-5">
-        <SectionHeading id="survey-section-personal" step="1" title="Personal Details" hint="Tell us who you are and where you are based." />
+        <SectionHeading id="survey-section-personal" step="1" title="Personal Information" hint="Tell us who you are and where you are based." />
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="full_name">Full Name <span aria-hidden>*</span></Label>
@@ -290,24 +305,24 @@ export function SurveyForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="contact_number">Contact Number <span aria-hidden>*</span></Label>
-            <Input id="contact_number" type="tel" inputMode="tel" autoComplete="tel" placeholder="Enter your contact number" maxLength={30} aria-invalid={Boolean(errors.contact_number)} aria-describedby={errors.contact_number ? "contact-number-error" : undefined} className={inputClass} {...register("contact_number")} />
+            <Input id="contact_number" type="tel" inputMode="tel" autoComplete="tel" placeholder="e.g., +91 98765 43210" maxLength={30} aria-invalid={Boolean(errors.contact_number)} aria-describedby={errors.contact_number ? "contact-number-error" : undefined} className={inputClass} {...register("contact_number")} />
             <ErrorMessage id="contact-number-error" message={errors.contact_number?.message} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email Address <span aria-hidden>*</span></Label>
-            <Input id="email" type="email" inputMode="email" autoComplete="email" placeholder="Enter your email address" maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "email-error" : undefined} className={inputClass} {...register("email")} />
+            <Input id="email" type="email" inputMode="email" autoComplete="email" placeholder="e.g., name@example.com" maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "email-error" : undefined} className={inputClass} {...register("email")} />
             <ErrorMessage id="email-error" message={errors.email?.message} />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="city">City <span aria-hidden>*</span></Label>
-            <Input id="city" autoComplete="address-level2" placeholder="Enter your city" maxLength={120} aria-invalid={Boolean(errors.city)} aria-describedby={errors.city ? "city-error" : undefined} className={inputClass} {...register("city")} />
+            <Label htmlFor="city">City / Location <span aria-hidden>*</span></Label>
+            <Input id="city" autoComplete="address-level2" placeholder="Enter your city (e.g., Coimbatore)" maxLength={120} aria-invalid={Boolean(errors.city)} aria-describedby={errors.city ? "city-error" : undefined} className={inputClass} {...register("city")} />
             <ErrorMessage id="city-error" message={errors.city?.message} />
           </div>
         </div>
       </section>
 
       <section aria-labelledby="survey-section-business" className="space-y-5">
-        <SectionHeading id="survey-section-business" step="2" title="Your Business, Startup, or Idea" hint="Choose the category that fits you best — the rest of the form adapts immediately." />
+        <SectionHeading id="survey-section-business" step="2" title="Business, Startup or Idea Information" hint="Choose the category that fits you best — the rest of the form adapts immediately." />
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="member_category">Which category best describes you? <span aria-hidden>*</span></Label>
@@ -333,11 +348,11 @@ export function SurveyForm() {
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="business_or_idea_name">Business, Startup, or Idea Name <span aria-hidden>*</span></Label>
-            <Input id="business_or_idea_name" autoComplete="organization" placeholder="Enter the name of your business, startup, or idea" maxLength={160} aria-invalid={Boolean(errors.business_or_idea_name)} aria-describedby={errors.business_or_idea_name ? "business-name-error" : undefined} className={inputClass} {...register("business_or_idea_name")} />
+            <Input id="business_or_idea_name" autoComplete="organization" placeholder="Enter your business name or a working name for your idea" maxLength={160} aria-invalid={Boolean(errors.business_or_idea_name)} aria-describedby={errors.business_or_idea_name ? "business-name-error" : undefined} className={inputClass} {...register("business_or_idea_name")} />
             <ErrorMessage id="business-name-error" message={errors.business_or_idea_name?.message} />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="industry_sector">Industry Sector <span aria-hidden>*</span></Label>
+            <Label htmlFor="industry_sector">Which industry or sector are you involved in? <span aria-hidden>*</span></Label>
             <Controller
               name="industry_sector"
               control={control}
@@ -357,7 +372,7 @@ export function SurveyForm() {
                   }}
                   onBlur={field.onBlur}
                 >
-                  <option value="">Select your industry</option>
+                  <option value="">Select your industry or sector</option>
                   {industrySectors.map((value) => <option key={value} value={value}>{value}</option>)}
                 </select>
               )}
@@ -366,13 +381,13 @@ export function SurveyForm() {
           </div>
           {industry === "Other" ? (
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="industry_other">Please specify your industry <span aria-hidden>*</span></Label>
-              <Input id="industry_other" placeholder="Describe your industry" maxLength={120} aria-invalid={Boolean(errors.industry_other)} aria-describedby={errors.industry_other ? "industry-other-error" : undefined} className={inputClass} {...register("industry_other")} />
+              <Label htmlFor="industry_other">Please Specify Your Industry <span aria-hidden>*</span></Label>
+              <Input id="industry_other" placeholder="Enter your industry or sector" maxLength={120} aria-invalid={Boolean(errors.industry_other)} aria-describedby={errors.industry_other ? "industry-other-error" : undefined} className={inputClass} {...register("industry_other")} />
               <ErrorMessage id="industry-other-error" message={errors.industry_other?.message} />
             </div>
           ) : null}
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="current_stage">Current Stage <span aria-hidden>*</span></Label>
+            <Label htmlFor="current_stage">{category ? stageLabels[category] : "Current Stage"} <span aria-hidden>*</span></Label>
             <Controller
               name="current_stage"
               control={control}
@@ -406,27 +421,27 @@ export function SurveyForm() {
       </section>
 
       <section aria-labelledby="survey-section-category" className="space-y-5">
-        <SectionHeading id="survey-section-category" step="3" title="Category Details" hint="A few questions specific to your stage. These are optional unless marked otherwise." />
+        <SectionHeading id="survey-section-category" step="3" title="Category-Specific Questions" hint="A few questions specific to your stage. These are optional unless marked otherwise." />
         {!category ? (
           <p className="rounded-2xl border border-dashed border-brand-border bg-brand-cloud/50 p-4 text-sm leading-6 text-brand-secondary">
-            Select a category in step 2 to see the additional questions for established businesses, startups, or idea-stage members.
+            Select your member category to view questions relevant to your business or idea.
           </p>
         ) : null}
         {category === "Established Business" ? (
           <div className="grid gap-5 transition-opacity duration-200 sm:grid-cols-2">
-            <h3 className="text-sm font-bold text-brand-ink sm:col-span-2">Established Business Details</h3>
+            <h3 className="text-sm font-bold text-brand-ink sm:col-span-2">Tell Us More About Your Business</h3>
             <div className="space-y-2">
-              <Label htmlFor="established_year">Year of Establishment</Label>
-              <Input id="established_year" inputMode="numeric" autoComplete="off" placeholder="e.g. 2019" maxLength={4} aria-invalid={Boolean(errors.established_year)} aria-describedby={errors.established_year ? "established-year-error" : undefined} className={inputClass} {...register("established_year")} />
+              <Label htmlFor="established_year">In which year was your business established?</Label>
+              <Input id="established_year" inputMode="numeric" autoComplete="off" placeholder="e.g., 2019" maxLength={4} aria-invalid={Boolean(errors.established_year)} aria-describedby={errors.established_year ? "established-year-error" : undefined} className={inputClass} {...register("established_year")} />
               <ErrorMessage id="established-year-error" message={errors.established_year?.message} />
             </div>
-            <fieldset className="space-y-2 sm:col-span-2">
-              <legend className="text-sm font-medium text-brand-ink">Business Team Size</legend>
-              {radioGroup("business_team_size", businessTeamSizes, "business-team-size-error")}
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="business_team_size">How many people are currently working in your business?</Label>
+              {selectField("business_team_size", "business_team_size", "Select your team size", businessTeamSizes, "business-team-size-error")}
               <ErrorMessage id="business-team-size-error" message={errors.business_team_size?.message} />
-            </fieldset>
+            </div>
             <fieldset className="space-y-2 sm:col-span-2">
-              <legend className="text-sm font-medium text-brand-ink">What business connections are you looking for?</legend>
+              <legend className="text-sm font-medium text-brand-ink">What type of business connections are you looking for?</legend>
               {checkboxGroup("business_connections", "business_connections_other", businessConnectionOptions, "business-connections-error")}
               <ErrorMessage id="business-connections-error" message={errors.business_connections?.message} />
             </fieldset>
@@ -441,14 +456,14 @@ export function SurveyForm() {
         ) : null}
         {category === "Startup Founder" ? (
           <div className="grid gap-5 transition-opacity duration-200 sm:grid-cols-2">
-            <h3 className="text-sm font-bold text-brand-ink sm:col-span-2">Startup Details</h3>
-            <fieldset className="space-y-2 sm:col-span-2">
-              <legend className="text-sm font-medium text-brand-ink">Startup Team Structure</legend>
-              {radioGroup("startup_team_structure", startupTeamStructures, "startup-team-structure-error")}
+            <h3 className="text-sm font-bold text-brand-ink sm:col-span-2">Tell Us More About Your Startup</h3>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="startup_team_structure">Do you currently have a startup team?</Label>
+              {selectField("startup_team_structure", "startup_team_structure", "Select your current team structure", startupTeamStructures, "startup-team-structure-error")}
               <ErrorMessage id="startup-team-structure-error" message={errors.startup_team_structure?.message} />
-            </fieldset>
+            </div>
             <fieldset className="space-y-2 sm:col-span-2">
-              <legend className="text-sm font-medium text-brand-ink">What support does your startup need right now?</legend>
+              <legend className="text-sm font-medium text-brand-ink">What support would help your startup most?</legend>
               {checkboxGroup("startup_support", "startup_support_other", startupSupportOptions, "startup-support-error")}
               <ErrorMessage id="startup-support-error" message={errors.startup_support?.message} />
             </fieldset>
@@ -461,24 +476,24 @@ export function SurveyForm() {
             ) : null}
             <div className="space-y-2 sm:col-span-2">
               <div className="flex items-end justify-between gap-3">
-                <Label htmlFor="startup_current_focus">What is your startup focused on right now?</Label>
+                <Label htmlFor="startup_current_focus">What are you currently working on?</Label>
                 <span className="shrink-0 text-xs text-brand-muted" aria-live="polite">{startupFocus.length}/1000</span>
               </div>
-              <Textarea id="startup_current_focus" rows={4} maxLength={1000} placeholder="For example: finishing our MVP, onboarding first customers, preparing for launch." aria-invalid={Boolean(errors.startup_current_focus)} aria-describedby={errors.startup_current_focus ? "startup-focus-error" : undefined} className="min-h-28 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("startup_current_focus")} />
+              <Textarea id="startup_current_focus" rows={4} maxLength={1000} placeholder="Tell us about your current product, MVP, launch, customer validation, or growth activities." aria-invalid={Boolean(errors.startup_current_focus)} aria-describedby={errors.startup_current_focus ? "startup-focus-error" : undefined} className="min-h-28 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("startup_current_focus")} />
               <ErrorMessage id="startup-focus-error" message={errors.startup_current_focus?.message} />
             </div>
           </div>
         ) : null}
         {category === "Idea Stage" ? (
           <div className="grid gap-5 transition-opacity duration-200 sm:grid-cols-2">
-            <h3 className="text-sm font-bold text-brand-ink sm:col-span-2">Idea Stage Details</h3>
-            <fieldset className="space-y-2 sm:col-span-2">
-              <legend className="text-sm font-medium text-brand-ink">Are you looking for a co-founder?</legend>
-              {radioGroup("seeking_cofounder", seekingCofounderOptions, "seeking-cofounder-error")}
+            <h3 className="text-sm font-bold text-brand-ink sm:col-span-2">Tell Us More About Your Idea</h3>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="seeking_cofounder">Are you looking for a co-founder or team?</Label>
+              {selectField("seeking_cofounder", "seeking_cofounder", "Select an option", seekingCofounderOptions, "seeking-cofounder-error")}
               <ErrorMessage id="seeking-cofounder-error" message={errors.seeking_cofounder?.message} />
-            </fieldset>
+            </div>
             <fieldset className="space-y-2 sm:col-span-2">
-              <legend className="text-sm font-medium text-brand-ink">What support would help you develop your idea?</legend>
+              <legend className="text-sm font-medium text-brand-ink">What would help you move forward with your idea?</legend>
               {checkboxGroup("idea_support", "idea_support_other", ideaSupportOptions, "idea-support-error")}
               <ErrorMessage id="idea-support-error" message={errors.idea_support?.message} />
             </fieldset>
@@ -491,10 +506,10 @@ export function SurveyForm() {
             ) : null}
             <div className="space-y-2 sm:col-span-2">
               <div className="flex items-end justify-between gap-3">
-                <Label htmlFor="idea_problem_statement">What problem does your idea solve?</Label>
+                <Label htmlFor="idea_problem_statement">What problem are you hoping to solve?</Label>
                 <span className="shrink-0 text-xs text-brand-muted" aria-live="polite">{problemStatement.length}/1000</span>
               </div>
-              <Textarea id="idea_problem_statement" rows={4} maxLength={1000} placeholder="Describe the problem you have noticed and who experiences it." aria-invalid={Boolean(errors.idea_problem_statement)} aria-describedby={errors.idea_problem_statement ? "idea-problem-error" : undefined} className="min-h-28 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("idea_problem_statement")} />
+              <Textarea id="idea_problem_statement" rows={4} maxLength={1000} placeholder="Describe the problem you have identified and why you believe solving it would be valuable." aria-invalid={Boolean(errors.idea_problem_statement)} aria-describedby={errors.idea_problem_statement ? "idea-problem-error" : undefined} className="min-h-28 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("idea_problem_statement")} />
               <ErrorMessage id="idea-problem-error" message={errors.idea_problem_statement?.message} />
             </div>
           </div>
@@ -502,9 +517,9 @@ export function SurveyForm() {
       </section>
 
       <section aria-labelledby="survey-section-support" className="space-y-5">
-        <SectionHeading id="survey-section-support" step="4" title="Support Needs" hint="Select every area where the CSC community could help you." />
+        <SectionHeading id="survey-section-support" step="4" title="Community Interests & Support Requirements" hint="Select every area where the CSC community could help you." />
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-brand-ink">What kind of support do you need from CSC? <span aria-hidden>*</span></legend>
+          <legend className="text-sm font-medium text-brand-ink">What support are you looking for from CSC Circle? <span aria-hidden>*</span></legend>
           {checkboxGroup("support_needed", "support_needed_other", supportNeededOptions, "support-needed-error")}
           <ErrorMessage id="support-needed-error" message={errors.support_needed?.message} />
         </fieldset>
@@ -517,10 +532,10 @@ export function SurveyForm() {
         ) : null}
         <div className="space-y-2">
           <div className="flex items-end justify-between gap-3">
-            <Label htmlFor="biggest_challenge">What is your biggest challenge right now?</Label>
+            <Label htmlFor="biggest_challenge">What is your biggest current challenge?</Label>
             <span className="shrink-0 text-xs text-brand-muted" aria-live="polite">{biggestChallenge.length}/1000</span>
           </div>
-          <Textarea id="biggest_challenge" rows={4} maxLength={1000} placeholder="Share the one challenge you would most like help with." aria-invalid={Boolean(errors.biggest_challenge)} aria-describedby={errors.biggest_challenge ? "biggest-challenge-error" : undefined} className="min-h-28 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("biggest_challenge")} />
+          <Textarea id="biggest_challenge" rows={4} maxLength={1000} placeholder="Tell us about the biggest challenge you are facing in your business, startup, or entrepreneurial journey." aria-invalid={Boolean(errors.biggest_challenge)} aria-describedby={errors.biggest_challenge ? "biggest-challenge-error" : undefined} className="min-h-28 resize-y rounded-xl border-brand-border bg-white px-3 py-3" {...register("biggest_challenge")} />
           <ErrorMessage id="biggest-challenge-error" message={errors.biggest_challenge?.message} />
         </div>
       </section>
@@ -529,12 +544,12 @@ export function SurveyForm() {
         <SectionHeading id="survey-section-additional" step="5" title="Additional Information" hint="Optional details that help us reach you and understand how you found CSC." />
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="website_url">Website URL</Label>
-            <Input id="website_url" type="url" inputMode="url" autoComplete="url" placeholder="https://example.com" maxLength={2048} aria-invalid={Boolean(errors.website_url)} aria-describedby={errors.website_url ? "website-url-error" : undefined} className={inputClass} {...register("website_url")} />
+            <Label htmlFor="website_url">Website, LinkedIn, or Portfolio URL</Label>
+            <Input id="website_url" type="url" inputMode="url" autoComplete="url" placeholder="https://yourwebsite.com or https://linkedin.com/in/..." maxLength={2048} aria-invalid={Boolean(errors.website_url)} aria-describedby={errors.website_url ? "website-url-error" : undefined} className={inputClass} {...register("website_url")} />
             <ErrorMessage id="website-url-error" message={errors.website_url?.message} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="discovery_source">How did you hear about CSC?</Label>
+            <Label htmlFor="discovery_source">How did you hear about Coimbatore Startup Community?</Label>
             <Controller
               name="discovery_source"
               control={control}
@@ -561,11 +576,11 @@ export function SurveyForm() {
             />
             <ErrorMessage id="discovery-source-error" message={errors.discovery_source?.message} />
           </div>
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-brand-ink">Preferred Contact Method</legend>
-            {radioGroup("preferred_contact_method", preferredContactMethods, "preferred-contact-error")}
+          <div className="space-y-2">
+            <Label htmlFor="preferred_contact_method">How would you prefer CSC Circle to contact you?</Label>
+            {selectField("preferred_contact_method", "preferred_contact_method", "Select your preferred contact method", preferredContactMethods, "preferred-contact-error")}
             <ErrorMessage id="preferred-contact-error" message={errors.preferred_contact_method?.message} />
-          </fieldset>
+          </div>
           {discovery === "Other" ? (
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="discovery_source_other">Please tell us how you heard about CSC</Label>
@@ -577,12 +592,16 @@ export function SurveyForm() {
       </section>
 
       <section aria-labelledby="survey-section-privacy" className="space-y-5">
-        <SectionHeading id="survey-section-privacy" step="6" title="Privacy & Submit" />
+        <SectionHeading id="survey-section-privacy" step="6" title="Privacy Consent & Submission" />
+        <h3 className="text-sm font-bold text-brand-ink">Your Information & Privacy</h3>
+        <p className="text-sm leading-6 text-brand-secondary">
+          Your information will be reviewed by authorized CSC Circle administrators and used for community-related engagement. Submitting this form does not automatically create a CSC membership account or guarantee access to particular opportunities.
+        </p>
         <div className="rounded-2xl border border-brand-border bg-brand-cloud/70 p-4">
           <label htmlFor="consent" className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-brand-secondary">
             <input id="consent" type="checkbox" className="mt-1 size-4 shrink-0 accent-brand-ink" aria-invalid={Boolean(errors.consent)} aria-describedby={errors.consent ? "consent-error" : undefined} {...register("consent")} />
             <span>
-              I understand that Coimbatore Startup Community will use the information I provide to review my submission and communicate with me about relevant CSC community activities, as described in the{" "}
+              I understand that Coimbatore Startup Community will use the information I provide to review my submission and communicate with me about relevant community activities, as described in the{" "}
               <Link href="/privacy" target="_blank" rel="noreferrer" className="font-semibold text-brand-ink underline underline-offset-4">Privacy Policy</Link>.
             </span>
           </label>

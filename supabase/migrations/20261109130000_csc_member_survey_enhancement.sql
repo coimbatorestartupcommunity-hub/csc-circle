@@ -36,19 +36,19 @@ alter table public.csc_members
   ),
   add constraint csc_members_industry_valid check (
     industry_sector in (
-      'Technology / Software',
-      'Healthcare / Life Sciences',
-      'Education / EdTech',
-      'Finance / FinTech',
-      'E-commerce / Retail',
+      'Technology & Artificial Intelligence',
       'Manufacturing',
-      'Agriculture / Food',
-      'Hospitality / Travel',
-      'Real Estate / Construction',
-      'Media / Entertainment',
-      'Logistics / Transportation',
-      'Consulting / Professional Services',
-      'Social Impact / Nonprofit',
+      'Healthcare & Medical',
+      'Education & EdTech',
+      'Finance & FinTech',
+      'Retail & E-Commerce',
+      'Agriculture & AgriTech',
+      'Food & Hospitality',
+      'Marketing & Media',
+      'Logistics & Transportation',
+      'Real Estate & Construction',
+      'Professional Services',
+      'Sustainability & Clean Energy',
       'Other'
     )
   ),
@@ -87,20 +87,19 @@ alter table public.csc_members
   add constraint csc_members_support_needed_valid check (
     support_needed is null
     or (
-      cardinality(support_needed) between 1 and 13
+      cardinality(support_needed) between 1 and 12
       and support_needed <@ array[
-        'Funding / Investment',
-        'Mentorship',
-        'Networking Opportunities',
-        'Marketing & Visibility',
-        'Talent / Hiring',
-        'Technology Support',
-        'Legal & Compliance',
-        'Financial Planning',
-        'Business Strategy',
-        'Product Development',
-        'Market Access',
-        'Workspace / Infrastructure',
+        'Professional Networking',
+        'Startup Mentorship',
+        'Business Partnerships',
+        'Investor / Funding Connections',
+        'Skill Development',
+        'Workshops & Events',
+        'Hiring / Talent Connections',
+        'Technology & AI Support',
+        'Marketing & Business Growth',
+        'Community Collaboration',
+        'Just Exploring',
         'Other'
       ]
     )
@@ -129,14 +128,13 @@ alter table public.csc_members
   ),
   add constraint csc_members_discovery_source_valid check (
     discovery_source in (
-      'Google Search',
-      'Social Media',
+      'Instagram',
+      'LinkedIn',
+      'WhatsApp',
       'Friend / Referral',
       'CSC Event',
-      'WhatsApp Community',
-      'College / Institution',
-      'News / Media',
-      'Partner Organization',
+      'College / University',
+      'Website / Search Engine',
       'Other'
     )
   ),
@@ -149,10 +147,10 @@ alter table public.csc_members
   ),
   add constraint csc_members_preferred_contact_valid check (
     preferred_contact_method in (
-      'Phone Call',
-      'WhatsApp',
       'Email',
-      'Any'
+      'WhatsApp',
+      'Phone Call',
+      'No Preference'
     )
   ),
   add constraint csc_members_established_year_valid check (
@@ -160,29 +158,28 @@ alter table public.csc_members
   ),
   add constraint csc_members_business_team_size_valid check (
     business_team_size in (
-      'Just me',
-      '2-5',
-      '6-10',
-      '11-25',
-      '26-50',
-      '50+'
+      'Just Me',
+      '1–5 Employees',
+      '6–20 Employees',
+      '21–50 Employees',
+      '51–100 Employees',
+      '100+ Employees'
     )
   ),
   add constraint csc_members_business_connections_valid check (
     business_connections is null
     or (
-      cardinality(business_connections) between 1 and 11
+      cardinality(business_connections) between 1 and 10
       and business_connections <@ array[
+        'New Customers',
+        'Business Partnerships',
+        'Vendors / Suppliers',
+        'Distributors',
         'Investors',
-        'Mentors',
-        'Customers',
-        'Distributors / Channel Partners',
-        'Suppliers / Vendors',
-        'Industry Peers',
-        'Government / Policy Support',
-        'Talent / Hiring',
-        'Technology Partners',
-        'Media / Visibility',
+        'Technology Support',
+        'Hiring / Talent',
+        'Business Mentorship',
+        'Professional Networking',
         'Other'
       ]
     )
@@ -197,28 +194,27 @@ alter table public.csc_members
   add constraint csc_members_startup_team_structure_valid check (
     startup_team_structure in (
       'Solo Founder',
-      '2 Co-founders',
-      'Small Team (3-5)',
-      'Growing Team (6-15)',
-      'Large Team (16+)'
+      '2–5 Team Members',
+      '6–10 Team Members',
+      '11+ Team Members',
+      'Currently Building a Team'
     )
   ),
   add constraint csc_members_startup_support_valid check (
     startup_support is null
     or (
-      cardinality(startup_support) between 1 and 12
+      cardinality(startup_support) between 1 and 11
       and startup_support <@ array[
-        'Mentorship',
-        'Funding / Investment',
-        'Co-founder Matching',
         'Product Development',
-        'Go-to-Market Strategy',
-        'Hiring / Talent',
-        'Legal / Incorporation',
-        'Marketing / Branding',
-        'Networking',
-        'Technology / Tools',
-        'Workspace',
+        'Technical Guidance',
+        'Startup Mentorship',
+        'Customer Introductions',
+        'Business Partnerships',
+        'Fundraising Preparation',
+        'Investor Connections',
+        'Marketing & Growth',
+        'Co-Founder / Team Building',
+        'Legal & Business Setup Guidance',
         'Other'
       ]
     )
@@ -240,27 +236,26 @@ alter table public.csc_members
   add constraint csc_members_seeking_cofounder_valid check (
     seeking_cofounder in (
       'Yes, Actively Looking',
-      'Yes, Open to It',
-      'No, Have a Team',
-      'No, Solo'
+      'No, Not Currently',
+      'Maybe Later',
+      'Not Sure Yet'
     )
   ),
   add constraint csc_members_idea_support_valid check (
     idea_support is null
     or (
-      cardinality(idea_support) between 1 and 12
+      cardinality(idea_support) between 1 and 11
       and idea_support <@ array[
         'Idea Validation',
-        'Mentorship',
         'Market Research',
-        'Prototyping Support',
+        'Customer Discovery',
+        'Startup Mentorship',
         'Technical Guidance',
-        'Business Planning',
+        'Building an MVP',
+        'Finding a Co-Founder',
+        'Team Building',
+        'Business Model Development',
         'Funding Guidance',
-        'Co-founder Matching',
-        'Networking',
-        'Skill Development',
-        'Legal / IP Guidance',
         'Other'
       ]
     )

@@ -32,11 +32,11 @@ const validSubmission = {
   city: "  Coimbatore  ",
   member_category: "Startup Founder",
   business_or_idea_name: "  Sample Startup  ",
-  industry_sector: "Technology / Software",
+  industry_sector: "Technology & Artificial Intelligence",
   industry_other: "",
   current_stage: "Prototype / MVP",
   description: "  Building an education product for startup founders.  ",
-  support_needed: ["Mentorship", "Funding / Investment"],
+  support_needed: ["Startup Mentorship", "Investor / Funding Connections"],
   support_needed_other: "",
   biggest_challenge: "",
   website_url: "",
@@ -48,7 +48,7 @@ const validSubmission = {
   business_connections: [],
   business_connections_other: "",
   startup_team_structure: "Solo Founder",
-  startup_support: ["Mentorship"],
+  startup_support: ["Startup Mentorship"],
   startup_support_other: "",
   startup_current_focus: "Finishing the MVP.",
   seeking_cofounder: undefined,
@@ -69,11 +69,11 @@ const row: CommunityMember = {
   city: "Coimbatore",
   member_category: "Startup Founder",
   business_or_idea_name: "=Unsafe Spreadsheet Name",
-  industry_sector: "Technology / Software",
+  industry_sector: "Technology & Artificial Intelligence",
   industry_other: null,
   current_stage: "Prototype / MVP",
   description: "A long founder description with commas, \"quotes\", and\nmultiple lines.",
-  support_needed: ["Mentorship", "Other"],
+  support_needed: ["Startup Mentorship", "Other"],
   support_needed_other: "Warm introductions",
   biggest_challenge: "Finding first customers.",
   website_url: "https://example.test",
@@ -85,7 +85,7 @@ const row: CommunityMember = {
   business_connections: null,
   business_connections_other: null,
   startup_team_structure: "Solo Founder",
-  startup_support: ["Mentorship", "Networking"],
+  startup_support: ["Startup Mentorship", "Business Partnerships"],
   startup_support_other: null,
   startup_current_focus: "Finishing the MVP.",
   seeking_cofounder: null,
@@ -140,9 +140,9 @@ describe("community member survey validation", () => {
     expect(value.email).toBe("example@test.com");
     expect(value.city).toBe("Coimbatore");
     expect(value.business_or_idea_name).toBe("Sample Startup");
-    expect(value.industry_sector).toBe("Technology / Software");
+    expect(value.industry_sector).toBe("Technology & Artificial Intelligence");
     expect(value.current_stage).toBe("Prototype / MVP");
-    expect(value.support_needed).toEqual(["Mentorship", "Funding / Investment"]);
+    expect(value.support_needed).toEqual(["Startup Mentorship", "Investor / Funding Connections"]);
     expect(memberCategories).toEqual(["Established Business", "Startup Founder", "Idea Stage"]);
   });
 
@@ -182,7 +182,7 @@ describe("community member survey validation", () => {
   });
 
   it("requires at least one support option and validates website and year optionals", () => {
-    expect(supportNeededOptions).toHaveLength(13);
+    expect(supportNeededOptions).toHaveLength(12);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, support_needed: [] }).success).toBe(false);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, website_url: "not a url" }).success).toBe(false);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, website_url: "example.com" }).success).toBe(true);
@@ -193,12 +193,12 @@ describe("community member survey validation", () => {
 
   it("exposes the specified per-category option counts", () => {
     expect(businessTeamSizes).toHaveLength(6);
-    expect(businessConnectionOptions).toHaveLength(11);
+    expect(businessConnectionOptions).toHaveLength(10);
     expect(startupTeamStructures).toHaveLength(5);
-    expect(startupSupportOptions).toHaveLength(12);
+    expect(startupSupportOptions).toHaveLength(11);
     expect(seekingCofounderOptions).toHaveLength(4);
-    expect(ideaSupportOptions).toHaveLength(12);
-    expect(discoverySources).toHaveLength(9);
+    expect(ideaSupportOptions).toHaveLength(11);
+    expect(discoverySources).toHaveLength(8);
     expect(preferredContactMethods).toHaveLength(4);
   });
 
@@ -207,7 +207,7 @@ describe("community member survey validation", () => {
       ...validSubmission,
       website_url: "example.com",
       established_year: "2019",
-      business_team_size: "2-5",
+      business_team_size: "1–5 Employees",
       startup_support: [],
     });
     const clean = sanitizeMemberSurveyValues(parsed);
@@ -216,7 +216,7 @@ describe("community member survey validation", () => {
     expect(clean.business_team_size).toBeUndefined();
     expect(clean.startup_support).toBeUndefined();
     expect(clean.startup_team_structure).toBe("Solo Founder");
-    expect(clean.support_needed).toEqual(["Mentorship", "Funding / Investment"]);
+    expect(clean.support_needed).toEqual(["Startup Mentorship", "Investor / Funding Connections"]);
   });
 
   it("validates combined category, search, city, industry, stage, support, date, sorting and pagination filters", () => {
@@ -226,7 +226,7 @@ describe("community member survey validation", () => {
       city: " Coimbatore ",
       industry: "Other",
       stage: "Validating the Idea",
-      support: "Mentorship",
+      support: "Startup Mentorship",
       from: "2026-11-01",
       to: "2026-11-09",
       sort: "name_asc",
@@ -238,7 +238,7 @@ describe("community member survey validation", () => {
       city: "Coimbatore",
       industry: "Other",
       stage: "Validating the Idea",
-      support: "Mentorship",
+      support: "Startup Mentorship",
       from: "2026-11-01",
       to: "2026-11-09",
       sort: "name_asc",
@@ -267,8 +267,8 @@ describe("community data exports", () => {
     expect(COMMUNITY_DATA_CSV_HEADERS).toContain("Support Needed");
     expect(COMMUNITY_DATA_CSV_HEADERS).toContain("Idea Problem Statement");
     const csv = communityDataCsv([row, legacyRow]);
-    expect(csv).toContain("\"Mentorship; Other\"");
-    expect(csv).toContain("\"Mentorship; Networking\"");
+    expect(csv).toContain("\"Startup Mentorship; Other\"");
+    expect(csv).toContain("\"Startup Mentorship; Business Partnerships\"");
     expect(csv).toContain("Warm introductions");
     const lines = csv.split("\r\n");
     expect(lines).toHaveLength(3);
@@ -309,7 +309,7 @@ describe("csc_members migration security and invariants", () => {
     await database.exec("create role anon; create role authenticated; create role service_role bypassrls;");
     const base = readFileSync(resolve(process.cwd(), "supabase/migrations/20261109102024_csc_member_survey.sql"), "utf8");
     await database.exec(base);
-    const enhancement = readFileSync(resolve(process.cwd(), "supabase/migrations/20261109120000_csc_member_survey_enhancement.sql"), "utf8");
+    const enhancement = readFileSync(resolve(process.cwd(), "supabase/migrations/20261109130000_csc_member_survey_enhancement.sql"), "utf8");
     await database.exec(enhancement);
   });
 
@@ -329,10 +329,10 @@ describe("csc_members migration security and invariants", () => {
 
   it("stores the enhancement columns and rejects invalid option values", async () => {
     await database.exec(`insert into public.csc_members(full_name,contact_number,email,city,member_category,business_or_idea_name,industry_sector,current_stage,description,support_needed,established_year,website_url,submission_token)
-      values ('Enhanced Member','+91 98765 43211','enhanced@test.com','Coimbatore','Startup Founder','Enhanced Startup','Technology / Software','Prototype / MVP','A sufficiently detailed startup description.',array['Mentorship','Other'],2019,'https://example.test','44444444-4444-4444-8444-444444444444')`);
+      values ('Enhanced Member','+91 98765 43211','enhanced@test.com','Coimbatore','Startup Founder','Enhanced Startup','Technology & Artificial Intelligence','Prototype / MVP','A sufficiently detailed startup description.',array['Startup Mentorship','Other'],2019,'https://example.test','44444444-4444-4444-8444-444444444444')`);
     const stored = await database.query<{ city: string; support_needed: string[]; established_year: number }>(
       `select city,support_needed,established_year from public.csc_members where submission_token='44444444-4444-4444-8444-444444444444'`);
-    expect(stored.rows[0]).toMatchObject({ city: "Coimbatore", support_needed: ["Mentorship", "Other"], established_year: 2019 });
+    expect(stored.rows[0]).toMatchObject({ city: "Coimbatore", support_needed: ["Startup Mentorship", "Other"], established_year: 2019 });
     await expect(database.exec(`insert into public.csc_members(full_name,contact_number,email,member_category,business_or_idea_name,description,industry_sector,submission_token) values ('Bad Industry','9876543210','bad-industry@test.com','Idea Stage','Bad Idea','A sufficiently detailed description.','Nope','55555555-5555-4555-8555-555555555555')`)).rejects.toThrow();
     await expect(database.exec(`insert into public.csc_members(full_name,contact_number,email,member_category,business_or_idea_name,description,current_stage,submission_token) values ('Bad Stage','9876543210','bad-stage@test.com','Idea Stage','Bad Idea','A sufficiently detailed description.','IPO','66666666-6666-4666-8666-666666666666')`)).rejects.toThrow();
     await expect(database.exec(`insert into public.csc_members(full_name,contact_number,email,member_category,business_or_idea_name,description,industry_sector,submission_token) values ('Missing Other','9876543210','missing-other@test.com','Idea Stage','Bad Idea','A sufficiently detailed description.','Other','77777777-7777-4777-8777-777777777777')`)).rejects.toThrow();
@@ -358,13 +358,13 @@ describe("csc_members migration security and invariants", () => {
       `select full_name from public.csc_list_member_survey_responses(null,null,'newest',0,25,'Coimbatore',null,null,null,null,null)`);
     expect(city.rows.map((entry) => entry.full_name)).toContain("Enhanced Member");
     const industry = await database.query<{ full_name: string }>(
-      `select full_name from public.csc_list_member_survey_responses(null,null,'newest',0,25,null,'Technology / Software',null,null,null,null)`);
+      `select full_name from public.csc_list_member_survey_responses(null,null,'newest',0,25,null,'Technology & Artificial Intelligence',null,null,null,null)`);
     expect(industry.rows.map((entry) => entry.full_name)).toContain("Enhanced Member");
     const stage = await database.query<{ full_name: string }>(
       `select full_name from public.csc_list_member_survey_responses(null,null,'newest',0,25,null,null,'Prototype / MVP',null,null,null)`);
     expect(stage.rows.map((entry) => entry.full_name)).toContain("Enhanced Member");
     const support = await database.query<{ full_name: string }>(
-      `select full_name from public.csc_list_member_survey_responses(null,null,'newest',0,25,null,null,null,'Mentorship',null,null)`);
+      `select full_name from public.csc_list_member_survey_responses(null,null,'newest',0,25,null,null,null,'Startup Mentorship',null,null)`);
     expect(support.rows.map((entry) => entry.full_name)).toContain("Enhanced Member");
     const missing = await database.query<{ full_name: string }>(
       `select full_name from public.csc_list_member_survey_responses(null,null,'newest',0,25,'Chennai',null,null,null,null,null)`);
