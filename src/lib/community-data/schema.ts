@@ -262,6 +262,8 @@ export const memberSurveyFieldsSchema = z.object({
   support_needed_other: blankableText("Other support details", 200),
   biggest_challenge: blankableText("Biggest challenge", 1000),
   website_url: blankableText("Website URL", 2048),
+  linkedin_url: blankableText("LinkedIn URL", 2048),
+  portfolio_url: blankableText("Portfolio URL", 2048),
   discovery_source: optionalEnum(discoverySources),
   discovery_source_other: blankableText("Discovery details", 200),
   preferred_contact_method: optionalEnum(preferredContactMethods),
@@ -304,6 +306,20 @@ export const memberSurveyFieldsSchema = z.object({
       message: "Enter a valid website URL, for example https://example.com.",
     });
   }
+  if (value.linkedin_url?.trim() && !isValidWebsiteUrl(value.linkedin_url)) {
+    context.addIssue({
+      code: "custom",
+      path: ["linkedin_url"],
+      message: "Enter a valid LinkedIn URL, for example https://linkedin.com/in/example.",
+    });
+  }
+  if (value.portfolio_url?.trim() && !isValidWebsiteUrl(value.portfolio_url)) {
+    context.addIssue({
+      code: "custom",
+      path: ["portfolio_url"],
+      message: "Enter a valid portfolio URL, for example https://example.com.",
+    });
+  }
 });
 
 export const memberSurveySubmissionSchema = memberSurveyFieldsSchema.extend({
@@ -342,6 +358,8 @@ export function sanitizeMemberSurveyValues(value: MemberSurveySubmission): Membe
       : undefined,
     biggest_challenge: cleanText(value.biggest_challenge),
     website_url: normalizeWebsiteUrl(value.website_url),
+    linkedin_url: normalizeWebsiteUrl(value.linkedin_url),
+    portfolio_url: normalizeWebsiteUrl(value.portfolio_url),
     discovery_source_other: value.discovery_source === "Other"
       ? cleanText(value.discovery_source_other)
       : undefined,

@@ -398,7 +398,9 @@ export function CommunityDataDashboard({
                 </div>
               </DetailSection>
               <DetailSection title="Additional Information">
-                <DetailField label="Website / LinkedIn" value={text(selected.website_url)} href={selected.website_url ?? undefined} />
+                <DetailField label="Website" value={text(selected.website_url)} href={selected.website_url ?? undefined} />
+                <DetailField label="LinkedIn" value={text(selected.linkedin_url)} href={selected.linkedin_url ?? undefined} />
+                <DetailField label="Portfolio" value={text(selected.portfolio_url)} href={selected.portfolio_url ?? undefined} />
                 <DetailField label="Discovery Source" value={withOther(selected.discovery_source, selected.discovery_source_other)} />
                 <DetailField label="Preferred Contact Method" value={text(selected.preferred_contact_method)} />
               </DetailSection>

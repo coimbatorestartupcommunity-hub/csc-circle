@@ -1,10 +1,36 @@
 import type { Metadata } from "next";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { siteConfig } from "@/lib/content/site";
 import { SurveyForm } from "./survey-form";
+
+const surveyTitle = "CSC Circle — Member Information Form";
+const surveyDescription =
+  "Tell us about yourself and your journey: share who you are, what you're building, and how CSC Circle can support your entrepreneurial journey.";
 
 export const metadata: Metadata = {
   title: "Member Information Form",
-  description: "CSC Circle member information form for businesses, startup founders, and idea-stage community members.",
+  description: surveyDescription,
+  alternates: { canonical: "/survey/member-onboarding" },
+  openGraph: {
+    title: surveyTitle,
+    description: surveyDescription,
+    url: "/survey/member-onboarding",
+    type: "website",
+    images: [
+      {
+        url: `${siteConfig.url}/og/survey-member-onboarding.png`,
+        width: 1200,
+        height: 630,
+        alt: "CSC Circle Member Information Form",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: surveyTitle,
+    description: surveyDescription,
+    images: [`${siteConfig.url}/og/survey-member-onboarding.png`],
+  },
   robots: { index: false, follow: false, noarchive: true, nocache: true },
 };
 
