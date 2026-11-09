@@ -1610,10 +1610,10 @@ export type Database = {
       csc_check_rate_limit: { Args: { p_scope: string; p_key: string; p_limit: number; p_window_seconds: number }; Returns: Json }
       csc_list_member_survey_responses: {
         Args: {
-          p_category?: string | null
+          p_category?: string
           p_limit?: number
           p_offset?: number
-          p_search?: string | null
+          p_search?: string
           p_sort?: string
         }
         Returns: {

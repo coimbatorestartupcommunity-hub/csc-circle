@@ -72,8 +72,8 @@ async function fetchRows(
   limit: number,
 ) {
   const { data, error } = await client.rpc("csc_list_member_survey_responses", {
-    p_category: filter.category ?? null,
-    p_search: filter.search || null,
+    p_category: filter.category,
+    p_search: filter.search || undefined,
     p_sort: filter.sort,
     p_offset: offset,
     p_limit: limit,
