@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { can, getAdminContext } from "@/lib/admin/gate";
 import { saveCommunityUpdate } from "@/lib/admin/cms";
+import { invalidatePublicContent } from "@/lib/redis/cache";
 import { communityUpdateSaveSchema } from "@/lib/validations/cms";
 
 export async function POST(request: Request) {
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: 422 });
   revalidatePath("/updates");
   revalidatePath(`/updates/${result.slug}`);
+  await invalidatePublicContent("updates", [result.slug]);
   revalidatePath("/");
   return NextResponse.json({ ok: true, ...result }, { status: parsed.data.id ? 200 : 201 });
 }

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
 import { eventEditorSchema } from "@/lib/validations/admin";
+import { invalidatePublicContent } from "@/lib/redis/cache";
 export async function POST(request: Request) {
   try {
     const ctx = await getAdminContext();
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
       revalidatePath(`/events/${previous.data.slug}`);
     }
     revalidatePath("/");
+    await invalidatePublicContent("events", previous?.data?.slug && previous.data.slug !== event.slug ? [event.slug, previous.data.slug] : [event.slug]);
     scheduleNotificationDelivery();
     return authResponse({ ok: true, id: data });
   } catch { return authResponse({ error: "Event saving is unavailable." }, 503); }

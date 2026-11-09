@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { can, getAdminContext } from "@/lib/admin/gate";
 import { setCommunityUpdateStatus } from "@/lib/admin/cms";
+import { invalidatePublicContent } from "@/lib/redis/cache";
 import { cmsActionSchema } from "@/lib/validations/cms";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -16,6 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: 422 });
   revalidatePath("/updates");
   revalidatePath(`/updates/${result.slug}`);
+  await invalidatePublicContent("updates", [result.slug]);
   revalidatePath("/");
   return NextResponse.json({ ok: true, wasFirst: result.wasFirst });
 }

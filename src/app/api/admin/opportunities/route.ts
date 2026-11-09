@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { can, getAdminContext } from "@/lib/admin/gate";
 import { cmsValidationMessage, opportunitySaveSchema } from "@/lib/validations/cms";
 import { saveOpportunity } from "@/lib/admin/cms";
+import { invalidatePublicContent } from "@/lib/redis/cache";
 
 export async function POST(request: Request) {
   if (request.headers.get("origin") !== new URL(request.url).origin) {
@@ -18,5 +19,6 @@ export async function POST(request: Request) {
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: 422 });
   revalidatePath("/opportunities");
   revalidatePath(`/opportunities/${result.slug}`);
+  await invalidatePublicContent("opportunities", [result.slug]);
   return NextResponse.json({ ok: true, ...result }, { status: parsed.data.id ? 200 : 201 });
 }

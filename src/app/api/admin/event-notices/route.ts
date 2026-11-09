@@ -1,4 +1,5 @@
 import { revalidatePath, revalidateTag } from "next/cache";
+import { invalidatePublicContent } from "@/lib/redis/cache";
 import { z } from "zod";
 import { getAdminContext } from "@/lib/admin/gate";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
@@ -94,6 +95,7 @@ export async function POST(request: Request) {
     revalidateTag("event-notices", { expire: 0 });
     revalidateTag("events", { expire: 0 });
     revalidatePath("/events");
+    await invalidatePublicContent("events");
     return authResponse({ ok: true, status: result?.status ?? "unknown" });
   } catch {
     return authResponse({ error: "Event notice management is unavailable." }, 503);

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { can, getAdminContext } from "@/lib/admin/gate";
 import { cmsActionSchema } from "@/lib/validations/cms";
 import { setResourceStatus } from "@/lib/admin/cms";
+import { invalidatePublicContent } from "@/lib/redis/cache";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   if (request.headers.get("origin") !== new URL(request.url).origin) {
@@ -20,5 +21,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: 422 });
   revalidatePath("/resources");
   revalidatePath(`/resources/${result.slug}`);
+  await invalidatePublicContent("resources", [result.slug]);
   return NextResponse.json({ ok: true, wasFirst: result.wasFirst });
 }

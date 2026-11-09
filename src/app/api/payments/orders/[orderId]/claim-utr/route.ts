@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
 import { containsExactOrderReference, verifyOrderAccess } from "@/lib/payments/orders";
+import { invalidatePublicContent } from "@/lib/redis/cache";
 
 const claimUtrSchema = z.object({
   utr: z.string().trim().regex(/^\d{12}$/, "UTR must be a 12-digit numeric reference"),
@@ -384,6 +385,7 @@ export async function POST(
             revalidateTag("registrations", "max");
             revalidateTag("payments", "max");
             revalidatePath("/events");
+            await invalidatePublicContent("events");
 
             return NextResponse.json(
               {
