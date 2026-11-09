@@ -24,6 +24,8 @@ export function ResourceAdminPreview({ resource }: { resource: ResourceRecord })
       {resource.summary ? <p className="text-lg leading-relaxed text-brand-secondary">{resource.summary}</p> : null}
       {image ? <div className="relative aspect-[5/3] overflow-hidden rounded-xl bg-brand-cloud"><Image src={image} alt={resource.title} fill unoptimized className="object-cover" /></div> : null}
       {resource.description ? <p className="whitespace-pre-line text-sm leading-7 text-brand-secondary">{resource.description}</p> : null}
+      {resource.audience ? <p className="text-sm text-brand-secondary"><span className="font-semibold text-brand-ink">Who it is for: </span>{resource.audience}</p> : null}
+      {resource.tags.length ? <p className="text-xs text-brand-muted">Tags: {resource.tags.join(" · ")}</p> : null}
       {resource.documentPath ? <a className="w-fit rounded-xl border border-brand-border px-4 py-2 text-sm font-semibold text-brand-ink" href={`/api/admin/resources/${resource.id}/download`}>Preview PDF · {resource.documentFilename || "PDF document"}</a> : null}
       {(resource.sourceOrganization || resource.author || resource.attribution || resource.license) ? <p className="text-sm text-brand-muted">{[resource.sourceOrganization, resource.author, resource.attribution, resource.license].filter(Boolean).join(" · ")}</p> : null}
       {resource.externalUrl ? <p className="break-all text-xs text-brand-muted">Reference: {resource.externalUrl}</p> : null}

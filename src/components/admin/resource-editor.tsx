@@ -134,8 +134,8 @@ export function ResourceEditor({ initial }: { initial?: ResourceRecord }) {
         <div className="flex flex-col gap-1.5"><Label htmlFor="r-org">Source organization</Label><Input id="r-org" value={v.sourceOrganization} onChange={(e) => set("sourceOrganization", e.target.value)} /></div>
         <div className="flex flex-col gap-1.5"><Label htmlFor="r-author">Author / publisher</Label><Input id="r-author" value={v.author} onChange={(e) => set("author", e.target.value)} /></div>
         <div className="flex flex-col gap-1.5"><Label htmlFor="r-surl">Source URL</Label><Input id="r-surl" value={v.sourceUrl} onChange={(e) => set("sourceUrl", e.target.value)} placeholder="https://" /></div>
-        <div className="flex flex-col gap-1.5"><Label htmlFor="r-lic">License / usage rights</Label><Input id="r-lic" value={v.license} onChange={(e) => set("license", e.target.value)} /></div>
-        <div className="flex flex-col gap-1.5 sm:col-span-2"><Label htmlFor="r-attr">Attribution / acknowledgment</Label><Input id="r-attr" value={v.attribution} onChange={(e) => set("attribution", e.target.value)} /></div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2"><Label htmlFor="r-lic">License / usage rights</Label><Textarea id="r-lic" rows={3} value={v.license} onChange={(e) => set("license", e.target.value)} maxLength={2000} /></div>
+        <div className="flex flex-col gap-1.5 sm:col-span-2"><Label htmlFor="r-attr">Attribution / acknowledgment</Label><Textarea id="r-attr" rows={3} value={v.attribution} onChange={(e) => set("attribution", e.target.value)} maxLength={2000} /></div>
         <label className="flex items-start gap-2 text-sm text-brand-ink sm:col-span-2"><input type="checkbox" className="mt-1" checked={v.publicationConsent} onChange={(e) => set("publicationConsent", e.target.checked)} /><span>I confirm this resource may be published and shared by CSC Circle.</span></label>
       </section>
 
