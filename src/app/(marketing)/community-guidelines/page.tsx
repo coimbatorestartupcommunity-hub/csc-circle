@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const sections: { title: string; body: string }[] = [
   { title: "Respectful communication", body: "Treat every member with courtesy and respect. Keep conversations constructive, and disagree without personal attacks, hostility, or demeaning language." },
   { title: "Professional collaboration", body: "Engage openly and in good faith. Share knowledge generously, give helpful feedback, and support fellow founders and builders." },
-  { title: "Accurate member information", body: "Provide truthful details about yourself. Do not misrepresent your identity, role, or affiliations." },
+  { title: "Accurate member and survey information", body: "Provide truthful details about yourself in accounts, applications, and community surveys. Do not misrepresent your identity, role, affiliations, business, startup, or idea." },
   { title: "Startup information integrity", body: "Share accurate information about your startup. Only submit details and media you have the right to share, and do not publish misleading claims." },
   { title: "Honest sharing of opportunities and material", body: "When you point others to an opportunity, resource, or link, make sure it is genuine and relevant. Do not circulate misleading offers, scams, or content designed to deceive members. Resources and Opportunities on the platform are curated and published by the CSC team." },
   { title: "Respect intellectual property", body: "Share only content, images, and documents you created or have permission to use, and credit sources where appropriate. Do not post copyrighted or confidential material without the right to do so." },

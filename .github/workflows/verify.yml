@@ -10,7 +10,9 @@ permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Playwright 1.58 supports Ubuntu 24.04; ubuntu-latest currently resolves
+    # to 26.04, where Chromium dependency installation is unsupported.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683

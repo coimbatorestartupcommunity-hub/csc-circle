@@ -24,7 +24,7 @@ export default function ContactPage() {
   ];
 
   const helpTopics = [
-    { icon: LifeBuoy, title: "Account or membership", body: <>For help with registration, your profile, membership status, or your digital card, email <a href={`mailto:${email}`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a> or check the <Link href="/help" className="font-semibold text-brand-accent underline underline-offset-2">Help &amp; FAQ</Link>.</> },
+    { icon: LifeBuoy, title: "Account, membership, or survey data", body: <>For help with registration, your profile, membership status, a digital card, or a correction or deletion request for survey information, email <a href={`mailto:${email}`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a> or check the <Link href="/help" className="font-semibold text-brand-accent underline underline-offset-2">Help &amp; FAQ</Link>. Survey requests should come from the submitted email address where possible.</> },
     { icon: CalendarDays, title: "Events", body: <>For questions about registering for an event, your registration status, or a confirmed pass, see the <Link href="/events" className="font-semibold text-brand-accent underline underline-offset-2">Events</Link> page or email us with the event name.</> },
     { icon: ShieldCheck, title: "Security concerns", body: <>To report suspicious activity or a security issue, email <a href={`mailto:${email}?subject=CSC%20Circle%20security%20report`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a>. See the <Link href="/security" className="font-semibold text-brand-accent underline underline-offset-2">Security</Link> page for details.</> },
   ];
