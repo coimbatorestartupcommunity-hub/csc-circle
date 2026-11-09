@@ -32,6 +32,8 @@ const fullRow: CommunityMember = {
   support_needed_other: null,
   biggest_challenge: null,
   website_url: null,
+  linkedin_url: null,
+  portfolio_url: null,
   discovery_source: null,
   discovery_source_other: null,
   preferred_contact_method: null,

@@ -187,6 +187,8 @@ function memberSections(row: CommunityMember): MemberSection[] {
         { label: "Current Stage", value: display(row.current_stage) },
         { label: "Description", value: display(row.description) },
         { label: "Website URL", value: display(row.website_url) },
+        { label: "LinkedIn URL", value: display(row.linkedin_url) },
+        { label: "Portfolio URL", value: display(row.portfolio_url) },
       ],
     },
   ];
@@ -285,6 +287,8 @@ export async function createCommunityDataPdf(
     row.support_needed_other ?? "",
     row.biggest_challenge ?? "",
     row.website_url ?? "",
+    row.linkedin_url ?? "",
+    row.portfolio_url ?? "",
     row.discovery_source ?? "",
     row.discovery_source_other ?? "",
     row.preferred_contact_method ?? "",

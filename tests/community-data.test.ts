@@ -40,6 +40,8 @@ const validSubmission = {
   support_needed_other: "",
   biggest_challenge: "",
   website_url: "",
+  linkedin_url: "",
+  portfolio_url: "",
   discovery_source: undefined,
   discovery_source_other: "",
   preferred_contact_method: undefined,
@@ -77,6 +79,8 @@ const row: CommunityMember = {
   support_needed_other: "Warm introductions",
   biggest_challenge: "Finding first customers.",
   website_url: "https://example.test",
+  linkedin_url: "https://linkedin.com/in/example",
+  portfolio_url: "https://portfolio.example.test",
   discovery_source: "Other",
   discovery_source_other: "College notice board",
   preferred_contact_method: "WhatsApp",
@@ -113,6 +117,8 @@ const legacyRow: CommunityMember = {
   support_needed_other: null,
   biggest_challenge: null,
   website_url: null,
+  linkedin_url: null,
+  portfolio_url: null,
   discovery_source: null,
   discovery_source_other: null,
   preferred_contact_method: null,
@@ -186,6 +192,10 @@ describe("community member survey validation", () => {
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, support_needed: [] }).success).toBe(false);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, website_url: "not a url" }).success).toBe(false);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, website_url: "example.com" }).success).toBe(true);
+    expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, linkedin_url: "not a url" }).success).toBe(false);
+    expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, linkedin_url: "linkedin.com/in/example" }).success).toBe(true);
+    expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, portfolio_url: "not a url" }).success).toBe(false);
+    expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, portfolio_url: "example.com/work" }).success).toBe(true);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, established_year: "1800" }).success).toBe(false);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, established_year: String(new Date().getFullYear() + 1) }).success).toBe(false);
     expect(memberSurveySubmissionSchema.safeParse({ ...validSubmission, biggest_challenge: "x".repeat(1001) }).success).toBe(false);
@@ -206,12 +216,16 @@ describe("community member survey validation", () => {
     const parsed = memberSurveySubmissionSchema.parse({
       ...validSubmission,
       website_url: "example.com",
+      linkedin_url: "linkedin.com/in/example",
+      portfolio_url: "example.com/work",
       established_year: "2019",
       business_team_size: "1–5 Employees",
       startup_support: [],
     });
     const clean = sanitizeMemberSurveyValues(parsed);
     expect(clean.website_url).toBe("https://example.com");
+    expect(clean.linkedin_url).toBe("https://linkedin.com/in/example");
+    expect(clean.portfolio_url).toBe("https://example.com/work");
     expect(clean.established_year).toBeUndefined();
     expect(clean.business_team_size).toBeUndefined();
     expect(clean.startup_support).toBeUndefined();
@@ -261,9 +275,11 @@ describe("community data exports", () => {
   });
 
   it("exports every survey column with semicolon-joined arrays and blank legacy cells", () => {
-    expect(COMMUNITY_DATA_CSV_HEADERS).toHaveLength(30);
+    expect(COMMUNITY_DATA_CSV_HEADERS).toHaveLength(32);
     expect(COMMUNITY_DATA_CSV_HEADERS).toContain("City");
     expect(COMMUNITY_DATA_CSV_HEADERS).toContain("Current Stage");
+    expect(COMMUNITY_DATA_CSV_HEADERS).toContain("LinkedIn URL");
+    expect(COMMUNITY_DATA_CSV_HEADERS).toContain("Portfolio URL");
     expect(COMMUNITY_DATA_CSV_HEADERS).toContain("Support Needed");
     expect(COMMUNITY_DATA_CSV_HEADERS).toContain("Idea Problem Statement");
     const csv = communityDataCsv([row, legacyRow]);
@@ -272,7 +288,7 @@ describe("community data exports", () => {
     expect(csv).toContain("Warm introductions");
     const lines = csv.split("\r\n");
     expect(lines).toHaveLength(3);
-    expect(lines[0].split('","')).toHaveLength(30);
+    expect(lines[0].split('","')).toHaveLength(32);
   });
 
   it("creates a readable multi-page portrait PDF report with page numbering and wrapped long text", async () => {

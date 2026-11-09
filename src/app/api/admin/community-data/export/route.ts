@@ -104,6 +104,8 @@ export async function GET(request: Request): Promise<Response> {
       + (row.support_needed_other?.length ?? 0)
       + (row.biggest_challenge?.length ?? 0)
       + (row.website_url?.length ?? 0)
+      + (row.linkedin_url?.length ?? 0)
+      + (row.portfolio_url?.length ?? 0)
       + (row.discovery_source?.length ?? 0)
       + (row.discovery_source_other?.length ?? 0)
       + (row.preferred_contact_method?.length ?? 0)

@@ -63,6 +63,9 @@ describe("member survey category experience", () => {
     const connections = screen.getByRole("group", { name: /what type of business connections/i });
     fireEvent.click(within(connections).getByRole("checkbox", { name: "Investors" }));
     fireEvent.click(within(supportGroup()).getByRole("checkbox", { name: "Startup Mentorship" }));
+    fireEvent.change(screen.getByLabelText("Website"), { target: { value: "example.com" } });
+    fireEvent.change(screen.getByLabelText("LinkedIn"), { target: { value: "linkedin.com/in/example" } });
+    fireEvent.change(screen.getByLabelText("Portfolio"), { target: { value: "example.com/work" } });
     fireEvent.click(screen.getByRole("checkbox", { name: /i understand that coimbatore/i }));
     fireEvent.click(screen.getByRole("button", { name: "Submit Information" }));
     await waitFor(() => expect(mockedSubmit).toHaveBeenCalledTimes(1));
@@ -74,6 +77,9 @@ describe("member survey category experience", () => {
       business_team_size: "1–5 Employees",
       business_connections: ["Investors"],
       full_name: "Switch Tester",
+      website_url: "https://example.com",
+      linkedin_url: "https://linkedin.com/in/example",
+      portfolio_url: "https://example.com/work",
     });
     expect(payload.startup_team_structure).toBeUndefined();
     expect(payload.seeking_cofounder).toBeUndefined();
@@ -118,6 +124,18 @@ describe("member survey category experience", () => {
     fireEvent.change(other, { target: { value: "Drone logistics" } });
     fireEvent.click(screen.getByRole("button", { name: "Submit Information" }));
     await waitFor(() => expect(mockedSubmit).toHaveBeenCalledTimes(1));
+  });
+
+  it("rejects invalid LinkedIn and portfolio URLs", async () => {
+    render(<SurveyForm />);
+    fillCommon("Startup Founder");
+    fireEvent.change(stageField(), { target: { value: "Launched" } });
+    fireEvent.change(screen.getByLabelText("LinkedIn"), { target: { value: "not a url" } });
+    fireEvent.click(within(supportGroup()).getByRole("checkbox", { name: "Startup Mentorship" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /i understand that coimbatore/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit Information" }));
+    expect(await screen.findByText(/valid LinkedIn URL/)).toBeInTheDocument();
+    expect(mockedSubmit).not.toHaveBeenCalled();
   });
 
   it("requires at least one support option", async () => {

@@ -24,6 +24,8 @@ const fullRow: CommunityMember = {
   support_needed_other: null,
   biggest_challenge: "Finding customers.",
   website_url: "https://example.test",
+  linkedin_url: "https://linkedin.com/in/example",
+  portfolio_url: "https://portfolio.example.test",
   discovery_source: "CSC Event",
   discovery_source_other: null,
   preferred_contact_method: "WhatsApp",
@@ -60,6 +62,8 @@ const legacyRow: CommunityMember = {
   support_needed_other: null,
   biggest_challenge: null,
   website_url: null,
+  linkedin_url: null,
+  portfolio_url: null,
   discovery_source: null,
   discovery_source_other: null,
   preferred_contact_method: null,
@@ -145,6 +149,8 @@ describe("community data admin dashboard", () => {
     expect(within(drawer).getByText("Additional Information")).toBeInTheDocument();
     expect(within(drawer).getByText("Submission Information")).toBeInTheDocument();
     expect(within(drawer).getByText("Solo Founder")).toBeInTheDocument();
+    expect(within(drawer).getByText("https://linkedin.com/in/example")).toBeInTheDocument();
+    expect(within(drawer).getByText("https://portfolio.example.test")).toBeInTheDocument();
     fireEvent.click(within(drawer).getByRole("button", { name: "Done" }));
     fireEvent.click(screen.getByRole("button", { name: "Legacy Member" }));
     const legacyDrawer = await screen.findByRole("dialog");

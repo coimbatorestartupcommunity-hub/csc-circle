@@ -137,7 +137,9 @@ export type Database = {
           idea_support_other: string | null
           industry_other: string | null
           industry_sector: string | null
+          linkedin_url: string | null
           member_category: string
+          portfolio_url: string | null
           preferred_contact_method: string | null
           seeking_cofounder: string | null
           startup_current_focus: string | null
@@ -173,7 +175,9 @@ export type Database = {
           idea_support_other?: string | null
           industry_other?: string | null
           industry_sector?: string | null
+          linkedin_url?: string | null
           member_category: string
+          portfolio_url?: string | null
           preferred_contact_method?: string | null
           seeking_cofounder?: string | null
           startup_current_focus?: string | null
@@ -209,7 +213,9 @@ export type Database = {
           idea_support_other?: string | null
           industry_other?: string | null
           industry_sector?: string | null
+          linkedin_url?: string | null
           member_category?: string
+          portfolio_url?: string | null
           preferred_contact_method?: string | null
           seeking_cofounder?: string | null
           startup_current_focus?: string | null
@@ -1714,7 +1720,9 @@ export type Database = {
           idea_support_other: string | null
           industry_other: string | null
           industry_sector: string | null
+          linkedin_url: string | null
           member_category: string
+          portfolio_url: string | null
           preferred_contact_method: string | null
           seeking_cofounder: string | null
           startup_current_focus: string | null

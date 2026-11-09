@@ -80,6 +80,8 @@ const DEFAULT_VALUES: DefaultValues<MemberSurveyFields> = {
   support_needed_other: "",
   biggest_challenge: "",
   website_url: "",
+  linkedin_url: "",
+  portfolio_url: "",
   discovery_source: undefined,
   discovery_source_other: "",
   preferred_contact_method: undefined,
@@ -305,7 +307,7 @@ export function SurveyForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="contact_number">Contact Number <span aria-hidden>*</span></Label>
-            <Input id="contact_number" type="tel" inputMode="tel" autoComplete="tel" placeholder="e.g., +91 98765 43210" maxLength={30} aria-invalid={Boolean(errors.contact_number)} aria-describedby={errors.contact_number ? "contact-number-error" : undefined} className={inputClass} {...register("contact_number")} />
+            <Input id="contact_number" type="tel" inputMode="tel" autoComplete="tel" placeholder="eg: +91 98765 43210" maxLength={30} aria-invalid={Boolean(errors.contact_number)} aria-describedby={errors.contact_number ? "contact-number-error" : undefined} className={inputClass} {...register("contact_number")} />
             <ErrorMessage id="contact-number-error" message={errors.contact_number?.message} />
           </div>
           <div className="space-y-2">
@@ -543,10 +545,20 @@ export function SurveyForm() {
       <section aria-labelledby="survey-section-additional" className="space-y-5">
         <SectionHeading id="survey-section-additional" step="5" title="Additional Information" hint="Optional details that help us reach you and understand how you found CSC." />
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="website_url">Website, LinkedIn, or Portfolio URL</Label>
-            <Input id="website_url" type="url" inputMode="url" autoComplete="url" placeholder="https://yourwebsite.com or https://linkedin.com/in/..." maxLength={2048} aria-invalid={Boolean(errors.website_url)} aria-describedby={errors.website_url ? "website-url-error" : undefined} className={inputClass} {...register("website_url")} />
+          <div className="space-y-2">
+            <Label htmlFor="website_url">Website</Label>
+            <Input id="website_url" type="url" inputMode="url" autoComplete="url" placeholder="https://yourwebsite.com" maxLength={2048} aria-invalid={Boolean(errors.website_url)} aria-describedby={errors.website_url ? "website-url-error" : undefined} className={inputClass} {...register("website_url")} />
             <ErrorMessage id="website-url-error" message={errors.website_url?.message} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="linkedin_url">LinkedIn</Label>
+            <Input id="linkedin_url" type="url" inputMode="url" autoComplete="url" placeholder="https://linkedin.com/in/yourprofile" maxLength={2048} aria-invalid={Boolean(errors.linkedin_url)} aria-describedby={errors.linkedin_url ? "linkedin-url-error" : undefined} className={inputClass} {...register("linkedin_url")} />
+            <ErrorMessage id="linkedin-url-error" message={errors.linkedin_url?.message} />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="portfolio_url">Portfolio</Label>
+            <Input id="portfolio_url" type="url" inputMode="url" autoComplete="url" placeholder="https://yourportfolio.com" maxLength={2048} aria-invalid={Boolean(errors.portfolio_url)} aria-describedby={errors.portfolio_url ? "portfolio-url-error" : undefined} className={inputClass} {...register("portfolio_url")} />
+            <ErrorMessage id="portfolio-url-error" message={errors.portfolio_url?.message} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="discovery_source">How did you hear about Coimbatore Startup Community?</Label>
