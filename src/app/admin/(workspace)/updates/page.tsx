@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { CompleteContentButton } from "@/components/admin/complete-content-button";
+import { DeleteContentButton } from "@/components/admin/delete-content-button";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 import { CtaLink } from "@/components/common/cta-link";
 import { can, requireAdminPagePermission } from "@/lib/admin/gate";
@@ -20,6 +21,7 @@ const facets: Facet[] = [{ key: "publicationStatus", label: "Status", options: [
 
 export default async function AdminUpdatesPage() {
   const context = await requireAdminPagePermission("content.manage");
+  const isSuperAdmin = context.mode === "preview" || context.roles.includes("super_admin");
   if (context.mode === "closed") return <AdminUnavailable />;
   if (context.mode === "forbidden" || !can(context, "content.manage")) return <AdminUnavailable forbidden />;
   const updates = context.mode === "live" ? await listCommunityUpdatesAdmin() : [];

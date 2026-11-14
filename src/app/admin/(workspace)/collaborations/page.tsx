@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { CompleteContentButton } from "@/components/admin/complete-content-button";
+import { DeleteContentButton } from "@/components/admin/delete-content-button";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 import { CtaLink } from "@/components/common/cta-link";
 import { requireAdminPagePermission, can } from "@/lib/admin/gate";
@@ -44,6 +45,7 @@ const facets: Facet[] = [
 
 export default async function AdminCollaborationsPage() {
   const ctx = await requireAdminPagePermission("content.manage");
+  const isSuperAdmin = ctx.mode === "preview" || ctx.roles.includes("super_admin");
   if (ctx.mode === "closed") return <AdminUnavailable />;
   if (ctx.mode === "forbidden" || !can(ctx, "content.manage")) {
     return <AdminUnavailable forbidden />;
@@ -148,6 +150,14 @@ export default async function AdminCollaborationsPage() {
                   id={row.id}
                   isCompleted={row.status === "completed"}
                 />
+                {isSuperAdmin ? (
+                  <DeleteContentButton
+                    kind="collaboration"
+                    id={row.id}
+                    slug={row.slug}
+                    title={row.title}
+                  />
+                ) : null}
               </div>
             </div>
           ))}

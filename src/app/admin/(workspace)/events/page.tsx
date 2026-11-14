@@ -3,6 +3,7 @@ import { Plus, ExternalLink, ArrowUpRight } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { CompleteContentButton } from "@/components/admin/complete-content-button";
+import { DeleteContentButton } from "@/components/admin/delete-content-button";
 import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
 
@@ -43,6 +44,7 @@ const facets: Facet[] = [
 
 export default async function AdminEventsPage() {
   const ctx = await requireAdminPagePermission(["events.create", "events.update", "events.publish"]);
+  const isSuperAdmin = ctx.mode === "preview" || ctx.roles.includes("super_admin");
   const res = await adminServices.listEvents();
   const rows = res.ok ? res.data : [];
 
@@ -126,6 +128,14 @@ export default async function AdminEventsPage() {
                       kind="event"
                       id={row.id}
                       isCompleted={row.isCompleted}
+                    />
+                  ) : null}
+                  {isSuperAdmin ? (
+                    <DeleteContentButton
+                      kind="event"
+                      id={row.id}
+                      slug={row.slug}
+                      title={row.title}
                     />
                   ) : null}
                 </div>

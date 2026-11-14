@@ -3,7 +3,7 @@ import { CalendarDays, MapPin, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FixtureNotice } from "@/components/common/empty-state";
 import { eventCategoryLabels } from "@/lib/content/taxonomy";
-import { formatEventRange } from "@/lib/format";
+import { formatEventDate, formatEventRange } from "@/lib/format";
 import type { EventRecord } from "@/types";
 
 /** Prominent featured event banner for the top of the Events page. */
@@ -30,7 +30,9 @@ export function FeaturedEvent({ event }: { event: EventRecord }) {
         <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-brand-ink">
           <li className="inline-flex items-center gap-2">
             <CalendarDays className="size-4 text-brand-accent" aria-hidden />
-            {formatEventRange(event.startsAt, event.endsAt)}
+            {event.slug === "csc-joint-online-meeting" || event.slug === "csc-first-online-google-meet"
+              ? `${formatEventDate(event.startsAt)} · Time to be announced`
+              : formatEventRange(event.startsAt, event.endsAt)}
           </li>
           <li className="inline-flex items-center gap-2">
             <MapPin className="size-4 text-brand-accent" aria-hidden />

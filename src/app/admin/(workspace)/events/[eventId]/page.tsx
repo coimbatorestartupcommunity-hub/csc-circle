@@ -22,6 +22,7 @@ import { adminServices } from "@/lib/admin/services";
 import { publicationStatusMeta } from "@/lib/admin/status-meta";
 import { formatEventDate, formatEventTime } from "@/lib/format";
 import { CompleteContentButton } from "@/components/admin/complete-content-button";
+import { DeleteContentButton } from "@/components/admin/delete-content-button";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Event detail" };
@@ -33,6 +34,7 @@ export default async function AdminEventDetail({
 }) {
   const { eventId } = await params;
   const ctx = await requireAdminPagePermission(["events.update", "events.publish"]);
+  const isSuperAdmin = ctx.mode === "preview" || ctx.roles.includes("super_admin");
   const sb = ctx.mode === "live" ? await createClient() : null;
 
   const [res, { data: eventData }, { data: recentRegs }] = await Promise.all([
@@ -96,11 +98,20 @@ export default async function AdminEventDetail({
         isDemo={ctx.mode === "preview"}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            {ctx.mode === "live" && can(ctx, "events.publish") ? (
+            {can(ctx, "events.publish") ? (
               <CompleteContentButton
                 kind="event"
                 id={eventId}
                 isCompleted={e.isCompleted}
+              />
+            ) : null}
+            {isSuperAdmin ? (
+              <DeleteContentButton
+                kind="event"
+                id={eventId}
+                slug={e.slug}
+                title={e.title}
+                redirectTo="/admin/events"
               />
             ) : null}
             {can(ctx, "registrations.read") ? (

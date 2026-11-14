@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FlaskConical } from "lucide-react";
+import { ArrowLeft, FlaskConical, Megaphone } from "lucide-react";
 import { Container } from "@/components/common/container";
 import { EventDetailsPanel } from "@/components/events/event-details-panel";
 import { getPublicEventBySlug } from "@/lib/services/public-data";
@@ -48,6 +48,18 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
         </div>
         <p className="mt-1 text-xs leading-relaxed text-amber-800">
           This test event validates end-to-end UPI checkout, dynamic QR generation, bank reconciliation, and admission pass delivery. Test payments are set to ₹1.00.
+        </p>
+      </div>
+    ) : null}
+    {event.slug === "csc-joint-online-meeting" ? (
+      <div className="mx-auto w-full max-w-3xl rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50/90 via-sky-50/80 to-purple-50/90 p-4 text-sm text-indigo-950 shadow-xs sm:p-5">
+        <div className="flex items-center gap-2 font-bold text-indigo-900">
+          <Megaphone className="size-4 shrink-0 text-brand-accent" />
+          <span>Official Event Notice · Live Community Announcement</span>
+        </div>
+        <p className="mt-2 text-xs leading-relaxed text-indigo-900 sm:text-sm">
+          <strong>Important Schedule Notice:</strong> Coimbatore Startup Community (CSC) First Online Meeting is scheduled for <strong>Sunday, November 22, 2026</strong> via <strong>Google Meet</strong>.
+          The exact session timing is currently <strong>To Be Announced</strong> and will be notified directly to confirmed attendees via their registered email event pass and official WhatsApp updates.
         </p>
       </div>
     ) : null}

@@ -137,7 +137,7 @@ export async function getLivePublishedEvents(): Promise<EventRecord[]> {
     return (data ?? [])
       .filter((r) => {
         const s = (r.settings as Record<string, unknown> | null) ?? {};
-        return s.visibility !== "unlisted";
+        return s.visibility !== "unlisted" && r.slug !== "csc-first-online-google-meet";
       })
       .map((r) => mapEvent(r as Row));
   });
@@ -209,18 +209,19 @@ export async function getPublicUpcomingEvents(limit = 3): Promise<EventRecord[]>
 }
 
 export async function getPublicEventBySlug(slug: string): Promise<EventRecord | null> {
+  const targetSlug = slug === "csc-first-online-google-meet" ? "csc-joint-online-meeting" : slug;
   const events = await getPublicEvents();
-  const matched = events.find((e) => e.slug === slug);
+  const matched = events.find((e) => e.slug === targetSlug);
   if (matched) return matched;
 
   // Direct fetch for unlisted or authorized private test events accessible by slug
-  return cachedPublic("events", slug, async () => {
+  return cachedPublic("events", targetSlug, async () => {
     const sb = createAnonClient();
     if (!sb) return null;
     const { data } = await sb
       .from("events")
       .select("*")
-      .eq("slug", slug)
+      .eq("slug", targetSlug)
       .eq("status", "published")
       .maybeSingle();
     if (!data) return null;

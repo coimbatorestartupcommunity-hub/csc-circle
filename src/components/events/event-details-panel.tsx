@@ -19,6 +19,7 @@ import { RsvpForm } from "@/components/events/rsvp-form";
 import { PaidEventRegistration } from "@/components/events/paid-event-registration";
 import { ReviewDialog } from "@/components/reviews/review-dialog";
 import { eventCategoryLabels } from "@/lib/content/taxonomy";
+import { ResourceContentRenderer } from "@/components/cms/resource-content-renderer";
 import {
   formatEventDate,
   formatEventRange,
@@ -41,12 +42,15 @@ export function EventDetailsPanel({
   loginHref?: string;
 }) {
   const handleEventChange = onEventChange ?? (() => undefined);
+  const isTimeTba =
+    event.slug === "csc-joint-online-meeting" ||
+    event.slug === "csc-first-online-google-meet";
   const facts: { icon: React.ElementType; label: string; value: string }[] = [
     { icon: CalendarDays, label: "Date", value: formatEventDate(event.startsAt) },
     {
       icon: Clock,
       label: "Time",
-      value: formatEventRange(event.startsAt, event.endsAt),
+      value: isTimeTba ? "To be announced" : formatEventRange(event.startsAt, event.endsAt),
     },
     event.format === "online"
       ? { icon: Video, label: "Format", value: "Online (Google Meet)" }
@@ -67,9 +71,19 @@ export function EventDetailsPanel({
 
   return (
     <div className="flex flex-col gap-6 rounded-[2rem] bg-brand-cloud p-6 ring-1 ring-brand-border sm:p-8">
-      {event.coverImage ? <div className="order-first overflow-hidden rounded-2xl bg-brand-white ring-1 ring-brand-border">
-        <Image src={event.coverImage} alt={`${event.title} event banner`} width={1600} height={900} className="aspect-video w-full object-cover" unoptimized />
-      </div> : null}
+      {event.coverImage ? (
+        <div className="order-first overflow-hidden rounded-2xl bg-brand-white ring-1 ring-brand-border">
+          <Image
+            src={event.coverImage}
+            alt={`${event.title} event banner`}
+            width={1200}
+            height={900}
+            className="aspect-[4/3] w-full object-cover"
+            priority
+            unoptimized
+          />
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -81,9 +95,9 @@ export function EventDetailsPanel({
         <h3 className="text-2xl font-bold text-brand-ink text-balance">
           {event.title}
         </h3>
-        <p className="text-[15px] leading-relaxed text-brand-secondary">
-          {event.description}
-        </p>
+        <div className="text-[15px] leading-relaxed text-brand-secondary">
+          <ResourceContentRenderer content={event.description} />
+        </div>
       </div>
 
       <dl className="grid gap-3 sm:grid-cols-2">

@@ -110,14 +110,39 @@ export const eventFixtures: EventRecord[] = [
     id: "fx-event-joint-meeting",
     slug: "csc-joint-online-meeting",
     title: "Coimbatore Startup Community (CSC) - Joint Online Meeting",
-    category: "meetup",
-    description:
-      "Join the official Coimbatore Startup Community (CSC) First Online Meeting on Google Meet. Connect with fellow founders, builders, and ecosystem leaders across Tamil Nadu.",
+    category: "networking",
+    description: `Welcome to the official registration page for the **Coimbatore Startup Community (CSC) Joint Online Meeting**, proudly powered by our Technical Partner, **Logic Intelligence Technologies**.
+
+This exclusive online gathering brings together Coimbatore’s most driven **founders**, **tech entrepreneurs**, **innovators**, and **ecosystem builders**. Whether you are scaling an early-stage startup, building disruptive technology, or seeking the right co-founders and strategic collaborators, this meeting is your premier launchpad to connect, collaborate, and scale.
+
+---
+
+### 🗓 Event Information
+* **Date:** **Sunday, November 22, 2026**
+* **Time:** **To Be Announced** *(Will be communicated directly via email & CSC Community channels)*
+* **Mode:** **Online via Google Meet** *(Private verified room access)*
+* **Registration Fee:** **₹10 per attendee** *(Instant automated UPI verification)*
+
+---
+
+### 📋 Structured Agenda
+1. **Welcome & Community Updates:** Discover the latest initiatives, platform features, incubation resources, and ecosystem roadmaps across CSC.
+2. **Founder Introductions & Speed Networking:** Connect directly with fellow founders, showcase what you are building, and explore immediate synergies.
+3. **Open Floor & Peer Advisory:** A high-impact collaborative session addressing real startup challenges, technical hurdles, fundraising discussions, and growth playbooks.
+
+---
+
+### 🚀 Why You Must Attend & Register
+* **Guaranteed Virtual Seat:** Secure your spot in an intimate, founder-focused session.
+* **Instant Digital Pass & Direct Access:** Receive an encrypted individual digital QR pass with single-tap check-in and automated Google Meet redirection.
+* **Curated Attendee Roster:** Help us tailor discussion topics specifically to your startup stage and industry domain.
+
+> **Important Instructions:** Please complete your registration and UPI payment verification below. Once verified, your personalized event pass and access credentials will be delivered instantly to your inbox.`,
     coverImage: "/events/csc-joint-online-meeting-cover.webp",
-    startsAt: "2026-11-22T10:00:00+05:30",
-    endsAt: "2026-11-22T12:00:00+05:30",
-    location: "Online / Google Meet",
-    venue: "Google Meet (Link delivered to confirmed attendees)",
+    startsAt: "2026-11-22T00:00:00+05:30",
+    endsAt: "2026-11-22T23:59:59+05:30",
+    location: "Online via Google Meet",
+    venue: "Google Meet Virtual Room (Link delivered upon verification)",
     capacity: 250,
     registrationDeadline: "2026-11-22T09:00:00+05:30",
     status: "published",
