@@ -3,7 +3,7 @@ import Link from "next/link";
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { MemberSettingsForm } from "@/components/member/member-settings-form";
 import { EmptyState } from "@/components/common/empty-state";
-import { Settings } from "lucide-react";
+import { Settings, ShieldCheck } from "lucide-react";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 
@@ -48,6 +48,13 @@ export default async function MemberSettingsPage() {
                 className="inline-flex h-10 items-center justify-center rounded-lg border border-brand-border px-4 text-sm font-medium text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 Edit profile
+              </Link>
+              <Link
+                href="/member/settings/security"
+                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-brand-border px-4 text-sm font-medium text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <ShieldCheck className="size-4 text-teal-600" />
+                Security &amp; Password
               </Link>
               <form action="/auth/signout" method="post">
                 <button

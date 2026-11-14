@@ -223,7 +223,9 @@ export function buildUpiUri(params: {
 export function buildPaymentDeepLinks(upiUri: string): PaymentDeepLinks {
   // Extract query string from upiUri, ensuring literal @ for pa so UPI mobile apps never fail
   const rawQuery = upiUri.startsWith("upi://pay?") ? upiUri.slice("upi://pay?".length) : "";
-  const query = rawQuery.replace(/pa=([^&]+)/, (_, vpa) => `pa=${decodeURIComponent(vpa)}`);
+  const query = rawQuery
+    .replace(/pa=([^&]+)/, (_, vpa) => `pa=${decodeURIComponent(vpa)}`)
+    .replace(/&tr=[^&]*/, "");
 
   return {
     standardUpi: upiUri,

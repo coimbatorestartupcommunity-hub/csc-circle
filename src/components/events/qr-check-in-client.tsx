@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import {
   UploadCloud,
@@ -48,15 +49,35 @@ interface OtpChallengeData {
 
 export function QrCheckInClient({
   initialToken,
+  isEarlyLocked = false,
+  eventTitle = "Coimbatore Startup Community (CSC) - Joint Online Meeting",
+  startsAt = "2026-11-22T04:30:00+00:00",
 }: {
   initialToken?: string;
+  isEarlyLocked?: boolean;
+  eventTitle?: string;
+  startsAt?: string;
 }) {
-  const [step, setStep] = React.useState<Step>(
-    initialToken && initialToken.length >= 16 ? "verifying" : "upload"
-  );
+  const [step, setStep] = React.useState<Step>(() => {
+    if (initialToken && initialToken.length >= 16) return "verifying";
+    if (isEarlyLocked) return "early";
+    return "upload";
+  });
   const [errorMessage, setErrorMessage] = React.useState<string>("");
   const [successData, setSuccessData] = React.useState<CheckInSuccessData | null>(null);
-  const [earlyData, setEarlyData] = React.useState<EarlyCheckInData | null>(null);
+  const [earlyData, setEarlyData] = React.useState<EarlyCheckInData | null>(() => {
+    if (isEarlyLocked) {
+      const startsAtMs = new Date(startsAt).getTime();
+      const opensAtMs = startsAtMs - 3 * 60 * 60 * 1000;
+      return {
+        eventTitle,
+        startsAt,
+        opensAt: new Date(opensAtMs).toISOString(),
+        message: "Online Meeting Check-In opens exactly 3 hours before the scheduled event.",
+      };
+    }
+    return null;
+  });
   const [otpData, setOtpData] = React.useState<OtpChallengeData | null>(null);
   const [otpInput, setOtpInput] = React.useState<string>("");
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState<boolean>(false);
@@ -728,17 +749,13 @@ export function QrCheckInClient({
               </ul>
             </div>
 
-            <div className="mt-5 flex gap-3">
-              <Button
-                type="button"
-                onClick={() => {
-                  setStep("upload");
-                  setErrorMessage("");
-                }}
-                className="gap-2 rounded-xl bg-slate-900 px-5 text-xs font-semibold text-white hover:bg-slate-800"
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/events/csc-joint-online-meeting"
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition"
               >
-                <RefreshCw className="size-3.5" /> Return to Check-In Page
-              </Button>
+                <Calendar className="size-3.5" /> View Event Details &amp; Updates
+              </Link>
             </div>
           </div>
         )}

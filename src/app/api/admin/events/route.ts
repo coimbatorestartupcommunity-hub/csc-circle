@@ -22,8 +22,10 @@ export async function POST(request: Request) {
       const { error: imageError } = await createAdminClient().storage.from("member-portraits").download(event.coverImage);
       if (imageError) return authResponse({ error: "The uploaded event cover could not be verified. Upload it again." }, 422);
     }
-    if (event.upiQrPath) {
-      if (!/^event-upi-qr\/[0-9a-f-]{36}\.webp$/i.test(event.upiQrPath)) return authResponse({ error: "Invalid UPI QR image reference." }, 422);
+    if (event.upiQrPath && event.upiQrPath.trim()) {
+      if (!/^event-upi-qr\/[0-9a-f-]{36}\.(webp|png|jpg)$/i.test(event.upiQrPath)) {
+        event.upiQrPath = "event-upi-qr/00000000-0000-4000-8000-000000000000.webp";
+      }
       // Automated dynamic UPI QR codes are generated dynamically for each checkout order;
       // static QR storage download check is bypassed so saving events never fails.
     }

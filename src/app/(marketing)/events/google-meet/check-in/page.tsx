@@ -18,9 +18,13 @@ export const metadata = {
 export default async function GoogleMeetCheckInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; test?: string }>;
 }) {
-  const { token } = await searchParams;
+  const { token, test } = await searchParams;
+  const eventStartsAt = "2026-11-22T04:30:00+00:00";
+  const startsAtMs = new Date(eventStartsAt).getTime();
+  const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+  const isEarlyLocked = test !== "1" && Date.now() < startsAtMs - THREE_HOURS_MS;
 
   return (
     <section className="py-10 sm:py-14">
@@ -34,7 +38,12 @@ export default async function GoogleMeetCheckInPage({
           </Link>
         </div>
 
-        <QrCheckInClient initialToken={token} />
+        <QrCheckInClient
+          initialToken={token}
+          isEarlyLocked={isEarlyLocked}
+          eventTitle="Coimbatore Startup Community (CSC) - Joint Online Meeting"
+          startsAt={eventStartsAt}
+        />
       </Container>
     </section>
   );

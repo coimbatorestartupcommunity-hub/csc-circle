@@ -38,28 +38,20 @@ export async function GET() {
 
     if (event) {
       const currentSettings = (event.settings as Record<string, unknown> | null) ?? {};
-      const configuredPrice =
-        typeof event.price_per_attendee === "number" && event.price_per_attendee > 0
-          ? event.price_per_attendee
-          : typeof event.price_minor === "number" && event.price_minor > 0
-            ? event.price_minor / 100
-            : currentSettings.pricePerAttendee
-              ? Number(currentSettings.pricePerAttendee)
-              : 1;
 
       const dynamicDescription = `Welcome to the official registration for the **Coimbatore Startup Community (CSC) Joint Online Meeting**, proudly powered by Technical Partner **Logic Intelligence Technologies**.
 
 * **Event Date:** **Sunday, November 22, 2026**
 * **Session Timing:** **To Be Announced** *(Notified directly via email pass & CSC WhatsApp Community)*
 * **Conference Mode:** **Online via Google Meet** *(Private verified room access)*
-* **Registration Pass:** **${event.admission === "free" ? "Free Admission" : `₹${configuredPrice} per attendee`}** *(Automated instant verification)*
+* **Registration:** **Free Admission · Open Community Registration** *(Instant encrypted digital QR pass)*
 
 **📋 Agenda & Highlights:**
 * **Founder Networking & Collaborations:** Connect directly with Coimbatore’s founders, engineers, and ecosystem builders.
 * **Ecosystem Roadmap & Open Floor:** Collaborative peer discussions on product scaling, architecture, and funding.
-* **Instant Digital Event Pass:** Every confirmed attendee receives an **individual encrypted QR code** for automated check-in.
+* **Instant Digital Event Pass:** Every confirmed attendee receives an **individual encrypted QR code** for automated Google Meet check-in.
 
-> **Important Notes:** Online check-in and Google Meet access open **3 hours before the meeting**. Complete your details below to secure your seat.`;
+> **Important Notes:** Online check-in and Google Meet access open **3 hours before the meeting**. Complete your details below to secure your free seat.`;
 
       const updatedSettings = {
         ...currentSettings,
@@ -69,11 +61,9 @@ export async function GET() {
         posterImage: "/events/csc-joint-online-meeting-poster.webp",
         timeNote: "To Be Announced (Will be notified via email and CSC WhatsApp Group)",
         timeTba: true,
-        upiPayeeVpa: "9342877474@ptaxis",
-        upiVpa: "9342877474@ptaxis",
-        upiPayeeName: "VIKASH S",
-        price: String(configuredPrice),
-        pricePerAttendee: String(configuredPrice),
+        admission: "free",
+        price: "0",
+        pricePerAttendee: "0",
         onlineInfo: "https://meet.google.com/vwg-hmsh-mrx",
         googleMeetUrl: "https://meet.google.com/vwg-hmsh-mrx",
       };
@@ -84,20 +74,20 @@ export async function GET() {
           title: "Coimbatore Startup Community (CSC) - Joint Online Meeting",
           description: dynamicDescription,
           cover_image: "/events/csc-joint-online-meeting-cover.webp",
-          upi_payee_name: "VIKASH S",
-          price_per_attendee: configuredPrice,
-          price_minor: Math.round(configuredPrice * 100),
+          admission: "free",
+          registration_mode: "rsvp",
+          price_per_attendee: 0,
+          price_minor: 0,
           settings: updatedSettings,
         })
         .eq("id", event.id);
 
-      // Cancel any outdated pending orders with stale prices for this event so users immediately see their new price
+      // Cancel any legacy pending orders
       await admin
         .from("event_payment_orders")
         .update({ status: "cancelled", updated_at: new Date().toISOString() })
         .eq("event_id", event.id)
-        .eq("status", "pending")
-        .neq("amount_paise", Math.round(configuredPrice * 100));
+        .eq("status", "pending");
 
       // 3. Create or update Event Notice for Featured Event Notices on /events
       const { data: existingNotice } = (await dynamicDb
@@ -110,10 +100,10 @@ export async function GET() {
         await dynamicDb
           .from("event_notices")
           .update({
-            title: "CSC Joint Online Meeting · Registrations Open",
+            title: "CSC Joint Online Meeting · Free Registration Open",
             message:
-              "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet (Nov 22, 2026). Session timing will be announced directly to confirmed attendees.",
-            button_label: "Register Now",
+              "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet (Nov 22, 2026). Free community registration is now open with instant digital pass issuance.",
+            button_label: "Register Free Now",
             status: "published",
             display_priority: 100,
           })
@@ -121,10 +111,10 @@ export async function GET() {
       } else {
         await dynamicDb.from("event_notices").insert({
           event_id: event.id,
-          title: "CSC Joint Online Meeting · Registrations Open",
+          title: "CSC Joint Online Meeting · Free Registration Open",
           message:
-            "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet (Nov 22, 2026). Session timing will be announced directly to confirmed attendees.",
-          button_label: "Register Now",
+            "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet (Nov 22, 2026). Free community registration is now open with instant digital pass issuance.",
+          button_label: "Register Free Now",
           status: "published",
           display_priority: 100,
         });
