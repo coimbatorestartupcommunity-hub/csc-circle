@@ -179,7 +179,8 @@ export function buildAndroidIntentUri(upiUri: string, packageName?: string): str
  * Generates application-specific deep links preserving exact query parameters (F17-3 & F17-4).
  */
 export function getUpiAppLinks(upiUri: string): PaymentDeepLinks {
-  const query = upiUri.startsWith("upi://pay?") ? upiUri.slice("upi://pay?".length) : "";
+  const rawQuery = upiUri.startsWith("upi://pay?") ? upiUri.slice("upi://pay?".length) : "";
+  const query = rawQuery.replace(/pa=([^&]+)/, (_, vpa) => `pa=${decodeURIComponent(vpa)}`);
 
   return {
     standardUpi: upiUri,

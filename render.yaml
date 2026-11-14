@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: csc-reconcile-24x7
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: "echo Ready"
+    startCommand: "node scripts/render-reconcile-worker.mjs"
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: CSC_RECONCILE_URL
+        value: https://csc.logicintelligencetechnologies.in/api/internal/payments/reconcile
+      - key: RECONCILE_INTERVAL_MS
+        value: "30000"

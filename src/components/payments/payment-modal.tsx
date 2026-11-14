@@ -12,9 +12,11 @@ import {
   Check,
   CheckCircle2,
   Clock,
+  Copy,
   Loader2,
   RotateCcw,
   ShieldCheck,
+  Smartphone,
   Ticket,
   X,
 } from "lucide-react";
@@ -412,50 +414,46 @@ export function PaymentModal({
 
     const vpa = order.payeeVpa && !order.payeeVpa.includes("ptyes") ? order.payeeVpa : "9342877474@ptaxis";
     const payee = order.payeeName || "VIKASH S";
-    const amount = (order.totalRupees || (order.amountPaise ? order.amountPaise / 100 : 10)).toFixed(2);
-    const note = `Pass for ${eventTitle.slice(0, 20)}`;
+    const amount = (order.totalRupees || (order.amountPaise ? order.amountPaise / 100 : 1)).toFixed(2);
+    const note = `Pass for ${eventTitle.slice(0, 20).trim()}`;
 
-    const p2pParams = new URLSearchParams({
-      pa: vpa,
-      pn: payee,
-      am: amount,
-      cu: "INR",
-      tn: note,
-    });
-    const p2pQuery = p2pParams.toString();
+    // Clean NPCI P2P UPI URI with literal @ and %20 spaces (matches QR code scan format)
+    const standardUpiUri = `upi://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
 
     if (platformInfo.isAndroid) {
-      // Direct Android package intent targeting with clean P2P query
-      const intentUri = `intent://pay?${p2pQuery}#Intent;scheme=upi;package=${packageId};end;`;
-      window.location.assign(intentUri);
+      // Direct Android package intent targeting with scheme=upi
+      const intentUri = `intent://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}#Intent;scheme=upi;package=${packageId};end;`;
+      window.location.href = intentUri;
+
+      setTimeout(() => {
+        if (!document.hidden) {
+          window.location.href = standardUpiUri;
+        }
+      }, 1500);
     } else if (platformInfo.isIos) {
       // Specific iOS deep links
-      let schemeUri = `${iosScheme}?${p2pQuery}`;
+      let schemeUri = standardUpiUri;
       if (appName === "Google Pay") {
-        schemeUri = `gpay://upi/pay?${p2pQuery}`;
+        schemeUri = `tez://upi/pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
       } else if (appName === "PhonePe") {
-        schemeUri = `phonepe://pay?${p2pQuery}`;
+        schemeUri = `phonepe://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
       } else if (appName === "Paytm") {
-        schemeUri = `paytmmp://pay?${p2pQuery}`;
+        schemeUri = `paytmmp://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
       } else if (appName === "BHIM") {
-        schemeUri = `bhim://pay?${p2pQuery}`;
+        schemeUri = `bhim://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
       }
-      window.location.assign(schemeUri);
 
-      // Graceful fallback if app is not installed
-      const startTime = Date.now();
+      window.location.href = schemeUri;
+
+      // Graceful fallback to standard universal upi://pay if app is not installed or fails
       setTimeout(() => {
-        if (!document.hidden && Date.now() - startTime >= 1800) {
-          toast.info(
-            `If ${appName} is not installed, you can scan the QR code below using any UPI app.`
-          );
+        if (!document.hidden) {
+          window.location.href = standardUpiUri;
         }
-      }, 2000);
+      }, 1200);
     } else {
-      // Desktop: inform attendee to scan QR or use mobile
-      toast.info(
-        `To pay with ${appName}, please scan the QR code below with your mobile device.`
-      );
+      window.location.href = standardUpiUri;
+      toast.info(`Opened UPI link. You can also scan the QR code below.`);
     }
   };
 
@@ -636,11 +634,32 @@ export function PaymentModal({
                   </div>
                 </div>
 
+                {/* 1-Tap Native Direct UPI App Launcher */}
+                <a
+                  href={`upi://pay?pa=${order.payeeVpa && !order.payeeVpa.includes("ptyes") ? order.payeeVpa : "9342877474@ptaxis"}&pn=${encodeURIComponent(order.payeeName || "VIKASH S")}&am=${(order.totalRupees || (order.amountPaise ? order.amountPaise / 100 : 1)).toFixed(2)}&cu=INR&tn=${encodeURIComponent(`Pass for ${eventTitle.slice(0, 20).trim()}`)}`}
+                  className="flex h-9 sm:h-10 w-full items-center justify-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs sm:text-sm shadow-sm transition active:scale-[0.99]"
+                >
+                  <Smartphone className="size-4 shrink-0" />
+                  <span>Pay via Any Installed UPI App</span>
+                </a>
+
                 {/* Middle Section: Exactly Four UPI-App Icon Buttons (1. GPay, 2. PhonePe, 3. BHIM, 4. Paytm) */}
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] sm:text-[11px] font-semibold text-slate-700">
-                    Pay using supported UPI app:
-                  </span>
+                  <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-semibold text-slate-700">
+                    <span>Or choose your installed app:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const vpa = order.payeeVpa && !order.payeeVpa.includes("ptyes") ? order.payeeVpa : "9342877474@ptaxis";
+                        navigator.clipboard.writeText(vpa);
+                        toast.success(`UPI ID copied: ${vpa}`);
+                      }}
+                      className="inline-flex items-center gap-1 text-[10.5px] text-teal-700 hover:text-teal-900 font-bold hover:underline"
+                    >
+                      <Copy className="size-3" />
+                      Copy UPI ID
+                    </button>
+                  </div>
                   <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                     {/* Position 1: Google Pay */}
                     <button
@@ -748,10 +767,24 @@ export function PaymentModal({
 
                 {/* Payment Instructions & Important Notes */}
                 <div className="rounded-xl border border-slate-200/90 bg-slate-50/90 px-2.5 py-2 text-left text-[10.5px] leading-snug text-slate-700">
-                  <p className="font-bold text-slate-900 flex items-center gap-1 mb-1">
-                    <ShieldCheck className="size-3 text-teal-600" />
-                    <strong>UPI Instructions & Payment Notes:</strong>
-                  </p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-bold text-slate-900 flex items-center gap-1">
+                      <ShieldCheck className="size-3 text-teal-600" />
+                      <strong>UPI Instructions & Payment Notes:</strong>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const vpa = order.payeeVpa && !order.payeeVpa.includes("ptyes") ? order.payeeVpa : "9342877474@ptaxis";
+                        navigator.clipboard.writeText(vpa);
+                        toast.success(`UPI ID copied: ${vpa}`);
+                      }}
+                      className="inline-flex items-center gap-1 text-[10px] text-teal-700 hover:text-teal-900 font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-2xs"
+                    >
+                      <Copy className="size-2.5" />
+                      Copy
+                    </button>
+                  </div>
                   <ul className="space-y-0.5 text-[10px] text-slate-600 list-disc list-inside">
                     <li>Payee: <strong>VIKASH S</strong> (<code>9342877474@ptaxis</code>).</li>
                     <li><strong>Important:</strong> Do not change or remove the auto-filled <strong>Reference memo</strong> in your UPI app.</li>
