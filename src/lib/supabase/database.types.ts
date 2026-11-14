@@ -41,21 +41,33 @@ export type Database = {
           event_id: string
           id: string
           registration_id: string
-          staff_id: string
+          staff_id: string | null
+          checkin_method?: string | null
+          attendee_email?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
         }
         Insert: {
           checked_in_at?: string
           event_id: string
           id?: string
           registration_id: string
-          staff_id: string
+          staff_id?: string | null
+          checkin_method?: string | null
+          attendee_email?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
         }
         Update: {
           checked_in_at?: string
           event_id?: string
           id?: string
           registration_id?: string
-          staff_id?: string
+          staff_id?: string | null
+          checkin_method?: string | null
+          attendee_email?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
         }
         Relationships: [
           {
@@ -646,6 +658,87 @@ export type Database = {
         Row: { base_version: number; created_at: string; id: string; proposed_data: Json; proposed_private_details: Json; review_reason: string | null; reviewed_at: string | null; reviewed_by: string | null; startup_id: string; status: string; submitted_at: string | null; submitted_by: string; updated_at: string }
         Insert: { base_version: number; created_at?: string; id?: string; proposed_data: Json; proposed_private_details?: Json; review_reason?: string | null; reviewed_at?: string | null; reviewed_by?: string | null; startup_id: string; status?: string; submitted_at?: string | null; submitted_by: string; updated_at?: string }
         Update: { base_version?: number; created_at?: string; id?: string; proposed_data?: Json; proposed_private_details?: Json; review_reason?: string | null; reviewed_at?: string | null; reviewed_by?: string | null; startup_id?: string; status?: string; submitted_at?: string | null; submitted_by?: string; updated_at?: string }
+        Relationships: []
+      }
+      event_checkin_challenges: {
+        Row: {
+          id: string
+          registration_id: string
+          otp_hash: string
+          recipient_email: string
+          token_hash: string
+          expires_at: string
+          attempts: number
+          verified_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          registration_id: string
+          otp_hash: string
+          recipient_email: string
+          token_hash: string
+          expires_at: string
+          attempts?: number
+          verified_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          registration_id?: string
+          otp_hash?: string
+          recipient_email?: string
+          token_hash?: string
+          expires_at?: string
+          attempts?: number
+          verified_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      event_join_sessions: {
+        Row: {
+          id: string
+          registration_id: string
+          event_id: string
+          token_hash: string
+          meeting_url: string
+          attendee_email: string
+          created_at: string
+          expires_at: string
+          redeemed_at: string | null
+          is_revoked: boolean
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          registration_id: string
+          event_id: string
+          token_hash: string
+          meeting_url: string
+          attendee_email: string
+          created_at?: string
+          expires_at: string
+          redeemed_at?: string | null
+          is_revoked?: boolean
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          registration_id?: string
+          event_id?: string
+          token_hash?: string
+          meeting_url?: string
+          attendee_email?: string
+          created_at?: string
+          expires_at?: string
+          redeemed_at?: string | null
+          is_revoked?: boolean
+          ip_address?: string | null
+          user_agent?: string | null
+        }
         Relationships: []
       }
       event_registration_import_metadata: {
@@ -1769,6 +1862,16 @@ export type Database = {
       }
       csc_check_in: { Args: { event: string; token: string }; Returns: Json }
       csc_manual_check_in: { Args: { registration: string }; Returns: Json }
+      csc_attendee_self_check_in: {
+        Args: {
+          p_pass_token: string
+          p_verified_email?: string | null
+          p_method?: string | null
+          p_ip?: string | null
+          p_user_agent?: string | null
+        }
+        Returns: Json
+      }
       csc_claim_notifications: {
         Args: { batch?: number; worker?: string }
         Returns: {

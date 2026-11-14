@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { toBlob } from "html-to-image";
-import { Check, Copy, Download, Loader2, MapPin, CalendarDays, FileDown, IdCard } from "lucide-react";
+import { Check, Copy, Download, Loader2, MapPin, CalendarDays, FileDown, IdCard, QrCode, Video, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/member/status-badge";
@@ -112,6 +112,17 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch { setCopied(false); }
+  }
+
+  function downloadQrOnly() {
+    if (!qr) return;
+    const link = document.createElement("a");
+    link.href = qr;
+    link.download = `CSC-Pass-QR-${fields.uid.replace(/[^A-Za-z0-9_-]/g, "-")}.png`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    toast.success("Downloaded QR Code image");
   }
 
   return (
@@ -248,49 +259,75 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
 
       {/* Action Buttons matching Member ID Card design */}
       <div className="grid w-full max-w-md grid-cols-2 gap-2.5">
+        {/* Primary CTA: Online Google Meet Check-In */}
+        <div className="col-span-2">
+          <Button
+            nativeButton={false}
+            className="h-12 w-full gap-2 rounded-xl bg-teal-600 text-sm font-bold text-white shadow-sm transition hover:bg-teal-700"
+            render={
+              <Link
+                href={`/events/google-meet/check-in?token=${encodeURIComponent(pass.verificationToken)}`}
+              />
+            }
+          >
+            <Video className="size-4" /> Check In to Google Meet <ExternalLink className="size-3.5" />
+          </Button>
+        </div>
+
         <Button
           onClick={() => void download("png")}
           disabled={downloading !== null || !qr}
-          className="h-12 w-full gap-2 rounded-xl bg-brand-ink text-sm font-semibold text-white shadow-sm transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple"
+          className="h-11 w-full gap-2 rounded-xl bg-brand-ink text-xs font-semibold text-white shadow-sm transition hover:bg-brand-ink/90"
         >
           {downloading === "png" ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <Download className="size-4" />
           )}
-          Download as PNG
+          Download Pass (PNG)
         </Button>
         <Button
           onClick={() => void download("pdf")}
           disabled={downloading !== null || !qr}
           variant="outline"
-          className="h-12 w-full gap-2 rounded-xl border border-brand-border bg-white text-sm font-semibold text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple"
+          className="h-11 w-full gap-2 rounded-xl border border-brand-border bg-white text-xs font-semibold text-brand-ink transition hover:bg-brand-cloud"
         >
           {downloading === "pdf" ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <FileDown className="size-4" />
           )}
-          Download as PDF
+          Download Pass (PDF)
         </Button>
 
-        <div className="col-span-2 flex gap-2">
+        <div className="col-span-2 grid grid-cols-3 gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={downloadQrOnly}
+            disabled={!qr}
+            className="h-10 gap-1 rounded-xl text-xs font-medium"
+            title="Download standalone QR code image"
+          >
+            <QrCode className="size-3.5 text-teal-600" /> Save QR Code
+          </Button>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={copyUid}
-            className="h-10 flex-1 gap-1.5 rounded-xl text-xs font-medium"
+            className="h-10 gap-1 rounded-xl text-xs font-medium"
             aria-label="Copy UID"
           >
             {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
-            {copied ? "Copied UID" : "Copy UID"}
+            {copied ? "Copied" : "Copy UID"}
           </Button>
           <Button
             variant="outline"
             size="sm"
             nativeButton={false}
-            className="h-10 flex-1 gap-1.5 rounded-xl text-xs font-medium"
+            className="h-10 gap-1 rounded-xl text-xs font-medium"
             render={<Link href="/member/id-card" />}
           >
             <IdCard className="size-3.5" /> Member ID

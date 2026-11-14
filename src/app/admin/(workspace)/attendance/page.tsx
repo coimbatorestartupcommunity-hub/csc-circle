@@ -33,7 +33,26 @@ export default async function AttendancePage() {
         title="Attendance reports"
         description="Review attendance, manually check in confirmed attendees when scanning is unavailable, and export the access-controlled report."
         isDemo={ctx.mode === "preview"}
-        action={ctx.mode === "live" ? <Link href="/api/admin/attendance/export" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"><Download className="size-4" aria-hidden />Download CSV</Link> : null}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/events/google-meet/check-in"
+              target="_blank"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-brand-border bg-white px-3.5 py-2 text-xs font-semibold text-brand-ink transition hover:bg-brand-cloud"
+            >
+              Attendee Check-in Portal ↗
+            </Link>
+            {ctx.mode === "live" ? (
+              <Link
+                href="/api/admin/attendance/export"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-accent"
+              >
+                <Download className="size-4" aria-hidden />
+                Download CSV
+              </Link>
+            ) : null}
+          </div>
+        }
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -47,13 +66,21 @@ export default async function AttendancePage() {
         rows={regs}
         columns={columns}
         searchKeys={["eventTitle", "reference", "memberName"]}
-        actions={canManualCheckIn ? [{
-          label: "Check In",
-          operation: { kind: "manual_check_in", decision: "checked_in" },
-          confirm: "Confirm that this attendee has arrived. This records an audited manual check-in and cannot be used for an unconfirmed or unpaid registration.",
-          variant: "default",
-          visibleForStatuses: ["confirmed"],
-        }] : undefined}
+        actions={[
+          ...(canManualCheckIn ? [{
+            label: "Check In",
+            operation: { kind: "manual_check_in", decision: "checked_in" },
+            confirm: "Confirm that this attendee has arrived. This records an audited manual check-in and cannot be used for an unconfirmed or unpaid registration.",
+            variant: "default" as const,
+            visibleForStatuses: ["confirmed"],
+          }] : []),
+          ...(ctx.mode === "live" && can(ctx, "registrations.approve") ? [{
+            label: "Resend QR Pass",
+            operation: { kind: "resend_event_pass", decision: "resend" },
+            confirm: "Re-queue the digital event pass email with the individual QR code to this attendee.",
+            variant: "outline" as const,
+          }] : []),
+        ]}
         emptyMessage={res.ok ? "No attendance records." : res.error.message}
       />
     </>
