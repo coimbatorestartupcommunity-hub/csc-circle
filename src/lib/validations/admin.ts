@@ -72,13 +72,17 @@ export const eventEditorSchema = z.object({
   ...event,
   ...(event.format === "online" ? { venueName: "", venueAddress: "", mapsUrl: "" } : {}),
   ...(event.format === "offline" ? { onlineInfo: "" } : {}),
-  ...(event.admission === "free" ? { price: "0", pricePerAttendee: "0", currency: "INR", registrationMode: "rsvp" as const, paymentInstructions: "", upiVpa: "", upiPayeeName: "", upiQrPath: "", paymentNote: "" } : {}),
+  ...(event.admission === "free" ? { price: "0", pricePerAttendee: "0", currency: "INR", registrationMode: "rsvp" as const, paymentInstructions: "", upiVpa: "", upiPayeeName: "", upiQrPath: "", paymentNote: "" } : {
+    registrationMode: "paid_upi" as const,
+    upiVpa: event.upiVpa?.trim() || "9342877474@ptaxis",
+    upiPayeeName: event.upiPayeeName?.trim() || "VIKASH S",
+    currency: "INR",
+  }),
 })).superRefine((event, ctx) => {
   if (event.format !== "offline" && !event.onlineInfo && event.status === "published") ctx.addIssue({ code: "custom", path: ["onlineInfo"], message: "Add the online meeting or calendar link before publishing." });
-  if (event.registrationMode === "paid_upi") {
+  if (event.registrationMode === "paid_upi" || event.admission === "paid") {
     const price = Number(event.pricePerAttendee);
-    if (event.admission !== "paid" || !Number.isFinite(price) || price <= 0) ctx.addIssue({ code: "custom", path: ["pricePerAttendee"], message: "Paid UPI registration requires a positive price per attendee." });
-    if (event.status === "published" && (!event.upiVpa?.trim() || !event.upiPayeeName?.trim() || !event.upiQrPath?.trim())) ctx.addIssue({ code: "custom", path: ["upiVpa"], message: "Set the UPI VPA, payee name, and upload its QR image before publishing." });
+    if (!Number.isFinite(price) || price <= 0) ctx.addIssue({ code: "custom", path: ["pricePerAttendee"], message: "Paid registration requires a positive price per attendee." });
   }
 });
 

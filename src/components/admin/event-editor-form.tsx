@@ -397,56 +397,18 @@ export function EventEditorForm({
                 </Field>
               </div>
 
-              {/* QR Code Upload Section */}
-              <div className="rounded-xl bg-brand-cloud/60 p-4 ring-1 ring-brand-border">
-                <FieldLabel htmlFor="e-upi-qr" className="font-semibold text-brand-ink">
-                  Payment QR Code (Scan to Pay)
-                </FieldLabel>
-                <p className="mt-0.5 text-xs text-brand-muted">
-                  Upload a UPI payment QR code. Attendees can pay by scanning it with any UPI app (GPay, PhonePe, Paytm).
-                </p>
-                <input
-                  ref={qrInput}
-                  id="e-upi-qr"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="sr-only"
-                  onChange={(e) => {
-                    void uploadQr(e.currentTarget.files?.[0]);
-                    e.currentTarget.value = "";
-                  }}
-                />
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={uploadingQr || isDemo}
-                    onClick={() => qrInput.current?.click()}
-                    className="gap-2"
-                  >
-                    {uploadingQr ? <Loader2 className="size-4 animate-spin" /> : null}
-                    {uploadingQr ? "Uploading QR code…" : values.upiQrPath ? "Replace QR code" : "Upload QR code"}
-                  </Button>
-                  {values.upiQrPath ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      disabled={uploadingQr}
-                      onClick={() => {
-                        setValue("upiQrPath", "", { shouldDirty: true, shouldValidate: true });
-                        setQrPreview("");
-                      }}
-                    >
-                      Remove QR code
-                    </Button>
-                  ) : null}
+              {/* Automated Dynamic UPI QR Section */}
+              <div className="rounded-xl border border-teal-200 bg-teal-50/70 p-4 ring-1 ring-teal-300/40">
+                <div className="flex items-center gap-2 font-semibold text-teal-950 text-sm">
+                  <CheckCircle2 className="size-4 text-teal-600" />
+                  <span>Automated Dynamic UPI QR Active</span>
                 </div>
-                {qrPreview ? (
-                  <div className="relative mt-3 size-44 overflow-hidden rounded-xl bg-white p-2 shadow-sm ring-1 ring-brand-border">
-                    <Image src={qrPreview} alt="Payment QR code preview" fill unoptimized sizes="176px" className="object-contain" />
-                  </div>
-                ) : null}
-                {errors.upiQrPath ? <FieldError>{errors.upiQrPath.message}</FieldError> : null}
+                <p className="mt-1 text-xs leading-relaxed text-teal-800">
+                  Every paid registration automatically generates a secure, order-specific dynamic UPI QR code bound to <strong>VIKASH S</strong> (<code>9342877474@ptaxis</code>). Manual QR upload is not required.
+                </p>
+                <div className="mt-2.5 flex items-center gap-2 text-[11px] text-teal-900 font-mono bg-white/80 px-2.5 py-1 rounded-lg border border-teal-200 w-fit">
+                  <span>Payee: <strong>VIKASH S</strong> · VPA: <strong>9342877474@ptaxis</strong></span>
+                </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
