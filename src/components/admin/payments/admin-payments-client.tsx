@@ -9,7 +9,11 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
+  Trash2,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EvidenceAuthBadge } from "./evidence-auth-badge";
@@ -26,13 +30,43 @@ export function AdminPaymentsClient({
   canVerify: boolean;
 }) {
   const router = useRouter();
-  const [rows] = React.useState<EnrichedAdminPaymentRow[]>(initialRows);
+  const [rows, setRows] = React.useState<EnrichedAdminPaymentRow[]>(initialRows);
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [authFilter, setAuthFilter] = React.useState<string>("all");
   const [attrFilter, setAttrFilter] = React.useState<string>("all");
   const [expandedRowId, setExpandedRowId] = React.useState<string | null>(null);
   const [reconcileOrder, setReconcileOrder] = React.useState<EnrichedAdminPaymentRow | null>(null);
+  const [deleteOrder, setDeleteOrder] = React.useState<EnrichedAdminPaymentRow | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
+
+  React.useEffect(() => {
+    setRows(initialRows);
+  }, [initialRows]);
+
+  const handleDeleteOrder = async () => {
+    if (!deleteOrder) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/admin/payments/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: deleteOrder.id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Could not delete transaction record.");
+      }
+      toast.success(`Payment order ${deleteOrder.reference} deleted successfully.`);
+      setRows((prev) => prev.filter((r) => r.id !== deleteOrder.id));
+      setDeleteOrder(null);
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete payment record.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const filteredRows = React.useMemo(() => {
     return rows.filter((row) => {
@@ -225,6 +259,16 @@ export function AdminPaymentsClient({
                                 <ChevronDown className="size-3" />
                               )}
                             </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteOrder(row)}
+                              className="h-7 px-2 text-[11px] text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                              title="Delete transaction record"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -273,6 +317,86 @@ export function AdminPaymentsClient({
             router.refresh();
           }}
         />
+      )}
+
+      {/* Delete Confirmation Pop-Up Modal */}
+      {deleteOrder && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs"
+        >
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/10">
+            <div className="p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+                  <AlertTriangle className="size-5" />
+                </div>
+                <div>
+                  <h3 id="delete-modal-title" className="text-base font-bold text-slate-900">
+                    Delete Payment Record
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                    Are you sure you want to permanently delete this payment transaction?
+                  </p>
+                </div>
+              </div>
+
+              {/* Order Info Card */}
+              <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Order Reference:</span>
+                  <span className="font-mono font-bold text-slate-900">{deleteOrder.reference}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Attendee:</span>
+                  <span className="font-semibold text-slate-800">{deleteOrder.attendee}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Event:</span>
+                  <span className="text-slate-700 truncate max-w-[200px]">{deleteOrder.event}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Amount:</span>
+                  <span className="font-bold text-slate-900">₹{deleteOrder.amount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-medium">Status:</span>
+                  <span className="capitalize text-slate-700 font-medium">{deleteOrder.status}</span>
+                </div>
+              </div>
+
+              <p className="mt-3 text-[11px] text-rose-600">
+                Warning: This removes the payment order and unlinks any related bank notification evidence.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="mt-5 flex items-center justify-end gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={deleting}
+                  onClick={() => setDeleteOrder(null)}
+                  className="rounded-xl text-xs font-medium"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={deleting}
+                  onClick={() => void handleDeleteOrder()}
+                  className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold gap-1.5"
+                >
+                  {deleting ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                  {deleting ? "Deleting…" : "Delete Transaction"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
