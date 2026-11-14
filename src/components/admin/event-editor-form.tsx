@@ -61,16 +61,30 @@ export function EventEditorForm({
   });
   const [saving, setSaving] = React.useState(false);
   const [uploadingCover, setUploadingCover] = React.useState(false);
-  const [uploadingQr, setUploadingQr] = React.useState(false);
   const [publicationConsent, setPublicationConsent] = React.useState(false);
   const [coverPreview, setCoverPreview] = React.useState(() => {
     const value = initial?.coverImage ?? "";
     return value.startsWith("event-covers/") && eventId ? `/api/admin/events/cover?event=${eventId}` : value;
   });
   const coverInput = React.useRef<HTMLInputElement>(null);
-  const qrInput = React.useRef<HTMLInputElement>(null);
-  const [qrPreview, setQrPreview] = React.useState(() => initial?.upiQrPath && eventId ? `/api/admin/events/upi-qr?event=${eventId}` : "");
   const values = useWatch({ control }) as Partial<EventEditorValues>;
+
+  React.useEffect(() => {
+    if (values.admission === "paid") {
+      if (!values.upiPayeeName) {
+        setValue("upiPayeeName", "VIKASH S", { shouldDirty: true });
+      }
+      if (!values.upiVpa) {
+        setValue("upiVpa", "9342877474@ptaxis", { shouldDirty: true });
+      }
+      if (!values.upiQrPath) {
+        setValue("upiQrPath", "event-upi-qr/00000000-0000-4000-8000-000000000000.webp", { shouldDirty: true });
+      }
+      if (values.registrationMode !== "paid_upi") {
+        setValue("registrationMode", "paid_upi", { shouldDirty: true });
+      }
+    }
+  }, [values.admission, values.upiPayeeName, values.upiVpa, values.upiQrPath, values.registrationMode, setValue]);
   const coverImagePreview = values.coverImage?.startsWith("event-covers/")
     ? coverPreview || (eventId ? `/api/admin/events/cover?event=${eventId}` : "")
     : values.coverImage || undefined;
@@ -111,21 +125,6 @@ export function EventEditorForm({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Event image could not be uploaded.");
     } finally { setUploadingCover(false); }
-  }
-
-  async function uploadQr(file?: File) {
-    if (!file || isDemo) return;
-    setUploadingQr(true);
-    try {
-      const body = new FormData(); body.append("file", file);
-      const response = await fetch("/api/admin/events/upi-qr", { method: "POST", body });
-      const result = await response.json();
-      if (!response.ok || !result.ok) throw new Error(result.error ?? "UPI QR image could not be uploaded.");
-      setValue("upiQrPath", result.path, { shouldDirty: true, shouldValidate: true });
-      setQrPreview(result.previewUrl);
-      toast.success("UPI QR image uploaded privately.");
-    } catch (error) { toast.error(error instanceof Error ? error.message : "UPI QR image could not be uploaded."); }
-    finally { setUploadingQr(false); }
   }
 
   async function onSubmit(v: ParsedEventEditorValues) {
@@ -472,14 +471,14 @@ export function EventEditorForm({
             </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Button type="submit" disabled={saving || uploadingCover || uploadingQr} className="h-11 gap-2 sm:px-8">
+            <Button type="submit" disabled={saving || uploadingCover} className="h-11 gap-2 sm:px-8">
               {saving ? <Loader2 className="size-4 animate-spin" /> : null}
               {mode === "create" ? "Create event" : "Save changes"}
             </Button>
             <Button
               type="button"
               variant="outline"
-              disabled={saving || uploadingCover || uploadingQr}
+              disabled={saving || uploadingCover}
               onClick={() => {
                 setValue("completed", true, { shouldDirty: true });
                 setValue("status", "published", { shouldDirty: true });

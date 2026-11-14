@@ -30,7 +30,7 @@ export function AdminPaymentsClient({
   canVerify: boolean;
 }) {
   const router = useRouter();
-  const [rows, setRows] = React.useState<EnrichedAdminPaymentRow[]>(initialRows);
+  const [deletedIds, setDeletedIds] = React.useState<Set<string>>(() => new Set());
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [authFilter, setAuthFilter] = React.useState<string>("all");
@@ -40,9 +40,9 @@ export function AdminPaymentsClient({
   const [deleteOrder, setDeleteOrder] = React.useState<EnrichedAdminPaymentRow | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
-  React.useEffect(() => {
-    setRows(initialRows);
-  }, [initialRows]);
+  const rows = React.useMemo(() => {
+    return initialRows.filter((r) => !deletedIds.has(r.id));
+  }, [initialRows, deletedIds]);
 
   const handleDeleteOrder = async () => {
     if (!deleteOrder) return;
@@ -58,7 +58,7 @@ export function AdminPaymentsClient({
         throw new Error(data.error || "Could not delete transaction record.");
       }
       toast.success(`Payment order ${deleteOrder.reference} deleted successfully.`);
-      setRows((prev) => prev.filter((r) => r.id !== deleteOrder.id));
+      setDeletedIds((prev) => new Set(prev).add(deleteOrder.id));
       setDeleteOrder(null);
       router.refresh();
     } catch (err) {
