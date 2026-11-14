@@ -2,11 +2,17 @@
  * Configuration and constants for the CSC Circle Custom UPI Payment & Axis Bank Verification.
  */
 
+const rawVpa = (process.env.CSC_PAYMENT_UPI_VPA || process.env.CSC_UPI_VPA || "").trim();
+const activeVpa = rawVpa && !rawVpa.includes("ptyes") ? rawVpa : "9342877474@ptaxis";
+
+const rawPayeeName = (process.env.CSC_PAYMENT_PAYEE_NAME || process.env.CSC_UPI_PAYEE_NAME || "").trim();
+const activePayeeName = rawPayeeName || "S VIKASH";
+
 export const UPI_CONFIG = {
   // Production checkout is enabled only when these values are explicitly
   // supplied through the server environment and separately approved.
-  PAYEE_VPA: process.env.CSC_PAYMENT_UPI_VPA || "9342877474@ptaxis",
-  PAYEE_NAME: process.env.CSC_PAYMENT_PAYEE_NAME || "S VIKASH",
+  PAYEE_VPA: activeVpa,
+  PAYEE_NAME: activePayeeName,
   CURRENCY: "INR",
 
   // Receiving bank account details from genuine Axis Bank alert

@@ -39,8 +39,9 @@ export async function GET() {
     const admin = createAdminClient();
     const dynamicDb = admin as unknown as SupabaseClient;
 
-    // 1. Permanently remove duplicate event
+    // 1. Permanently remove duplicate events
     await admin.from("events").delete().eq("slug", "csc-first-online-google-meet");
+    await admin.from("events").delete().neq("slug", "csc-joint-online-meeting").ilike("title", "%Joint Online Meeting%");
 
     // 2. Fetch canonical event
     const { data: event } = await admin
@@ -53,18 +54,28 @@ export async function GET() {
       const currentSettings = (event.settings as Record<string, unknown> | null) ?? {};
       const updatedSettings = {
         ...currentSettings,
+        title: "Coimbatore Startup Community (CSC) - Joint Online Meeting",
         coverImage: "/events/csc-joint-online-meeting-cover.webp",
         bannerImage: "/events/csc-joint-online-meeting-banner.webp",
         posterImage: "/events/csc-joint-online-meeting-poster.webp",
         timeNote: "To Be Announced (Will be notified via email and CSC WhatsApp Group)",
         upiPayeeVpa: "9342877474@ptaxis",
+        upiVpa: "9342877474@ptaxis",
+        upiPayeeName: "VIKASH S",
+        price: "10",
+        pricePerAttendee: "10",
+        onlineInfo: "https://meet.google.com/vwg-hmsh-mrx",
+        googleMeetUrl: "https://meet.google.com/vwg-hmsh-mrx",
       };
 
       await admin
         .from("events")
         .update({
+          title: "Coimbatore Startup Community (CSC) - Joint Online Meeting",
           description: PROFESSIONAL_DESCRIPTION,
           cover_image: "/events/csc-joint-online-meeting-cover.webp",
+          upi_payee_name: "VIKASH S",
+          price_per_attendee: 10,
           settings: updatedSettings,
         })
         .eq("id", event.id);

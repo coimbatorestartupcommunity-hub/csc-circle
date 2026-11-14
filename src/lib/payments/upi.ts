@@ -91,7 +91,8 @@ export function formatTransactionNote(eventTitle: string, prefix = "Pass for "):
  * (spaces as %20, mode=02, orgid=000000).
  */
 export function buildUpiPayload(params: UpiPayloadParams): string {
-  const vpa = params.vpa || UPI_CONFIG.PAYEE_VPA;
+  const rawVpa = params.vpa || UPI_CONFIG.PAYEE_VPA;
+  const vpa = rawVpa && !rawVpa.includes("ptyes") ? rawVpa : "9342877474@ptaxis";
   const payee = params.payeeName || UPI_CONFIG.PAYEE_NAME;
   const formattedAmount = formatUpiAmount(params.amountRupees, params.amountPaise);
   const note = formatTransactionNote(params.eventTitle);
@@ -128,7 +129,8 @@ export function buildUpiPayload(params: UpiPayloadParams): string {
  * and existing test suites.
  */
 export function buildUpiUri(params: UpiPayloadParams): string {
-  const vpa = params.vpa || UPI_CONFIG.PAYEE_VPA;
+  const rawVpa = params.vpa || UPI_CONFIG.PAYEE_VPA;
+  const vpa = rawVpa && !rawVpa.includes("ptyes") ? rawVpa : "9342877474@ptaxis";
   const payee = params.payeeName || UPI_CONFIG.PAYEE_NAME;
   const formattedAmount = formatUpiAmount(params.amountRupees, params.amountPaise);
   const note = formatTransactionNote(params.eventTitle);

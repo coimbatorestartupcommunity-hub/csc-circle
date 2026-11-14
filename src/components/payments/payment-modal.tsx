@@ -410,8 +410,8 @@ export function PaymentModal({
   const handleAppLaunch = (appName: string, packageId: string, iosScheme: string) => {
     if (!order) return;
 
-    const vpa = order.payeeVpa || "9342877474@ptaxis";
-    const payee = order.payeeName || "S VIKASH";
+    const vpa = order.payeeVpa && !order.payeeVpa.includes("ptyes") ? order.payeeVpa : "9342877474@ptaxis";
+    const payee = order.payeeName || "VIKASH S";
     const amount = (order.totalRupees || (order.amountPaise ? order.amountPaise / 100 : 10)).toFixed(2);
     const note = `Pass for ${eventTitle.slice(0, 20)}`;
 
@@ -741,8 +741,8 @@ export function PaymentModal({
                   upiUri={order.upiUri}
                   orderReference={order.orderReference}
                   amountRupees={order.totalRupees}
-                  payeeVpa={order.payeeVpa}
-                  payeeName={order.payeeName}
+                  payeeVpa={order.payeeVpa && !order.payeeVpa.includes("ptyes") ? order.payeeVpa : "9342877474@ptaxis"}
+                  payeeName={order.payeeName || "VIKASH S"}
                   eventTitle={eventTitle}
                 />
 

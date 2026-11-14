@@ -36,8 +36,8 @@ export function UpiQr({
   const cleanUri = React.useMemo(() => {
     if (!upiUri) return "";
     try {
-      const vpa = payeeVpa || "9342877474@ptaxis";
-      const payee = payeeName || "S VIKASH";
+      const vpa = payeeVpa && !payeeVpa.includes("ptyes") ? payeeVpa : "9342877474@ptaxis";
+      const payee = payeeName || "VIKASH S";
       const amount = amountRupees.toFixed(2);
       const note = `Pass for ${eventTitle.slice(0, 20)}`;
       const p2pParams = new URLSearchParams({
