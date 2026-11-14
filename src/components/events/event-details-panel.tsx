@@ -46,6 +46,10 @@ export function EventDetailsPanel({
     event.timeTba ||
     event.slug === "csc-joint-online-meeting" ||
     event.slug === "csc-first-online-google-meet";
+  const registrationCover =
+    event.slug === "csc-joint-online-meeting" || event.slug === "csc-first-online-google-meet"
+      ? "/events/csc-joint-online-meeting-cover.webp"
+      : event.coverImage;
   const facts: { icon: React.ElementType; label: string; value: string }[] = [
     { icon: CalendarDays, label: "Date", value: formatEventDate(event.startsAt) },
     {
@@ -72,14 +76,14 @@ export function EventDetailsPanel({
 
   return (
     <div className="flex flex-col gap-4 sm:gap-5 rounded-[2rem] bg-brand-cloud p-4 sm:p-7 ring-1 ring-brand-border">
-      {event.coverImage ? (
-        <div className="order-first overflow-hidden rounded-2xl bg-brand-white ring-1 ring-brand-border">
+      {registrationCover ? (
+        <div className="order-first aspect-[4/3] w-full overflow-hidden rounded-2xl bg-brand-white ring-1 ring-brand-border">
           <Image
-            src={event.coverImage}
+            src={registrationCover}
             alt={`${event.title} event banner`}
             width={1200}
-            height={600}
-            className="aspect-[16/9] sm:aspect-[21/9] max-h-64 w-full object-cover"
+            height={900}
+            className="size-full object-cover"
             priority
             unoptimized
           />

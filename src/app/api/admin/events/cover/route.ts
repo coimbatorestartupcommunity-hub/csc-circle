@@ -45,7 +45,23 @@ export async function GET(request: Request) {
       if (ctx.mode !== "live" || !(ctx.permissions.has("events.update") || ctx.permissions.has("events.publish"))) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
     }
     const { data: image, error } = await admin.storage.from("member-portraits").download(path);
-    if (error || !image) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
+    if (error || !image) {
+      try {
+        const fs = await import("node:fs/promises");
+        const pathMod = await import("node:path");
+        const fallbackPath = pathMod.join(process.cwd(), "public", "events", "csc-joint-online-meeting-cover.webp");
+        const fileBytes = await fs.readFile(fallbackPath);
+        return new Response(fileBytes, {
+          headers: {
+            "Content-Type": "image/webp",
+            "Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
+            "X-Content-Type-Options": "nosniff",
+          },
+        });
+      } catch {
+        return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
+      }
+    }
     return new Response(await image.arrayBuffer(), { headers: { "Content-Type": "image/webp", "Cache-Control": event.status === "published" ? "public, max-age=300, stale-while-revalidate=3600" : "private, no-store", "X-Content-Type-Options": "nosniff" } });
   } catch { return new Response(null, { status: 503, headers: { "Cache-Control": "private, no-store" } }); }
 }
