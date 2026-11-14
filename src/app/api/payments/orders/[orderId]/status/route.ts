@@ -70,7 +70,8 @@ export async function GET(
     }
 
     // Opportunistic auto-reconciliation during polling if genuine bank evidence has arrived
-    if (order.status === "processing" && order.claimed_utr && process.env.CSC_PAYMENT_AUTO_CONFIRM === "true") {
+    const isAutoConfirm = process.env.CSC_PAYMENT_AUTO_CONFIRM === "true" || process.env.NODE_ENV === "production";
+    if (["pending", "processing"].includes(order.status) && order.claimed_utr && isAutoConfirm) {
       const { data: matchedEvidence } = await admin
         .from("event_payment_evidence")
         .select("*")

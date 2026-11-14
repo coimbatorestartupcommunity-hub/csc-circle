@@ -589,7 +589,7 @@ export function PaymentModal({
         </div>
 
         {/* Content Body (Visible, perfectly aligned and unclipped across all devices) */}
-        <div className="p-2.5 sm:p-3.5 pb-3 sm:pb-4 flex flex-col gap-2">
+        <div className="p-2.5 sm:p-3.5 pb-4 sm:pb-5 flex flex-col gap-2">
           <AnimatePresence mode="wait">
             {/* 1. CREATING STATE */}
             {modalState === "creating" && (

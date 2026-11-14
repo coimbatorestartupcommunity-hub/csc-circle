@@ -65,13 +65,13 @@ export function MemberShell({
     exact || href === "/" ? pathname === href : pathname.startsWith(href);
 
   return (
-    <div className="bg-brand-cloud">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-brand-cloud">
       {/* Member top bar */}
-      <div className="border-b border-brand-border bg-brand-white">
-        <Container className="flex h-16 items-center justify-between gap-4">
+      <div className="w-full border-b border-brand-border bg-brand-white">
+        <Container className="flex h-16 items-center justify-between gap-2 sm:gap-4">
           <div className="flex min-w-0 items-center gap-2">
             <Sheet>
-              <SheetTrigger render={<Button variant="outline" size="icon" aria-label="Open member navigation" className="lg:hidden"><Menu /></Button>} />
+              <SheetTrigger render={<Button variant="outline" size="icon" aria-label="Open member navigation" className="lg:hidden shrink-0"><Menu /></Button>} />
               <SheetContent side="left" className="w-[min(86vw,22rem)] overflow-y-auto p-4">
                 <SheetHeader className="border-b border-brand-border px-0"><SheetTitle>Member navigation</SheetTitle></SheetHeader>
                 <nav className="flex flex-col gap-1 py-3" aria-label="Member">
@@ -96,21 +96,32 @@ export function MemberShell({
               href="/"
               aria-label="Back to Home Page"
               title="Back to Home Page"
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-brand-border bg-brand-white px-2.5 text-xs font-semibold whitespace-nowrap text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3"
+              className="hidden sm:inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-brand-border bg-brand-white px-2.5 text-xs font-semibold whitespace-nowrap text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3"
             >
               <Home className="size-4" aria-hidden="true" />
               <span className="hidden lg:inline">Back to Home Page</span>
               <span className="sr-only lg:hidden">Back to Home Page</span>
             </Link>
-            <AccountAvatar name={memberName} src={avatarUrl} className="size-8 sm:size-9" />
-            <Link href={accountHref} className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-brand-ink px-2.5 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3" aria-current={pathname === accountHref ? "page" : undefined}>
+            <Link
+              href={accountHref}
+              aria-label="View Profile"
+              title="View Profile"
+              className="shrink-0 rounded-full transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-ink"
+            >
+              <AccountAvatar name={memberName} src={avatarUrl} className="size-8 sm:size-9" />
+            </Link>
+            <Link
+              href={accountHref}
+              className="hidden sm:inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-brand-ink px-2.5 text-xs font-semibold whitespace-nowrap text-brand-white outline-none transition hover:bg-brand-ink/90 focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3"
+              aria-current={pathname === accountHref ? "page" : undefined}
+            >
               {accountLabel}
             </Link>
-            <form action="/auth/signout" method="post">
+            <form action="/auth/signout" method="post" className="shrink-0">
               <button
                 type="submit"
                 aria-label="Sign out"
-                className="flex size-9 items-center justify-center rounded-full text-brand-muted ring-1 ring-brand-border transition-colors hover:bg-brand-cloud hover:text-brand-ink"
+                className="flex size-9 items-center justify-center rounded-full text-brand-muted ring-1 border border-brand-border ring-brand-border transition-colors hover:bg-brand-cloud hover:text-brand-ink"
               >
                 <LogOut className="size-4" />
               </button>
@@ -119,7 +130,7 @@ export function MemberShell({
         </Container>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8 lg:py-8 xl:px-8">
+      <div className="mx-auto flex w-full max-w-[96rem] overflow-x-hidden flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8 lg:py-8 xl:px-8">
         {/* Nav */}
         <nav
           aria-label="Member"

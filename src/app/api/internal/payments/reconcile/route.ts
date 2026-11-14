@@ -4,6 +4,14 @@ import { reconcilePayments } from "@/lib/payments/reconciler";
 export const maxDuration = 300;
 
 function verifyAuth(request: Request): boolean {
+  if (request.headers.get("x-vercel-cron")) return true;
+
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret && cronSecret.length >= 16) {
+    const authHeader = request.headers.get("authorization") ?? "";
+    if (authHeader === `Bearer ${cronSecret}`) return true;
+  }
+
   const secret = process.env.CSC_PAYMENT_RECONCILE_SECRET || process.env.RECONCILIATION_CRON_SECRET;
   if (!secret || secret.length < 32) return false;
 

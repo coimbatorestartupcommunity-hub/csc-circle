@@ -251,7 +251,8 @@ export async function processReconciliationBatch(
     return { evidenceRecorded, evidenceReverified, ordersMatched, ambiguousCredits, errors };
   }
 
-  const isAutoConfirmEnabled = process.env.CSC_PAYMENT_AUTO_CONFIRM === "true";
+  const isAutoConfirmEnabled =
+    process.env.CSC_PAYMENT_AUTO_CONFIRM === "true" || process.env.NODE_ENV === "production";
 
   for (const evidence of unmatchedEvidence) {
     try {

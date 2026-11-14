@@ -352,16 +352,15 @@ export async function createPaymentOrder(
   const activeOrder = existingOrders?.find((o) => o.status === "pending" || o.status === "processing");
   if (activeOrder) {
     const isExpired = activeOrder.expires_at ? new Date(activeOrder.expires_at).getTime() <= now : false;
-    const isAmountMismatch = activeOrder.amount_paise !== amountPaise || activeOrder.attendee_count !== attendeeCount;
 
-    if (isExpired || isAmountMismatch) {
-      // Cancel outdated order so a fresh order with updated pricing or seat count can be generated
+    if (isExpired) {
+      // Mark expired order so a fresh order can be generated
       await admin
         .from("event_payment_orders")
-        .update({ status: isExpired ? "expired" : "cancelled", updated_at: new Date().toISOString() })
+        .update({ status: "expired", updated_at: new Date().toISOString() })
         .eq("id", activeOrder.id);
     } else {
-      // Order is still active and matches requested amount! Verify ownership before allowing resumption
+      // Order is still active! Verify ownership before allowing resumption or re-creation
       let isOwner = false;
 
       // 1) Authenticated user matches order's user_id
@@ -381,15 +380,27 @@ export async function createPaymentOrder(
       }
 
       if (isOwner) {
-        // Return existing active order details WITHOUT rotating the token
-        const { data: fullOrder } = await admin.from("event_payment_orders").select("*").eq("id", activeOrder.id).single();
-        if (fullOrder) {
-          return {
-            ok: true as const,
-            order: fullOrder,
-            deepLinks: buildPaymentDeepLinks(fullOrder.upi_uri),
-            guestCheckoutToken: existingGuestToken,
-          };
+        const isAmountMismatch =
+          activeOrder.amount_paise !== amountPaise ||
+          (activeOrder.attendee_count !== undefined && activeOrder.attendee_count !== null && activeOrder.attendee_count !== attendeeCount);
+
+        if (isAmountMismatch) {
+          // Owner is changing seat count or pricing: safely cancel older active order
+          await admin
+            .from("event_payment_orders")
+            .update({ status: "cancelled", updated_at: new Date().toISOString() })
+            .eq("id", activeOrder.id);
+        } else {
+          // Return existing active order details WITHOUT rotating the token
+          const { data: fullOrder } = await admin.from("event_payment_orders").select("*").eq("id", activeOrder.id).single();
+          if (fullOrder) {
+            return {
+              ok: true as const,
+              order: fullOrder,
+              deepLinks: buildPaymentDeepLinks(fullOrder.upi_uri),
+              guestCheckoutToken: existingGuestToken,
+            };
+          }
         }
       } else {
         // Prevent order takeover: unauthenticated visitor cannot access or rotate someone else's order
