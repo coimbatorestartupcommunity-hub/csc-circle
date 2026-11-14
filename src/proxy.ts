@@ -23,6 +23,11 @@ export async function proxy(request: NextRequest) {
     // client can exchange the email URL fragment for a short-lived HttpOnly
     // cookie before the invitee signs in and accepts the invitation.
     "/admin/accept-invitation",
+    // QR Pass check-in & Meet access portals must be accessible for attendees
+    // checking in via QR pass, OTP, or pass token
+    "/events/google-meet/check-in",
+    "/events/check-in",
+    "/events/meet-access",
   ].some((path) => pathname === path || pathname.startsWith(`${path}/`))
     || pathname === "/"
     // The Events & Booking listing requires sign-in, but an individual event
