@@ -78,7 +78,7 @@ export const eventEditorSchema = z.object({
   if (event.registrationMode === "paid_upi") {
     const price = Number(event.pricePerAttendee);
     if (event.admission !== "paid" || !Number.isFinite(price) || price <= 0) ctx.addIssue({ code: "custom", path: ["pricePerAttendee"], message: "Paid UPI registration requires a positive price per attendee." });
-    if (event.status === "published" && (!event.upiVpa?.trim() || !event.upiPayeeName?.trim() || !event.upiQrPath?.trim())) ctx.addIssue({ code: "custom", path: ["upiVpa"], message: "Set the UPI VPA, payee name, and upload its QR image before publishing." });
+    if (event.status === "published" && (!event.upiVpa?.trim() || !event.upiPayeeName?.trim())) ctx.addIssue({ code: "custom", path: ["upiVpa"], message: "Set the UPI VPA and payee name before publishing." });
   }
 });
 

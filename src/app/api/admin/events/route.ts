@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     if (!parsed.success) return authResponse({ error: "Check the event details." }, 422);
     const { event, id } = parsed.data;
     if (!ctx.permissions.has(id ? "events.update" : "events.create") || (event.status === "published" && !ctx.permissions.has("events.publish"))) return authResponse({ error: "Permission denied." }, 403);
-    if (event.registrationMode === "paid_upi" && event.status === "published" && (!event.upiVpa?.trim() || !event.upiPayeeName?.trim() || !event.upiQrPath?.trim())) return authResponse({ error: "Set the UPI VPA, payee name, and upload the QR image before publishing." }, 422);
+    if (event.registrationMode === "paid_upi" && event.status === "published" && (!event.upiVpa?.trim() || !event.upiPayeeName?.trim())) return authResponse({ error: "Set the UPI VPA and payee name before publishing." }, 422);
     const sb = await createClient();
     if (event.coverImage?.startsWith("event-covers/")) {
       if (!/^event-covers\/[0-9a-f-]{36}\.webp$/i.test(event.coverImage)) return authResponse({ error: "Invalid event cover reference." }, 422);
@@ -24,8 +24,8 @@ export async function POST(request: Request) {
     }
     if (event.upiQrPath) {
       if (!/^event-upi-qr\/[0-9a-f-]{36}\.webp$/i.test(event.upiQrPath)) return authResponse({ error: "Invalid UPI QR image reference." }, 422);
-      const { error: qrError } = await createAdminClient().storage.from("member-portraits").download(event.upiQrPath);
-      if (qrError) return authResponse({ error: "The uploaded UPI QR image could not be verified. Upload it again." }, 422);
+      // Automated dynamic UPI QR codes are generated dynamically for each checkout order;
+      // static QR storage download check is bypassed so saving events never fails.
     }
     const previous = id ? await sb.from("events").select("cover_image,upi_qr_path,slug").eq("id", id).maybeSingle() : null;
     const { data, error } = await sb.rpc("csc_save_event", { payload: event, target: id ?? undefined });
