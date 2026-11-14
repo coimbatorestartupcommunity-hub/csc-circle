@@ -112,19 +112,15 @@ export function EventDetailsPanel({
         </p>
       </div>
 
-      {event.format !== "offline" && event.onlineInfo ? (
+      {event.format !== "offline" ? (
         <div className="flex flex-col gap-2 rounded-2xl bg-brand-white p-4 ring-1 ring-brand-border">
           <span className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
-            Online meeting link
+            Meeting Platform
           </span>
-          <a
-            href={event.onlineInfo}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-fit items-center gap-2 font-semibold text-brand-accent hover:underline"
-          >
-            <Video className="size-4" /> Join Google Meet / Calendar Link
-          </a>
+          <div className="inline-flex w-fit items-center gap-2 font-medium text-brand-ink">
+            <Video className="size-4 text-brand-accent" />
+            <span>Google Meet (Secure access provided to confirmed attendees upon registration)</span>
+          </div>
         </div>
       ) : null}
       {event.registrationState === "completed" ? (

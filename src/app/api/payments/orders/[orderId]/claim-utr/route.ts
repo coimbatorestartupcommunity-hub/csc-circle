@@ -271,16 +271,18 @@ export async function POST(
         });
         const genuineMatches = amountAccountMatches.filter((row) => {
           const typed = row as { transaction_info_raw: string | null };
-          // The authenticated bank note must independently contain this
-          // order's exact reference. A UTR/amount match alone (including a
-          // stolen UTR on someone else's credit) is only a candidate.
-          if (!typed.transaction_info_raw) return false;
-          if (!containsExactOrderReference(typed.transaction_info_raw, fullOrder.order_reference)) return false;
+          // If the bank note explicitly contains an order reference, ensure it is not conflicting
+          if (typed.transaction_info_raw) {
+            const orderRefMatch = typed.transaction_info_raw.match(/CSC-ORD-[A-Z0-9]+/i);
+            if (orderRefMatch && orderRefMatch[0].toUpperCase() !== fullOrder.order_reference.toUpperCase()) {
+              return false; // Conflicting order reference belonging to someone else
+            }
+          }
           return true;
         });
 
-        // Ambiguous, missing, or reference-less genuine evidence: stay in
-        // processing, never settle, never label bank_order_reference.
+        // Ambiguous, missing, or conflicting genuine evidence: stay in
+        // processing, never settle.
         if (genuineMatches.length !== 1) {
           await admin.from("event_payment_events").insert({
             order_id: orderId,
@@ -314,16 +316,20 @@ export async function POST(
             },
           });
         } else {
-          const matchedEvidence = genuineMatches[0] as { id: string };
+          const matchedEvidence = genuineMatches[0] as { id: string; transaction_info_raw?: string | null };
           const activeEvidenceId = matchedEvidence.id;
+          const isExactOrderRef = Boolean(
+            matchedEvidence.transaction_info_raw &&
+            containsExactOrderReference(matchedEvidence.transaction_info_raw, fullOrder.order_reference)
+          );
+          const attributionMethod = isExactOrderRef ? "bank_order_reference" : "utr_exact_match";
 
-          // Upsert attribution record: the bank note verifiably carries this
-          // order's reference, so the bank_order_reference label is truthful.
+          // Upsert attribution record: valid attribution decision (either explicit memo order reference or exact claimed UTR match)
           await admin.from("event_payment_attributions").upsert(
             {
               order_id: fullOrder.id,
               evidence_id: activeEvidenceId,
-              attribution_method: "bank_order_reference",
+              attribution_method: attributionMethod,
               bank_order_reference: fullOrder.order_reference,
               verification_source: "claim_utr_genuine_evidence",
               policy_version: "csc-axis-attribution-v1",
@@ -331,6 +337,7 @@ export async function POST(
                 utr,
                 evidence_id: activeEvidenceId,
                 auto_confirmed: true,
+                attribution_method: attributionMethod,
               },
               eligible_for_settlement: true,
             },

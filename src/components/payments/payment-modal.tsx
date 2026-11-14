@@ -836,19 +836,27 @@ export function PaymentModal({
                   We are reconciling authorized Axis Bank credit evidence for your ₹{order.totalRupees.toFixed(2)} transfer.
                 </p>
 
-                {/* Progress Stepper */}
-                <div className="mt-6 w-full max-w-xs rounded-xl bg-slate-50 p-4 border border-slate-100 text-left text-xs space-y-2.5">
+                {/* Progress Stepper - 5 Sequential Verification Steps */}
+                <div className="mt-6 w-full max-w-sm rounded-xl bg-slate-50 p-4 border border-slate-100 text-left text-xs space-y-2.5">
                   <div className="flex items-center gap-2 text-teal-700 font-medium">
                     <CheckCircle2 className="size-4 shrink-0 text-teal-600" />
-                    <span>Order reference created ({order.orderReference})</span>
+                    <span>Step 1: Payment Reference Received ({userUtr ? `UTR ${userUtr}` : order.orderReference})</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-700 font-medium">
+                  <div className="flex items-center gap-2 text-teal-700 font-medium">
                     <Loader2 className="size-4 shrink-0 animate-spin text-teal-600" />
-                    <span>Awaiting Axis Bank credit evidence…</span>
+                    <span>Step 2: Checking Axis Bank Confirmation stream (Awaiting Axis Bank credit evidence…)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <div className="size-4 rounded-full border border-slate-300 shrink-0 flex items-center justify-center text-[10px]">3</div>
+                    <span>Step 3: Matching Transaction (UTR, ₹{order.totalRupees.toFixed(2)}, Account)</span>
                   </div>
                   <div className="flex items-center gap-2 text-slate-400">
-                    <div className="size-4 rounded-full border border-slate-300 shrink-0"></div>
-                    <span>Pass issuance after authorized settlement</span>
+                    <div className="size-4 rounded-full border border-slate-300 shrink-0 flex items-center justify-center text-[10px]">4</div>
+                    <span>Step 4: Verifying Payment (Cryptographic authentication)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <div className="size-4 rounded-full border border-slate-300 shrink-0 flex items-center justify-center text-[10px]">5</div>
+                    <span>Step 5: Registration Confirmed &amp; Digital Passes Dispatched</span>
                   </div>
                 </div>
 
@@ -906,8 +914,7 @@ export function PaymentModal({
 
                 <h4 className="text-base font-bold text-slate-900">Payment Confirmation Pending</h4>
                 <p className="mt-2 text-xs text-slate-600 max-w-sm leading-relaxed">
-                  Your registration details have been saved securely. Inter-bank alert delivery can sometimes take 2–5
-                  minutes. Please avoid paying again while we continue reconciling your payment.
+                  Your payment reference is safely recorded. We are awaiting confirmation from Axis Bank. If your payment was completed, your registration will be confirmed automatically as soon as the bank notification arrives. Please avoid paying again while we continue reconciling your payment. You do not need to pay again.
                 </p>
 
                 <div className="mt-5 w-full max-w-sm rounded-xl bg-slate-50 p-3.5 border border-slate-200 text-left text-xs space-y-1.5">
@@ -922,7 +929,10 @@ export function PaymentModal({
                     </div>
                   )}
                   <p className="text-slate-500 text-[11px] pt-1 border-t border-slate-200/60">
-                    An authorized bank-evidence review will link the credit to this exact order. Your UTR reference has been safely logged.
+                    Need assistance? Contact support at{" "}
+                    <a href="mailto:csc@logicintelligencetechnologies.in" className="text-teal-600 font-medium underline">
+                      csc@logicintelligencetechnologies.in
+                    </a>
                   </p>
                 </div>
 

@@ -36,21 +36,17 @@ const jetbrainsMono = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
-  title: {
-    default: `${siteConfig.name} — ${siteConfig.tagline}`,
-    template: `%s · ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  applicationName: siteConfig.name,
+  metadataBase: new URL("https://csc.logicintelligencetechnologies.in"),
+  title: "Coimbatore Startup Community (CSC) — Connect, Build & Grow",
+  description:
+    "A platform bringing together Founders, Entrepreneurs, Innovators & Aspiring Builders in Coimbatore.",
+  applicationName: "Coimbatore Startup Community",
   keywords: [
-    "Coimbatore startup community",
-    "CSC Circle",
-    "startup community Coimbatore",
-    "founders",
-    "entrepreneurs",
-    "startup events Coimbatore",
-    "networking",
+    "Coimbatore Startup Community",
+    "CSC",
+    "Coimbatore Startups",
+    "Logic Intelligence Technologies",
+    "Founders Coimbatore",
   ],
   authors: [{ name: siteConfig.legalName }],
   creator: siteConfig.legalName,
@@ -58,10 +54,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: siteConfig.locale,
-    url: siteConfig.url,
-    siteName: siteConfig.name,
-    title: `${siteConfig.name} — ${siteConfig.tagline}`,
-    description: siteConfig.description,
+    url: "https://csc.logicintelligencetechnologies.in/",
+    siteName: "Coimbatore Startup Community",
+    title: "Coimbatore Startup Community (CSC) — Connect, Build & Grow",
+    description:
+      "A platform bringing together Founders, Entrepreneurs, Innovators & Aspiring Builders in Coimbatore.",
     images: [{
       url: "/brand/csc-homepage-banner.png",
       width: 1200,
@@ -71,15 +68,40 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} — ${siteConfig.tagline}`,
-    description: siteConfig.description,
+    title: "Coimbatore Startup Community (CSC) — Connect, Build & Grow",
+    description:
+      "A platform bringing together Founders, Entrepreneurs, Innovators & Aspiring Builders in Coimbatore.",
     images: ["/brand/csc-homepage-banner.png"],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
   },
 };
+
+function OrganizationJsonLd() {
+  const organization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Coimbatore Startup Community",
+    alternateName: ["CSC", "CSC Circle"],
+    url: "https://csc.logicintelligencetechnologies.in/",
+    sameAs: ["https://www.instagram.com/coimbatorestartupcommunity/"],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(organization).replace(/</g, "\\u003c"),
+      }}
+    />
+  );
+}
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",
@@ -92,6 +114,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${poppins.variable} ${lora.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        <OrganizationJsonLd />
+      </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <Providers>
           <a

@@ -1,10 +1,9 @@
 import type { MetadataRoute } from "next";
-import { siteConfig } from "@/lib/content/site";
 import { getPublicCollaborations } from "@/lib/services/public-data";
 import { listPublishedUpdates, listPublishedResources, listPublishedOpportunities } from "@/lib/services/cms-public";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = siteConfig.url;
+  const base = "https://csc.logicintelligencetechnologies.in";
   const lastModified = new Date();
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -23,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/privacy`, lastModified, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/security`, lastModified, changeFrequency: "yearly", priority: 0.3 },
     { url: `${base}/terms`, lastModified, changeFrequency: "yearly", priority: 0.3 },
+    // Add additional public routes here, such as /events or /about.
   ];
 
   // Published collaboration detail pages (never drafts / admin routes).

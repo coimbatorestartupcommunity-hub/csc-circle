@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { verifyOrderAccess } from "@/lib/payments/orders";
+import { verifyOrderAccess, containsExactOrderReference } from "@/lib/payments/orders";
 import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
+import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 
 export async function GET(
   request: Request,
@@ -45,7 +46,7 @@ export async function GET(
 
     const { data: order, error } = await admin
       .from("event_payment_orders")
-      .select("id,order_reference,status,amount_paise,paid_registration_id,claimed_utr,matched_at,verification_started_at,event_id,user_id,guest_token_hash")
+      .select("id,order_reference,status,amount_paise,paid_registration_id,claimed_utr,matched_at,verification_started_at,event_id,user_id,guest_token_hash,expected_account_suffix")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -66,6 +67,80 @@ export async function GET(
         { ok: false, error: "Access denied to this payment order." },
         { status: 403, headers: { "Cache-Control": "private, no-store" } }
       );
+    }
+
+    // Opportunistic auto-reconciliation during polling if genuine bank evidence has arrived
+    if (order.status === "processing" && order.claimed_utr && process.env.CSC_PAYMENT_AUTO_CONFIRM === "true") {
+      const { data: matchedEvidence } = await admin
+        .from("event_payment_evidence")
+        .select("*")
+        .eq("utr", order.claimed_utr)
+        .eq("auth_status", "authenticated")
+        .eq("direction", "CREDIT")
+        .eq("currency", "INR")
+        .maybeSingle();
+
+      if (
+        matchedEvidence &&
+        Number(matchedEvidence.amount_paise) === Number(order.amount_paise) &&
+        (matchedEvidence.receiving_account_suffix ?? "") === (order.expected_account_suffix ?? "") &&
+        !matchedEvidence.matched_order_id &&
+        (!matchedEvidence.reconciliation_state || ["pending", "unmatched"].includes(matchedEvidence.reconciliation_state))
+      ) {
+        // Check for conflicting order reference in memo
+        const memoConflict = matchedEvidence.transaction_info_raw?.match(/CSC-ORD-[A-Z0-9]+/i);
+        if (!memoConflict || memoConflict[0].toUpperCase() === order.order_reference.toUpperCase()) {
+          const isExactMemo = Boolean(
+            matchedEvidence.transaction_info_raw &&
+            containsExactOrderReference(matchedEvidence.transaction_info_raw, order.order_reference)
+          );
+          const method = isExactMemo ? "bank_order_reference" : "utr_exact_match";
+          await admin.from("event_payment_attributions").upsert(
+            {
+              order_id: order.id,
+              evidence_id: matchedEvidence.id,
+              attribution_method: method,
+              bank_order_reference: order.order_reference,
+              verification_source: "status_poll_genuine_evidence",
+              policy_version: "csc-axis-attribution-v1",
+              supporting_evidence: {
+                utr: order.claimed_utr,
+                evidence_id: matchedEvidence.id,
+                auto_confirmed: true,
+              },
+              eligible_for_settlement: true,
+            },
+            { onConflict: "order_id" }
+          );
+
+          const { data: fulfillmentResult } = await admin.rpc("csc_fulfill_confirmed_payment", {
+            p_order_id: order.id,
+            p_evidence_id: matchedEvidence.id,
+            p_matched_by: "user_utr_claim",
+            p_notes: `Status poll automated settlement: UTR ${order.claimed_utr}`,
+            p_user_id: null,
+          });
+
+          if ((fulfillmentResult as { ok?: boolean })?.ok) {
+            order.status = "verified";
+            const resObj = fulfillmentResult as { primary_pass_id?: string; paid_registration_id?: string };
+            if (resObj.paid_registration_id) {
+              order.paid_registration_id = resObj.paid_registration_id;
+              const { data: passes } = await admin
+                .from("event_registrations")
+                .select("id")
+                .eq("paid_registration_id", resObj.paid_registration_id);
+              if (passes) {
+                for (const p of passes) {
+                  await ensureEventPassEmail(admin, p.id);
+                }
+              }
+            } else if (resObj.primary_pass_id) {
+              await ensureEventPassEmail(admin, resObj.primary_pass_id);
+            }
+          }
+        }
+      }
     }
 
     // If order has been confirmed/reconciled, fetch pass details if available

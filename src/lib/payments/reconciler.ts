@@ -288,34 +288,40 @@ export async function processReconciliationBatch(
         matchedOrder = refMatch;
         matchedBy = "automated_worker";
       } else if (utrMatch) {
-        // Financial Safety Policy (Section 4):
-        // UTR claim without bank-confirmed order reference requires admin review to prevent stolen UTR confirmation.
-        await admin
-          .from("event_payment_evidence")
-          .update({ reconciliation_state: "ambiguous" })
-          .eq("id", evidence.id);
+        // Check for conflicting order reference in bank transaction note
+        const orderRefMatch = evidence.transaction_info_raw?.match(/CSC-ORD-[A-Z0-9]+/i);
+        if (orderRefMatch && orderRefMatch[0].toUpperCase() !== utrMatch.order_reference.toUpperCase()) {
+          // Conflicting order reference in memo - held for manual review
+          await admin
+            .from("event_payment_evidence")
+            .update({ reconciliation_state: "ambiguous" })
+            .eq("id", evidence.id);
 
-        await admin
-          .from("event_payment_orders")
-          .update({
-            status: "processing",
-            matched_evidence_id: evidence.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", utrMatch.id);
+          await admin
+            .from("event_payment_orders")
+            .update({
+              status: "processing",
+              matched_evidence_id: evidence.id,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", utrMatch.id);
 
-        await admin.from("event_payment_events").insert({
-          order_id: utrMatch.id,
-          event_type: "order.matched_pending_review",
-          details: {
-            evidence_id: evidence.id,
-            utr: evidence.utr,
-            reason: "Bank alert lacks verifiable order reference; held for admin review",
-          },
-        });
+          await admin.from("event_payment_events").insert({
+            order_id: utrMatch.id,
+            event_type: "order.matched_pending_review",
+            details: {
+              evidence_id: evidence.id,
+              utr: evidence.utr,
+              reason: "Bank alert contains conflicting order reference; held for admin review",
+            },
+          });
 
-        ambiguousCredits++;
-        continue;
+          ambiguousCredits++;
+          continue;
+        }
+
+        matchedOrder = utrMatch;
+        matchedBy = "user_utr_claim";
       } else {
         // NO AMOUNT-ONLY AUTO-MATCHING.
         // If multiple orders owe this amount with no reference or UTR claim, mark ambiguous.
@@ -329,19 +335,22 @@ export async function processReconciliationBatch(
         continue;
       }
 
+      const attributionMethod = matchedBy === "user_utr_claim" ? "utr_exact_match" : "bank_order_reference";
       const { error: attributionError } = await admin
         .from("event_payment_attributions")
         .upsert(
           {
             order_id: matchedOrder.id,
             evidence_id: evidence.id,
-            attribution_method: "bank_order_reference",
+            attribution_method: attributionMethod,
             bank_order_reference: matchedOrder.order_reference,
             verification_source: "cryptographically_authenticated_axis_alert",
             policy_version: "csc-axis-attribution-v1",
             supporting_evidence: {
               message_id: evidence.message_id,
               authentication_policy: evidence.auth_details,
+              utr: evidence.utr,
+              matched_by: matchedBy,
             },
             eligible_for_settlement: true,
           },
@@ -418,35 +427,48 @@ export async function fulfillConfirmedPayment(
       return { ok: false, error: "Atomic fulfillment did not succeed." };
     }
 
-    // 3. Queue Pass Email and schedule delivery (isolated from settlement commitment)
-    if (resObj.primary_pass_id) {
-      try {
-        await ensureEventPassEmail(admin, resObj.primary_pass_id);
-        try {
-          await admin.from("notifications").insert({
-            type: "email",
-            channel: "email",
-            audience: "admin",
-            template_key: "EventRSVPAdminAlert",
-            status: "queued",
-            payload: {
-              eventTitle: "CSC Circle Event",
-              reference: order.order_reference,
-              name: order.full_name,
-              totalAmountPaid: Number(order.amount_paise) / 100,
-              attendeeCount: order.attendee_count,
-              status: "verified",
-              utr: evidence.utr,
-            },
-            dedupe_key: `paid-order-admin-${order.id}`,
-          });
-        } catch {
-          // Best effort admin notification
+    // 3. Queue Pass Email for all passes in this registration and schedule delivery
+    try {
+      if (resObj.paid_registration_id) {
+        const { data: passes } = await admin
+          .from("event_registrations")
+          .select("id")
+          .eq("paid_registration_id", resObj.paid_registration_id);
+        if (passes && passes.length > 0) {
+          for (const pass of passes) {
+            await ensureEventPassEmail(admin, pass.id);
+          }
+        } else if (resObj.primary_pass_id) {
+          await ensureEventPassEmail(admin, resObj.primary_pass_id);
         }
-        scheduleNotificationDelivery();
-      } catch (emailErr) {
-        console.error("CSC_EVENT_PASS_EMAIL_ENQUEUE_FAILED", emailErr);
+      } else if (resObj.primary_pass_id) {
+        await ensureEventPassEmail(admin, resObj.primary_pass_id);
       }
+
+      try {
+        await admin.from("notifications").insert({
+          type: "email",
+          channel: "email",
+          audience: "admin",
+          template_key: "EventRSVPAdminAlert",
+          status: "queued",
+          payload: {
+            eventTitle: "CSC Circle Event",
+            reference: order.order_reference,
+            name: order.full_name,
+            totalAmountPaid: Number(order.amount_paise) / 100,
+            attendeeCount: order.attendee_count,
+            status: "verified",
+            utr: evidence.utr,
+          },
+          dedupe_key: `paid-order-admin-${order.id}`,
+        });
+      } catch {
+        // Best effort admin notification
+      }
+      scheduleNotificationDelivery();
+    } catch (emailErr) {
+      console.error("CSC_EVENT_PASS_EMAIL_ENQUEUE_FAILED", emailErr);
     }
 
     return { ok: true };

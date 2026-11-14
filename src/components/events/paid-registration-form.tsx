@@ -210,8 +210,8 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
               {errors.whatsapp && <FieldError>{errors.whatsapp.message}</FieldError>}
             </Field>
             <Field>
-              <FieldLabel htmlFor="paid-org">Organization</FieldLabel>
-              <Input id="paid-org" autoComplete="organization" {...register("organization")} aria-invalid={!!errors.organization} />
+              <FieldLabel htmlFor="paid-org">Startup / Company Name</FieldLabel>
+              <Input id="paid-org" autoComplete="organization" placeholder="Your startup, company, or venture" {...register("organization")} aria-invalid={!!errors.organization} />
               {errors.organization && <FieldError>{errors.organization.message}</FieldError>}
             </Field>
             <Field>
@@ -264,8 +264,13 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
           </div>
 
           <Field>
-            <FieldLabel htmlFor="paid-notes">Dietary or accessibility notes (optional)</FieldLabel>
-            <Textarea id="paid-notes" rows={2} {...register("dietaryAccessibilityNotes")} />
+            <FieldLabel htmlFor="paid-notes">What are you currently building or looking for? (optional)</FieldLabel>
+            <Textarea
+              id="paid-notes"
+              rows={2}
+              placeholder="Briefly share what you are building, your product/tech, or co-founders/collaborators you are seeking..."
+              {...register("dietaryAccessibilityNotes")}
+            />
           </Field>
 
           <label className="flex items-start gap-3 text-sm text-brand-secondary">

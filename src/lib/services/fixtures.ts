@@ -107,6 +107,30 @@ const atDays = (days: number, hour: number) => {
 
 export const eventFixtures: EventRecord[] = [
   {
+    id: "fx-event-joint-meeting",
+    slug: "csc-joint-online-meeting",
+    title: "Coimbatore Startup Community (CSC) - Joint Online Meeting",
+    category: "meetup",
+    description:
+      "Join the official Coimbatore Startup Community (CSC) First Online Meeting on Google Meet. Connect with fellow founders, builders, and ecosystem leaders across Tamil Nadu.",
+    coverImage: "/events/csc-joint-online-meeting-cover.webp",
+    startsAt: "2026-11-22T10:00:00+05:30",
+    endsAt: "2026-11-22T12:00:00+05:30",
+    location: "Online / Google Meet",
+    venue: "Google Meet (Link delivered to confirmed attendees)",
+    capacity: 250,
+    registrationDeadline: "2026-11-22T09:00:00+05:30",
+    status: "published",
+    admission: "paid",
+    registrationState: "open",
+    registrationMode: "paid_upi",
+    pricePerAttendee: 10,
+    maxAttendeesPerRegistration: 10,
+    upiPayeeName: "S VIKASH",
+    featured: true,
+    isFixture: true,
+  },
+  {
     id: "fx-event-1",
     slug: "sample-founder-meetup",
     title: "CSC Connect · Meet · Grow — Edition 2",
