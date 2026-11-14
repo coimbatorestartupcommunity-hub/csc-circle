@@ -27,6 +27,25 @@ const createOrderSchema = z.object({
     "Other",
   ]),
   attendeeCount: z.coerce.number().int().min(1).max(10),
+  additionalAttendees: z
+    .array(
+      z.object({
+        fullName: z.string().trim().min(2).max(100),
+        email: z.string().trim().email().max(254),
+        whatsapp: z.string().trim().regex(/^\+?[0-9][0-9\s()-]{7,20}$/),
+        organization: z.string().trim().min(2).max(120),
+        role: z.enum([
+          "Startup Founder / Co-Founder",
+          "Entrepreneur / Business Owner",
+          "Working Professional",
+          "Student",
+          "Freelancer / Creator",
+          "Aspiring Entrepreneur",
+          "Other",
+        ]),
+      })
+    )
+    .optional(),
   additionalAttendeeNames: z.string().optional(),
   referralSource: z.enum([
     "Instagram",
@@ -70,15 +89,18 @@ export async function POST(request: NextRequest) {
 
     // Require distinct attendee names for every seat booked in group registrations (Section 11)
     if (parsed.data.attendeeCount > 1) {
-      const additional = (parsed.data.additionalAttendeeNames || "")
-        .split(/[\r\n;]+/)
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const additional = parsed.data.additionalAttendees?.length
+        ? parsed.data.additionalAttendees.map((a) => a.fullName.trim()).filter(Boolean)
+        : (parsed.data.additionalAttendeeNames || "")
+            .split(/[\r\n;]+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+
       if (additional.length < parsed.data.attendeeCount - 1) {
         return NextResponse.json(
           {
             ok: false,
-            error: `Please provide all ${parsed.data.attendeeCount} attendee names. Currently provided: ${additional.length + 1}.`,
+            error: `Please provide all ${parsed.data.attendeeCount} attendee details. Currently provided: ${additional.length + 1}.`,
           },
           { status: 422 }
         );
@@ -201,8 +223,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const derivedAttendeeNames = parsed.data.additionalAttendees?.length
+      ? parsed.data.additionalAttendees.map((a) => a.fullName.trim()).join("\n")
+      : parsed.data.additionalAttendeeNames;
+
+    let formattedNotes = parsed.data.dietaryAccessibilityNotes?.trim() || "";
+    if (parsed.data.additionalAttendees && parsed.data.additionalAttendees.length > 0) {
+      const attendeeDetailsText = parsed.data.additionalAttendees
+        .map(
+          (a, i) =>
+            `[Attendee ${i + 2}] ${a.fullName} | ${a.email} | ${a.whatsapp} | ${a.organization} | ${a.role}`
+        )
+        .join("\n");
+      formattedNotes = formattedNotes
+        ? `${formattedNotes}\n\nGroup Attendees:\n${attendeeDetailsText}`
+        : `Group Attendees:\n${attendeeDetailsText}`;
+    }
+
     const result = await createPaymentOrder(admin, {
       ...parsed.data,
+      additionalAttendeeNames: derivedAttendeeNames,
+      dietaryAccessibilityNotes: formattedNotes || undefined,
       userId,
       existingGuestToken,
     });

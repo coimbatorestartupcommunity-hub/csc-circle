@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { EventCard } from "@/components/events/event-card";
+import { DeleteContentButton } from "@/components/admin/delete-content-button";
 import {
   eventEditorSchema,
   eventEditorDefaults,
@@ -528,6 +529,16 @@ export function EventEditorForm({
               <CheckCircle2 className="size-4" />
               Completed
             </Button>
+            {eventId ? (
+              <DeleteContentButton
+                kind="event"
+                id={eventId}
+                slug={initial?.slug || ""}
+                title={initial?.title || "Event"}
+                redirectTo="/admin/events"
+                className="h-11"
+              />
+            ) : null}
             {isDemo ? (
               <p className="w-full text-xs text-brand-muted">
                 DEMO — validates the form; saving/publishing is performed by the trusted backend in Phase 1.

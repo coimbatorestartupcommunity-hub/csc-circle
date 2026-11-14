@@ -19,6 +19,16 @@ export function parseAdditionalAttendeeNames(value: string | undefined) {
   return (value ?? "").split(/[\r\n;]/).map((name) => name.trim()).filter(Boolean);
 }
 
+export const additionalAttendeeSchema = z.object({
+  fullName: z.string().trim().min(2, "Enter attendee's full name").max(100),
+  email: z.string().trim().email("Enter a valid email address").max(254),
+  whatsapp: z.string().trim().regex(/^\+?[0-9][0-9\s()-]{7,20}$/, "Enter a valid WhatsApp number"),
+  organization: z.string().trim().min(2, "Enter startup or company name").max(120),
+  role: z.enum(paidRegistrationRoles),
+});
+
+export type AdditionalAttendee = z.infer<typeof additionalAttendeeSchema>;
+
 export const paidRegistrationSchema = z.object({
   eventId: z.string().uuid(),
   fullName: z.string().trim().min(2).max(100),
@@ -28,7 +38,8 @@ export const paidRegistrationSchema = z.object({
   role: z.enum(paidRegistrationRoles),
   attendeeCount: z.coerce.number().int().min(1).max(10),
   totalAmountPaid: z.coerce.number().positive().max(100000),
-  additionalAttendeeNames: z.string().trim().max(500).optional().or(z.literal("")),
+  additionalAttendees: z.array(additionalAttendeeSchema).optional(),
+  additionalAttendeeNames: z.string().trim().max(1000).optional().or(z.literal("")),
   referralSource: z.enum(paidRegistrationReferrals).optional().or(z.literal("")),
   dietaryAccessibilityNotes: z.string().trim().max(1000).optional().or(z.literal("")),
   upiTransactionRef: z.string().trim().min(3).max(100),
@@ -36,8 +47,27 @@ export const paidRegistrationSchema = z.object({
   consentPaymentTerms: z.literal("true"),
 }).superRefine((value, ctx) => {
   if (!Number.isFinite(value.totalAmountPaid)) ctx.addIssue({ code: "custom", path: ["totalAmountPaid"], message: "Enter the exact amount paid." });
-  const additionalNames = parseAdditionalAttendeeNames(value.additionalAttendeeNames);
-  if (additionalNames.length !== value.attendeeCount - 1) ctx.addIssue({ code: "custom", path: ["additionalAttendeeNames"], message: "Add one full name for every attendee after yourself." });
+  if (value.attendeeCount > 1) {
+    const hasArray = Array.isArray(value.additionalAttendees) && value.additionalAttendees.length > 0;
+    if (hasArray) {
+      if (value.additionalAttendees!.length < value.attendeeCount - 1) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["additionalAttendees"],
+          message: `Add details for all ${value.attendeeCount} attendees.`,
+        });
+      }
+    } else {
+      const additionalNames = parseAdditionalAttendeeNames(value.additionalAttendeeNames);
+      if (additionalNames.length !== value.attendeeCount - 1) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["additionalAttendeeNames"],
+          message: "Add one full name for every attendee after yourself.",
+        });
+      }
+    }
+  }
 });
 
 export function isAllowedPaymentProof(file: Pick<File, "size" | "type">) {
@@ -57,6 +87,13 @@ export interface BrowserRegistrationValues {
   organization: unknown;
   role: unknown;
   attendeeCount: unknown;
+  additionalAttendees?: Array<{
+    fullName: unknown;
+    email: unknown;
+    whatsapp: unknown;
+    organization: unknown;
+    role: unknown;
+  }>;
   additionalAttendeeNames?: unknown;
   referralSource?: unknown;
   dietaryAccessibilityNotes?: unknown;
@@ -93,8 +130,24 @@ export function toCreateOrderBody(values: BrowserRegistrationValues): Record<str
     consentPaymentTerms:
       values.consentPaymentTerms === "true" || values.consentPaymentTerms === true,
   };
-  const additionalNames = optionalText(values.additionalAttendeeNames);
-  if (additionalNames !== undefined) body.additionalAttendeeNames = additionalNames;
+
+  if (Array.isArray(values.additionalAttendees) && values.additionalAttendees.length > 0) {
+    const validAttendees = values.additionalAttendees.map((att) => ({
+      fullName: text(att.fullName).trim(),
+      email: text(att.email).trim().toLowerCase(),
+      whatsapp: text(att.whatsapp).trim(),
+      organization: text(att.organization).trim(),
+      role: text(att.role).trim(),
+    })).filter((att) => att.fullName);
+
+    if (validAttendees.length > 0) {
+      body.additionalAttendees = validAttendees;
+      body.additionalAttendeeNames = validAttendees.map((a) => a.fullName).join("\n");
+    }
+  } else {
+    const additionalNames = optionalText(values.additionalAttendeeNames);
+    if (additionalNames !== undefined) body.additionalAttendeeNames = additionalNames;
+  }
   const referral = optionalText(values.referralSource);
   if (referral !== undefined) body.referralSource = referral;
   const notes = optionalText(values.dietaryAccessibilityNotes);

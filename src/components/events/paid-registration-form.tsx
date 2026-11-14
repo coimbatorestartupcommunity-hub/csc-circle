@@ -99,8 +99,8 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
 
   // Handler for the order-scoped UPI checkout
   const handleProceedToUpi = async () => {
-    // Validate attendee fields first
-    const isValid = await trigger([
+    // Validate primary attendee fields first
+    const isPrimaryValid = await trigger([
       "fullName",
       "email",
       "whatsapp",
@@ -111,12 +111,54 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
       "consentPaymentTerms",
     ]);
 
-    if (!isValid) {
-      toast.error("Please fill in all required registration details.");
+    if (!isPrimaryValid) {
+      toast.error("Please fill in all required registration details for Attendee 1.");
       return;
     }
 
     const currentValues = getValues();
+    const count = Number(currentValues.attendeeCount || 1);
+
+    // Validate additional attendees when selecting 2 or more attendees
+    if (count > 1) {
+      const additional = currentValues.additionalAttendees || [];
+      for (let i = 0; i < count - 1; i++) {
+        const att = additional[i];
+        const attendeeNumber = i + 2;
+
+        if (!att?.fullName?.trim()) {
+          toast.error(`Please provide the full name for Attendee ${attendeeNumber}.`);
+          return;
+        }
+        if (!att?.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(att.email.trim())) {
+          toast.error(`Please provide a valid email address for Attendee ${attendeeNumber}.`);
+          return;
+        }
+        if (!att?.whatsapp?.trim() || !/^\+?[0-9][0-9\s()-]{7,20}$/.test(att.whatsapp.trim())) {
+          toast.error(`Please provide a valid WhatsApp number for Attendee ${attendeeNumber}.`);
+          return;
+        }
+        if (!att?.organization?.trim()) {
+          toast.error(`Please provide the startup or company name for Attendee ${attendeeNumber}.`);
+          return;
+        }
+        if (!att?.role) {
+          toast.error(`Please select the role for Attendee ${attendeeNumber}.`);
+          return;
+        }
+      }
+
+      // Ensure distinct names across all attendees
+      const allNames = [
+        String(currentValues.fullName || "").trim().toLowerCase(),
+        ...additional.slice(0, count - 1).map((a) => String(a?.fullName || "").trim().toLowerCase()),
+      ];
+      if (new Set(allNames).size !== allNames.length) {
+        toast.error("Each attendee must have a distinct full name.");
+        return;
+      }
+    }
+
     const normalizedEmail = String(currentValues.email || "").trim().toLowerCase();
     const usableVerification = guestVerificationEmail === normalizedEmail;
     setSaving(true);
@@ -133,7 +175,11 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
             organization: currentValues.organization,
             role: currentValues.role,
             attendeeCount: currentValues.attendeeCount,
-            additionalAttendeeNames: currentValues.additionalAttendeeNames,
+            additionalAttendees: (currentValues.additionalAttendees || []).slice(0, count - 1),
+            additionalAttendeeNames: (currentValues.additionalAttendees || [])
+              .slice(0, count - 1)
+              .map((a) => a.fullName)
+              .join("\n"),
             referralSource: currentValues.referralSource,
             dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
             consentContact: currentValues.consentContact,
@@ -170,6 +216,16 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
           onSubmit={(e) => { e.preventDefault(); handleProceedToUpi(); }}
           className="flex flex-col gap-4"
         >
+          {/* Attendee 1 Header (if count > 1) */}
+          {Number(values.attendeeCount || 1) > 1 ? (
+            <div className="flex items-center gap-2 border-b border-brand-border/70 pb-2 pt-1 text-sm font-semibold text-brand-ink">
+              <span className="flex size-5 items-center justify-center rounded-full bg-brand-accent/15 text-xs font-bold text-brand-accent">
+                1
+              </span>
+              <span>Primary Attendee (Attendee 1)</span>
+            </div>
+          ) : null}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="paid-name">Full name</FieldLabel>
@@ -236,32 +292,97 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
             </Field>
           </div>
 
+          {/* Additional Attendee Form Cards (for Attendee 2, Attendee 3, etc.) */}
+          {Number(values.attendeeCount || 1) > 1 ? (
+            <div className="flex flex-col gap-4 pt-1">
+              {Array.from({ length: Number(values.attendeeCount || 1) - 1 }, (_, idx) => {
+                const attendeeNumber = idx + 2;
+                return (
+                  <div
+                    key={attendeeNumber}
+                    className="flex flex-col gap-3 rounded-2xl border border-brand-border/80 bg-brand-cloud/40 p-4 sm:p-5"
+                  >
+                    <div className="flex items-center gap-2 border-b border-brand-border/70 pb-2 text-sm font-semibold text-brand-ink">
+                      <span className="flex size-5 items-center justify-center rounded-full bg-brand-accent text-xs font-bold text-white">
+                        {attendeeNumber}
+                      </span>
+                      <span>Attendee {attendeeNumber} Information</span>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 pt-1">
+                      <Field>
+                        <FieldLabel htmlFor={`paid-att-${attendeeNumber}-name`}>Full Name</FieldLabel>
+                        <Input
+                          id={`paid-att-${attendeeNumber}-name`}
+                          placeholder={`Attendee ${attendeeNumber} full name`}
+                          {...register(`additionalAttendees.${idx}.fullName` as const)}
+                        />
+                      </Field>
+
+                      <Field>
+                        <FieldLabel htmlFor={`paid-att-${attendeeNumber}-email`}>Email Address</FieldLabel>
+                        <Input
+                          id={`paid-att-${attendeeNumber}-email`}
+                          type="email"
+                          placeholder={`Attendee ${attendeeNumber} email address`}
+                          {...register(`additionalAttendees.${idx}.email` as const)}
+                        />
+                      </Field>
+
+                      <Field>
+                        <FieldLabel htmlFor={`paid-att-${attendeeNumber}-whatsapp`}>WhatsApp Number</FieldLabel>
+                        <Input
+                          id={`paid-att-${attendeeNumber}-whatsapp`}
+                          type="tel"
+                          placeholder={`+91 or WhatsApp number`}
+                          {...register(`additionalAttendees.${idx}.whatsapp` as const)}
+                        />
+                      </Field>
+
+                      <Field>
+                        <FieldLabel htmlFor={`paid-att-${attendeeNumber}-org`}>Startup / Company Name</FieldLabel>
+                        <Input
+                          id={`paid-att-${attendeeNumber}-org`}
+                          placeholder={`Startup, company or venture`}
+                          {...register(`additionalAttendees.${idx}.organization` as const)}
+                        />
+                      </Field>
+
+                      <Field className="sm:col-span-2">
+                        <FieldLabel htmlFor={`paid-att-${attendeeNumber}-role`}>Role</FieldLabel>
+                        <select
+                          id={`paid-att-${attendeeNumber}-role`}
+                          className={selectClass}
+                          {...register(`additionalAttendees.${idx}.role` as const)}
+                          defaultValue=""
+                        >
+                          <option value="" disabled>Select role for Attendee {attendeeNumber}</option>
+                          {paidRegistrationRoles.map((role) => (
+                            <option key={role} value={role}>{role}</option>
+                          ))}
+                        </select>
+                      </Field>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
           <div className="rounded-xl bg-brand-cloud p-4 text-lg font-semibold text-brand-ink flex items-center justify-between" aria-live="polite">
             <span>Total payable: ₹{total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
             <span className="text-xs font-normal text-slate-500">₹{event.pricePerAttendee} × {Number(values.attendeeCount || 1)} attendee(s)</span>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="paid-additional">Additional attendee names (required when count is above 1)</FieldLabel>
-              <Textarea
-                id="paid-additional"
-                rows={2}
-                placeholder="One full name per line"
-                {...register("additionalAttendeeNames")}
-              />
-              {errors.additionalAttendeeNames && <FieldError>{errors.additionalAttendeeNames.message}</FieldError>}
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="paid-referral">How did you hear about us? (optional)</FieldLabel>
-              <select id="paid-referral" className={selectClass} {...register("referralSource")}>
-                <option value="">Select</option>
-                {paidRegistrationReferrals.map((referral) => (
-                  <option key={referral}>{referral}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
+          <Field>
+            <FieldLabel htmlFor="paid-referral">How did you hear about us? (optional)</FieldLabel>
+            <select id="paid-referral" className={selectClass} {...register("referralSource")}>
+              <option value="">Select</option>
+              {paidRegistrationReferrals.map((referral) => (
+                <option key={referral}>{referral}</option>
+              ))}
+            </select>
+          </Field>
 
           <Field>
             <FieldLabel htmlFor="paid-notes">What are you currently building or looking for? (optional)</FieldLabel>

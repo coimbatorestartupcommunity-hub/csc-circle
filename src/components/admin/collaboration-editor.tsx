@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { notifySubmissionSuccess } from "@/lib/ui/submission-feedback";
 import { Button } from "@/components/ui/button";
 import { CompleteContentButton } from "@/components/admin/complete-content-button";
+import { DeleteContentButton } from "@/components/admin/delete-content-button";
 import { collaborationSaveSchema, type CollaborationSaveValues } from "@/lib/validations/collaboration";
 import type { z } from "zod";
 
@@ -369,11 +370,20 @@ export function CollaborationEditor({
       </section>
       <div className="flex flex-wrap items-center justify-end gap-3">
         {initial?.id ? (
-          <CompleteContentButton
-            kind="collaboration"
-            id={initial.id}
-            isCompleted={form.watch("status") === "completed"}
-          />
+          <>
+            <CompleteContentButton
+              kind="collaboration"
+              id={initial.id}
+              isCompleted={form.watch("status") === "completed"}
+            />
+            <DeleteContentButton
+              kind="collaboration"
+              id={initial.id}
+              slug={initial.slug}
+              title={initial.title}
+              redirectTo="/admin/collaborations"
+            />
+          </>
         ) : (
           <Button
             type="button"

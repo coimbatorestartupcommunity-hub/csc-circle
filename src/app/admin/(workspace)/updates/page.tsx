@@ -97,6 +97,14 @@ export default async function AdminUpdatesPage() {
                     id={update.id}
                     isCompleted={Boolean(update.completedAt)}
                   />
+                  {isSuperAdmin ? (
+                    <DeleteContentButton
+                      kind="update"
+                      id={update.id}
+                      slug={update.slug}
+                      title={update.title}
+                    />
+                  ) : null}
                 </div>
               </div>
             ))}

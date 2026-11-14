@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { CommunityUpdateRecord, UpdateGalleryImage } from "@/types/cms";
 import { UPDATE_CATEGORIES } from "@/types/cms";
 import { CompleteContentButton } from "@/components/admin/complete-content-button";
+import { DeleteContentButton } from "@/components/admin/delete-content-button";
 
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 90);
 
@@ -101,6 +102,15 @@ export function UpdateEditor({ initial }: { initial?: CommunityUpdateRecord }) {
             setCompleted(true);
             setStatus("completed");
           }}
+        />
+      ) : null}
+      {value.id ? (
+        <DeleteContentButton
+          kind="update"
+          id={value.id}
+          slug={value.slug}
+          title={value.title}
+          redirectTo="/admin/updates"
         />
       ) : null}
     </div>

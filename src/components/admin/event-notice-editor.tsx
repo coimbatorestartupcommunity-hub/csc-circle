@@ -1,5 +1,6 @@
 "use client";
 import { CompleteContentButton } from "@/components/admin/complete-content-button";
+import { DeleteContentButton } from "@/components/admin/delete-content-button";
 
 import * as React from "react";
 import Image from "next/image";
@@ -234,6 +235,13 @@ export function EventNoticeEditor({ isDemo, canPublish, canEditEvents, initialEv
               update("stopsAt", null);
               setMessage("Event notice marked as completed. The notice remains visible and the finishing date was automatically removed.");
             }}
+          />
+        ) : null}
+        {selectedNotice ? (
+          <DeleteContentButton
+            kind="notice"
+            id={selectedNotice.id}
+            title={selectedNotice.title}
           />
         ) : null}
         {selectedNotice?.status === "published" ? <Button type="button" variant="outline" disabled={saving || uploading} onClick={() => void mutate("unpublish")}>Unpublish Event Notice</Button> : null}
