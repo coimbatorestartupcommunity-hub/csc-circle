@@ -23,9 +23,8 @@ import { BrandLogo } from "@/components/layout/brand-logo";
 import { Input } from "@/components/ui/input";
 import {
   type PaymentDeepLinks,
-  detectPlatform,
   type ClientPlatform,
-  buildAndroidIntentUri,
+  detectPlatform,
   ANDROID_UPI_PACKAGES,
 } from "@/lib/payments/upi";
 import { UpiQr } from "./upi-qr";
@@ -402,33 +401,45 @@ export function PaymentModal({
 
   if (!isOpen) return null;
 
-  // App buttons targeted deep-link execution (prevents opening WhatsApp).
-  // NOTE: launching an app does NOT start the verification window — the
-  // five-minute countdown begins only when the attendee explicitly activates
-  // "I Have Paid — Enter UTR" after returning from the UPI app.
+  // App buttons targeted deep-link execution.
+  // We use clean P2P query parameters (pa, pn, am, cu, tn) without merchant tags (tr, mode, orgid)
+  // because the recipient VPA is a savings/individual account. Including merchant parameters causes
+  // remitting banks to reject the payment with:
+  // "Your money has not been debited. You have exceeded the bank limit for this payment. Retry with a smaller amount."
+  // Using clean P2P parameters ensures seamless execution on all bank switches and UPI apps.
   const handleAppLaunch = (appName: string, packageId: string, iosScheme: string) => {
     if (!order) return;
 
-    const query = order.upiUri.startsWith("upi://pay?")
-      ? order.upiUri.slice("upi://pay?".length)
-      : "";
+    const vpa = order.payeeVpa || "9342877474@ptaxis";
+    const payee = order.payeeName || "S VIKASH";
+    const amount = (order.totalRupees || (order.amountPaise ? order.amountPaise / 100 : 10)).toFixed(2);
+    const note = `Pass for ${eventTitle.slice(0, 20)}`;
+
+    const p2pParams = new URLSearchParams({
+      pa: vpa,
+      pn: payee,
+      am: amount,
+      cu: "INR",
+      tn: note,
+    });
+    const p2pQuery = p2pParams.toString();
 
     if (platformInfo.isAndroid) {
-      // Direct Android package intent targeting prevents WhatsApp interception
-      const intentUri = buildAndroidIntentUri(order.upiUri, packageId);
+      // Direct Android package intent targeting with clean P2P query
+      const intentUri = `intent://pay?${p2pQuery}#Intent;scheme=upi;package=${packageId};end;`;
       window.location.assign(intentUri);
     } else if (platformInfo.isIos) {
       // Specific iOS deep links
-      const schemeUri =
-        appName === "PhonePe" && deepLinks?.phonepe
-          ? deepLinks.phonepe
-          : appName === "Paytm" && deepLinks?.paytm
-          ? deepLinks.paytm
-          : appName === "Google Pay" && deepLinks?.gpay
-          ? deepLinks.gpay
-          : appName === "BHIM" && deepLinks?.bhim
-          ? deepLinks.bhim
-          : `${iosScheme}?${query}`;
+      let schemeUri = `${iosScheme}?${p2pQuery}`;
+      if (appName === "Google Pay") {
+        schemeUri = `gpay://upi/pay?${p2pQuery}`;
+      } else if (appName === "PhonePe") {
+        schemeUri = `phonepe://pay?${p2pQuery}`;
+      } else if (appName === "Paytm") {
+        schemeUri = `paytmmp://pay?${p2pQuery}`;
+      } else if (appName === "BHIM") {
+        schemeUri = `bhim://pay?${p2pQuery}`;
+      }
       window.location.assign(schemeUri);
 
       // Graceful fallback if app is not installed
@@ -532,7 +543,7 @@ export function PaymentModal({
       aria-modal="true"
       aria-labelledby="payment-modal-title"
       aria-describedby="payment-modal-description"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/75 backdrop-blur-md overflow-hidden"
     >
       {/* Screen reader live announcement region */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
@@ -545,14 +556,14 @@ export function PaymentModal({
         animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
         exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
         transition={{ type: "spring", duration: 0.3, bounce: 0.08 }}
-        className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10 my-6 sm:my-8 max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-sm sm:max-w-md overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10 my-auto max-h-[96vh] flex flex-col"
       >
         {/* Top Header: Complete Your UPI Payment */}
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-5 sm:px-6 py-4 shrink-0">
-          <div className="flex items-center gap-3">
-            <BrandLogo showWordmark={false} href={null} markSize={36} priority={false} />
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-3.5 sm:px-5 py-2 sm:py-2.5 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <BrandLogo showWordmark={false} href={null} markSize={28} priority={false} />
             <div>
-              <h3 id="payment-modal-title" className="text-base font-bold text-slate-900 tracking-tight">
+              <h3 id="payment-modal-title" className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
                 {modalState === "confirmed"
                   ? "Registration Confirmed"
                   : modalState === "failed"
@@ -560,7 +571,7 @@ export function PaymentModal({
                   : "Complete Your UPI Payment"}
               </h3>
               {order?.orderReference && (
-                <p id="payment-modal-description" className="text-xs text-slate-500 font-mono">
+                <p id="payment-modal-description" className="text-[10px] sm:text-xs text-slate-500 font-mono">
                   {order.orderReference}
                 </p>
               )}
@@ -569,16 +580,16 @@ export function PaymentModal({
           {modalState !== "verifying" && (
             <button
               onClick={onClose}
-              className="rounded-full p-2 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              className="rounded-full p-1 sm:p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
               aria-label="Close checkout modal"
             >
-              <X className="size-5" />
+              <X className="size-4 sm:size-5" />
             </button>
           )}
         </div>
 
-        {/* Content Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto">
+        {/* Content Body (Strictly non-scrollable on mobile) */}
+        <div className="p-2.5 sm:p-4 overflow-hidden flex flex-col gap-2">
           <AnimatePresence mode="wait">
             {/* 1. CREATING STATE */}
             {modalState === "creating" && (
@@ -587,13 +598,13 @@ export function PaymentModal({
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="flex flex-col items-center justify-center py-12 text-center"
+                className="flex flex-col items-center justify-center py-10 text-center"
               >
-                <Loader2 className="size-10 animate-spin text-teal-600" />
-                <h4 className="mt-4 text-base font-semibold text-slate-900">
+                <Loader2 className="size-8 animate-spin text-teal-600" />
+                <h4 className="mt-3 text-sm font-semibold text-slate-900">
                   Initializing Checkout Session…
                 </h4>
-                <p className="mt-1 text-xs text-slate-500 max-w-xs">
+                <p className="mt-1 text-[11px] text-slate-500 max-w-xs">
                   Generating order-specific bank credentials and dynamic UPI QR code.
                 </p>
               </motion.div>
@@ -606,32 +617,32 @@ export function PaymentModal({
                 initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="flex flex-col gap-4"
+                className="flex flex-col gap-2"
               >
                 {/* Top Section: Event title, Attendee, Payable Amount */}
-                <div className="flex items-center justify-between rounded-2xl bg-slate-900 p-4 text-white shadow-inner">
-                  <div className="min-w-0 pr-3">
-                    <p className="text-[11px] font-semibold text-teal-400 uppercase tracking-wider">
+                <div className="flex items-center justify-between rounded-xl bg-slate-900 px-3 py-1.5 sm:py-2 text-white shadow-inner">
+                  <div className="min-w-0 pr-2">
+                    <p className="text-[9px] font-semibold text-teal-400 uppercase tracking-wider">
                       Event Admission
                     </p>
-                    <p className="font-bold text-sm truncate">{eventTitle}</p>
-                    <p className="text-xs text-slate-400 mt-0.5 truncate">{attendeeName}</p>
+                    <p className="font-bold text-xs truncate max-w-[190px] sm:max-w-[220px]">{eventTitle}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[190px] sm:max-w-[220px]">{attendeeName}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[11px] text-slate-400">Total Payable</p>
-                    <p className="text-2xl font-extrabold tracking-tight text-white">
+                    <p className="text-[9px] text-slate-400">Total Payable</p>
+                    <p className="text-base sm:text-lg font-extrabold tracking-tight text-white">
                       ₹{order.totalRupees.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
 
-                {/* Middle Section: Exactly Four UPI-App Icon Buttons (Exact requested order: 1. GPay, 2. PhonePe, 3. Google Pay, 4. Paytm) */}
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-semibold text-slate-700">
+                {/* Middle Section: Exactly Four UPI-App Icon Buttons (1. GPay, 2. PhonePe, 3. BHIM, 4. Paytm) */}
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-slate-700">
                     Pay using supported UPI app:
                   </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    {/* Position 1: Google Pay (official supplied artwork) */}
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                    {/* Position 1: Google Pay */}
                     <button
                       type="button"
                       aria-label="Pay with Google Pay"
@@ -642,14 +653,14 @@ export function PaymentModal({
                           "gpay://upi/pay"
                         )
                       }
-                      className="group flex h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                      className="group flex h-9 sm:h-10 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                     >
                       <Image
                         src="/images/payments/gpay-icon.png"
                         alt=""
-                        width={90}
-                        height={24}
-                        className="h-6 w-auto max-w-[85%] object-contain"
+                        width={70}
+                        height={18}
+                        className="h-4 sm:h-4.5 w-auto max-w-[85%] object-contain"
                         unoptimized
                       />
                     </button>
@@ -665,14 +676,14 @@ export function PaymentModal({
                           "phonepe://pay"
                         )
                       }
-                      className="group flex h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                      className="group flex h-9 sm:h-10 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                     >
                       <Image
                         src="/images/payments/phonepe-icon.png"
                         alt=""
-                        width={90}
-                        height={24}
-                        className="h-6 w-auto max-w-[85%] object-contain"
+                        width={70}
+                        height={18}
+                        className="h-4 sm:h-4.5 w-auto max-w-[85%] object-contain"
                         unoptimized
                       />
                     </button>
@@ -688,14 +699,14 @@ export function PaymentModal({
                           "bhim://pay"
                         )
                       }
-                      className="group flex h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                      className="group flex h-9 sm:h-10 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                     >
                       <Image
                         src="/images/payments/bhim-icon.png"
                         alt=""
-                        width={90}
-                        height={24}
-                        className="h-6 w-auto max-w-[85%] object-contain"
+                        width={70}
+                        height={18}
+                        className="h-4 sm:h-4.5 w-auto max-w-[85%] object-contain"
                         unoptimized
                       />
                     </button>
@@ -711,25 +722,26 @@ export function PaymentModal({
                           "paytmmp://pay"
                         )
                       }
-                      className="group flex h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                      className="group flex h-9 sm:h-10 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xs hover:bg-slate-50 hover:border-teal-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
                     >
                       <Image
                         src="/images/payments/paytm-icon.png"
                         alt=""
-                        width={90}
-                        height={24}
-                        className="h-6 w-auto max-w-[85%] object-contain"
+                        width={70}
+                        height={18}
+                        className="h-4 sm:h-4.5 w-auto max-w-[85%] object-contain"
                         unoptimized
                       />
                     </button>
                   </div>
                 </div>
 
-                {/* Bottom Section: Order-Specific Dynamic QR Code (QR strictly at bottom) */}
+                {/* Bottom Section: Order-Specific Dynamic QR Code */}
                 <UpiQr
                   upiUri={order.upiUri}
                   orderReference={order.orderReference}
                   amountRupees={order.totalRupees}
+                  payeeVpa={order.payeeVpa}
                   payeeName={order.payeeName}
                   eventTitle={eventTitle}
                 />
@@ -740,18 +752,18 @@ export function PaymentModal({
                     type="button"
                     onClick={startVerificationTimer}
                     disabled={startingVerification}
-                    className="h-12 w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm mt-1"
+                    className="h-8 sm:h-9 w-full gap-1.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs sm:text-sm shadow-2xs mt-0.5"
                   >
                     {startingVerification ? (
-                      <Loader2 className="size-4 animate-spin" />
+                      <Loader2 className="size-3.5 animate-spin" />
                     ) : null}
                     {startingVerification ? "Starting Verification…" : "I Have Paid — Enter UTR"}
                   </Button>
                 ) : (
-                  <div className="flex flex-col gap-3 pt-2 border-t border-slate-100">
+                  <div className="flex flex-col gap-1.5 pt-1.5 border-t border-slate-100">
                     {/* Five-Minute Verification Countdown Timer */}
                     <div
-                      className={`flex items-center justify-between px-4 py-2.5 rounded-xl border text-xs font-semibold ${
+                      className={`flex items-center justify-between px-3 py-1.5 rounded-lg border text-[11px] font-semibold ${
                         verifyTimerSecondsLeft === 0
                           ? "bg-amber-50 border-amber-200 text-amber-900"
                           : verifyTimerSecondsLeft < 60
@@ -760,53 +772,50 @@ export function PaymentModal({
                       }`}
                       aria-live="polite"
                     >
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="size-4 shrink-0 text-teal-700" />
+                      <span className="flex items-center gap-1">
+                        <Clock className="size-3.5 shrink-0 text-teal-700" />
                         Verification Window:
                       </span>
-                      <span className="font-mono text-sm font-bold">
+                      <span className="font-mono text-xs font-bold">
                         {formatTimerDigits(verifyTimerSecondsLeft)}
                       </span>
                     </div>
 
                     {/* Expiration Message when 5-minute timer reaches 00:00 */}
                     {verifyTimerSecondsLeft === 0 && (
-                      <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3 text-left">
-                        <p className="text-xs font-bold text-amber-900">
+                      <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-2 text-left">
+                        <p className="text-[11px] font-bold text-amber-900">
                           Payment Verification Is Taking Longer
                         </p>
-                        <p className="mt-0.5 text-[11px] text-amber-800 leading-relaxed">
+                        <p className="mt-0.5 text-[10px] text-amber-800 leading-relaxed">
                           Your payment may still be processing. Please do not make another payment while we check the transaction.
                         </p>
                       </div>
                     )}
 
-                    {/* UTR Entry Form (No screenshot required per Section 13) */}
-                    <form onSubmit={handleClaimUtr} className="flex flex-col gap-2">
-                      <label htmlFor="modal-utr-input" className="text-xs font-semibold text-slate-700">
-                        UTR / UPI Transaction Reference
-                      </label>
-                      <div className="flex gap-2">
+                    {/* UTR Entry Form */}
+                    <form onSubmit={handleClaimUtr} className="flex flex-col gap-1">
+                      <div className="flex gap-1.5">
                         <Input
                           id="modal-utr-input"
-                          placeholder="e.g. 12-digit numeric reference"
+                          placeholder="12-digit UTR reference"
                           maxLength={12}
                           inputMode="numeric"
                           pattern="[0-9]*"
                           value={userUtr}
                           onChange={(e) => setUserUtr(e.target.value.replace(/\D/g, ""))}
-                          className="h-11 text-sm font-mono tracking-wider"
+                          className="h-8 text-xs font-mono tracking-wider"
                           autoFocus
                         />
                         <Button
                           type="submit"
                           disabled={submittingUtr || userUtr.length !== 12}
-                          className="h-11 px-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shrink-0"
+                          className="h-8 px-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shrink-0"
                         >
                           {submittingUtr ? (
-                            <Loader2 className="size-4 animate-spin" />
+                            <Loader2 className="size-3.5 animate-spin" />
                           ) : (
-                            "Submit UTR & Verify Payment"
+                            "Verify UTR"
                           )}
                         </Button>
                       </div>

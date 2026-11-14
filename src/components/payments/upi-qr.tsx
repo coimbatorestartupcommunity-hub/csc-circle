@@ -23,6 +23,7 @@ export function UpiQr({
   upiUri,
   orderReference,
   amountRupees,
+  payeeVpa,
   payeeName,
   eventTitle,
   className = "",
@@ -30,12 +31,34 @@ export function UpiQr({
   const [qrSvg, setQrSvg] = React.useState<string>("");
   const [qrError, setQrError] = React.useState<string | null>(null);
 
+  // Clean standard P2P UPI URI for QR code scanning
+  // Omits merchant parameters (tr, mode, orgid) that trigger remitting bank limits on personal VPAs
+  const cleanUri = React.useMemo(() => {
+    if (!upiUri) return "";
+    try {
+      const vpa = payeeVpa || "9342877474@ptaxis";
+      const payee = payeeName || "S VIKASH";
+      const amount = amountRupees.toFixed(2);
+      const note = `Pass for ${eventTitle.slice(0, 20)}`;
+      const p2pParams = new URLSearchParams({
+        pa: vpa,
+        pn: payee,
+        am: amount,
+        cu: "INR",
+        tn: note,
+      });
+      return `upi://pay?${p2pParams.toString()}`;
+    } catch {
+      return upiUri;
+    }
+  }, [upiUri, payeeVpa, payeeName, amountRupees, eventTitle]);
+
   // Generate crisp dynamic SVG QR code
   React.useEffect(() => {
-    if (!upiUri) return;
-    QRCode.toString(upiUri, {
+    if (!cleanUri) return;
+    QRCode.toString(cleanUri, {
       type: "svg",
-      margin: 2,
+      margin: 1,
       color: { dark: "#0f172a", light: "#ffffff" },
     })
       .then((svg) => {
@@ -46,18 +69,18 @@ export function UpiQr({
         setQrError("Could not render QR code.");
         toast.error("Failed to generate dynamic UPI QR code.");
       });
-  }, [upiUri]);
+  }, [cleanUri]);
 
   return (
     <div
       role="region"
       aria-label={`UPI Payment QR Code for ${eventTitle}`}
-      className={`flex flex-col items-center gap-3.5 rounded-2xl border border-slate-200/90 bg-slate-50/70 p-4 sm:p-5 ${className}`}
+      className={`flex flex-col items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-slate-200/90 bg-slate-50/70 p-2 sm:p-2.5 ${className}`}
     >
-      {/* Centered QR Display (White quiet zone, responsive dimensions) */}
+      {/* Centered QR Display (Compact dimensions to guarantee non-scrollable mobile layout) */}
       <div className="flex flex-col items-center justify-center">
         <div
-          className="size-[190px] sm:size-[210px] overflow-hidden rounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-slate-200/80 flex items-center justify-center"
+          className="size-[115px] sm:size-[135px] overflow-hidden rounded-xl bg-white p-1 shadow-2xs ring-1 ring-slate-200/80 flex items-center justify-center"
           aria-label={`Dynamic UPI payment QR code for ₹${amountRupees.toFixed(2)}`}
         >
           {qrSvg ? (
@@ -66,33 +89,33 @@ export function UpiQr({
               dangerouslySetInnerHTML={{ __html: qrSvg }}
             />
           ) : qrError ? (
-            <p className="text-xs text-rose-500 text-center px-2">{qrError}</p>
+            <p className="text-[10px] text-rose-500 text-center px-1">{qrError}</p>
           ) : (
-            <Loader2 className="size-8 animate-spin text-teal-600" />
+            <Loader2 className="size-6 animate-spin text-teal-600" />
           )}
         </div>
-        <span className="mt-2 text-xs font-medium text-slate-600 flex items-center gap-1.5">
-          <QrCode className="size-3.5 text-teal-600" />
+        <span className="mt-1 text-[10px] sm:text-[11px] font-medium text-slate-600 flex items-center gap-1">
+          <QrCode className="size-3 text-teal-600" />
           Scan with any UPI app to pay ₹{amountRupees.toFixed(2)}
         </span>
       </div>
 
-      {/* Verified Details Badges (Notice: VPA is completely hidden per Section 10) */}
-      <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs">
-        <span className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-slate-700 ring-1 ring-slate-200 font-medium">
+      {/* Verified Details Badges */}
+      <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px]">
+        <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-slate-700 ring-1 ring-slate-200 font-medium">
           Payee: <strong className="text-slate-900">{payeeName}</strong>
         </span>
-        <span className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-slate-700 ring-1 ring-slate-200 font-medium">
+        <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-slate-700 ring-1 ring-slate-200 font-medium">
           Order: <code className="font-mono text-teal-800 font-bold">{orderReference}</code>
         </span>
       </div>
 
-      <div className="flex items-center gap-1.5 text-[11px] text-teal-800 bg-teal-50/80 px-3 py-1.5 rounded-xl border border-teal-200/60 text-center">
+      <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-teal-800 bg-teal-50/80 px-2 py-0.5 rounded-md border border-teal-200/60 text-center">
         <Image
           src="/images/payments/axis-monogram.svg"
           alt="Axis Bank"
-          width={14}
-          height={14}
+          width={12}
+          height={12}
           className="shrink-0"
         />
         <span>Direct Axis Bank Credit · Single-use payment order</span>

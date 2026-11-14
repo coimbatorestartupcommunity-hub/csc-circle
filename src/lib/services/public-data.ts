@@ -134,10 +134,15 @@ export async function getLivePublishedEvents(): Promise<EventRecord[]> {
       .select("*")
       .eq("status", "published")
       .order("starts_at", { ascending: true });
+    const seen = new Set<string>();
     return (data ?? [])
       .filter((r) => {
         const s = (r.settings as Record<string, unknown> | null) ?? {};
-        return s.visibility !== "unlisted" && r.slug !== "csc-first-online-google-meet";
+        if (s.visibility === "unlisted" || r.slug === "csc-first-online-google-meet") return false;
+        const key = (r.slug || r.title || "").trim().toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
       })
       .map((r) => mapEvent(r as Row));
   });
@@ -187,11 +192,16 @@ export async function getPublicFeaturedStartups(limit = 3): Promise<Startup[]> {
 
 export async function getPublicEvents(): Promise<EventRecord[]> {
   const live = await getLivePublishedEvents();
-  if (live.length > 0) return live;
-  if (!USE_FIXTURES) return [];
-  return eventFixtures
-    .filter((e) => e.status === "published")
-    .slice()
+  const pool = live.length > 0 ? live : (USE_FIXTURES ? eventFixtures.filter((e) => e.status === "published") : []);
+  const seen = new Set<string>();
+  return pool
+    .filter((e) => {
+      if (e.slug === "csc-first-online-google-meet") return false;
+      const key = (e.slug || e.title || "").trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .sort((a, b) => {
       if (a.featured && !b.featured) return -1;
       if (!a.featured && b.featured) return 1;

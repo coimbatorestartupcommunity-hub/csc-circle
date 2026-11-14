@@ -1259,7 +1259,7 @@ describe("Tier 1: Feature Coverage (F01 - F22)", () => {
   // F15: Order Creation Validation & Payee Binding
   describe("F15: Order Creation Validation & Payee Binding", () => {
     it("F15-1: binds payee credentials strictly to approved UPI parameters", () => {
-      expect(UPI_CONFIG.PAYEE_VPA).toBe("9342877474@ptyes");
+      expect(UPI_CONFIG.PAYEE_VPA).toBe("9342877474@ptaxis");
       expect(UPI_CONFIG.PAYEE_NAME).toBe("S VIKASH");
       expect(UPI_CONFIG.RECEIVING_ACCOUNT_SUFFIX).toBe("1995");
     });
@@ -1447,7 +1447,7 @@ describe("Tier 1: Feature Coverage (F01 - F22)", () => {
   describe("F17: Dynamic UPI QR & Deep Links", () => {
     it("F17-1: generates standard upi://pay URI matching NPCI UPI specification", () => {
       const uri = buildUpiUri({
-        vpa: "9342877474@ptyes",
+        vpa: "9342877474@ptaxis",
         payeeName: "S VIKASH",
         amountRupees: 180.0,
         orderReference: "CSC-ORD-ABC123DEF456",
@@ -1455,7 +1455,7 @@ describe("Tier 1: Feature Coverage (F01 - F22)", () => {
       });
 
       expect(uri).toContain("upi://pay?");
-      expect(uri).toContain("pa=9342877474%40ptyes");
+      expect(uri).toContain("pa=9342877474%40ptaxis");
       expect(uri).toContain("pn=S+VIKASH");
       expect(uri).toContain("am=180.00");
       expect(uri).toContain("cu=INR");

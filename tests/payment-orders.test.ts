@@ -10,7 +10,7 @@ describe("UPI Payment Orders and Deep Link Generation", () => {
 
   it("builds a standards-compliant UPI payment URI with exact amount and parameters", () => {
     const uri = buildUpiUri({
-      vpa: "9342877474@ptyes",
+      vpa: "9342877474@ptaxis",
       payeeName: "S VIKASH",
       amountRupees: 180,
       orderReference: "CSC-ORD-ABCDEF123456",
@@ -18,7 +18,7 @@ describe("UPI Payment Orders and Deep Link Generation", () => {
     });
 
     expect(uri).toContain("upi://pay?");
-    expect(uri).toContain("pa=9342877474%40ptyes");
+    expect(uri).toContain("pa=9342877474%40ptaxis");
     expect(uri).toContain("pn=S+VIKASH");
     expect(uri).toContain("am=180.00");
     expect(uri).toContain("cu=INR");

@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Container } from "@/components/common/container";
 import { PageHero } from "@/components/common/page-hero";
+import { ResourceContentRenderer } from "@/components/cms/resource-content-renderer";
 import { cmsImageUrl, getPublishedUpdate } from "@/lib/services/cms-public";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -31,7 +32,9 @@ async function UpdateDetailContent({ params }: { params: Promise<{ slug: string 
       <Link href="/updates" className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-brand-accent"><ArrowLeft className="size-4" aria-hidden="true" />All updates</Link>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-brand-muted">{date ? <time dateTime={update.publishedAt ?? undefined}>{date}</time> : null}{update.author ? <span>By {update.author}</span> : null}</div>
       {update.coverImagePath ? <div className="relative aspect-[5/3] w-full overflow-hidden rounded-2xl bg-brand-cloud"><Image src={cmsImageUrl(update.coverImagePath)!} alt={update.coverImageAlt || ""} fill unoptimized sizes="(max-width: 768px) 100vw, 768px" className="object-cover" /></div> : null}
-      <div className="whitespace-pre-line break-words text-base leading-8 text-brand-secondary">{update.body}</div>
+      <div className="break-words text-base leading-relaxed text-brand-secondary">
+        <ResourceContentRenderer content={update.body} />
+      </div>
       {update.source ? <p className="border-t border-brand-border pt-4 text-sm text-brand-muted">Source: {update.source}</p> : null}
       {update.gallery.length ? <section aria-label="Update photographs" className="grid gap-4 sm:grid-cols-2">{update.gallery.map((image) => <figure key={image.path} className="overflow-hidden rounded-2xl border border-brand-border bg-white"><div className="relative aspect-[5/3] bg-brand-cloud"><Image src={cmsImageUrl(image.path)!} alt={image.alt} fill unoptimized sizes="(max-width: 768px) 100vw, 380px" className="object-cover" /></div>{image.caption || image.attribution ? <figcaption className="p-3 text-xs text-brand-muted">{image.caption}{image.attribution ? <span>{image.caption ? " · " : ""}{image.attribution}</span> : null}</figcaption> : null}</figure>)}</section> : null}
     </Container></article>

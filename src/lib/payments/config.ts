@@ -5,7 +5,7 @@
 export const UPI_CONFIG = {
   // Production checkout is enabled only when these values are explicitly
   // supplied through the server environment and separately approved.
-  PAYEE_VPA: process.env.CSC_PAYMENT_UPI_VPA || "9342877474@ptyes",
+  PAYEE_VPA: process.env.CSC_PAYMENT_UPI_VPA || "9342877474@ptaxis",
   PAYEE_NAME: process.env.CSC_PAYMENT_PAYEE_NAME || "S VIKASH",
   CURRENCY: "INR",
 

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "cn";
 
 type Step = "upload" | "decoding" | "verifying" | "otp" | "success" | "error";
 
@@ -60,8 +61,15 @@ export function QrCheckInClient({
 
   // Stop camera stream safely
   const stopCamera = React.useCallback(() => {
-    controlsRef.current?.stop();
+    try {
+      controlsRef.current?.stop();
+    } catch {}
     controlsRef.current = null;
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks?.().forEach((t) => t.stop());
+      videoRef.current.srcObject = null;
+    }
     setCameraActive(false);
   }, []);
 
@@ -245,22 +253,69 @@ export function QrCheckInClient({
     setErrorMessage("");
 
     try {
-      const qrReader = new BrowserQRCodeReader(undefined, {
-        delayBetweenScanAttempts: 100,
-        delayBetweenScanSuccess: 500,
+      // Yield to let the video element unhide/mount in DOM
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const video = videoRef.current;
+      if (!video) {
+        throw new Error("Camera video element not available.");
+      }
+
+      // Check for getUserMedia support
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera access is not supported on this browser.");
+      }
+
+      // Explicitly set DOM properties required for mobile Safari & Chromium
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute("playsinline", "true");
+      video.setAttribute("webkit-playsinline", "true");
+      video.setAttribute("muted", "true");
+      video.setAttribute("autoplay", "true");
+
+      // Request stream with resilient environment facing constraints
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
       });
 
-      const controls = await qrReader.decodeFromConstraints(
-        {
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 1280 },
-          },
-        },
-        videoRef.current!,
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+
+      // Wait until metadata is loaded and videoWidth > 0
+      await new Promise<void>((resolve) => {
+        if (video.readyState >= 2 && video.videoWidth > 0) {
+          resolve();
+        } else {
+          video.onloadedmetadata = () => resolve();
+          setTimeout(resolve, 400);
+        }
+      });
+
+      // Resilient autofocus
+      try {
+        const track = stream.getVideoTracks()[0];
+        await track?.applyConstraints({
+          advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet],
+        } as MediaTrackConstraints);
+      } catch {
+        // focusMode not supported
+      }
+
+      const qrReader = new BrowserQRCodeReader(undefined, {
+        delayBetweenScanAttempts: 80,
+        delayBetweenScanSuccess: 400,
+      });
+
+      let scanned = false;
+      const controls = await qrReader.decodeFromVideoElement(
+        video,
         (result) => {
-          if (result) {
+          if (result && !scanned) {
             const rawText = result.getText();
             let token = rawText;
             try {
@@ -270,17 +325,29 @@ export function QrCheckInClient({
               // Raw token
             }
             if (token && token.length >= 16) {
+              scanned = true;
+              stopCamera();
               void verifyToken(token);
             }
           }
         }
       );
 
-      controlsRef.current = controls;
+      controlsRef.current = {
+        stop: () => {
+          try {
+            controls.stop();
+          } catch {}
+          stream.getTracks().forEach((track) => track.stop());
+          if (videoRef.current) {
+            videoRef.current.srcObject = null;
+          }
+        },
+      };
     } catch (camErr) {
       console.warn("CAMERA_ACCESS_DENIED", camErr);
-      setCameraActive(false);
-      setErrorMessage("Camera access was denied or is not supported. Please upload your QR code image.");
+      stopCamera();
+      setErrorMessage("Camera access was denied, unavailable, or not supported. Please upload your QR code image.");
     }
   }
 
@@ -419,6 +486,47 @@ export function QrCheckInClient({
 
             {/* Camera Scan Alternative */}
             <div className="mt-5 w-full">
+              <div
+                className={cn(
+                  "relative mx-auto w-full max-w-sm aspect-square overflow-hidden rounded-2xl border-2 border-teal-500 bg-slate-950 shadow-lg",
+                  !cameraActive && "hidden"
+                )}
+              >
+                <video
+                  ref={videoRef}
+                  className="size-full object-cover"
+                  autoPlay
+                  playsInline
+                  muted
+                />
+                {/* Viewfinder Target & Scanner Frame */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="relative size-48 sm:size-56 rounded-2xl border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]">
+                    <span className="absolute -top-1 -left-1 size-4 border-t-4 border-l-4 border-teal-400 rounded-tl" />
+                    <span className="absolute -top-1 -right-1 size-4 border-t-4 border-r-4 border-teal-400 rounded-tr" />
+                    <span className="absolute -bottom-1 -left-1 size-4 border-b-4 border-l-4 border-teal-400 rounded-bl" />
+                    <span className="absolute -bottom-1 -right-1 size-4 border-b-4 border-r-4 border-teal-400 rounded-br" />
+                    <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-teal-400 to-transparent animate-pulse" />
+                  </div>
+                </div>
+                <div className="absolute inset-x-0 top-3 flex justify-center pointer-events-none">
+                  <span className="rounded-full bg-slate-950/80 px-3 py-1 text-[11px] font-semibold text-white shadow backdrop-blur-sm">
+                    Align your CSC Event QR Code within the frame
+                  </span>
+                </div>
+                <div className="absolute inset-x-0 bottom-3 flex justify-center">
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={stopCamera}
+                    className="gap-1.5 rounded-xl text-xs font-semibold shadow-md pointer-events-auto"
+                  >
+                    <CameraOff className="size-3.5" /> Stop Camera
+                  </Button>
+                </div>
+              </div>
+
               {!cameraActive ? (
                 <Button
                   type="button"
@@ -428,25 +536,7 @@ export function QrCheckInClient({
                 >
                   <Camera className="size-4" /> Scan with Device Camera
                 </Button>
-              ) : (
-                <div className="relative overflow-hidden rounded-2xl border border-slate-300 bg-black">
-                  <video ref={videoRef} className="size-full aspect-square object-cover" autoPlay playsInline muted />
-                  <div className="absolute inset-0 flex flex-col items-center justify-between p-4 pointer-events-none">
-                    <span className="rounded-full bg-black/60 px-3 py-1 text-[11px] font-semibold text-white">
-                      Align QR code within camera view
-                    </span>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={stopCamera}
-                      className="pointer-events-auto gap-1 rounded-xl text-xs"
-                    >
-                      <CameraOff className="size-3.5" /> Stop Camera
-                    </Button>
-                  </div>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         )}

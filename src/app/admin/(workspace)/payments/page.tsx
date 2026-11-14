@@ -62,7 +62,7 @@ export default async function AdminPaymentsPage() {
             <span>Receiving Account</span>
           </div>
           <p className="mt-2 font-semibold text-slate-900 text-sm">Axis Bank · XX1995</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Payee: S VIKASH (9342877474@ptyes)</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Payee: S VIKASH (9342877474@ptaxis)</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">

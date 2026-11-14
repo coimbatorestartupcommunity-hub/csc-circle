@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             ok: false,
-            error: `Please provide all ${parsed.data.attendeeCount} attendee details. Currently provided: ${additional.length + 1}.`,
+            error: `Please provide all ${parsed.data.attendeeCount} attendee names and details. Currently provided: ${additional.length + 1}.`,
           },
           { status: 422 }
         );
