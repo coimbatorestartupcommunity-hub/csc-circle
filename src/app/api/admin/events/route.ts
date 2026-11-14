@@ -30,6 +30,22 @@ export async function POST(request: Request) {
     const previous = id ? await sb.from("events").select("cover_image,upi_qr_path,slug").eq("id", id).maybeSingle() : null;
     const { data, error } = await sb.rpc("csc_save_event", { payload: event, target: id ?? undefined });
     if (error) return authResponse({ error: "Event was not saved. Check times, price, capacity, and slug uniqueness." }, 409);
+    
+    // Direct sync to guarantee price_per_attendee, price_minor, admission, registration_mode, and settings columns
+    const targetId = (data as string) || id;
+    if (targetId) {
+      const priceNum = event.admission === "paid" ? Number(event.pricePerAttendee ?? 0) : 0;
+      await createAdminClient().from("events").update({
+        price_per_attendee: priceNum,
+        price_minor: Math.round(priceNum * 100),
+        admission: event.admission,
+        registration_mode: event.admission === "paid" ? (event.registrationMode || "paid_upi") : "rsvp",
+        upi_vpa: event.admission === "paid" ? (event.upiVpa || null) : null,
+        upi_payee_name: event.admission === "paid" ? (event.upiPayeeName || null) : null,
+        payment_note: event.admission === "paid" ? (event.paymentInstructions || null) : null,
+        format: event.format || "offline",
+      }).eq("id", targetId);
+    }
     const oldCover = previous?.data?.cover_image;
     if (oldCover && oldCover !== event.coverImage && /^event-covers\/[0-9a-f-]{36}\.webp$/i.test(oldCover)) {
       await createAdminClient().storage.from("member-portraits").remove([oldCover]);

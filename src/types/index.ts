@@ -139,6 +139,7 @@ export interface EventRecord {
   onlineInfo?: string;
   format?: "offline" | "online" | "hybrid";
   featured?: boolean;
+  timeTba?: boolean;
   isFixture?: boolean;
   isTestEvent?: boolean;
   testRunId?: string;

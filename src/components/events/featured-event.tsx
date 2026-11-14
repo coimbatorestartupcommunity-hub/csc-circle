@@ -30,7 +30,7 @@ export function FeaturedEvent({ event }: { event: EventRecord }) {
         <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-brand-ink">
           <li className="inline-flex items-center gap-2">
             <CalendarDays className="size-4 text-brand-accent" aria-hidden />
-            {event.slug === "csc-joint-online-meeting" || event.slug === "csc-first-online-google-meet"
+            {event.timeTba || event.slug === "csc-joint-online-meeting" || event.slug === "csc-first-online-google-meet"
               ? `${formatEventDate(event.startsAt)} · Time to be announced`
               : formatEventRange(event.startsAt, event.endsAt)}
           </li>

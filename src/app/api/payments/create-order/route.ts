@@ -12,11 +12,11 @@ import {
 import { validateGuestEmailVerification } from "@/lib/payments/guest-email-verification";
 
 const createOrderSchema = z.object({
-  eventId: z.string().uuid(),
-  fullName: z.string().trim().min(2).max(100),
-  email: z.string().trim().email(),
-  whatsapp: z.string().trim().min(10).max(20),
-  organization: z.string().trim().min(2).max(100),
+  eventId: z.string().uuid("Invalid event identifier."),
+  fullName: z.string().trim().min(2, "Please enter your full name (minimum 2 characters).").max(100),
+  email: z.string().trim().email("Please enter a valid email address."),
+  whatsapp: z.string().trim().min(10, "Please enter a valid WhatsApp or phone number.").max(20),
+  organization: z.string().trim().min(2, "Please enter your startup, company, or venture name.").max(100),
   role: z.enum([
     "Startup Founder / Co-Founder",
     "Entrepreneur / Business Owner",
@@ -25,15 +25,15 @@ const createOrderSchema = z.object({
     "Freelancer / Creator",
     "Aspiring Entrepreneur",
     "Other",
-  ]),
+  ], { message: "Please select your role from the list." }),
   attendeeCount: z.coerce.number().int().min(1).max(10),
   additionalAttendees: z
     .array(
       z.object({
-        fullName: z.string().trim().min(2).max(100),
-        email: z.string().trim().email().max(254),
-        whatsapp: z.string().trim().regex(/^\+?[0-9][0-9\s()-]{7,20}$/),
-        organization: z.string().trim().min(2).max(120),
+        fullName: z.string().trim().min(2, "Please enter attendee's full name.").max(100),
+        email: z.string().trim().email("Please enter a valid email address for this attendee.").max(254),
+        whatsapp: z.string().trim().regex(/^\+?[0-9][0-9\s()-]{7,20}$/, "Please enter a valid WhatsApp number for this attendee."),
+        organization: z.string().trim().min(2, "Please enter startup or company name for this attendee.").max(120),
         role: z.enum([
           "Startup Founder / Co-Founder",
           "Entrepreneur / Business Owner",
@@ -42,7 +42,7 @@ const createOrderSchema = z.object({
           "Freelancer / Creator",
           "Aspiring Entrepreneur",
           "Other",
-        ]),
+        ], { message: "Please select a role for this attendee." }),
       })
     )
     .optional(),

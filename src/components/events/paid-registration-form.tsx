@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Loader2, Smartphone, ArrowRight, ShieldCheck } from "lucide-react";
+import { Loader2, Smartphone, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +28,8 @@ const selectClass =
 
 export function PaidRegistrationForm({ event }: { event: EventRecord }) {
   const [saving, setSaving] = React.useState(false);
+  const isFree = event.admission === "free" || (event.pricePerAttendee ?? 0) <= 0;
+  const [freeConfirmedData, setFreeConfirmedData] = React.useState<{ ok: boolean; reference: string; passHref?: string; message?: string } | null>(null);
 
   // Automated UPI Checkout state
   const [checkoutModalOpen, setCheckoutModalOpen] = React.useState(false);
@@ -160,6 +163,48 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
     }
 
     const normalizedEmail = String(currentValues.email || "").trim().toLowerCase();
+
+    if (isFree) {
+      setSaving(true);
+      try {
+        const res = await fetch("/api/events/register-free", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            eventId: event.id,
+            fullName: currentValues.fullName,
+            email: currentValues.email,
+            whatsapp: currentValues.whatsapp,
+            organization: currentValues.organization,
+            role: currentValues.role,
+            attendeeCount: count,
+            additionalAttendees: (currentValues.additionalAttendees || []).slice(0, count - 1),
+            additionalAttendeeNames: (currentValues.additionalAttendees || [])
+              .slice(0, count - 1)
+              .map((a) => a.fullName)
+              .join("\n"),
+            referralSource: currentValues.referralSource,
+            dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
+            consentContact: currentValues.consentContact,
+            consentPaymentTerms: "true",
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Unable to complete free registration.");
+        }
+
+        setFreeConfirmedData(data);
+        toast.success("Registration confirmed! Your digital event pass has been emailed to you.");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to register.");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     const usableVerification = guestVerificationEmail === normalizedEmail;
     setSaving(true);
     try {
@@ -208,6 +253,42 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
       setSaving(false);
     }
   };
+
+  if (freeConfirmedData) {
+    return (
+      <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-6 text-slate-800 ring-1 ring-teal-300/50" aria-live="polite">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="mt-0.5 size-6 text-teal-600 shrink-0" />
+          <div className="flex-1">
+            <h4 className="text-lg font-bold text-slate-900">Registration Confirmed!</h4>
+            <p className="mt-1 text-xs font-mono font-bold text-teal-800">Pass Reference: {freeConfirmedData.reference}</p>
+            <p className="mt-2 text-sm text-slate-700 leading-relaxed">
+              {freeConfirmedData.message || "Your spot is secured. We have sent your individual QR event pass and Google Meet access instructions to your email."}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {freeConfirmedData.passHref && (
+                <Link
+                  href={freeConfirmedData.passHref}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-teal-700 transition"
+                >
+                  View Digital Event Pass →
+                </Link>
+              )}
+              <Link
+                href="/events/google-meet/check-in"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-teal-300 bg-white px-4 py-2.5 text-xs font-semibold text-teal-800 shadow-2xs hover:bg-teal-50 transition"
+              >
+                Go to QR Check-in Portal →
+              </Link>
+            </div>
+            <p className="mt-3 text-[11px] text-slate-500">
+              Check-in and Google Meet access unlock 3 hours prior to meeting start time.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -370,8 +451,10 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
           ) : null}
 
           <div className="rounded-xl bg-brand-cloud p-4 text-lg font-semibold text-brand-ink flex items-center justify-between" aria-live="polite">
-            <span>Total payable: ₹{total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-            <span className="text-xs font-normal text-slate-500">₹{event.pricePerAttendee} × {Number(values.attendeeCount || 1)} attendee(s)</span>
+            <span>{isFree ? "Admission: Free" : `Total payable: ₹${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}</span>
+            <span className="text-xs font-normal text-slate-500">
+              {isFree ? "100% Free Admission" : `₹${event.pricePerAttendee} × ${Number(values.attendeeCount || 1)} attendee(s)`}
+            </span>
           </div>
 
           <Field>
@@ -400,19 +483,33 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
           </label>
           <label className="flex items-start gap-3 text-sm text-brand-secondary">
             <input type="checkbox" value="true" {...register("consentPaymentTerms")} className="mt-1 size-4 accent-[var(--brand-accent)]" />
-            <span>I confirm the registration details are accurate and understand my pass is issued upon verified payment.</span>
+            <span>
+              {isFree
+                ? "I confirm the registration details are accurate and agree to CSC community guidelines."
+                : "I confirm the registration details are accurate and understand my pass is issued upon verified payment."}
+            </span>
           </label>
 
-          {/* UPI Payment Instructions & Notes */}
+          {/* Payment / Pass Instructions & Notes */}
           <div className="rounded-xl border border-teal-200/80 bg-teal-50/70 p-3 text-xs leading-relaxed text-teal-950">
             <p className="font-bold flex items-center gap-1.5 text-teal-900 mb-1">
               <ShieldCheck className="size-4 text-teal-700" />
-              <strong>Payment Instructions & Pass Delivery:</strong>
+              <strong>{isFree ? "Registration & Pass Instructions:" : "Payment Instructions & Pass Delivery:"}</strong>
             </p>
             <ul className="space-y-1 text-[11.5px] text-teal-900/90 list-disc list-inside">
-              <li><strong>Registration Fee:</strong> ₹{event.pricePerAttendee ?? 10} per attendee via <strong>Instant UPI Confirmation</strong>.</li>
-              <li><strong>Official Payee:</strong> <strong>VIKASH S</strong> (<code>9342877474@ptaxis</code>).</li>
-              <li><strong>Pass Delivery:</strong> Once verified, your <strong>individual QR pass</strong> and <strong>Google Meet check-in link</strong> will be dispatched immediately to your email.</li>
+              {isFree ? (
+                <>
+                  <li><strong>Admission:</strong> Free access for approved attendees and community members.</li>
+                  <li><strong>Pass Delivery:</strong> Your <strong>individual QR pass</strong> and <strong>Google Meet check-in link</strong> will be dispatched immediately to your email.</li>
+                  <li><strong>Check-in Notice:</strong> Google Meet check-in unlocks <strong>3 hours before the meeting start time</strong>.</li>
+                </>
+              ) : (
+                <>
+                  <li><strong>Registration Fee:</strong> ₹{event.pricePerAttendee ?? 1} per attendee via <strong>Instant UPI Confirmation</strong>.</li>
+                  <li><strong>Official Payee:</strong> <strong>VIKASH S</strong> (<code>9342877474@ptaxis</code>).</li>
+                  <li><strong>Pass Delivery:</strong> Once verified, your <strong>individual QR pass</strong> and <strong>Google Meet check-in link</strong> will be dispatched immediately to your email.</li>
+                </>
+              )}
             </ul>
           </div>
 
@@ -422,15 +519,21 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
               disabled={saving}
               className="h-12 w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm"
             >
-              {saving ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4" />}
-              {saving ? "Generating Payment Session…" : "Pay using UPI instant confirmation."}
+              {saving ? <Loader2 className="size-4 animate-spin" /> : isFree ? <CheckCircle2 className="size-4" /> : <Smartphone className="size-4" />}
+              {saving
+                ? isFree ? "Confirming Registration…" : "Generating Payment Session…"
+                : isFree ? "Register Now — Free Admission" : "Pay using UPI instant confirmation."}
               {!saving && <ArrowRight className="size-4" />}
             </Button>
           </div>
 
           <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 mt-1">
             <ShieldCheck className="size-3.5 text-teal-600" />
-            <span>Direct Bank UPI Checkout · Verified Automatically · Event Pass Delivered Instantly</span>
+            <span>
+              {isFree
+                ? "Instant Registration · Individual Encrypted QR Pass Delivered Automatically"
+                : "Direct Bank UPI Checkout · Verified Automatically · Event Pass Delivered Instantly"}
+            </span>
           </div>
         </form>
       </div>

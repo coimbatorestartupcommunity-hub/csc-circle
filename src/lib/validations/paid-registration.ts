@@ -20,33 +20,33 @@ export function parseAdditionalAttendeeNames(value: string | undefined) {
 }
 
 export const additionalAttendeeSchema = z.object({
-  fullName: z.string().trim().min(2, "Enter attendee's full name").max(100),
-  email: z.string().trim().email("Enter a valid email address").max(254),
-  whatsapp: z.string().trim().regex(/^\+?[0-9][0-9\s()-]{7,20}$/, "Enter a valid WhatsApp number"),
-  organization: z.string().trim().min(2, "Enter startup or company name").max(120),
-  role: z.enum(paidRegistrationRoles),
+  fullName: z.string().trim().min(2, "Please enter attendee's full name (at least 2 characters).").max(100, "Full name must be under 100 characters."),
+  email: z.string().trim().email("Please enter a valid email address for this attendee.").max(254),
+  whatsapp: z.string().trim().regex(/^\+?[0-9][0-9\s()-]{7,20}$/, "Please enter a valid WhatsApp or phone number (e.g. +91 98765 43210)."),
+  organization: z.string().trim().min(2, "Please enter startup or company name (at least 2 characters).").max(120),
+  role: z.enum(paidRegistrationRoles, { message: "Please select a role from the list." }),
 });
 
 export type AdditionalAttendee = z.infer<typeof additionalAttendeeSchema>;
 
 export const paidRegistrationSchema = z.object({
-  eventId: z.string().uuid(),
-  fullName: z.string().trim().min(2).max(100),
-  email: z.string().trim().email().max(254),
-  whatsapp: z.string().trim().regex(/^\+?[0-9][0-9\s()-]{7,20}$/),
-  organization: z.string().trim().min(2).max(120),
-  role: z.enum(paidRegistrationRoles),
-  attendeeCount: z.coerce.number().int().min(1).max(10),
-  totalAmountPaid: z.coerce.number().positive().max(100000),
+  eventId: z.string().uuid("Invalid event reference."),
+  fullName: z.string().trim().min(2, "Please enter your full name (at least 2 characters).").max(100, "Full name must be under 100 characters."),
+  email: z.string().trim().email("Please enter a valid email address.").max(254, "Email address is too long."),
+  whatsapp: z.string().trim().regex(/^\+?[0-9][0-9\s()-]{7,20}$/, "Please enter a valid WhatsApp or phone number (e.g. +91 98765 43210)."),
+  organization: z.string().trim().min(2, "Please enter your startup, company, or venture name.").max(120, "Company name must be under 120 characters."),
+  role: z.enum(paidRegistrationRoles, { message: "Please select your role from the list." }),
+  attendeeCount: z.coerce.number().int().min(1, "At least 1 attendee is required.").max(10, "Maximum 10 attendees allowed."),
+  totalAmountPaid: z.coerce.number().positive("Amount paid must be greater than zero.").max(100000),
   additionalAttendees: z.array(additionalAttendeeSchema).optional(),
   additionalAttendeeNames: z.string().trim().max(1000).optional().or(z.literal("")),
   referralSource: z.enum(paidRegistrationReferrals).optional().or(z.literal("")),
   dietaryAccessibilityNotes: z.string().trim().max(1000).optional().or(z.literal("")),
-  upiTransactionRef: z.string().trim().min(3).max(100),
-  consentContact: z.literal("true"),
-  consentPaymentTerms: z.literal("true"),
+  upiTransactionRef: z.string().trim().min(3, "Please provide the UPI transaction reference or UTR.").max(100),
+  consentContact: z.literal("true", { message: "Please confirm that CSC may contact you regarding event updates." }),
+  consentPaymentTerms: z.literal("true", { message: "Please accept the event registration terms." }),
 }).superRefine((value, ctx) => {
-  if (!Number.isFinite(value.totalAmountPaid)) ctx.addIssue({ code: "custom", path: ["totalAmountPaid"], message: "Enter the exact amount paid." });
+  if (!Number.isFinite(value.totalAmountPaid)) ctx.addIssue({ code: "custom", path: ["totalAmountPaid"], message: "Please enter the exact amount paid." });
   if (value.attendeeCount > 1) {
     const hasArray = Array.isArray(value.additionalAttendees) && value.additionalAttendees.length > 0;
     if (hasArray) {
@@ -54,7 +54,7 @@ export const paidRegistrationSchema = z.object({
         ctx.addIssue({
           code: "custom",
           path: ["additionalAttendees"],
-          message: `Add details for all ${value.attendeeCount} attendees.`,
+          message: `Please provide details for all ${value.attendeeCount} attendees.`,
         });
       }
     } else {
@@ -63,7 +63,7 @@ export const paidRegistrationSchema = z.object({
         ctx.addIssue({
           code: "custom",
           path: ["additionalAttendeeNames"],
-          message: "Add one full name for every attendee after yourself.",
+          message: "Please add one full name for every additional attendee.",
         });
       }
     }

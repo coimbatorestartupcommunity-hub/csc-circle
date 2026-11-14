@@ -40,6 +40,7 @@ export const eventEditorSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a date."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Choose a start time."),
   endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Choose an end time."),
+  timeTba: z.boolean().optional(),
   registrationDeadline: z.string().optional(),
   // D. Location
   format: z.enum(["offline", "online", "hybrid"]),
@@ -94,5 +95,6 @@ export const eventEditorDefaults: Partial<EventEditorValues> = {
   currency: "INR",
   registrationMode: "rsvp",
   maxAttendeesPerRegistration: 10,
+  timeTba: false,
   status: "draft",
 };

@@ -43,6 +43,7 @@ export function EventDetailsPanel({
 }) {
   const handleEventChange = onEventChange ?? (() => undefined);
   const isTimeTba =
+    event.timeTba ||
     event.slug === "csc-joint-online-meeting" ||
     event.slug === "csc-first-online-google-meet";
   const facts: { icon: React.ElementType; label: string; value: string }[] = [
@@ -149,26 +150,21 @@ export function EventDetailsPanel({
             </div>
           </div>
         </div>
-      ) : (event.admission === "paid" || event.registrationMode === "paid_upi" || (event.pricePerAttendee ?? 0) > 0) ? (
+      ) : (
         <div className="border-t border-brand-border pt-6">
           <div className="mb-4">
-            <h4 className="text-xl font-bold text-brand-ink">Book Your Ticket · Pay via UPI</h4>
+            <h4 className="text-xl font-bold text-brand-ink">
+              {(event.admission === "paid" || event.registrationMode === "paid_upi" || (event.pricePerAttendee ?? 0) > 0)
+                ? "Book Your Ticket · Pay via UPI"
+                : "Register for Your Spot · Free Admission"}
+            </h4>
             <p className="mt-1 text-sm text-brand-secondary">
-              Instant automatic confirmation with dynamic QR code and Google Pay, PhonePe, Paytm, or BHIM.
+              {(event.admission === "paid" || event.registrationMode === "paid_upi" || (event.pricePerAttendee ?? 0) > 0)
+                ? "Instant automatic confirmation with dynamic QR code and Google Pay, PhonePe, Paytm, or BHIM."
+                : "Instant automatic confirmation with individual QR code and Google Meet access."}
             </p>
           </div>
           <PaidEventRegistration event={event} />
-        </div>
-      ) : !canRegister ? (
-        <div className="border-t border-brand-border pt-6">
-          <h4 className="mb-2 text-lg font-semibold text-brand-ink">Sign in to register</h4>
-          <p className="mb-4 text-sm text-brand-secondary">Log in with your Google account to book your spot and receive your event pass.</p>
-          <Link href={loginHref} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-ink">Sign in with Google to register<ArrowRight className="size-4" /></Link>
-        </div>
-      ) : (
-        <div className="border-t border-brand-border pt-6">
-          <h4 className="mb-4 text-lg font-semibold text-brand-ink">Request your spot</h4>
-          <RsvpForm events={events} selectedEventId={event.id} onEventChange={handleEventChange} />
         </div>
       )}
     </div>

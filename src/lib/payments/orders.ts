@@ -285,7 +285,7 @@ export async function createPaymentOrder(
   // 1. Fetch and validate event
   const { data: event, error: eventError } = await admin
     .from("events")
-    .select("id,title,status,registration_state,starts_at,registration_deadline,admission,registration_mode,price_per_attendee,max_attendees_per_registration,upi_vpa,upi_payee_name,capacity")
+    .select("id,title,status,registration_state,starts_at,registration_deadline,admission,registration_mode,price_per_attendee,price_minor,max_attendees_per_registration,upi_vpa,upi_payee_name,capacity")
     .eq("id", eventId)
     .maybeSingle();
 
@@ -319,15 +319,27 @@ export async function createPaymentOrder(
     return { ok: false as const, error: `Attendee count exceeds limit of ${event.max_attendees_per_registration ?? 10}.`, status: 422 };
   }
 
-  const pricePerAttendee = Number(event.price_per_attendee ?? 0);
+  // Authoritative price calculation: check price_per_attendee or price_minor
+  const eventMinor = (event as { price_minor?: number | null }).price_minor;
+  const pricePerAttendee =
+    typeof eventMinor === "number" && eventMinor > 0
+      ? eventMinor / 100
+      : typeof event.price_per_attendee === "number" && event.price_per_attendee > 0
+        ? event.price_per_attendee
+        : Number(event.price_per_attendee ?? 0);
+
   if (pricePerAttendee <= 0) {
     return { ok: false as const, error: "Event ticket price is invalid.", status: 422 };
   }
 
+  const pricePerAttendeePaise = Math.round(pricePerAttendee * 100);
+  const amountPaise = pricePerAttendeePaise * attendeeCount;
+  const totalRupees = amountPaise / 100;
+
   // 2. Prevent duplicate active registrations for this event
   const lowerEmail = email.toLowerCase().trim();
   const [{ data: existingOrders }, { data: existingPaidRegs }, { data: existingPasses }] = await Promise.all([
-    admin.from("event_payment_orders").select("id,status,guest_token_hash,user_id,expires_at").eq("event_id", event.id).eq("email", lowerEmail).in("status", ["pending", "processing", "verified", "reconciled"]).limit(5),
+    admin.from("event_payment_orders").select("id,status,guest_token_hash,user_id,expires_at,amount_paise,attendee_count").eq("event_id", event.id).eq("email", lowerEmail).in("status", ["pending", "processing", "verified", "reconciled"]).limit(5),
     admin.from("paid_event_registrations").select("id,status").eq("event_id", event.id).eq("email", lowerEmail).not("status", "in", "('rejected','cancelled')").limit(5),
     admin.from("event_registrations").select("id,status").eq("event_id", event.id).eq("source_email", lowerEmail).not("status", "in", "('cancelled','revoked')").limit(5),
   ]);
@@ -340,13 +352,16 @@ export async function createPaymentOrder(
   const activeOrder = existingOrders?.find((o) => o.status === "pending" || o.status === "processing");
   if (activeOrder) {
     const isExpired = activeOrder.expires_at ? new Date(activeOrder.expires_at).getTime() <= now : false;
-    if (isExpired) {
+    const isAmountMismatch = activeOrder.amount_paise !== amountPaise || activeOrder.attendee_count !== attendeeCount;
+
+    if (isExpired || isAmountMismatch) {
+      // Cancel outdated order so a fresh order with updated pricing or seat count can be generated
       await admin
         .from("event_payment_orders")
-        .update({ status: "expired", updated_at: new Date().toISOString() })
+        .update({ status: isExpired ? "expired" : "cancelled", updated_at: new Date().toISOString() })
         .eq("id", activeOrder.id);
     } else {
-      // Order is still active! Verify ownership before allowing resumption
+      // Order is still active and matches requested amount! Verify ownership before allowing resumption
       let isOwner = false;
 
       // 1) Authenticated user matches order's user_id
@@ -390,11 +405,6 @@ export async function createPaymentOrder(
   // Generate capability token for new guest checkout access
   const guestCheckoutToken = userId ? undefined : generateGuestCheckoutToken();
   const guestTokenHash = guestCheckoutToken ? hashGuestToken(guestCheckoutToken) : null;
-
-  // 3. Calculate amount with exact server-side integer paise arithmetic
-  const pricePerAttendeePaise = Math.round(pricePerAttendee * 100);
-  const amountPaise = pricePerAttendeePaise * attendeeCount;
-  const totalRupees = amountPaise / 100;
 
   // 4. Generate unique order reference & dynamic UPI URI
   const orderReference = generateOrderReference();

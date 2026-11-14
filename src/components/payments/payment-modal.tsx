@@ -556,7 +556,7 @@ export function PaymentModal({
         animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
         exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
         transition={{ type: "spring", duration: 0.3, bounce: 0.08 }}
-        className="relative w-full max-w-[380px] sm:max-w-[400px] aspect-[2/3] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10 my-auto flex flex-col justify-between"
+        className="relative w-full max-w-[390px] sm:max-w-[420px] max-h-[94vh] overflow-y-auto overflow-x-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10 my-auto flex flex-col justify-between"
       >
         {/* Top Header: Complete Your UPI Payment */}
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-3.5 sm:px-5 py-2 sm:py-2.5 shrink-0">
@@ -588,8 +588,8 @@ export function PaymentModal({
           )}
         </div>
 
-        {/* Content Body (Strictly non-scrollable on mobile) */}
-        <div className="p-2.5 sm:p-4 overflow-hidden flex flex-col gap-2">
+        {/* Content Body (Visible, perfectly aligned and unclipped across all devices) */}
+        <div className="p-2.5 sm:p-3.5 pb-3 sm:pb-4 flex flex-col gap-2">
           <AnimatePresence mode="wait">
             {/* 1. CREATING STATE */}
             {modalState === "creating" && (
@@ -766,7 +766,7 @@ export function PaymentModal({
                     type="button"
                     onClick={startVerificationTimer}
                     disabled={startingVerification}
-                    className="h-8 sm:h-9 w-full gap-1.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs sm:text-sm shadow-2xs mt-0.5"
+                    className="h-9 sm:h-10 w-full gap-1.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs sm:text-sm shadow-md mt-1 mb-0.5 shrink-0"
                   >
                     {startingVerification ? (
                       <Loader2 className="size-3.5 animate-spin" />

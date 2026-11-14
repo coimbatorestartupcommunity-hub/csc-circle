@@ -217,6 +217,23 @@ export function EventEditorForm({
         </Section>
 
         <Section title="C · Scheduling (Asia/Kolkata)">
+          <div className="mb-3 flex items-center justify-between rounded-xl border border-brand-border bg-brand-cloud/40 p-3">
+            <div>
+              <p className="text-xs font-semibold text-brand-ink">Schedule Status: To Be Announced</p>
+              <p className="text-[11px] text-brand-muted">Mark event session time as &quot;To be announced&quot; on public cards and registration passes.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setValue("timeTba", !values.timeTba, { shouldDirty: true })}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                values.timeTba
+                  ? "bg-teal-600 text-white shadow-2xs hover:bg-teal-700"
+                  : "bg-white border border-brand-border text-brand-ink hover:bg-slate-50"
+              }`}
+            >
+              {values.timeTba ? "✓ To Be Announced Active" : "Set: To Be Announced"}
+            </button>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="e-date">Date</FieldLabel>

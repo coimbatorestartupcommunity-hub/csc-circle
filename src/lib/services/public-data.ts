@@ -66,6 +66,12 @@ function mapEvent(r: Row): EventRecord {
     onlineInfo: typeof (r.settings as Record<string, unknown> | null)?.onlineInfo === "string" ? (r.settings as Record<string, string>).onlineInfo : undefined,
     format: (r.format as EventRecord["format"]) ?? "offline",
     featured: !!r.featured,
+    timeTba: Boolean(
+      (r.settings as Record<string, unknown> | null)?.timeTba ||
+      (r.settings as Record<string, unknown> | null)?.isTimeTba ||
+      r.slug === "csc-joint-online-meeting" ||
+      r.slug === "csc-first-online-google-meet"
+    ),
     isTestEvent: Boolean((r.settings as Record<string, unknown> | null)?.is_test_event || (r.settings as Record<string, unknown> | null)?.isTestEvent),
     testRunId: typeof (r.settings as Record<string, unknown> | null)?.test_run_id === "string" ? ((r.settings as Record<string, unknown> | null)?.test_run_id as string) : undefined,
   };

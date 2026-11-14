@@ -75,12 +75,12 @@ export function UpiQr({
     <div
       role="region"
       aria-label={`UPI Payment QR Code for ${eventTitle}`}
-      className={`flex flex-col items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl border border-slate-200/90 bg-slate-50/70 p-2 sm:p-2.5 ${className}`}
+      className={`flex flex-col items-center gap-1 sm:gap-1.5 rounded-xl sm:rounded-2xl border border-slate-200/90 bg-slate-50/70 p-1.5 sm:p-2 ${className}`}
     >
-      {/* Centered QR Display (Compact dimensions to guarantee non-scrollable mobile layout) */}
+      {/* Centered QR Display (Crisp dimensions to guarantee non-truncated mobile layout) */}
       <div className="flex flex-col items-center justify-center">
         <div
-          className="size-[115px] sm:size-[135px] overflow-hidden rounded-xl bg-white p-1 shadow-2xs ring-1 ring-slate-200/80 flex items-center justify-center"
+          className="size-[105px] sm:size-[120px] overflow-hidden rounded-xl bg-white p-1 shadow-2xs ring-1 ring-slate-200/80 flex items-center justify-center"
           aria-label={`Dynamic UPI payment QR code for ₹${amountRupees.toFixed(2)}`}
         >
           {qrSvg ? (
@@ -94,18 +94,18 @@ export function UpiQr({
             <Loader2 className="size-6 animate-spin text-teal-600" />
           )}
         </div>
-        <span className="mt-1 text-[10px] sm:text-[11px] font-medium text-slate-600 flex items-center gap-1">
+        <span className="mt-0.5 text-[9.5px] sm:text-[10.5px] font-medium text-slate-600 flex items-center gap-1">
           <QrCode className="size-3 text-teal-600" />
           Scan with any UPI app to pay ₹{amountRupees.toFixed(2)}
         </span>
       </div>
 
       {/* Verified Details Badges */}
-      <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px]">
-        <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-slate-700 ring-1 ring-slate-200 font-medium">
+      <div className="flex flex-wrap items-center justify-center gap-1 text-[9.5px]">
+        <span className="inline-flex items-center gap-1 rounded-md bg-white px-1.5 py-0.5 text-slate-700 ring-1 ring-slate-200 font-medium">
           Payee: <strong className="text-slate-900">{payeeName}</strong>
         </span>
-        <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-slate-700 ring-1 ring-slate-200 font-medium">
+        <span className="inline-flex items-center gap-1 rounded-md bg-white px-1.5 py-0.5 text-slate-700 ring-1 ring-slate-200 font-medium">
           Order: <code className="font-mono text-teal-800 font-bold">{orderReference}</code>
         </span>
       </div>
