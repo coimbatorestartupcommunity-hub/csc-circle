@@ -70,71 +70,60 @@ export function EventDetailsPanel({
   }
 
   return (
-    <div className="flex flex-col gap-6 rounded-[2rem] bg-brand-cloud p-6 ring-1 ring-brand-border sm:p-8">
+    <div className="flex flex-col gap-4 sm:gap-5 rounded-[2rem] bg-brand-cloud p-4 sm:p-7 ring-1 ring-brand-border">
       {event.coverImage ? (
         <div className="order-first overflow-hidden rounded-2xl bg-brand-white ring-1 ring-brand-border">
           <Image
             src={event.coverImage}
             alt={`${event.title} event banner`}
             width={1200}
-            height={900}
-            className="aspect-[4/3] w-full object-cover"
+            height={600}
+            className="aspect-[16/9] sm:aspect-[21/9] max-h-64 w-full object-cover"
             priority
             unoptimized
           />
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary" className="bg-brand-white text-brand-secondary">
             {eventCategoryLabels[event.category]}
           </Badge>
           {event.isFixture ? <FixtureNotice /> : null}
         </div>
-        <h3 className="text-2xl font-bold text-brand-ink text-balance">
+        <h3 className="text-xl sm:text-2xl font-bold text-brand-ink text-balance">
           {event.title}
         </h3>
-        <div className="text-[15px] leading-relaxed text-brand-secondary">
+        <div className="text-sm leading-relaxed text-brand-secondary">
           <ResourceContentRenderer content={event.description} />
         </div>
       </div>
 
-      <dl className="grid gap-3 sm:grid-cols-2">
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {facts.map((fact) => (
           <div
             key={fact.label}
-            className="flex items-start gap-3 rounded-2xl bg-brand-white p-3 ring-1 ring-brand-border"
+            className="flex items-start gap-2 rounded-xl bg-brand-white p-2.5 ring-1 ring-brand-border"
           >
-            <fact.icon className="mt-0.5 size-4 shrink-0 text-brand-accent" aria-hidden />
-            <div className="flex flex-col">
-              <dt className="text-xs tracking-wide text-brand-muted uppercase">
+            <fact.icon className="mt-0.5 size-3.5 shrink-0 text-brand-accent" aria-hidden />
+            <div className="flex flex-col min-w-0">
+              <dt className="text-[10px] tracking-wide text-brand-muted uppercase truncate">
                 {fact.label}
               </dt>
-              <dd className="text-sm font-medium text-brand-ink">{fact.value}</dd>
+              <dd className="text-xs font-semibold text-brand-ink truncate">{fact.value}</dd>
             </div>
           </div>
         ))}
       </dl>
 
-      <div className="flex items-start gap-3 rounded-2xl bg-brand-white p-4 text-sm text-brand-secondary ring-1 ring-brand-border">
-        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand-accent" aria-hidden />
-        <p>
-          Your details are used only to organise this event and to keep you
-          informed about CSC Circle. All times are shown in India Standard Time
-          (Asia/Kolkata).
-        </p>
-      </div>
-
       {event.format !== "offline" ? (
-        <div className="flex flex-col gap-2 rounded-2xl bg-brand-white p-4 ring-1 ring-brand-border">
-          <span className="text-xs font-semibold uppercase tracking-wider text-brand-muted">
-            Meeting Platform
-          </span>
-          <div className="inline-flex w-fit items-center gap-2 font-medium text-brand-ink">
-            <Video className="size-4 text-brand-accent" />
-            <span>Google Meet (Secure access provided to confirmed attendees upon registration)</span>
+        <div className="flex items-center justify-between rounded-xl bg-brand-white px-3.5 py-2 text-xs text-brand-secondary ring-1 ring-brand-border">
+          <div className="flex items-center gap-2">
+            <Video className="size-4 text-brand-accent shrink-0" />
+            <span>Platform: <strong>Google Meet</strong> (Private link dispatched to registered attendees)</span>
           </div>
+          <span className="hidden sm:inline-flex text-[11px] text-brand-muted">Check-in unlocks 3h before session</span>
         </div>
       ) : null}
       {event.registrationState === "completed" ? (

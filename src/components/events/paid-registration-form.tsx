@@ -403,7 +403,20 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
             <span>I confirm the registration details are accurate and understand my pass is issued upon verified payment.</span>
           </label>
 
-          <div className="flex flex-col gap-3 pt-2">
+          {/* UPI Payment Instructions & Notes */}
+          <div className="rounded-xl border border-teal-200/80 bg-teal-50/70 p-3 text-xs leading-relaxed text-teal-950">
+            <p className="font-bold flex items-center gap-1.5 text-teal-900 mb-1">
+              <ShieldCheck className="size-4 text-teal-700" />
+              <strong>Payment Instructions & Pass Delivery:</strong>
+            </p>
+            <ul className="space-y-1 text-[11.5px] text-teal-900/90 list-disc list-inside">
+              <li><strong>Registration Fee:</strong> ₹{event.pricePerAttendee ?? 10} per attendee via <strong>Instant UPI Confirmation</strong>.</li>
+              <li><strong>Official Payee:</strong> <strong>VIKASH S</strong> (<code>9342877474@ptaxis</code>).</li>
+              <li><strong>Pass Delivery:</strong> Once verified, your <strong>individual QR pass</strong> and <strong>Google Meet check-in link</strong> will be dispatched immediately to your email.</li>
+            </ul>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-1">
             <Button
               type="submit"
               disabled={saving}

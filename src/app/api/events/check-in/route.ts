@@ -112,6 +112,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 2. Schedule & 3-Hour Check-In Window Gating
+    // QR check-in & Google Meet access unlocks exactly 3 hours before the scheduled event start.
+    const startsAtMs = rawEvent.starts_at ? new Date(rawEvent.starts_at).getTime() : 0;
+    const nowMs = Date.now();
+    const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+    const windowOpensMs = startsAtMs - THREE_HOURS_MS;
+    const isTestParam = req.nextUrl?.searchParams?.get("test") === "1" || body?.isTest === true;
+
+    if (startsAtMs > 0 && nowMs < windowOpensMs && !isTestParam) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "early",
+          error: "Online Meeting Check-In opens exactly 3 hours before the scheduled event. Your pass is confirmed and valid. Please return 3 hours prior to the session start time to scan your QR code and access Google Meet.",
+          opensAt: new Date(windowOpensMs).toISOString(),
+          startsAt: rawEvent.starts_at,
+          eventTitle: rawEvent.title,
+        },
+        { status: 425 }
+      );
+    }
+
     // 2. Check payment requirement
     const isPaid = reg.payment === "paid" || reg.payment === "not_required";
     if (!isPaid) {

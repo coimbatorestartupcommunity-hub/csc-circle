@@ -556,7 +556,7 @@ export function PaymentModal({
         animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
         exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: 12 }}
         transition={{ type: "spring", duration: 0.3, bounce: 0.08 }}
-        className="relative w-full max-w-sm sm:max-w-md overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10 my-auto max-h-[96vh] flex flex-col"
+        className="relative w-full max-w-[380px] sm:max-w-[400px] aspect-[2/3] overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10 my-auto flex flex-col justify-between"
       >
         {/* Top Header: Complete Your UPI Payment */}
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-3.5 sm:px-5 py-2 sm:py-2.5 shrink-0">
@@ -745,6 +745,20 @@ export function PaymentModal({
                   payeeName={order.payeeName || "VIKASH S"}
                   eventTitle={eventTitle}
                 />
+
+                {/* Payment Instructions & Important Notes */}
+                <div className="rounded-xl border border-slate-200/90 bg-slate-50/90 px-2.5 py-2 text-left text-[10.5px] leading-snug text-slate-700">
+                  <p className="font-bold text-slate-900 flex items-center gap-1 mb-1">
+                    <ShieldCheck className="size-3 text-teal-600" />
+                    <strong>UPI Instructions & Payment Notes:</strong>
+                  </p>
+                  <ul className="space-y-0.5 text-[10px] text-slate-600 list-disc list-inside">
+                    <li>Payee: <strong>VIKASH S</strong> (<code>9342877474@ptaxis</code>).</li>
+                    <li><strong>Important:</strong> Do not change or remove the auto-filled <strong>Reference memo</strong> in your UPI app.</li>
+                    <li>After paying, stay on this screen — verification completes <strong>automatically</strong> within seconds.</li>
+                    <li>If verification is delayed, tap <strong>"I Have Paid — Enter UTR"</strong> and submit your <strong>12-digit UTR</strong>.</li>
+                  </ul>
+                </div>
 
                 {/* Verification Countdown & UTR Confirmation Action */}
                 {!showUtrSection ? (

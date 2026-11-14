@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "cn";
 
-type Step = "upload" | "decoding" | "verifying" | "otp" | "success" | "error";
+type Step = "upload" | "decoding" | "verifying" | "otp" | "success" | "error" | "early";
 
 interface CheckInSuccessData {
   attendeeName: string;
@@ -30,6 +30,13 @@ interface CheckInSuccessData {
   meetingUrl: string;
   joinUrl?: string;
   alreadyCheckedIn?: boolean;
+}
+
+interface EarlyCheckInData {
+  opensAt?: string;
+  startsAt?: string;
+  eventTitle?: string;
+  message?: string;
 }
 
 interface OtpChallengeData {
@@ -49,6 +56,7 @@ export function QrCheckInClient({
   );
   const [errorMessage, setErrorMessage] = React.useState<string>("");
   const [successData, setSuccessData] = React.useState<CheckInSuccessData | null>(null);
+  const [earlyData, setEarlyData] = React.useState<EarlyCheckInData | null>(null);
   const [otpData, setOtpData] = React.useState<OtpChallengeData | null>(null);
   const [otpInput, setOtpInput] = React.useState<string>("");
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState<boolean>(false);
@@ -93,6 +101,16 @@ export function QrCheckInClient({
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
+        if (data.status === "early") {
+          setEarlyData({
+            opensAt: data.opensAt,
+            startsAt: data.startsAt,
+            eventTitle: data.eventTitle || "Coimbatore Startup Community (CSC) - Joint Online Meeting",
+            message: data.error,
+          });
+          setStep("early");
+          return;
+        }
         setErrorMessage(
           data.error || "Verification failed. Please check your QR code and try again."
         );
@@ -147,6 +165,16 @@ export function QrCheckInClient({
         if (controller.signal.aborted) return;
 
         if (!res.ok || !data.ok) {
+          if (data.status === "early") {
+            setEarlyData({
+              opensAt: data.opensAt,
+              startsAt: data.startsAt,
+              eventTitle: data.eventTitle || "Coimbatore Startup Community (CSC) - Joint Online Meeting",
+              message: data.error,
+            });
+            setStep("early");
+            return;
+          }
           setErrorMessage(data.error || "Verification failed.");
           setStep("error");
           return;
@@ -656,6 +684,61 @@ export function QrCheckInClient({
                   <Video className="size-4" /> Join Google Meet Now <ExternalLink className="size-3.5" />
                 </a>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step: Early Check-in Notice (Opens 3 Hours Before Meeting) */}
+        {step === "early" && earlyData && (
+          <div className="flex flex-col items-center py-5 text-center">
+            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-sm">
+              <Calendar className="size-8" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+              Check-In Opens 3 Hours Before Meeting
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm font-medium text-slate-600 max-w-md leading-relaxed">
+              Your registration and QR pass are <strong className="text-emerald-700">confirmed and valid</strong>. To ensure an orderly session, automated Google Meet check-in unlocks <strong>3 hours prior to the session start time</strong> on the event day.
+            </p>
+
+            <div className="my-5 w-full rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-left text-xs space-y-2">
+              <div className="flex justify-between border-b border-amber-200/60 pb-2">
+                <span className="text-slate-500">Event</span>
+                <span className="font-bold text-slate-900 truncate max-w-[200px]">{earlyData.eventTitle}</span>
+              </div>
+              <div className="flex justify-between border-b border-amber-200/60 py-2">
+                <span className="text-slate-500">Check-In Window</span>
+                <span className="font-semibold text-amber-900">Opens 3 Hours Before Start Time</span>
+              </div>
+              <div className="flex justify-between pt-1">
+                <span className="text-slate-500">Meeting Platform</span>
+                <span className="font-semibold text-slate-800">Google Meet</span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs text-slate-600 text-left w-full space-y-1.5">
+              <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                <ShieldCheck className="size-4 text-teal-600" />
+                <strong>What should you do now?</strong>
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-600">
+                <li>Keep the <strong>QR pass image</strong> saved on your phone or laptop.</li>
+                <li>You will receive an email and WhatsApp reminder right when check-in unlocks.</li>
+                <li>Visit this link 3 hours before the meeting to upload or scan your QR code for instant entry.</li>
+              </ul>
+            </div>
+
+            <div className="mt-5 flex gap-3">
+              <Button
+                type="button"
+                onClick={() => {
+                  setStep("upload");
+                  setErrorMessage("");
+                }}
+                className="gap-2 rounded-xl bg-slate-900 px-5 text-xs font-semibold text-white hover:bg-slate-800"
+              >
+                <RefreshCw className="size-3.5" /> Return to Check-In Page
+              </Button>
             </div>
           </div>
         )}
