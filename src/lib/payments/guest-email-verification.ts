@@ -21,21 +21,36 @@ function equalHash(left: string, right: string): boolean {
 export async function createGuestEmailVerification(
   admin: SupabaseClient<Database>,
   email: string,
-  eventId: string
+  eventId: string,
+  eventSlug?: string
 ) {
   const id = randomUUID();
   const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
+  const magicToken = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS).toISOString();
   const normalizedEmail = email.trim().toLowerCase();
+
+  let slug = eventSlug;
+  if (!slug) {
+    const { data: ev } = await admin.from("events").select("slug").eq("id", eventId).maybeSingle();
+    slug = (ev?.slug as string) || "csc-joint-online-meeting";
+  }
+
   const { error } = await admin.from("guest_email_verifications").insert({
     id,
     email: normalizedEmail,
     event_id: eventId,
     code_hash: hashSecret(id, code),
     expires_at: expiresAt,
-    metadata: { policy_version: "csc-guest-email-v1" },
+    metadata: {
+      policy_version: "csc-guest-email-v1",
+      magic_token_hash: hashSecret(id, magicToken),
+      event_slug: slug,
+    },
   });
   if (error) throw new Error("Could not create guest email verification");
+
+  const verificationUrl = `/events/verify-email?id=${encodeURIComponent(id)}&token=${encodeURIComponent(magicToken)}&event=${encodeURIComponent(slug)}`;
 
   const { error: notificationError } = await admin.from("notifications").insert({
     type: "GuestEmailVerification",
@@ -46,12 +61,18 @@ export async function createGuestEmailVerification(
     audience: "member",
     related_record_type: "guest_email_verifications",
     related_record_id: id,
-    payload: { verificationCode: code },
+    payload: {
+      verificationCode: code,
+      verificationUrl,
+      magicToken,
+      slug,
+      eventSlug: slug,
+    },
     dedupe_key: `GuestEmailVerification:${id}`,
   });
   if (notificationError) throw new Error("Could not queue guest verification email");
 
-  return { id, expiresAt };
+  return { id, expiresAt, verificationUrl, magicToken };
 }
 
 export async function verifyGuestEmailCode(
@@ -93,6 +114,66 @@ export async function verifyGuestEmailCode(
     .select("id")
     .maybeSingle();
   return verified ? token : null;
+}
+
+export async function verifyGuestEmailToken(
+  admin: SupabaseClient<Database>,
+  id: string,
+  token: string
+) {
+  const { data: row } = await admin
+    .from("guest_email_verifications")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!row || row.consumed_at) return null;
+  if (Date.parse(row.expires_at) <= Date.now() || row.attempts >= 5) return null;
+
+  const meta = (row.metadata as Record<string, unknown> | null) ?? {};
+  const storedMagicHash = typeof meta.magic_token_hash === "string" ? meta.magic_token_hash : "";
+
+  // If already verified with this token or token_hash matches
+  if (row.verified_at && row.token_hash && equalHash(row.token_hash, hashSecret(id, token))) {
+    return {
+      verificationToken: token,
+      email: row.email,
+      eventId: row.event_id,
+      eventSlug: (meta.event_slug as string) || "csc-joint-online-meeting",
+    };
+  }
+
+  // Validate magic token hash
+  if (!storedMagicHash || !equalHash(storedMagicHash, hashSecret(id, token))) {
+    await admin
+      .from("guest_email_verifications")
+      .update({ attempts: row.attempts + 1 })
+      .eq("id", id)
+      .eq("attempts", row.attempts);
+    return null;
+  }
+
+  // Mark verified and store token_hash for downstream order creation
+  const { data: verified } = await admin
+    .from("guest_email_verifications")
+    .update({
+      attempts: row.attempts + 1,
+      verified_at: new Date().toISOString(),
+      token_hash: hashSecret(id, token),
+    })
+    .eq("id", id)
+    .select("id,email,event_id,metadata")
+    .maybeSingle();
+
+  if (!verified) return null;
+
+  const verifiedMeta = (verified.metadata as Record<string, unknown> | null) ?? {};
+  return {
+    verificationToken: token,
+    email: verified.email,
+    eventId: verified.event_id,
+    eventSlug: (verifiedMeta.event_slug as string) || "csc-joint-online-meeting",
+  };
 }
 
 export async function validateGuestEmailVerification(

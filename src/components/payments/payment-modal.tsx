@@ -404,25 +404,29 @@ export function PaymentModal({
   if (!isOpen) return null;
 
   // App buttons targeted deep-link execution.
-  // We use clean P2P query parameters (pa, pn, am, cu, tn) without merchant tags (tr, mode, orgid)
-  // because the recipient VPA is a savings/individual account. Including merchant parameters causes
-  // remitting banks to reject the payment with:
-  // "Your money has not been debited. You have exceeded the bank limit for this payment. Retry with a smaller amount."
-  // Using clean P2P parameters ensures seamless execution on all bank switches and UPI apps.
   const handleAppLaunch = (appName: string, packageId: string, iosScheme: string) => {
     if (!order) return;
 
     const vpa = order.payeeVpa && !order.payeeVpa.includes("ptyes") ? order.payeeVpa : "9342877474@ptaxis";
     const payee = order.payeeName || "VIKASH S";
     const amount = (order.totalRupees || (order.amountPaise ? order.amountPaise / 100 : 1)).toFixed(2);
-    const note = `Pass for ${eventTitle.slice(0, 20).trim()}`;
+    const orderRef = order.orderReference || "CSC-ORDER";
+    const note = `CSC Order ${orderRef}`;
 
-    // Clean NPCI P2P UPI URI with literal @ and %20 spaces (matches QR code scan format)
-    const standardUpiUri = `upi://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+    // Auto-copy UPI ID to clipboard for zero-failure resilience
+    try {
+      navigator.clipboard.writeText(vpa);
+      toast.success(`Opening ${appName} · UPI ID (${vpa}) copied!`);
+    } catch {
+      // Ignored
+    }
+
+    // Clean NPCI P2P UPI URI matching proven working QR code format
+    const standardUpiUri = `upi://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}&tr=${encodeURIComponent(orderRef)}`;
 
     if (platformInfo.isAndroid) {
       // Direct Android package intent targeting with scheme=upi
-      const intentUri = `intent://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}#Intent;scheme=upi;package=${packageId};end;`;
+      const intentUri = `intent://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}&tr=${encodeURIComponent(orderRef)}#Intent;scheme=upi;package=${packageId};end;`;
       window.location.href = intentUri;
 
       setTimeout(() => {
@@ -434,13 +438,13 @@ export function PaymentModal({
       // Specific iOS deep links
       let schemeUri = standardUpiUri;
       if (appName === "Google Pay") {
-        schemeUri = `tez://upi/pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+        schemeUri = `tez://upi/pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}&tr=${encodeURIComponent(orderRef)}`;
       } else if (appName === "PhonePe") {
-        schemeUri = `phonepe://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+        schemeUri = `phonepe://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}&tr=${encodeURIComponent(orderRef)}`;
       } else if (appName === "Paytm") {
-        schemeUri = `paytmmp://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+        schemeUri = `paytmmp://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}&tr=${encodeURIComponent(orderRef)}`;
       } else if (appName === "BHIM") {
-        schemeUri = `bhim://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+        schemeUri = `bhim://pay?pa=${vpa}&pn=${encodeURIComponent(payee)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}&tr=${encodeURIComponent(orderRef)}`;
       }
 
       window.location.href = schemeUri;
@@ -453,7 +457,21 @@ export function PaymentModal({
       }, 1200);
     } else {
       window.location.href = standardUpiUri;
-      toast.info(`Opened UPI link. You can also scan the QR code below.`);
+    }
+  };
+
+  const handlePasteUtr = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const digits = text.replace(/\D/g, "").slice(0, 12);
+      if (digits) {
+        setUserUtr(digits);
+        toast.success(digits.length === 12 ? "12-digit UTR pasted!" : `Pasted ${digits.length} digits.`);
+      } else {
+        toast.error("Clipboard does not contain numbers.");
+      }
+    } catch {
+      toast.error("Please tap and paste directly into the box.");
     }
   };
 
@@ -841,23 +859,31 @@ export function PaymentModal({
                     )}
 
                     {/* UTR Entry Form */}
-                    <form onSubmit={handleClaimUtr} className="flex flex-col gap-1">
-                      <div className="flex gap-1.5">
-                        <Input
-                          id="modal-utr-input"
-                          placeholder="12-digit UTR reference"
-                          maxLength={12}
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={userUtr}
-                          onChange={(e) => setUserUtr(e.target.value.replace(/\D/g, ""))}
-                          className="h-8 text-xs font-mono tracking-wider"
-                          autoFocus
-                        />
+                    <form onSubmit={handleClaimUtr} className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <div className="relative flex-1">
+                          <Input
+                            id="modal-utr-input"
+                            placeholder="12-digit UTR reference"
+                            maxLength={12}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={userUtr}
+                            onChange={(e) => setUserUtr(e.target.value.replace(/\D/g, ""))}
+                            className="h-10 text-base sm:text-sm font-mono tracking-wider pr-14 bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={handlePasteUtr}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2 py-1 text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 rounded-md border border-teal-200 transition"
+                          >
+                            Paste
+                          </button>
+                        </div>
                         <Button
                           type="submit"
                           disabled={submittingUtr || userUtr.length !== 12}
-                          className="h-8 px-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shrink-0"
+                          className="h-10 px-3.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shrink-0"
                         >
                           {submittingUtr ? (
                             <Loader2 className="size-3.5 animate-spin" />

@@ -46,6 +46,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
     control,
     trigger,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(paidRegistrationSchema),
@@ -61,11 +62,90 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
   const values = useWatch({ control });
   const total = calculatePaidRegistrationTotal(event.pricePerAttendee ?? 0, Number(values.attendeeCount ?? 1));
 
+  // Check for 1-click email verification completion or saved session
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const verifiedParam = params.get("verified");
+    const guestIdParam = params.get("guestId");
+    const guestTokenParam = params.get("guestToken");
+    const emailParam = params.get("email");
+
+    if (verifiedParam === "true" && guestIdParam && guestTokenParam) {
+      setGuestVerificationId(guestIdParam);
+      setGuestVerificationToken(guestTokenParam);
+      if (emailParam) {
+        const norm = emailParam.toLowerCase();
+        setGuestVerificationEmail(norm);
+        setValue("email", norm, { shouldValidate: true });
+      }
+      toast.success("Email verified successfully! You can now proceed to payment.");
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem("csc_guest_verification");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.id && parsed.token && Date.now() - (parsed.verifiedAt || 0) < 15 * 60_000) {
+          if (!parsed.eventSlug || parsed.eventSlug === event.slug) {
+            setGuestVerificationId(parsed.id);
+            setGuestVerificationToken(parsed.token);
+            setGuestVerificationEmail(parsed.email?.toLowerCase() || null);
+            if (parsed.email) setValue("email", parsed.email, { shouldValidate: true });
+          }
+        }
+      }
+    } catch {
+      // Ignore storage error
+    }
+  }, [event.slug, setValue]);
+
+  // Restore draft values
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storageKey = `csc_reg_draft_${event.id}`;
+    try {
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft.fullName) setValue("fullName", draft.fullName);
+        if (draft.whatsapp) setValue("whatsapp", draft.whatsapp);
+        if (draft.organization) setValue("organization", draft.organization);
+        if (draft.role) setValue("role", draft.role);
+        if (draft.referralSource) setValue("referralSource", draft.referralSource);
+      }
+    } catch {
+      // Ignore
+    }
+  }, [event.id, setValue]);
+
+  // Persist form draft as user types
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storageKey = `csc_reg_draft_${event.id}`;
+    try {
+      sessionStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          fullName: values.fullName || "",
+          whatsapp: values.whatsapp || "",
+          organization: values.organization || "",
+          role: values.role || "",
+          referralSource: values.referralSource || "",
+        })
+      );
+    } catch {
+      // Ignore
+    }
+  }, [event.id, values.fullName, values.whatsapp, values.organization, values.role, values.referralSource]);
+
   const requestGuestEmailVerification = async (email: string) => {
     const response = await fetch("/api/payments/guest-email/request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, eventId: event.id }),
+      body: JSON.stringify({ email, eventId: event.id, eventSlug: event.slug }),
     });
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.error || "Could not send the verification code.");
@@ -73,7 +153,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
     setGuestVerificationToken(null);
     setGuestVerificationEmail(email.toLowerCase());
     setGuestVerificationCode("");
-    toast.success("A verification code was sent to your email address.");
+    toast.success("Verification link & code sent! Click the button in your email to verify instantly.");
   };
 
   const handleVerifyGuestEmail = async () => {
@@ -317,10 +397,19 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
               <FieldLabel htmlFor="paid-email">Email</FieldLabel>
               <Input id="paid-email" type="email" autoComplete="email" {...register("email")} aria-invalid={!!errors.email} />
               {errors.email && <FieldError>{errors.email.message}</FieldError>}
+              {guestVerificationToken && guestVerificationEmail === (values.email || "").trim().toLowerCase() && (
+                <div className="mt-2 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                  <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                  <span>Email verified · Ready for instant UPI checkout</span>
+                </div>
+              )}
               {guestVerificationId && !guestVerificationToken && (
                 <div className="mt-2 flex flex-col gap-1.5 rounded-xl border border-teal-200 bg-teal-50/70 p-3 text-xs">
-                  <span className="font-semibold text-teal-900">Enter 6-digit code sent to your email:</span>
-                  <div className="flex gap-2">
+                  <span className="font-semibold text-teal-900">Verification link &amp; code sent:</span>
+                  <p className="text-[11px] text-teal-800 leading-relaxed">
+                    Check your email and click <strong>&quot;Verify Email &amp; Complete Checkout&quot;</strong> to continue automatically, or enter your 6-digit code below:
+                  </p>
+                  <div className="flex gap-2 mt-0.5">
                     <Input
                       placeholder="6-digit code"
                       maxLength={6}
@@ -335,7 +424,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
                       disabled={verifyingEmail || guestVerificationCode.length !== 6}
                       className="h-9 px-3 bg-teal-600 hover:bg-teal-700 text-white text-xs shrink-0"
                     >
-                      {verifyingEmail ? <Loader2 className="size-3.5 animate-spin" /> : "Verify Email"}
+                      {verifyingEmail ? <Loader2 className="size-3.5 animate-spin" /> : "Verify Code"}
                     </Button>
                   </div>
                 </div>

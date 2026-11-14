@@ -5,7 +5,11 @@ import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
 import { createGuestEmailVerification } from "@/lib/payments/guest-email-verification";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 
-const schema = z.object({ email: z.string().trim().email().max(254), eventId: z.string().uuid() });
+const schema = z.object({
+  email: z.string().trim().email().max(254),
+  eventId: z.string().uuid(),
+  eventSlug: z.string().trim().max(120).optional(),
+});
 
 export async function POST(request: Request) {
   if (request.headers.get("origin") !== new URL(request.url).origin) {
@@ -27,9 +31,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await createGuestEmailVerification(admin, parsed.data.email, parsed.data.eventId);
+    const result = await createGuestEmailVerification(admin, parsed.data.email, parsed.data.eventId, parsed.data.eventSlug);
     scheduleNotificationDelivery();
-    return NextResponse.json({ ok: true, verificationId: result.id, expiresAt: result.expiresAt }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({
+      ok: true,
+      verificationId: result.id,
+      expiresAt: result.expiresAt,
+      verificationUrl: result.verificationUrl,
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ ok: false, error: "Email verification is temporarily unavailable." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
