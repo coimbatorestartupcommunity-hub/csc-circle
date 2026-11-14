@@ -2,6 +2,6 @@
   "functions": { "src/app/api/**/route.ts": { "maxDuration": 300 } },
   "crons": [
     { "path": "/api/internal/notifications", "schedule": "0 2 * * *" },
-    { "path": "/api/internal/payments/reconcile", "schedule": "* * * * *" }
+    { "path": "/api/internal/payments/reconcile", "schedule": "0 3 * * *" }
   ]
 }
