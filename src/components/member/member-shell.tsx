@@ -96,7 +96,7 @@ export function MemberShell({
               href="/"
               aria-label="Back to Home Page"
               title="Back to Home Page"
-              className="hidden sm:inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-brand-border bg-brand-white px-2.5 text-xs font-semibold whitespace-nowrap text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3"
+              className="inline-flex size-9 sm:h-9 sm:w-auto shrink-0 items-center justify-center gap-2 rounded-full sm:rounded-lg border border-brand-border bg-brand-white text-brand-muted hover:text-brand-ink sm:text-xs sm:font-semibold sm:text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3"
             >
               <Home className="size-4" aria-hidden="true" />
               <span className="hidden lg:inline">Back to Home Page</span>
