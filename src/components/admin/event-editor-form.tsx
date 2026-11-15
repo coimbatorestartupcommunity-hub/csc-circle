@@ -61,7 +61,9 @@ export function EventEditorForm({
   });
   const [saving, setSaving] = React.useState(false);
   const [uploadingCover, setUploadingCover] = React.useState(false);
-  const [publicationConsent, setPublicationConsent] = React.useState(false);
+  const [publicationConsent, setPublicationConsent] = React.useState(
+    () => initial?.status === "published"
+  );
   const [coverPreview, setCoverPreview] = React.useState(() => {
     const value = initial?.coverImage ?? "";
     return value.startsWith("event-covers/") && eventId ? `/api/admin/events/cover?event=${eventId}` : value;
@@ -150,12 +152,23 @@ export function EventEditorForm({
       }
       notifySubmissionSuccess({ title: v.status === "published" ? "Event published across CSC" : "Event draft saved", message: v.status === "published" ? "The event, Featured Event Notice and linked Update are now available from the same event content." : "The event draft was saved." });
       router.push(`/admin/events/${data.id}`); router.refresh();
-    } catch { toast.error("Could not save the event."); }
-    finally { setSaving(false); }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save the event.");
+    } finally {
+      setSaving(false);
+    }
   }
 
+  const onFormError = (formErrors: Record<string, unknown>) => {
+    const errorKeys = Object.keys(formErrors);
+    if (errorKeys.length > 0) {
+      const firstError = Object.values(formErrors)[0] as { message?: string } | undefined;
+      toast.error(`Please review the form: ${errorKeys.join(", ")}. ${firstError?.message || ""}`);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid w-full min-w-0 gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+    <form onSubmit={handleSubmit(onSubmit, onFormError)} className="grid w-full min-w-0 gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
       <div className="flex min-w-0 flex-col gap-5">
         <Section title="A · Basic information">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -385,9 +398,7 @@ export function EventEditorForm({
                     placeholder="e.g. 299"
                     {...register("price", {
                       onChange: (e) => {
-                        if (!getValues("pricePerAttendee")) {
-                          setValue("pricePerAttendee", e.target.value);
-                        }
+                        setValue("pricePerAttendee", e.target.value, { shouldDirty: true, shouldValidate: true });
                       },
                     })}
                   />
@@ -405,7 +416,17 @@ export function EventEditorForm({
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="e-price-attendee">Price per attendee (₹)</FieldLabel>
-                  <Input id="e-price-attendee" type="number" min="1" step="0.01" {...register("pricePerAttendee")} />
+                  <Input
+                    id="e-price-attendee"
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    {...register("pricePerAttendee", {
+                      onChange: (e) => {
+                        setValue("price", e.target.value, { shouldDirty: true, shouldValidate: true });
+                      },
+                    })}
+                  />
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="e-max-attendees">Maximum attendees per registration</FieldLabel>

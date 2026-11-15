@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
   const { data: event, error: eventError } = await admin.from("events").select("id,slug,title,summary,description,starts_at,ends_at,venue,location,cover_image,status,admission,registration_mode,upi_vpa,upi_payee_name,upi_qr_path").eq("id", eventId).maybeSingle();
   if (eventError || !event) return NextResponse.json({ error: "The event could not be loaded." }, { status: 404 });
   if (event.status !== "published") return NextResponse.json({ error: "Save the event as published first." }, { status: 409 });
-  if (event.registration_mode === "paid_upi" && (!event.upi_vpa || !event.upi_payee_name || !event.upi_qr_path)) return NextResponse.json({ error: "Set the UPI VPA, payee name and QR before publication." }, { status: 422 });
+  if (event.registration_mode === "paid_upi" && (!event.upi_vpa || !event.upi_payee_name)) return NextResponse.json({ error: "Set the UPI VPA and payee name before publication." }, { status: 422 });
   const storage = admin.storage.from("member-portraits");
   let bytes: Buffer | null = null;
   const coverPath = String(event.cover_image ?? "");
@@ -68,10 +68,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ eve
   const db = await createClient() as unknown as SupabaseClient;
   const noticeId = String(existingNotice?.id ?? randomUUID());
   const description = String(event.description ?? event.summary ?? "").trim();
-  const noticeContent = buildEventNoticeContent({ title: String(event.title), summary: String(event.summary ?? ""), description });
+  const noticeTitle = String(event.title ?? "").trim().slice(0, 100);
+  const noticeContent = buildEventNoticeContent({ title: noticeTitle, summary: String(event.summary ?? ""), description });
   const { error: noticeError } = await db.rpc("csc_manage_event_notice", {
     operation: "publish", notice_id: noticeId, linked_event_id: eventId,
-    notice_title: noticeContent.title,
+    notice_title: noticeTitle,
     notice_message: noticeContent.message,
     notice_button_label: noticeContent.buttonLabel, notice_banner_path: noticeBanner,
     starts_at: new Date().toISOString(), stops_at: String(event.ends_at), priority: 900,

@@ -37,9 +37,11 @@ export default async function EditEventPage({
     venueName: row?.venue ?? rawSettings.venueName ?? e?.venue,
     venueAddress: row?.location ?? rawSettings.venueAddress,
     admission: (row?.admission ?? rawSettings.admission ?? e?.admission ?? "free") as "free" | "paid",
-    price: row?.price_minor ? String(row.price_minor / 100) : rawSettings.price ? String(rawSettings.price) : "0",
+    price: row?.price_minor ? String(row.price_minor / 100) : rawSettings.price ? String(rawSettings.price) : rawSettings.pricePerAttendee ? String(rawSettings.pricePerAttendee) : "0",
+    pricePerAttendee: row?.price_per_attendee ? String(row.price_per_attendee) : row?.price_minor ? String(row.price_minor / 100) : rawSettings.pricePerAttendee ? String(rawSettings.pricePerAttendee) : "0",
     capacity: row?.capacity != null ? String(row.capacity) : rawSettings.capacity ? String(rawSettings.capacity) : undefined,
     completed: row?.registration_state === "completed" || Boolean(rawSettings.completed) || Boolean(e?.isCompleted),
+    timeTba: Boolean(rawSettings.timeTba),
     status: (row?.status ?? rawSettings.status ?? (e?.status === "published" ? "published" : "draft")) as "draft" | "published",
     date: row?.starts_at ? row.starts_at.slice(0, 10) : rawSettings.date,
     startTime: row?.starts_at ? new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(row.starts_at)) : rawSettings.startTime,
@@ -48,7 +50,7 @@ export default async function EditEventPage({
     upiVpa: row?.upi_vpa ?? rawSettings.upiVpa,
     upiPayeeName: row?.upi_payee_name ?? rawSettings.upiPayeeName,
     upiQrPath: row?.upi_qr_path ?? rawSettings.upiQrPath,
-    onlineInfo: rawSettings.onlineInfo ?? (row?.maps_url?.includes("meet.google.com") ? row.maps_url : undefined),
+    onlineInfo: rawSettings.onlineInfo ? String(rawSettings.onlineInfo) : (row?.maps_url?.includes("meet.google.com") ? row.maps_url : "https://meet.google.com/vwg-hmsh-mrx"),
     registrationMode: (row?.registration_mode ?? rawSettings.registrationMode ?? (row?.admission === "paid" ? "paid_upi" : "rsvp")) as "rsvp" | "paid_upi",
   };
 

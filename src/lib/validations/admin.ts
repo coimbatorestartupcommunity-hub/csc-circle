@@ -69,17 +69,54 @@ export const eventEditorSchema = z.object({
   // H. Publication
   status: z.enum(["draft", "published"]),
   completed: z.boolean().optional(),
-}).transform((event) => ({
-  ...event,
-  ...(event.format === "online" ? { venueName: "", venueAddress: "", mapsUrl: "" } : {}),
-  ...(event.format === "offline" ? { onlineInfo: "" } : {}),
-  ...(event.admission === "free" ? { price: "0", pricePerAttendee: "0", currency: "INR", registrationMode: "rsvp" as const, paymentInstructions: "", upiVpa: "", upiPayeeName: "", upiQrPath: "", paymentNote: "" } : {}),
-})).superRefine((event, ctx) => {
-  if (event.format !== "offline" && !event.onlineInfo && event.status === "published") ctx.addIssue({ code: "custom", path: ["onlineInfo"], message: "Add the online meeting or calendar link before publishing." });
+}).transform((event) => {
+  const isPaid = event.admission === "paid";
+  const parsedPrice = isPaid
+    ? (event.pricePerAttendee?.trim() || event.price?.trim() || "1")
+    : "0";
+
+  return {
+    ...event,
+    price: parsedPrice,
+    pricePerAttendee: parsedPrice,
+    currency: "INR",
+    registrationMode: isPaid ? ("paid_upi" as const) : ("rsvp" as const),
+    upiQrPath: isPaid ? (event.upiQrPath?.trim() || "") : "",
+    upiPayeeName: isPaid ? (event.upiPayeeName?.trim() || "") : "",
+    upiVpa: isPaid ? (event.upiVpa?.trim() || "") : "",
+    paymentInstructions: isPaid ? (event.paymentInstructions?.trim() || "") : "",
+    paymentNote: isPaid ? (event.paymentNote?.trim() || "") : "",
+    ...(event.format === "online"
+      ? {
+          venueName: event.venueName?.trim() || "Online (Google Meet)",
+          venueAddress: event.venueAddress?.trim() || "Google Meet",
+          mapsUrl: "",
+        }
+      : {}),
+    ...(event.format === "offline" ? { onlineInfo: "" } : {}),
+  };
+}).superRefine((event, ctx) => {
+  if (event.format !== "offline" && !event.onlineInfo && event.status === "published") {
+    ctx.addIssue({
+      code: "custom",
+      path: ["onlineInfo"],
+      message: "Add the online meeting or calendar link before publishing.",
+    });
+  }
   if (event.registrationMode === "paid_upi") {
     const price = Number(event.pricePerAttendee);
-    if (event.admission !== "paid" || !Number.isFinite(price) || price <= 0) ctx.addIssue({ code: "custom", path: ["pricePerAttendee"], message: "Paid UPI registration requires a positive price per attendee." });
-    if (event.status === "published" && (!event.upiVpa?.trim() || !event.upiPayeeName?.trim())) ctx.addIssue({ code: "custom", path: ["upiVpa"], message: "Set the UPI VPA and payee name before publishing." });
+    if (event.admission !== "paid" || !Number.isFinite(price) || price <= 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["pricePerAttendee"],
+        message: "Paid UPI registration requires a positive price per attendee.",
+      });
+    }
+    if (event.status === "published") {
+      if (!event.upiVpa?.trim()) ctx.addIssue({ code: "custom", path: ["upiVpa"], message: "Set the UPI VPA before publishing." });
+      if (!event.upiPayeeName?.trim()) ctx.addIssue({ code: "custom", path: ["upiPayeeName"], message: "Set the payee name before publishing." });
+      if (!event.upiQrPath?.trim()) ctx.addIssue({ code: "custom", path: ["upiQrPath"], message: "Set the UPI QR reference before publishing." });
+    }
   }
 });
 
