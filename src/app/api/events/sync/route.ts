@@ -53,8 +53,16 @@ export async function GET() {
 
 > **Important Notes:** Online check-in and Google Meet access open **3 hours before the meeting**. Complete your details below to secure your free seat.`;
 
+      const cleanSettings = { ...currentSettings };
+      delete cleanSettings.registrationMode;
+      delete cleanSettings.registration_mode;
+      delete cleanSettings.pricePerAttendee;
+      delete cleanSettings.price_per_attendee;
+      delete cleanSettings.price;
+      delete cleanSettings.price_minor;
+
       const updatedSettings = {
-        ...currentSettings,
+        ...cleanSettings,
         title: "Coimbatore Startup Community (CSC) - Joint Online Meeting",
         coverImage: "/events/csc-joint-online-meeting-cover.webp",
         bannerImage: "/events/csc-joint-online-meeting-banner.webp",
@@ -63,8 +71,9 @@ export async function GET() {
         timeTba: true,
         admission: "free",
         registrationMode: "rsvp",
+        registration_mode: "rsvp",
         price: "0",
-        pricePerAttendee: "",
+        pricePerAttendee: null,
         upiVpa: null,
         upiPayeeName: null,
         upiQrPath: null,
@@ -88,7 +97,7 @@ export async function GET() {
         .select();
 
       if (updateError) {
-        return NextResponse.json({ ok: false, error: updateError.message, eventId: event.id }, { status: 500 });
+        return NextResponse.json({ ok: false, error: updateError.message, eventId: event.id, syncVersion: "v3-clean" }, { status: 500 });
       }
 
       // Cancel any legacy pending orders
