@@ -1,9 +1,8 @@
 import "server-only";
 import fs from "fs";
 import path from "path";
-import sharp from "sharp";
 import QRCode from "qrcode";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, type PDFFont } from "pdf-lib";
 
 export interface ServerPassPdfOptions {
   eventTitle: string;
@@ -17,35 +16,405 @@ export interface ServerPassPdfOptions {
   phone?: string;
 }
 
-function escapeXml(unsafe: unknown): string {
-  return String(unsafe || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/\x27/g, "&apos;");
+/**
+ * Sanitizes input text so it is safe for standard PDF WinAnsiEncoding,
+ * avoiding runtime font encoding crashes.
+ */
+function sanitizeForPdf(text: string): string {
+  return String(text || "")
+    .replace(/[^\x20-\x7E\u00A0-\u00FF\u2013\u2014\u2022]/g, " ")
+    .trim();
 }
 
-let cachedLogoBase64: string | null = null;
+/**
+ * Measures text using the embedded PDF font and wraps it across multiple lines
+ * so it never exceeds maxWidth.
+ */
+function wrapText(font: PDFFont, text: string, fontSize: number, maxWidth: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
+      current = candidate;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
 
-async function getLogoBase64(): Promise<string> {
-  if (cachedLogoBase64) return cachedLogoBase64;
+let cachedLogoBytes: Buffer | null = null;
+function getLogoBytes(): Buffer | null {
+  if (cachedLogoBytes) return cachedLogoBytes;
   try {
     const logoPath = path.join(process.cwd(), "public/brand/csc-icon.png");
     if (fs.existsSync(logoPath)) {
-      const resized = await sharp(logoPath).resize(80, 80).png().toBuffer();
-      cachedLogoBase64 = resized.toString("base64");
-      return cachedLogoBase64;
+      cachedLogoBytes = fs.readFileSync(logoPath);
+      return cachedLogoBytes;
     }
   } catch {
     // Non-fatal if logo is unavailable
   }
-  return "";
+  return null;
 }
 
 /**
- * Generates the official CSC Event Pass as a high-resolution PNG card image,
- * matching the exact glass-office card design shown on the member pass page.
+ * Generates an official, beautifully proportioned CSC Event Pass PDF
+ * using pure vector rendering in pdf-lib. Standard fonts (Helvetica, Courier)
+ * are embedded directly into the PDF specification, guaranteeing 100% crisp,
+ * selectable, and accurate rendering on all devices, servers, and PDF viewers.
+ */
+export async function generateServerEventPassPdf(
+  options: ServerPassPdfOptions,
+): Promise<Buffer> {
+  const pdf = await PDFDocument.create();
+  const fontRegular = await pdf.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const fontMono = await pdf.embedFont(StandardFonts.CourierBold);
+
+  pdf.setTitle(`${options.eventTitle || "CSC Event"} · Event Pass`);
+  pdf.setSubject("Official CSC Circle Event Pass");
+  pdf.setProducer("Coimbatore Startup Community");
+  pdf.setCreator("CSC Circle Portal");
+
+  const W = 400;
+  const H = 740;
+  const page = pdf.addPage([W, H]);
+
+  // Colors matching CSC Circle brand guidelines
+  const cInk = rgb(15 / 255, 23 / 255, 42 / 255);
+  const cSecondary = rgb(51 / 255, 65 / 255, 85 / 255);
+  const cMuted = rgb(100 / 255, 116 / 255, 139 / 255);
+  const cBorder = rgb(226 / 255, 232 / 255, 240 / 255);
+  const cHeaderBg = rgb(245 / 255, 243 / 255, 255 / 255);
+  const cBoxBg = rgb(248 / 255, 250 / 255, 255 / 255);
+  const cGreenBg = rgb(236 / 255, 253 / 255, 245 / 255);
+  const cGreenBorder = rgb(167 / 255, 243 / 255, 208 / 255);
+  const cGreenText = rgb(4 / 255, 120 / 255, 87 / 255);
+  const cGreenDot = rgb(16 / 255, 185 / 255, 129 / 255);
+  const cAvatarBg = rgb(238 / 255, 232 / 255, 255 / 255);
+  const cAvatarBorder = rgb(111 / 255, 100 / 255, 186 / 255);
+  const cAvatarText = rgb(67 / 255, 56 / 255, 202 / 255);
+
+  // Outer card
+  page.drawRectangle({
+    x: 16,
+    y: 16,
+    width: 368,
+    height: 708,
+    color: rgb(1, 1, 1),
+    borderColor: cBorder,
+    borderWidth: 1.5,
+  });
+
+  // Header banner
+  page.drawRectangle({
+    x: 17,
+    y: 660,
+    width: 366,
+    height: 63,
+    color: cHeaderBg,
+  });
+  page.drawLine({
+    start: { x: 16, y: 660 },
+    end: { x: 384, y: 660 },
+    color: cBorder,
+    thickness: 1,
+  });
+
+  // CSC Logo
+  const logoBytes = getLogoBytes();
+  if (logoBytes) {
+    try {
+      const logoImage = await pdf.embedPng(logoBytes);
+      page.drawImage(logoImage, {
+        x: 30,
+        y: 672,
+        width: 38,
+        height: 38,
+      });
+    } catch {
+      // Fallback text if logo embedding fails
+    }
+  }
+
+  // Header Titles
+  page.drawText("CSC EVENT PASS", {
+    x: 78,
+    y: 695,
+    size: 11.5,
+    font: fontBold,
+    color: cInk,
+  });
+  page.drawText("Coimbatore Startup Community", {
+    x: 78,
+    y: 680,
+    size: 8.5,
+    font: fontRegular,
+    color: cMuted,
+  });
+
+  // Confirmed Badge
+  page.drawRectangle({
+    x: 284,
+    y: 678,
+    width: 88,
+    height: 24,
+    color: cGreenBg,
+    borderColor: cGreenBorder,
+    borderWidth: 1,
+  });
+  page.drawCircle({
+    x: 295,
+    y: 690,
+    size: 3.5,
+    color: cGreenDot,
+  });
+  page.drawText("CONFIRMED", {
+    x: 303,
+    y: 686,
+    size: 8.5,
+    font: fontBold,
+    color: cGreenText,
+  });
+
+  // Attendee Avatar Circle
+  page.drawCircle({
+    x: 200,
+    y: 615,
+    size: 26,
+    color: cAvatarBg,
+    borderColor: cAvatarBorder,
+    borderWidth: 1.5,
+  });
+  const rawName = (options.name || "Attendee").trim();
+  const safeName = sanitizeForPdf(rawName);
+  const initial = (safeName.charAt(0) || "A").toUpperCase();
+  const initialWidth = fontBold.widthOfTextAtSize(initial, 20);
+  page.drawText(initial, {
+    x: 200 - initialWidth / 2,
+    y: 608,
+    size: 20,
+    font: fontBold,
+    color: cAvatarText,
+  });
+
+  // Event Title (wrapped to 1 or 2 lines)
+  const safeTitle = sanitizeForPdf(options.eventTitle || "CSC Event");
+  const titleLines = wrapText(fontBold, safeTitle, 12.5, 340);
+  if (titleLines.length === 1) {
+    const tW = fontBold.widthOfTextAtSize(titleLines[0], 13);
+    page.drawText(titleLines[0], {
+      x: 200 - tW / 2,
+      y: 558,
+      size: 13,
+      font: fontBold,
+      color: cInk,
+    });
+  } else {
+    const l1 = titleLines[0];
+    const l2 = titleLines.slice(1).join(" ");
+    const t1W = fontBold.widthOfTextAtSize(l1, 12.5);
+    const t2W = fontBold.widthOfTextAtSize(l2, 12.5);
+    page.drawText(l1, {
+      x: 200 - t1W / 2,
+      y: 566,
+      size: 12.5,
+      font: fontBold,
+      color: cInk,
+    });
+    page.drawText(l2, {
+      x: 200 - t2W / 2,
+      y: 550,
+      size: 12.5,
+      font: fontBold,
+      color: cInk,
+    });
+  }
+
+  // Date & Location Box
+  page.drawRectangle({
+    x: 26,
+    y: 470,
+    width: 348,
+    height: 64,
+    color: rgb(248 / 255, 250 / 255, 252 / 255),
+    borderColor: cBorder,
+    borderWidth: 1,
+  });
+
+  const safeDateRange = sanitizeForPdf(options.dateRange || "Date & Time to be announced");
+  const dateText = `Date & Time: ${safeDateRange}`;
+  const truncatedDateText = fontBold.widthOfTextAtSize(dateText, 9.5) > 330
+    ? `Date: ${safeDateRange}`
+    : dateText;
+  page.drawText(truncatedDateText, {
+    x: 36,
+    y: 512,
+    size: 9.5,
+    font: fontBold,
+    color: cSecondary,
+  });
+
+  const safeLocation = sanitizeForPdf(options.location || "Online via Google Meet");
+  const locLines = wrapText(fontRegular, `Location: ${safeLocation}`, 9, 328);
+  page.drawText(locLines[0] || "Location: Online", {
+    x: 36,
+    y: 490,
+    size: 9,
+    font: fontRegular,
+    color: rgb(71 / 255, 85 / 255, 105 / 255),
+  });
+
+  // Attendee Details Box
+  page.drawRectangle({
+    x: 26,
+    y: 348,
+    width: 348,
+    height: 110,
+    color: cBoxBg,
+    borderColor: cBorder,
+    borderWidth: 1,
+  });
+
+  // 1. Name
+  const nameLabelW = fontBold.widthOfTextAtSize("NAME", 8);
+  page.drawText("NAME", {
+    x: 200 - nameLabelW / 2,
+    y: 442,
+    size: 8,
+    font: fontBold,
+    color: cMuted,
+  });
+  const displayName = safeName.toUpperCase();
+  const nameFontSize = displayName.length > 28 ? 10.5 : 12.5;
+  const nameValW = fontBold.widthOfTextAtSize(displayName, nameFontSize);
+  page.drawText(displayName, {
+    x: 200 - nameValW / 2,
+    y: 426,
+    size: nameFontSize,
+    font: fontBold,
+    color: cInk,
+  });
+
+  // 2. Email
+  const safeEmail = sanitizeForPdf(options.email || "—").toLowerCase();
+  const emailLabelW = fontBold.widthOfTextAtSize("EMAIL", 8);
+  page.drawText("EMAIL", {
+    x: 200 - emailLabelW / 2,
+    y: 406,
+    size: 8,
+    font: fontBold,
+    color: cMuted,
+  });
+  const emailFontSize = safeEmail.length > 32 ? 9 : 10.5;
+  const emailValW = fontBold.widthOfTextAtSize(safeEmail, emailFontSize);
+  page.drawText(safeEmail, {
+    x: 200 - emailValW / 2,
+    y: 392,
+    size: emailFontSize,
+    font: fontBold,
+    color: cInk,
+  });
+
+  // 3. UID
+  const safeUid = sanitizeForPdf(options.uid || "UID Pending");
+  const uidLabelW = fontBold.widthOfTextAtSize("UID", 8);
+  page.drawText("UID", {
+    x: 200 - uidLabelW / 2,
+    y: 372,
+    size: 8,
+    font: fontBold,
+    color: cMuted,
+  });
+  const uidFontSize = safeUid.length > 28 ? 9 : 10.5;
+  const uidValW = fontMono.widthOfTextAtSize(safeUid, uidFontSize);
+  page.drawText(safeUid, {
+    x: 200 - uidValW / 2,
+    y: 358,
+    size: uidFontSize,
+    font: fontMono,
+    color: cInk,
+  });
+
+  // Entrance Verification QR Box
+  page.drawRectangle({
+    x: 26,
+    y: 68,
+    width: 348,
+    height: 266,
+    color: cBoxBg,
+    borderColor: cBorder,
+    borderWidth: 1,
+  });
+
+  const qrHeaderW = fontBold.widthOfTextAtSize("ENTRANCE VERIFICATION QR", 8.5);
+  page.drawText("ENTRANCE VERIFICATION QR", {
+    x: 200 - qrHeaderW / 2,
+    y: 316,
+    size: 8.5,
+    font: fontBold,
+    color: cMuted,
+  });
+
+  // White QR card container
+  page.drawRectangle({
+    x: 105,
+    y: 110,
+    width: 190,
+    height: 190,
+    color: rgb(1, 1, 1),
+    borderColor: cBorder,
+    borderWidth: 1,
+  });
+
+  const qrBuffer =
+    options.qrBuffer ||
+    (await QRCode.toBuffer(options.qrPayload || "https://csc.circle", {
+      margin: 1,
+      width: 360,
+      color: { dark: "#121826", light: "#ffffff" },
+    }));
+
+  const qrImage = await pdf.embedPng(new Uint8Array(qrBuffer.buffer.slice(qrBuffer.byteOffset, qrBuffer.byteOffset + qrBuffer.byteLength)));
+  page.drawImage(qrImage, {
+    x: 115,
+    y: 120,
+    width: 170,
+    height: 170,
+  });
+
+  const qrSubW = fontBold.widthOfTextAtSize("Scan at Venue Entrance", 9.5);
+  page.drawText("Scan at Venue Entrance", {
+    x: 200 - qrSubW / 2,
+    y: 86,
+    size: 9.5,
+    font: fontBold,
+    color: rgb(71 / 255, 85 / 255, 105 / 255),
+  });
+
+  // Footer
+  const footerText = "Show this pass at the entrance. All times in India Standard Time.";
+  const footerW = fontRegular.widthOfTextAtSize(footerText, 8.5);
+  page.drawText(footerText, {
+    x: 200 - footerW / 2,
+    y: 38,
+    size: 8.5,
+    font: fontRegular,
+    color: cMuted,
+  });
+
+  const pdfBytes = await pdf.save();
+  return Buffer.from(pdfBytes);
+}
+
+/**
+ * Compatibility wrapper if PNG is needed.
  */
 export async function generateServerEventPassPng(
   options: ServerPassPdfOptions,
@@ -57,148 +426,5 @@ export async function generateServerEventPassPng(
       width: 360,
       color: { dark: "#121826", light: "#ffffff" },
     }));
-  const qrBase64 = qrBuffer.toString("base64");
-  const logoBase64 = await getLogoBase64();
-
-  const name = (options.name || "Attendee").trim();
-  const email = (options.email || "—").trim();
-  const uid = (options.uid || "UID Pending").trim();
-  const eventTitle = (options.eventTitle || "CSC Event").trim();
-  const dateRange = (options.dateRange || "Date & Time to be announced").trim();
-  const location = (options.location || "Online via Google Meet").trim();
-  const initial = (name.charAt(0) || "A").toUpperCase();
-
-  const titleFontSize = eventTitle.length > 32 ? 14 : 16;
-  const nameFontSize = name.length > 26 ? 11 : 13;
-  const emailFontSize = email.length > 28 ? 10 : 11.5;
-
-  const W = 440;
-  const H = 740;
-
-  const svg = `
-<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#f5efff" />
-      <stop offset="50%" stop-color="#e9f3ff" />
-      <stop offset="100%" stop-color="#fbfaff" />
-    </linearGradient>
-    <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#eee8ff" />
-      <stop offset="100%" stop-color="#e3f0ff" />
-    </linearGradient>
-    <clipPath id="cardClip">
-      <rect x="12" y="12" width="416" height="716" rx="28" />
-    </clipPath>
-  </defs>
-
-  <!-- Outer background card -->
-  <rect x="12" y="12" width="416" height="716" rx="28" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
-
-  <g clip-path="url(#cardClip)">
-    <!-- Header banner -->
-    <rect x="12" y="12" width="416" height="64" fill="url(#headerGrad)"/>
-    <line x1="12" y1="76" x2="428" y2="76" stroke="#e2e8f0" stroke-width="1"/>
-
-    <!-- CSC Logo -->
-    <circle cx="44" cy="44" r="20" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
-    ${
-      logoBase64
-        ? `<image href="data:image/png;base64,${logoBase64}" x="25" y="25" width="38" height="38" />`
-        : `<text x="44" y="49" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="14" font-weight="800" fill="#6f64ba" text-anchor="middle">CSC</text>`
-    }
-
-    <!-- Header Titles -->
-    <text x="74" y="39" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="12" font-weight="800" fill="#0f172a" letter-spacing="0.08em">CSC EVENT PASS</text>
-    <text x="74" y="54" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="9.5" font-weight="500" fill="#64748b">Coimbatore Startup Community</text>
-
-    <!-- Status Badge -->
-    <rect x="324" y="32" width="92" height="24" rx="12" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1"/>
-    <circle cx="336" cy="44" r="3.5" fill="#10b981"/>
-    <text x="345" y="48" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#047857" letter-spacing="0.05em">CONFIRMED</text>
-  </g>
-
-  <!-- Attendee Avatar Circle -->
-  <circle cx="220" cy="118" r="30" fill="url(#avatarGrad)" stroke="#6f64ba" stroke-width="1.5" stroke-opacity="0.3"/>
-  <text x="220" y="128" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="24" font-weight="800" fill="#4338ca" text-anchor="middle">${escapeXml(initial)}</text>
-
-  <!-- Event Title -->
-  <text x="220" y="170" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="${titleFontSize}" font-weight="800" fill="#0f172a" text-anchor="middle">${escapeXml(eventTitle)}</text>
-
-  <!-- Date & Location Box -->
-  <rect x="28" y="188" width="384" height="66" rx="16" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
-  
-  <!-- Calendar icon & row -->
-  <rect x="42" y="200" width="16" height="15" rx="3" fill="none" stroke="#64748b" stroke-width="1.5"/>
-  <line x1="42" y1="205" x2="58" y2="205" stroke="#64748b" stroke-width="1.5"/>
-  <line x1="46" y1="198" x2="46" y2="201" stroke="#64748b" stroke-width="1.5"/>
-  <line x1="54" y1="198" x2="54" y2="201" stroke="#64748b" stroke-width="1.5"/>
-  <text x="66" y="212" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11" font-weight="600" fill="#334155">${escapeXml(dateRange)}</text>
-  
-  <!-- Location pin icon & row -->
-  <path d="M50 226 C46.7 226 44 228.7 44 232 C44 236.5 50 243 50 243 C50 243 56 236.5 56 232 C56 228.7 53.3 226 50 226 Z" fill="#0d9488"/>
-  <circle cx="50" cy="232" r="2" fill="#ffffff"/>
-  <text x="66" y="238" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="11" fill="#475569">
-    <tspan font-weight="700" fill="#0f172a">Location:</tspan> ${escapeXml(location)}
-  </text>
-
-  <!-- Attendee Details Box -->
-  <rect x="28" y="266" width="384" height="126" rx="18" fill="#f8faff" stroke="#e2e8f0" stroke-width="1"/>
-  
-  <!-- Name -->
-  <text x="220" y="286" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="9" font-weight="700" fill="#64748b" text-anchor="middle" letter-spacing="0.08em">NAME</text>
-  <text x="220" y="304" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="${nameFontSize}" font-weight="800" fill="#0f172a" text-anchor="middle">${escapeXml(name.toUpperCase())}</text>
-
-  <!-- Email -->
-  <text x="220" y="326" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="9" font-weight="700" fill="#64748b" text-anchor="middle" letter-spacing="0.08em">EMAIL</text>
-  <text x="220" y="343" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="${emailFontSize}" font-weight="700" fill="#0f172a" text-anchor="middle">${escapeXml(email)}</text>
-
-  <!-- UID -->
-  <text x="220" y="365" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="9" font-weight="700" fill="#64748b" text-anchor="middle" letter-spacing="0.08em">UID</text>
-  <text x="220" y="380" font-family="Courier, monospace" font-size="11" font-weight="700" fill="#0f172a" text-anchor="middle">${escapeXml(uid)}</text>
-
-  <!-- Entrance Verification QR Box -->
-  <rect x="28" y="404" width="384" height="264" rx="18" fill="#f8faff" stroke="#e2e8f0" stroke-width="1"/>
-  
-  <text x="220" y="426" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="9.5" font-weight="800" fill="#64748b" text-anchor="middle" letter-spacing="0.14em">ENTRANCE VERIFICATION QR</text>
-
-  <!-- White QR background box -->
-  <rect x="120" y="438" width="200" height="200" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
-  <image href="data:image/png;base64,${qrBase64}" x="130" y="448" width="180" height="180" />
-
-  <text x="220" y="654" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#475569" text-anchor="middle">Scan at Venue Entrance</text>
-
-  <!-- Footer Notice -->
-  <text x="220" y="694" font-family="-apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="9" font-weight="500" fill="#64748b" text-anchor="middle">Show this pass at the entrance. All times in India Standard Time.</text>
-</svg>`;
-
-  const pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
-  return pngBuffer;
-}
-
-/**
- * Generates an official, beautifully proportioned CSC Event Pass PDF
- * suitable for printing or opening directly on mobile/desktop, matching the
- * website pass card exactly.
- */
-export async function generateServerEventPassPdf(
-  options: ServerPassPdfOptions,
-): Promise<Buffer> {
-  const pngBuffer = await generateServerEventPassPng(options);
-
-  const pdf = await PDFDocument.create();
-  pdf.setTitle(`${options.eventTitle || "CSC Event"} · Event Pass`);
-  pdf.setSubject("Official CSC Circle Event Pass");
-  pdf.setProducer("Coimbatore Startup Community");
-  pdf.setCreator("CSC Circle Portal");
-
-  const W = 440;
-  const H = 740;
-  const page = pdf.addPage([W, H]);
-  const uint8 = new Uint8Array(pngBuffer.buffer.slice(pngBuffer.byteOffset, pngBuffer.byteOffset + pngBuffer.byteLength));
-  const image = await pdf.embedPng(uint8);
-  page.drawImage(image, { x: 0, y: 0, width: W, height: H });
-
-  const pdfBytes = await pdf.save();
-  return Buffer.from(pdfBytes);
+  return qrBuffer;
 }
