@@ -54,7 +54,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
       eventId: event.id,
       attendeeCount: 1,
       totalAmountPaid: event.pricePerAttendee ?? 0,
-      consentContact: undefined,
+      consentContact: "true",
       consentPaymentTerms: undefined,
     },
   });
@@ -183,19 +183,41 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
   // Handler for the order-scoped UPI checkout
   const handleProceedToUpi = async () => {
     // Validate primary attendee fields first
-    const isPrimaryValid = await trigger([
-      "fullName",
-      "email",
-      "whatsapp",
-      "organization",
-      "role",
-      "attendeeCount",
-      "consentContact",
-      "consentPaymentTerms",
-    ]);
+    const fieldsToValidate = [
+      "fullName" as const,
+      "email" as const,
+      "whatsapp" as const,
+      "organization" as const,
+      "role" as const,
+      "attendeeCount" as const,
+      "consentPaymentTerms" as const,
+      ...(!isFree ? ["consentContact" as const] : []),
+    ];
+
+    const isPrimaryValid = await trigger(fieldsToValidate);
 
     if (!isPrimaryValid) {
-      toast.error("Please fill in all required registration details for Attendee 1.");
+      const err = errors;
+      const count = Number(getValues("attendeeCount") || 1);
+      const prefix = count > 1 ? "Attendee 1: " : "";
+
+      if (err.fullName) {
+        toast.error(`${prefix}${err.fullName.message || "Please enter your full name (at least 2 characters)."}`);
+      } else if (err.email) {
+        toast.error(`${prefix}${err.email.message || "Please enter a valid email address."}`);
+      } else if (err.whatsapp) {
+        toast.error(`${prefix}${err.whatsapp.message || "Please enter a valid WhatsApp number."}`);
+      } else if (err.organization) {
+        toast.error(`${prefix}${err.organization.message || "Please enter your startup or company name."}`);
+      } else if (err.role) {
+        toast.error(`${prefix}Please select your role from the list.`);
+      } else if (err.consentPaymentTerms) {
+        toast.error("Please agree to the event registration guidelines to proceed.");
+      } else if (err.consentContact) {
+        toast.error("Please confirm the contact consent checkbox.");
+      } else {
+        toast.error(count > 1 ? "Please fill in all required registration details for Attendee 1." : "Please fill in all required registration details.");
+      }
       return;
     }
 
@@ -265,7 +287,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
               .join("\n"),
             referralSource: currentValues.referralSource,
             dietaryAccessibilityNotes: currentValues.dietaryAccessibilityNotes,
-            consentContact: currentValues.consentContact,
+            consentContact: currentValues.consentContact ? "true" : "false",
             consentPaymentTerms: "true",
           }),
         });
@@ -276,7 +298,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
         }
 
         setFreeConfirmedData(data);
-        toast.success("Registration confirmed! Your digital event pass has been emailed to you.");
+        toast.success(data.message || "Registration confirmed! Your digital event pass has been emailed to you.");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to register.");
       } finally {
@@ -566,18 +588,25 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
             />
           </Field>
 
-          <label className="flex items-start gap-3 text-sm text-brand-secondary">
-            <input type="checkbox" value="true" {...register("consentContact")} className="mt-1 size-4 accent-[var(--brand-accent)]" />
-            <span>CSC may contact me about this event registration.</span>
-          </label>
-          <label className="flex items-start gap-3 text-sm text-brand-secondary">
-            <input type="checkbox" value="true" {...register("consentPaymentTerms")} className="mt-1 size-4 accent-[var(--brand-accent)]" />
-            <span>
-              {isFree
-                ? "I confirm the registration details are accurate and agree to CSC community guidelines."
-                : "I confirm the registration details are accurate and understand my pass is issued upon verified payment."}
-            </span>
-          </label>
+          <div className="flex flex-col gap-1">
+            <label className="flex items-start gap-3 text-sm text-brand-secondary">
+              <input type="checkbox" value="true" {...register("consentContact")} className="mt-1 size-4 accent-[var(--brand-accent)]" />
+              <span>CSC may contact me about this event registration.</span>
+            </label>
+            {errors.consentContact && <FieldError>{errors.consentContact.message}</FieldError>}
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="flex items-start gap-3 text-sm text-brand-secondary">
+              <input type="checkbox" value="true" {...register("consentPaymentTerms")} className="mt-1 size-4 accent-[var(--brand-accent)]" />
+              <span>
+                {isFree
+                  ? "I confirm the registration details are accurate and agree to CSC community guidelines."
+                  : "I confirm the registration details are accurate and understand my pass is issued upon verified payment."}
+              </span>
+            </label>
+            {errors.consentPaymentTerms && <FieldError>{errors.consentPaymentTerms.message}</FieldError>}
+          </div>
 
           {/* Payment / Pass Instructions & Notes */}
           <div className="rounded-xl border border-teal-200/80 bg-teal-50/70 p-3 text-xs leading-relaxed text-teal-950">

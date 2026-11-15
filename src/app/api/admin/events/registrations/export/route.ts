@@ -14,10 +14,30 @@ export async function GET(request: Request) {
     if (ctx.mode !== "live" || !can(ctx, "registrations.read")) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
     const eventId = new URL(request.url).searchParams.get("event") ?? "";
     if (!z.string().uuid().safeParse(eventId).success) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
-    const { data, error } = await createAdminClient().from("paid_event_registrations").select("created_at,full_name,email,whatsapp,organization,role,attendee_count,additional_attendee_names,referral_source,dietary_accessibility_notes,total_amount_paid,upi_transaction_ref,status,review_note").eq("event_id", eventId).order("created_at", { ascending: true });
+    const admin = createAdminClient();
+    const [{ data, error }, { data: freePasses }] = await Promise.all([
+      admin.from("paid_event_registrations").select("created_at,full_name,email,whatsapp,organization,role,attendee_count,additional_attendee_names,referral_source,dietary_accessibility_notes,total_amount_paid,upi_transaction_ref,status,review_note").eq("event_id", eventId).order("created_at", { ascending: true }),
+      admin.from("event_registrations").select("created_at,attendee_name,source_email,reference,status").eq("event_id", eventId).eq("source", "platform").eq("payment", "not_required").order("created_at", { ascending: true }),
+    ]);
     if (error) return new Response("Export unavailable", { status: 503 });
     const headers = ["Submitted", "Full name", "Email", "WhatsApp", "Organization", "Role", "Attendees", "Additional names", "Referral", "Dietary or accessibility notes", "Amount paid", "UPI reference", "Status", "Review note"];
     const rows = (data ?? []).map((row) => [row.created_at,row.full_name,row.email,row.whatsapp,row.organization,row.role,row.attendee_count,row.additional_attendee_names,row.referral_source,row.dietary_accessibility_notes,row.total_amount_paid,row.upi_transaction_ref,row.status,row.review_note].map(csvCell).join(","));
-    return new Response([headers.map(csvCell).join(","), ...rows].join("\r\n"), { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="paid-event-registrations.csv"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
+    const freeRows = (freePasses ?? []).map((row) => [
+      row.created_at,
+      row.attendee_name,
+      row.source_email,
+      "—",
+      "—",
+      "—",
+      1,
+      "—",
+      "—",
+      "—",
+      0,
+      row.reference,
+      row.status,
+      "Automated free event registration",
+    ].map(csvCell).join(","));
+    return new Response([headers.map(csvCell).join(","), ...rows, ...freeRows].join("\r\n"), { headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": 'attachment; filename="paid-event-registrations.csv"', "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
   } catch { return new Response(null, { status: 503, headers: { "Cache-Control": "private, no-store" } }); }
 }

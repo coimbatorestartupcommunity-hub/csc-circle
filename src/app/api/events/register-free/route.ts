@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. Create primary paid_event_registrations tracking record (for analytics & reporting)
+    // 4. Try optional paid_event_registrations tracking record (for legacy analytics & reporting if permitted)
     const paidRegId = crypto.randomUUID();
     const regRef = "CSC-EVT-" + crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
 
@@ -109,29 +109,42 @@ export async function POST(request: NextRequest) {
       ? data.additionalAttendees.map((a, i) => `[Attendee ${i + 2}] ${a.fullName} | ${a.email} | ${a.whatsapp} | ${a.organization} | ${a.role}`).join("\n")
       : data.additionalAttendeeNames || null;
 
-    await admin.from("paid_event_registrations").insert({
-      id: paidRegId,
-      event_id: event.id,
-      user_id: null,
-      reference: regRef,
-      status: "confirmed",
-      full_name: data.fullName.trim(),
-      email: lowerEmail,
-      whatsapp: data.whatsapp.trim(),
-      organization: data.organization.trim(),
-      role: data.role,
-      attendee_count: data.attendeeCount,
-      additional_attendee_names: additionalAttendeeDetails,
-      referral_source: data.referralSource || null,
-      dietary_accessibility_notes: data.dietaryAccessibilityNotes?.trim() || null,
-      total_amount_paid: 0,
-      upi_transaction_ref: "FREE_REGISTRATION",
-      payment_evidence_type: "authenticated_bank_alert",
-      consent_contact: data.consentContact === "true",
-      consent_payment_terms: true,
-      reviewed_at: new Date().toISOString(),
-      review_note: "Automated free event registration",
-    });
+    let insertedPaidRegId: string | null = null;
+    try {
+      const { data: paidReg, error: paidError } = await admin
+        .from("paid_event_registrations")
+        .insert({
+          id: paidRegId,
+          event_id: event.id,
+          user_id: null,
+          reference: regRef,
+          status: "confirmed",
+          full_name: data.fullName.trim(),
+          email: lowerEmail,
+          whatsapp: data.whatsapp.trim(),
+          organization: data.organization.trim(),
+          role: data.role,
+          attendee_count: data.attendeeCount,
+          additional_attendee_names: additionalAttendeeDetails,
+          referral_source: data.referralSource || null,
+          dietary_accessibility_notes: data.dietaryAccessibilityNotes?.trim() || null,
+          total_amount_paid: 0,
+          upi_transaction_ref: "FREE_REGISTRATION",
+          payment_evidence_type: "authenticated_bank_alert",
+          consent_contact: data.consentContact === "true",
+          consent_payment_terms: true,
+          reviewed_at: new Date().toISOString(),
+          review_note: "Automated free event registration",
+        })
+        .select("id")
+        .maybeSingle();
+
+      if (!paidError && paidReg) {
+        insertedPaidRegId = paidReg.id;
+      }
+    } catch {
+      // Non-blocking: free registrations do not require a paid_event_registrations record
+    }
 
     // 5. Create primary pass in event_registrations
     const primaryPassToken = crypto.randomBytes(32).toString("hex");
@@ -148,7 +161,7 @@ export async function POST(request: NextRequest) {
         status: "confirmed",
         payment: "not_required",
         attendance: "not_attended",
-        paid_registration_id: paidRegId,
+        paid_registration_id: insertedPaidRegId,
         source: "platform",
         source_email: lowerEmail,
       })
@@ -156,7 +169,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (passError || !primaryPass) {
-      return NextResponse.json({ ok: false, error: "Failed to create event pass." }, { status: 500 });
+      console.error("Free registration pass creation error:", passError);
+      return NextResponse.json(
+        { ok: false, error: passError?.message || "Failed to create event pass." },
+        { status: 500 }
+      );
     }
 
     // Queue email for primary attendee
@@ -180,7 +197,7 @@ export async function POST(request: NextRequest) {
             status: "confirmed",
             payment: "not_required",
             attendance: "not_attended",
-            paid_registration_id: paidRegId,
+            paid_registration_id: insertedPaidRegId,
             source: "platform",
             source_email: attendee.email.toLowerCase().trim(),
           })

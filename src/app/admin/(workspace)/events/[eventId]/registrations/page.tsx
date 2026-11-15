@@ -13,10 +13,11 @@ export default async function PaidEventRegistrationsPage({ params }: { params: P
   const { eventId } = await params;
   const ctx = await requireAdminPagePermission("registrations.read");
   const client = createAdminClient();
-  const [{ data: event }, { data: records, error }, { data: imported }] = await Promise.all([
+  const [{ data: event }, { data: records, error }, { data: imported }, { data: freePasses }] = await Promise.all([
     client.from("events").select("id,title").eq("id", eventId).maybeSingle(),
     client.from("paid_event_registrations").select("id,full_name,email,whatsapp,attendee_count,total_amount_paid,upi_transaction_ref,status,created_at").eq("event_id", eventId).order("created_at", { ascending: false }),
     client.from("event_registrations").select("id,reference,attendee_name,source_email,status,created_at").eq("event_id", eventId).eq("source", "google_form_import").order("created_at", { ascending: false }),
+    client.from("event_registrations").select("id,reference,attendee_name,source_email,status,created_at").eq("event_id", eventId).eq("source", "platform").eq("payment", "not_required").order("created_at", { ascending: false }),
   ]);
   const { data: importMetadata } = imported?.length ? await client.from("event_registration_import_metadata").select("registration_id,metadata").in("registration_id", imported.map((row) => row.id)) : { data: [] };
   if (!event) return <p className="text-brand-muted">Event not found.</p>;
@@ -27,6 +28,17 @@ export default async function PaidEventRegistrationsPage({ params }: { params: P
     proof: { href: `/api/admin/events/registrations/proof?registration=${row.id}`, label: "View proof" },
     createdAt: row.created_at,
   }));
+  const freeRows = (freePasses ?? []).map((row) => ({
+    id: row.id,
+    name: row.attendee_name ?? "Attendee",
+    contact: row.source_email ?? "Email unavailable",
+    attendees: 1,
+    amount: "Free (RSVP)",
+    txnRef: row.reference,
+    status: row.status,
+    proof: "Free Admission",
+    createdAt: row.created_at,
+  }));
   const metadataById = new Map((importMetadata ?? []).map((item) => [item.registration_id, item.metadata as Record<string, unknown>]));
   const importedRows = (imported ?? []).map((row) => {
     const info = metadataById.get(row.id) ?? {};
@@ -35,7 +47,8 @@ export default async function PaidEventRegistrationsPage({ params }: { params: P
   });
   const confirmedCount =
     (imported ?? []).filter((r) => r.status === "confirmed").length +
-    (records ?? []).filter((r) => r.status === "confirmed").length;
+    (records ?? []).filter((r) => r.status === "confirmed").length +
+    (freePasses ?? []).filter((r) => r.status === "confirmed").length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -70,7 +83,7 @@ export default async function PaidEventRegistrationsPage({ params }: { params: P
       />
     {can(ctx, "registrations.approve") ? <GoogleFormImport eventId={eventId} /> : null}
     {importedRows.length > 0 ? <section className="grid gap-3"><h2 className="text-lg font-semibold text-brand-ink">Google Form imports</h2><DataTable rows={importedRows} columns={[{ key: "name", header: "Name", sortable: true }, { key: "contact", header: "Contact" }, { key: "attendees", header: "Attendees" }, { key: "amount", header: "Amount paid" }, { key: "txnRef", header: "UPI transaction reference" }, { key: "proof", header: "Payment screenshot", type: "link" }, { key: "status", header: "Status", type: "badge" }, { key: "createdAt", header: "Form submitted", type: "date" }]} searchKeys={["name", "contact", "txnRef"]} actions={can(ctx, "registrations.approve") ? [{ operation: ctx.mode === "live" ? { kind: "imported_registration", decision: "confirmed" } : undefined, label: "Approve and issue pass", message: "Confirm the recorded payment. This issues a member-portal pass and queues the pass email.", visibleForStatuses: ["pending_review"] }, { operation: ctx.mode === "live" ? { kind: "resend_event_pass", decision: "resend" } : undefined, label: "Resend pass", message: "Queue another event pass email for this attendee.", visibleForStatuses: ["confirmed"] }] : undefined} /></section> : null}
-    <DataTable rows={rows} columns={[{ key: "name", header: "Name", sortable: true }, { key: "contact", header: "Contact" }, { key: "attendees", header: "Attendees", sortable: true }, { key: "amount", header: "Amount" }, { key: "txnRef", header: "UPI transaction ref" }, { key: "proof", header: "Payment proof", type: "link" }, { key: "status", header: "Status", type: "badge" }, { key: "createdAt", header: "Submitted", type: "date" }]} searchKeys={["name", "contact", "txnRef"]} emptyMessage={error ? "Registrations could not be loaded." : "No paid registrations yet."} actions={can(ctx, "registrations.approve") ? [{ operation: ctx.mode === "live" ? { kind: "paid_registration", decision: "confirmed" } : undefined, label: "Approve", message: "Confirm this payment and registration.", visibleForStatuses: ["pending_verification"] }, { operation: ctx.mode === "live" ? { kind: "paid_registration", decision: "rejected" } : undefined, label: "Reject", variant: "destructive", message: "Reject this payment proof and include a note for the registrant.", visibleForStatuses: ["pending_verification"] }] : undefined} />
+    <DataTable rows={[...rows, ...freeRows]} columns={[{ key: "name", header: "Name", sortable: true }, { key: "contact", header: "Contact" }, { key: "attendees", header: "Attendees", sortable: true }, { key: "amount", header: "Amount" }, { key: "txnRef", header: "UPI transaction ref" }, { key: "proof", header: "Payment proof", type: "link" }, { key: "status", header: "Status", type: "badge" }, { key: "createdAt", header: "Submitted", type: "date" }]} searchKeys={["name", "contact", "txnRef"]} emptyMessage={error ? "Registrations could not be loaded." : "No registrations yet."} actions={can(ctx, "registrations.approve") ? [{ operation: ctx.mode === "live" ? { kind: "paid_registration", decision: "confirmed" } : undefined, label: "Approve", message: "Confirm this payment and registration.", visibleForStatuses: ["pending_verification"] }, { operation: ctx.mode === "live" ? { kind: "paid_registration", decision: "rejected" } : undefined, label: "Reject", variant: "destructive", message: "Reject this payment proof and include a note for the registrant.", visibleForStatuses: ["pending_verification"] }] : undefined} />
     </div>
   );
 }
