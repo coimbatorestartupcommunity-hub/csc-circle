@@ -68,7 +68,7 @@ export async function GET() {
         googleMeetUrl: "https://meet.google.com/vwg-hmsh-mrx",
       };
 
-      await admin
+      const { data: updateData, error: updateError } = await admin
         .from("events")
         .update({
           title: "Coimbatore Startup Community (CSC) - Joint Online Meeting",
@@ -80,7 +80,12 @@ export async function GET() {
           price_minor: 0,
           settings: updatedSettings,
         })
-        .eq("id", event.id);
+        .eq("id", event.id)
+        .select();
+
+      if (updateError) {
+        return NextResponse.json({ ok: false, error: updateError.message, eventId: event.id }, { status: 500 });
+      }
 
       // Cancel any legacy pending orders
       await admin
