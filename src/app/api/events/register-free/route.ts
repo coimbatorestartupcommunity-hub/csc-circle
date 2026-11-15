@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
@@ -81,17 +82,44 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. Duplicate check for this email
+    // 3. Duplicate check for this email & resolve authenticated user ID
     const lowerEmail = data.email.toLowerCase().trim();
+
+    let registeredUserId: string | null = null;
+    try {
+      const sessionClient = await createClient();
+      const { data: authData } = await sessionClient.auth.getUser();
+      if (authData?.user?.id) {
+        registeredUserId = authData.user.id;
+      }
+    } catch {}
+
+    if (!registeredUserId) {
+      const { data: profileUser } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("email", lowerEmail)
+        .maybeSingle();
+      if (profileUser) {
+        registeredUserId = profileUser.id;
+      }
+    }
+
     const { data: existingRegs } = await admin
       .from("event_registrations")
-      .select("id, reference, status")
+      .select("id, reference, status, user_id")
       .eq("event_id", event.id)
       .eq("source_email", lowerEmail)
       .not("status", "in", "('cancelled','revoked')")
       .limit(1);
 
     if (existingRegs && existingRegs.length > 0) {
+      if (registeredUserId && !existingRegs[0].user_id) {
+        await admin
+          .from("event_registrations")
+          .update({ user_id: registeredUserId })
+          .eq("id", existingRegs[0].id);
+      }
       return NextResponse.json({
         ok: true,
         alreadyRegistered: true,
@@ -116,7 +144,7 @@ export async function POST(request: NextRequest) {
         .insert({
           id: paidRegId,
           event_id: event.id,
-          user_id: null,
+          user_id: registeredUserId,
           reference: regRef,
           status: "confirmed",
           full_name: data.fullName.trim(),
@@ -154,7 +182,7 @@ export async function POST(request: NextRequest) {
       .from("event_registrations")
       .insert({
         event_id: event.id,
-        user_id: null as unknown as string,
+        user_id: registeredUserId as unknown as string,
         attendee_name: data.fullName.trim(),
         reference: primaryPassRef,
         pass_token: primaryPassToken,

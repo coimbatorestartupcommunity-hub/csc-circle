@@ -113,20 +113,22 @@ function mapProfile(p: Row, m: Row | null): MemberProfile {
 
 function mapRegistration(r: Row, memberName = ""): EventRegistration {
   const ev = (r.events as Row) ?? {};
+  const venue = (ev.venue as string) || "Online (Google Meet)";
+  const location = (ev.location as string) || (ev.venue as string) || "Online via Google Meet";
   return {
     id: String(r.id),
     eventId: String(r.event_id),
-    eventTitle: (ev.title as string) ?? "Event",
+    eventTitle: (ev.title as string) ?? "Coimbatore Startup Community (CSC) - Joint Online Meeting",
     eventCoverImage: (ev.cover_image as string) ?? undefined,
     startsAt: (ev.starts_at as string) ?? new Date().toISOString(),
     endsAt: (ev.ends_at as string) ?? new Date().toISOString(),
-    venue: (ev.venue as string) ?? undefined,
-    location: (ev.location as string) ?? "",
+    venue,
+    location,
     reference: (r.reference as string) ?? "",
     status: (r.status as RegistrationStatus) ?? "pending",
     payment: (r.payment as EventRegistration["payment"]) ?? "not_required",
     attendance: (r.attendance as EventRegistration["attendance"]) ?? "not_attended",
-    memberName: String(r.attendee_name ?? "").trim() || memberName.trim() || String(r.full_name ?? r.member_name ?? "").trim() || "Name unavailable",
+    memberName: String(r.attendee_name ?? "").trim() || memberName.trim() || String(r.full_name ?? r.member_name ?? "").trim() || "Attendee",
     createdAt: (r.created_at as string) ?? new Date().toISOString(),
   };
 }
@@ -217,13 +219,25 @@ export const memberServices = {
     if (ctx.mode === "closed") return unavailable();
     if (ctx.mode === "preview") return ok(demoRegistrations);
     try {
-      const sb = await createClient();
+      const admin = createAdminClient();
+      const userEmail = ctx.user?.email ? ctx.user.email.toLowerCase().trim() : "";
+
+      // Self-heal: link any unlinked registrations that match this member's email
+      if (userEmail) {
+        await admin
+          .from("event_registrations")
+          .update({ user_id: ctx.user!.id })
+          .eq("source_email", userEmail)
+          .is("user_id", null);
+      }
+
       const [{ data }, { data: profile }] = await Promise.all([
-        sb.from("event_registrations")
+        admin
+          .from("event_registrations")
           .select("*, events(title, cover_image, starts_at, ends_at, venue, location)")
-          .eq("user_id", ctx.user!.id)
+          .or(`user_id.eq.${ctx.user!.id}${userEmail ? `,source_email.eq.${userEmail}` : ""}`)
           .order("created_at", { ascending: false }),
-        sb.from("profiles").select("full_name, display_name").eq("id", ctx.user!.id).maybeSingle(),
+        admin.from("profiles").select("full_name, display_name").eq("id", ctx.user!.id).maybeSingle(),
       ]);
       const metadataName = String(ctx.user!.user_metadata?.full_name ?? ctx.user!.user_metadata?.name ?? "");
       const memberName = String(profile?.full_name ?? "").trim() || String(profile?.display_name ?? "").trim() || metadataName.trim();
@@ -235,9 +249,51 @@ export const memberServices = {
 
   async getRegistration(id: string): Promise<ServiceResult<EventRegistration>> {
     const list = await this.listRegistrations();
-    if (!list.ok) return list;
-    const reg = list.data.find((r) => r.id === id);
-    return reg ? ok(reg) : fail("not_found", "Registration not found.");
+    if (list.ok) {
+      const found = list.data.find((r) => r.id === id);
+      if (found) return ok(found);
+    }
+
+    const ctx = await getMemberContext();
+    if (ctx.mode === "closed") return unavailable();
+    if (ctx.mode === "preview") return fail("not_found", "Registration not found.");
+
+    try {
+      const admin = createAdminClient();
+      const userEmail = ctx.user?.email ? ctx.user.email.toLowerCase().trim() : "";
+
+      const [{ data: regRow }, { data: profile }] = await Promise.all([
+        admin
+          .from("event_registrations")
+          .select("*, events(title, cover_image, starts_at, ends_at, venue, location)")
+          .eq("id", id)
+          .maybeSingle(),
+        admin.from("profiles").select("full_name, display_name").eq("id", ctx.user!.id).maybeSingle(),
+      ]);
+
+      if (!regRow) {
+        return fail("not_found", "Registration not found.");
+      }
+
+      const isOwner =
+        regRow.user_id === ctx.user!.id ||
+        (userEmail && regRow.source_email?.toLowerCase().trim() === userEmail);
+
+      if (!isOwner) {
+        return fail("forbidden", "You do not have permission to view this registration pass.");
+      }
+
+      // Self-heal link user_id if null
+      if (!regRow.user_id) {
+        await admin.from("event_registrations").update({ user_id: ctx.user!.id }).eq("id", id);
+      }
+
+      const metadataName = String(ctx.user!.user_metadata?.full_name ?? ctx.user!.user_metadata?.name ?? "");
+      const memberName = String(profile?.full_name ?? "").trim() || String(profile?.display_name ?? "").trim() || metadataName.trim();
+      return ok(mapRegistration(regRow as Row, memberName));
+    } catch {
+      return fail("unknown", "Could not load registration.");
+    }
   },
 
   async getPass(registrationId: string): Promise<ServiceResult<EventPass>> {
@@ -257,18 +313,36 @@ export const memberServices = {
     let avatarUrl: string | undefined;
     if (ctx.mode === "preview") token = "DEMO-PASS-NOT-VALID";
     if (ctx.mode === "live") {
-      const sb = await createClient();
-      const { data: passData } = await sb.from("event_registrations").select("pass_token,payment,user_id,reference,source,source_email,paid_registration_id,source_parent_registration_id").eq("id", reg.id).eq("user_id", ctx.user!.id).maybeSingle();
-      if (!passData?.pass_token || !["paid", "not_required"].includes(passData.payment) || new Date(reg.endsAt).getTime() <= Date.now()) return fail("forbidden", "This pass is unavailable or expired.");
-      if (!String(reg.memberName).trim() || !String(passData.reference).trim() || !String(reg.location).trim() && !String(reg.venue ?? "").trim()) return fail("forbidden", "A pass requires an attendee name, UID, and event location.");
+      const admin = createAdminClient();
+      const userEmail = ctx.user?.email ? ctx.user.email.toLowerCase().trim() : "";
+
+      const { data: passData } = await admin
+        .from("event_registrations")
+        .select("id,pass_token,payment,user_id,reference,source,source_email,paid_registration_id,source_parent_registration_id")
+        .eq("id", reg.id)
+        .maybeSingle();
+
+      const isOwner =
+        passData?.user_id === ctx.user!.id ||
+        (userEmail && passData?.source_email?.toLowerCase().trim() === userEmail);
+
+      if (!isOwner || !passData?.pass_token || !["paid", "not_required"].includes(passData.payment)) {
+        return fail("forbidden", "This pass is unavailable or pending verification.");
+      }
+
+      // Ensure user_id is permanently linked
+      if (!passData.user_id) {
+        await admin.from("event_registrations").update({ user_id: ctx.user!.id }).eq("id", passData.id);
+      }
+
       reg.reference = passData.reference;
       token = passData.pass_token;
 
       const metadataRegistrationId = passData.source_parent_registration_id ?? reg.id;
       const [profileResult, paidResult] = await Promise.all([
-        sb.from("profiles").select("portrait_path,whatsapp").eq("id", ctx.user!.id).maybeSingle(),
+        admin.from("profiles").select("portrait_path,whatsapp").eq("id", ctx.user!.id).maybeSingle(),
         passData.paid_registration_id
-          ? sb.from("paid_event_registrations").select("email,whatsapp").eq("id", passData.paid_registration_id).eq("user_id", ctx.user!.id).maybeSingle()
+          ? admin.from("paid_event_registrations").select("email,whatsapp").eq("id", passData.paid_registration_id).maybeSingle()
           : Promise.resolve({ data: null }),
       ]);
       // Import metadata is admin-only under RLS. The pass row above was first
@@ -277,7 +351,6 @@ export const memberServices = {
       let importMetadata: Record<string, unknown> | null = null;
       if (passData.source === "google_form_import" || passData.source_parent_registration_id) {
         try {
-          const admin = createAdminClient();
           const { data } = await admin.from("event_registration_import_metadata").select("metadata").eq("registration_id", metadataRegistrationId).maybeSingle();
           importMetadata = data?.metadata as Record<string, unknown> | null;
         } catch { /* The pass still works if optional imported contact metadata is unavailable. */ }
@@ -295,9 +368,9 @@ export const memberServices = {
       eventTitle: reg.eventTitle,
       startsAt: reg.startsAt,
       endsAt: reg.endsAt,
-      venue: reg.venue,
-      location: reg.location,
-      memberName: reg.memberName,
+      venue: reg.venue || "Online (Google Meet)",
+      location: reg.location || reg.venue || "Online via Google Meet",
+      memberName: reg.memberName || "Attendee",
       avatarUrl,
       email,
       phone,

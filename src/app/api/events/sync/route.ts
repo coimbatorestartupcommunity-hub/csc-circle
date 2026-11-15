@@ -89,6 +89,8 @@ export async function GET() {
           cover_image: "/events/csc-joint-online-meeting-cover.webp",
           admission: "free",
           registration_mode: "rsvp",
+          location: "Online via Google Meet",
+          venue: "Online (Google Meet)",
           price_per_attendee: null,
           price_minor: 0,
           settings: updatedSettings,

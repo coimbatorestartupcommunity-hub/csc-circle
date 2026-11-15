@@ -11,8 +11,8 @@ import type { Permission } from "@/lib/admin/permissions";
 import type { Database } from "@/lib/supabase/database.types";
 import { issueImportedRegistrationPasses } from "@/lib/admin/imported-registration-pass";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
-const schema = z.object({ kind: z.enum(["claim", "member", "registration", "imported_registration", "paid_registration", "manual_check_in", "resend_event_pass", "payment", "review", "startup", "consultation"]), target: z.string().uuid(), decision: z.string().min(1).max(40), reason: z.string().max(1000).default("") });
-const permissions: Record<string, Permission> = { claim: "members.approve", member: "members.suspend", registration: "registrations.approve", imported_registration: "registrations.approve", paid_registration: "registrations.approve", manual_check_in: "attendance.scan", resend_event_pass: "registrations.approve", payment: "payments.verify", review: "reviews.moderate", startup: "directory.manage", consultation: "consultations.manage" };
+const schema = z.object({ kind: z.enum(["claim", "member", "registration", "imported_registration", "paid_registration", "manual_check_in", "resend_event_pass", "delete_registration", "payment", "review", "startup", "consultation"]), target: z.string().uuid(), decision: z.string().min(1).max(40), reason: z.string().max(1000).default("") });
+const permissions: Record<string, Permission> = { claim: "members.approve", member: "members.suspend", registration: "registrations.approve", imported_registration: "registrations.approve", paid_registration: "registrations.approve", manual_check_in: "attendance.scan", resend_event_pass: "registrations.approve", delete_registration: "registrations.approve", payment: "payments.verify", review: "reviews.moderate", startup: "directory.manage", consultation: "consultations.manage" };
 export async function POST(request: Request) {
   try {
     const ctx = await getAdminContext();
@@ -48,6 +48,103 @@ export async function POST(request: Request) {
       if (error || !data) return authResponse({ error: "The confirmed event pass could not be re-queued." }, 409);
       scheduleNotificationDelivery();
       return authResponse({ ok: true });
+    }
+    if (parsed.data.kind === "delete_registration") {
+      const admin = createAdminClient();
+      const targetId = parsed.data.target;
+
+      // 1. Check if target exists in paid_event_registrations
+      const { data: paidReg } = await admin
+        .from("paid_event_registrations")
+        .select("id, event_id, full_name, email, reference")
+        .eq("id", targetId)
+        .maybeSingle();
+
+      if (paidReg) {
+        // Cascade delete child passes in event_registrations
+        const { data: linkedPasses } = await admin
+          .from("event_registrations")
+          .select("id")
+          .eq("paid_registration_id", targetId);
+
+        if (linkedPasses && linkedPasses.length > 0) {
+          const passIds = linkedPasses.map((p) => p.id);
+          await admin.from("attendance_checkins").delete().in("registration_id", passIds);
+          await admin.from("notifications").delete().in("related_record_id", passIds);
+          await admin.from("event_registrations").delete().in("id", passIds);
+        }
+
+        // Unlink any order references
+        await admin
+          .from("event_payment_orders")
+          .update({ paid_registration_id: null })
+          .eq("paid_registration_id", targetId);
+
+        const { error: delPaidError } = await admin
+          .from("paid_event_registrations")
+          .delete()
+          .eq("id", targetId);
+
+        if (delPaidError) {
+          return authResponse({ error: `Could not delete registration: ${delPaidError.message}` }, 500);
+        }
+
+        await admin.from("audit_logs").insert({
+          action: "event.registration.deleted",
+          actor_id: ctx.userId,
+          target_type: "paid_event_registrations",
+          target_id: targetId,
+          before: paidReg,
+        });
+
+        revalidateTag("registrations", "max");
+        return authResponse({ ok: true, message: "Registration deleted successfully." });
+      }
+
+      // 2. Check if target exists in event_registrations (free RSVP or imported registration)
+      const { data: eventReg } = await admin
+        .from("event_registrations")
+        .select("id, event_id, attendee_name, source_email, reference, paid_registration_id")
+        .eq("id", targetId)
+        .maybeSingle();
+
+      if (eventReg) {
+        await admin.from("event_registration_import_metadata").delete().eq("registration_id", targetId);
+        await admin.from("attendance_checkins").delete().eq("registration_id", targetId);
+        await admin.from("notifications").delete().eq("related_record_id", targetId);
+
+        const { error: delEventRegError } = await admin
+          .from("event_registrations")
+          .delete()
+          .eq("id", targetId);
+
+        if (delEventRegError) {
+          return authResponse({ error: `Could not delete registration: ${delEventRegError.message}` }, 500);
+        }
+
+        if (eventReg.paid_registration_id) {
+          const { count } = await admin
+            .from("event_registrations")
+            .select("id", { count: "exact", head: true })
+            .eq("paid_registration_id", eventReg.paid_registration_id);
+          if ((count ?? 0) === 0) {
+            await admin.from("paid_event_registrations").delete().eq("id", eventReg.paid_registration_id);
+          }
+        }
+
+        await admin.from("audit_logs").insert({
+          action: "event.pass.deleted",
+          actor_id: ctx.userId,
+          target_type: "event_registrations",
+          target_id: targetId,
+          before: eventReg,
+        });
+
+        revalidateTag("registrations", "max");
+        return authResponse({ ok: true, message: "Registration deleted successfully." });
+      }
+
+      return authResponse({ error: "Registration record not found or already deleted." }, 404);
     }
     if (parsed.data.kind === "imported_registration") {
       if (parsed.data.decision !== "confirmed") return authResponse({ error: "Imported registrations can only be confirmed after payment review." }, 422);

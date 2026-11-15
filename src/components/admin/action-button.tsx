@@ -117,7 +117,19 @@ export function ActionButton({
               <div className={`mb-3 flex size-12 items-center justify-center rounded-2xl shadow-xs ring-1 ring-white/70 ${result === "success" ? "bg-emerald-50 text-emerald-700" : result === "error" ? "bg-red-50 text-red-700" : "bg-brand-purple/40 text-brand-ink"}`}>
                 {result === "success" ? <Check className="size-6" /> : result === "error" ? <CircleAlert className="size-6" /> : <CircleAlert className="size-6" />}
               </div>
-              <DialogTitle className="text-xl font-bold tracking-tight text-brand-ink">{result === "success" ? isEventPassApproval ? "Registration approved" : isManualCheckIn ? "Attendee checked in" : "Action recorded" : result === "error" ? "Action needs attention" : label}</DialogTitle>
+              <DialogTitle className="text-xl font-bold tracking-tight text-brand-ink">
+                {result === "success"
+                  ? isEventPassApproval
+                    ? "Registration approved"
+                    : isManualCheckIn
+                    ? "Attendee checked in"
+                    : operation?.kind === "delete_registration"
+                    ? "Registration deleted"
+                    : "Action recorded"
+                  : result === "error"
+                  ? "Action needs attention"
+                  : label}
+              </DialogTitle>
               <DialogDescription className="mt-1.5 text-xs sm:text-sm leading-relaxed text-brand-secondary">{result === "success" ? isEventPassApproval ? "Approval is saved and the pass email is queued. The recipient should sign in with the registration email, then open Member → My Events to view and download the event pass. To request a CSC membership ID, they can choose Digital ID in the member menu, complete and submit the required information, and wait for manual review. They will be notified after approval and can then download the Digital ID." : isManualCheckIn ? "The attendee's arrival has been recorded and the attendance list is being refreshed." : "The decision was saved and the record has been updated." : result === "error" ? failureMessage || "The action could not be completed. Review the current record status and try again." : isMembershipApproval ? "Membership cards are free. Approving confirms this account and activates its CSC membership card; no payment is required." : isStartupApproval ? "Review the founder-submitted details below. Publishing makes this startup visible in the CSC Founder Directory." : confirm ?? message ?? "Review the submitted information before continuing."}</DialogDescription>
             </DialogHeader>
             {result === null && <>

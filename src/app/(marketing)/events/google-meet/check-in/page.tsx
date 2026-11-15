@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Container } from "@/components/common/container";
 import { QrCheckInClient } from "@/components/events/qr-check-in-client";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const instant = false;
 
@@ -21,10 +22,19 @@ export default async function GoogleMeetCheckInPage({
   searchParams: Promise<{ token?: string; test?: string }>;
 }) {
   const { token, test } = await searchParams;
-  const eventStartsAt = "2026-11-22T04:30:00+00:00";
+
+  const admin = createAdminClient();
+  const { data: event } = await admin
+    .from("events")
+    .select("id, title, starts_at, status")
+    .eq("slug", "csc-joint-online-meeting")
+    .maybeSingle();
+
+  const eventTitle = event?.title || "Coimbatore Startup Community (CSC) - Joint Online Meeting";
+  const eventStartsAt = event?.starts_at || "2026-11-22T04:30:00+00:00";
   const startsAtMs = new Date(eventStartsAt).getTime();
-  const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-  const isEarlyLocked = test !== "1" && Date.now() < startsAtMs - THREE_HOURS_MS;
+  const THREE_MINUTES_MS = 3 * 60 * 1000;
+  const isEarlyLocked = test !== "1" && startsAtMs > 0 && Date.now() < startsAtMs - THREE_MINUTES_MS;
 
   return (
     <section className="py-10 sm:py-14">
@@ -41,7 +51,7 @@ export default async function GoogleMeetCheckInPage({
         <QrCheckInClient
           initialToken={token}
           isEarlyLocked={isEarlyLocked}
-          eventTitle="Coimbatore Startup Community (CSC) - Joint Online Meeting"
+          eventTitle={eventTitle}
           startsAt={eventStartsAt}
         />
       </Container>
