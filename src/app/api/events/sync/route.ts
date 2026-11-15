@@ -62,8 +62,12 @@ export async function GET() {
         timeNote: "To Be Announced (Will be notified via email and CSC WhatsApp Group)",
         timeTba: true,
         admission: "free",
+        registrationMode: "rsvp",
         price: "0",
-        pricePerAttendee: "0",
+        pricePerAttendee: "",
+        upiVpa: null,
+        upiPayeeName: null,
+        upiQrPath: null,
         onlineInfo: "https://meet.google.com/vwg-hmsh-mrx",
         googleMeetUrl: "https://meet.google.com/vwg-hmsh-mrx",
       };
@@ -76,7 +80,7 @@ export async function GET() {
           cover_image: "/events/csc-joint-online-meeting-cover.webp",
           admission: "free",
           registration_mode: "rsvp",
-          price_per_attendee: 0,
+          price_per_attendee: null,
           price_minor: 0,
           settings: updatedSettings,
         })
