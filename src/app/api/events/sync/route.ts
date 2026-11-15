@@ -170,7 +170,7 @@ This high-impact online gathering unites Coimbatore’s most ambitious **founder
 * **Instant Digital QR Pass:** Verified attendees receive an encrypted digital pass with one-click automatic check-in and instant Google Meet launch.
 * **Direct Network Access:** Join the curated roster of Coimbatore's foremost entrepreneurs and builders.
 
-> **Notice:** Registrations are now officially open. Complete your ₹10 payment verification on CSC Circle to secure your seat.`,
+> **Notice:** Registrations are now officially open. Complete your free community registration on CSC Circle to secure your seat.`,
         featured: true,
         publication_consent: true,
         publication_status: "published",
@@ -192,12 +192,17 @@ This high-impact online gathering unites Coimbatore’s most ambitious **founder
     revalidatePath("/");
     revalidateTag("events", { expire: 0 });
     revalidateTag("updates", { expire: 0 });
-    await invalidatePublicContent("events", ["all", "csc-joint-online-meeting"]);
+    await invalidatePublicContent("events", ["list", "csc-joint-online-meeting"]);
     await invalidatePublicContent("updates", ["list", "csc-joint-online-meeting-announcement"]);
 
     return NextResponse.json({
       ok: true,
       message: "Duplicate event removed, description updated, and announcements published.",
+      updatedEvent: event ? {
+        id: event.id,
+        admission: "free",
+        price_per_attendee: 0,
+      } : null,
     });
   } catch (err) {
     return NextResponse.json(
