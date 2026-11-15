@@ -68,12 +68,12 @@ export function QrCheckInClient({
   const [earlyData, setEarlyData] = React.useState<EarlyCheckInData | null>(() => {
     if (isEarlyLocked) {
       const startsAtMs = new Date(startsAt).getTime();
-      const opensAtMs = startsAtMs - 3 * 60 * 1000;
+      const opensAtMs = startsAtMs - 60 * 60 * 1000;
       return {
         eventTitle,
         startsAt,
         opensAt: new Date(opensAtMs).toISOString(),
-        message: "Online Meeting Check-In opens exactly 3 minutes before the scheduled event start time.",
+        message: "Online Meeting Check-In opens exactly 1 hour before the scheduled event start time.",
       };
     }
     return null;
@@ -741,10 +741,10 @@ export function QrCheckInClient({
               <Calendar className="size-8" />
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Check-In Opens 3 Minutes Before Meeting
+              Check-In Opens 1 Hour Before Meeting
             </h2>
             <p className="mt-2 text-xs sm:text-sm font-medium text-slate-600 max-w-md leading-relaxed">
-              Your registration and QR pass are <strong className="text-emerald-700">confirmed and valid</strong>. To ensure an orderly session, automated Google Meet check-in unlocks <strong>3 minutes prior to the session start time</strong> on the event day.
+              Your registration and QR pass are <strong className="text-emerald-700">confirmed and valid</strong>. To ensure an orderly session, automated Google Meet check-in unlocks <strong>1 hour prior to the session start time</strong> on the event day.
             </p>
 
             <div className="my-5 w-full rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-left text-xs space-y-2">
@@ -754,7 +754,7 @@ export function QrCheckInClient({
               </div>
               <div className="flex justify-between border-b border-amber-200/60 py-2">
                 <span className="text-slate-500">Check-In Window</span>
-                <span className="font-semibold text-amber-900">Opens 3 Minutes Before Start Time</span>
+                <span className="font-semibold text-amber-900">Opens 1 Hour Before Start Time</span>
               </div>
               <div className="flex justify-between pt-1">
                 <span className="text-slate-500">Meeting Platform</span>
@@ -770,7 +770,7 @@ export function QrCheckInClient({
               <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-600">
                 <li>Keep the <strong>QR pass image</strong> saved on your phone or laptop.</li>
                 <li>You will receive an email and WhatsApp reminder right when check-in unlocks.</li>
-                <li>Visit this link 3 minutes before the meeting to upload or scan your QR code for instant entry.</li>
+                <li>Visit this link 1 hour before the meeting to upload or scan your QR code for instant entry.</li>
               </ul>
             </div>
 

@@ -7,7 +7,6 @@ import { sendCommunityEmail } from "@/lib/notifications/email";
 import { classifyEmailFailure } from "@/lib/notifications/failures";
 import QRCode from "qrcode";
 import { buildEventPassQrPayload } from "@/lib/member/qr";
-import { generateServerEventPassPdf, generateServerEventPassPng } from "@/lib/events/server-pass-pdf";
 import { formatEventRange } from "@/lib/format";
 import { chooseNotificationRecipient } from "@/lib/notifications/recipients";
 import type { Database } from "@/lib/supabase/database.types";
@@ -184,50 +183,13 @@ export async function dispatchNotifications(batch = 15) {
             color: { dark: "#121826", light: "#ffffff" },
           });
 
-          const passOptions = {
-            eventTitle: String(payload.eventTitle || "CSC Event"),
-            name: String(payload.name || "Attendee"),
-            phone: String(payload.phone || ""),
-            email: String(payload.email || ""),
-            uid: String(payload.reference || registration.reference),
-            dateRange: payload.startsAt && payload.endsAt ? formatEventRange(String(payload.startsAt), String(payload.endsAt)) : "",
-            location: String(payload.venue ? `${payload.venue}, ${payload.location}` : payload.location || "Online via Google Meet"),
-            qrBuffer,
-          };
-
-          let pdfBuffer: Buffer | null = null;
-          let passCardPngBuffer: Buffer | null = null;
-          try {
-            passCardPngBuffer = await generateServerEventPassPng(passOptions);
-          } catch (err) {
-            console.error("Failed to generate pass card PNG:", err);
-          }
-          try {
-            pdfBuffer = await generateServerEventPassPdf(passOptions);
-          } catch (err) {
-            console.error("Failed to generate pass card PDF:", err);
-          }
-
           attachments = [
-            ...(pdfBuffer
-              ? [
-                  {
-                    filename: `CSC-EventPass-${registration.reference}.pdf`,
-                    content: pdfBuffer,
-                    contentType: "application/pdf",
-                  },
-                ]
-              : []),
-            ...(passCardPngBuffer
-              ? [
-                  {
-                    filename: `CSC-EventPass-${registration.reference}.png`,
-                    content: passCardPngBuffer,
-                    contentType: "image/png",
-                    cid,
-                  },
-                ]
-              : []),
+            {
+              filename: `CSC-EventPass-QR-${registration.reference}.png`,
+              content: qrBuffer,
+              contentType: "image/png",
+              cid,
+            },
           ];
         }
       }

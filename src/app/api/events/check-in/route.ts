@@ -112,12 +112,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Schedule & 3-Minute Check-In Window Gating
-    // QR check-in & Google Meet access unlocks exactly 3 minutes before the scheduled event start.
+    // 2. Schedule & 1-Hour Check-In Window Gating
+    // QR check-in & Google Meet access unlocks exactly 1 hour before the scheduled event start.
     const startsAtMs = rawEvent.starts_at ? new Date(rawEvent.starts_at).getTime() : 0;
     const nowMs = Date.now();
-    const THREE_MINUTES_MS = 3 * 60 * 1000;
-    const windowOpensMs = startsAtMs - THREE_MINUTES_MS;
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const windowOpensMs = startsAtMs - ONE_HOUR_MS;
     const isTestParam = req.nextUrl?.searchParams?.get("test") === "1" || body?.isTest === true;
 
     if (startsAtMs > 0 && nowMs < windowOpensMs && !isTestParam) {
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           status: "early",
-          error: "Online Meeting Check-In opens exactly 3 minutes before the scheduled event start time. Your pass is confirmed and valid. Please return 3 minutes prior to the session start time to scan your QR code and access Google Meet.",
+          error: "Online Meeting Check-In opens exactly 1 hour before the scheduled event start time. Your pass is confirmed and valid. Please return 1 hour prior to the session start time to scan your QR code and access Google Meet.",
           opensAt: new Date(windowOpensMs).toISOString(),
           startsAt: rawEvent.starts_at,
           eventTitle: rawEvent.title,
