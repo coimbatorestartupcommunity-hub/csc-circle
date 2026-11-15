@@ -12,7 +12,7 @@ export async function verifyEmailTransport() {
   if (!transport) throw new Error("EMAIL_CONFIGURATION_INVALID");
   return transport.verify();
 }
-export async function sendCommunityEmail(input: { to: string; subject: string; text: string; html?: string; notificationId: string; attachments?: { filename: string; content: Buffer; contentType: string; cid: string }[] }) {
+export async function sendCommunityEmail(input: { to: string; subject: string; text: string; html?: string; notificationId: string; attachments?: { filename: string; content: Buffer; contentType: string; cid?: string }[] }) {
   const c = emailConfiguration(); const transport = createEmailTransport();
   if (!c.enabled || !transport) throw new Error("EMAIL_DISABLED_OR_UNCONFIGURED");
   if (!validEmail(input.to) || /[\r\n]/.test(input.subject) || input.subject.length>180 || !/^[a-zA-Z0-9-]{1,100}$/.test(input.notificationId)) throw new Error("EMAIL_INPUT_INVALID");

@@ -7,7 +7,7 @@ import { sendCommunityEmail } from "@/lib/notifications/email";
 import { classifyEmailFailure } from "@/lib/notifications/failures";
 import QRCode from "qrcode";
 import { buildEventPassQrPayload } from "@/lib/member/qr";
-import { generateServerEventPassPdf } from "@/lib/events/server-pass-pdf";
+import { generateServerEventPassPdf, generateServerEventPassPng } from "@/lib/events/server-pass-pdf";
 import { formatEventRange } from "@/lib/format";
 import { chooseNotificationRecipient } from "@/lib/notifications/recipients";
 import type { Database } from "@/lib/supabase/database.types";
@@ -135,7 +135,7 @@ export async function dispatchNotifications(batch = 15) {
       let recipients = job.audience === "admin" ? c.admins : [chooseNotificationRecipient(resolvedMemberEmail, job.recipient)];
       const originalPayload = job.payload && typeof job.payload === "object" && !Array.isArray(job.payload) ? job.payload : {};
       let payload: Record<string, unknown> = originalPayload;
-      let attachments: { filename: string; content: Buffer; contentType: string; cid: string }[] | undefined;
+      let attachments: { filename: string; content: Buffer; contentType: string; cid?: string }[] | undefined;
       if (job.related_record_type === "paid_event_registrations" && job.related_record_id) {
         const { data: registration } = await sb.from("paid_event_registrations").select("full_name,reference,status,review_note,event_id,member_registration_id").eq("id", job.related_record_id).maybeSingle();
         if (registration) {
@@ -184,20 +184,28 @@ export async function dispatchNotifications(batch = 15) {
             color: { dark: "#121826", light: "#ffffff" },
           });
 
+          const passOptions = {
+            eventTitle: String(payload.eventTitle || "CSC Event"),
+            name: String(payload.name || "Attendee"),
+            phone: String(payload.phone || ""),
+            email: String(payload.email || ""),
+            uid: String(payload.reference || registration.reference),
+            dateRange: payload.startsAt && payload.endsAt ? formatEventRange(String(payload.startsAt), String(payload.endsAt)) : "",
+            location: String(payload.venue ? `${payload.venue}, ${payload.location}` : payload.location || "Online via Google Meet"),
+            qrBuffer,
+          };
+
           let pdfBuffer: Buffer | null = null;
+          let passCardPngBuffer: Buffer | null = null;
           try {
-            pdfBuffer = await generateServerEventPassPdf({
-              eventTitle: String(payload.eventTitle || "CSC Event"),
-              name: String(payload.name || "Attendee"),
-              phone: String(payload.phone || ""),
-              email: String(payload.email || ""),
-              uid: String(payload.reference || registration.reference),
-              dateRange: payload.startsAt && payload.endsAt ? formatEventRange(String(payload.startsAt), String(payload.endsAt)) : "",
-              location: String(payload.venue ? `${payload.venue}, ${payload.location}` : payload.location || ""),
-              qrBuffer,
-            });
-          } catch {
-            pdfBuffer = null;
+            passCardPngBuffer = await generateServerEventPassPng(passOptions);
+          } catch (err) {
+            console.error("Failed to generate pass card PNG:", err);
+          }
+          try {
+            pdfBuffer = await generateServerEventPassPdf(passOptions);
+          } catch (err) {
+            console.error("Failed to generate pass card PDF:", err);
           }
 
           attachments = [
@@ -207,16 +215,19 @@ export async function dispatchNotifications(batch = 15) {
                     filename: `CSC-EventPass-${registration.reference}.pdf`,
                     content: pdfBuffer,
                     contentType: "application/pdf",
-                    cid: `pdf-${cid}`,
                   },
                 ]
               : []),
-            {
-              filename: `CSC-EventPass-${registration.reference}.png`,
-              content: qrBuffer,
-              contentType: "image/png",
-              cid,
-            },
+            ...(passCardPngBuffer
+              ? [
+                  {
+                    filename: `CSC-EventPass-${registration.reference}.png`,
+                    content: passCardPngBuffer,
+                    contentType: "image/png",
+                    cid,
+                  },
+                ]
+              : []),
           ];
         }
       }
