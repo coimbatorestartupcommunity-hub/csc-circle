@@ -59,12 +59,18 @@ export const brandAssets = {
   communityPhoto: "/images/community.png",
   /** CSC × Outlier meetup group photograph. */
   communityOutlier: "/images/community-outlier.png",
-  /** Approved portrait of the technical partner. */
-  vikashPortrait: "/images/vikash.jpg",
-  /** Owner-supplied portrait of CSC founder Reyash. */
-  reyashPortrait: "/images/Reyash.png",
+  /** Approved portrait of the technical partner / CTO. */
+  vikashPortrait: "/images/team/vikash-new.jpg",
+  /** Owner-supplied portrait of CSC founder K. N. Reyash. */
+  reyashPortrait: "/images/team/reyash.jpg",
   /** Owner-supplied Belvoria logo. */
   belvoriaLogo: "/brand/belvoria-logo.png",
+  /** Team portraits */
+  sharanPortrait: "/images/team/sharan.jpg",
+  mirraPortrait: "/images/team/mirra.jpg",
+  kishoreCPortrait: "/images/team/kishore.jpg",
+  swathiPortrait: "/images/team/swathi.jpg",
+  jaibharathPortrait: "/images/team/jaibharath.jpg",
 } as const;
 
 export interface NavItem {
