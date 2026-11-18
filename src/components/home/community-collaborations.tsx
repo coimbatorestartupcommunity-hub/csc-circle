@@ -19,20 +19,20 @@ export async function CommunityCollaborations() {
         description="Through shared ideas, communities, and experiences — here's who we've been building with."
       />
 
-      <RevealOnScroll className="mt-10">
-        <div className="grid items-center gap-8 overflow-hidden rounded-[2rem] bg-brand-white ring-1 ring-brand-border lg:grid-cols-2">
-          <div className="relative aspect-[5/3] w-full">
+      <RevealOnScroll className="mt-8 sm:mt-10">
+        <div className="grid items-stretch overflow-hidden rounded-[2rem] bg-brand-white ring-1 ring-brand-border lg:grid-cols-2">
+          <div className="relative min-h-[260px] sm:min-h-[340px] lg:min-h-[420px] w-full h-full">
             {featured.featuredImagePath ? (
               <Image
                 src={featured.featuredImagePath}
                 alt={`${featured.title} meetup`}
                 fill
-                sizes="(max-width: 1024px) 100vw, 600px"
-                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover object-center"
               />
             ) : null}
           </div>
-          <div className="flex flex-col gap-4 p-7 sm:p-10">
+          <div className="flex flex-col justify-center gap-4 p-6 sm:p-10 lg:p-12">
             <div className="flex items-center gap-2">
               {featured.partners.slice(0, 3).map((p) =>
                 p.organization.logoPath ? (
@@ -43,10 +43,10 @@ export async function CommunityCollaborations() {
               )}
               <Badge className="bg-brand-purple text-brand-ink">{featured.category}</Badge>
             </div>
-            <h3 className="text-2xl font-bold text-brand-ink">{featured.title}</h3>
-            {featured.tagline ? <p className="font-serif text-lg text-brand-accent">{featured.tagline}</p> : null}
-            <p className="text-[15px] leading-relaxed text-brand-secondary">{featured.summary}</p>
-            <div className="mt-1 flex flex-col gap-3 sm:flex-row">
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-brand-ink lg:text-3xl">{featured.title}</h3>
+            {featured.tagline ? <p className="font-serif text-base sm:text-lg text-brand-accent">{featured.tagline}</p> : null}
+            <p className="text-sm sm:text-[15px] leading-relaxed text-brand-secondary">{featured.summary}</p>
+            <div className="mt-2 flex flex-col gap-3 sm:flex-row">
               <CtaLink href={`/collaborations/${featured.slug}`} size="md">View story</CtaLink>
               <CtaLink href="/collaborations" variant="outline" size="md">Explore collaborations</CtaLink>
             </div>

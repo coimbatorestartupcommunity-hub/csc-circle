@@ -34,41 +34,44 @@ function LeaderPortrait({ leader }: { leader: Leader }) {
 function LeaderCard({ leader }: { leader: Leader }) {
   return (
     <article className="flex h-full w-full flex-col overflow-hidden rounded-[2rem] bg-brand-white ring-1 ring-brand-border shadow-sm transition-transform duration-300 hover:-translate-y-1">
-      <div className="relative aspect-4/5 overflow-hidden bg-brand-cloud">
+      <div className="relative aspect-4/5 overflow-hidden bg-brand-cloud w-full">
         <LeaderPortrait leader={leader} />
-        {leader.org ? (
-          <a
-            href={leader.org.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full bg-brand-white/95 px-3.5 py-1.5 text-xs font-semibold text-brand-ink shadow-md ring-1 ring-brand-border backdrop-blur-sm whitespace-nowrap z-10 transition-all hover:bg-brand-white hover:shadow-lg"
-          >
-            <Image
-              src={leader.org.logo}
-              alt={`${leader.org.name} logo`}
-              width={18}
-              height={18}
-              className="rounded-full shrink-0"
-            />
-            <span>{leader.org.name}</span>
-          </a>
-        ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-6">
+      <div className="flex flex-1 flex-col gap-2 p-5 sm:p-6">
         <h3
-          className={`text-xl font-bold tracking-tight ${leader.name ? "text-brand-ink" : "text-brand-muted"}`}
+          className={`text-lg sm:text-xl font-bold tracking-tight ${leader.name ? "text-brand-ink" : "text-brand-muted"}`}
         >
           {leader.honorific && leader.name ? `${leader.honorific} ` : ""}
           {leader.name ?? "To be announced"}
         </h3>
-        <p className="text-sm font-medium text-brand-accent">{leader.role}</p>
+        <p className="text-xs sm:text-sm font-medium text-brand-accent">{leader.role}</p>
         {leader.additionalRole ? (
-          <p className="text-sm font-medium text-brand-accent">{leader.additionalRole}</p>
+          <p className="text-xs sm:text-sm font-medium text-brand-accent">{leader.additionalRole}</p>
         ) : null}
-        <p className="mt-1 text-sm leading-relaxed text-brand-secondary">
+        <p className="mt-1 text-xs sm:text-sm leading-relaxed text-brand-secondary">
           {leader.responsibility}
         </p>
+
+        {leader.org ? (
+          <div className="mt-auto pt-4 flex justify-center w-full">
+            <a
+              href={leader.org.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex max-w-full items-center gap-2 rounded-full bg-brand-white px-4 py-2 text-xs font-semibold text-brand-ink shadow-xs ring-1 ring-brand-border transition-all hover:bg-brand-cloud hover:shadow-sm"
+            >
+              <Image
+                src={leader.org.logo}
+                alt={`${leader.org.name} logo`}
+                width={18}
+                height={18}
+                className="rounded-full shrink-0"
+              />
+              <span className="truncate">{leader.org.name}</span>
+            </a>
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -91,13 +94,13 @@ export function LeadershipSection() {
         title={leadershipSection.heading}
         description={leadershipSection.description}
       />
-      <StaggerContainer className="mx-auto mt-12 flex flex-col gap-8 lg:gap-10 items-center w-full max-w-6xl">
+      <StaggerContainer className="mx-auto mt-8 sm:mt-12 flex flex-col gap-6 sm:gap-10 items-center w-full max-w-6xl">
         {/* Row 1: Founder, Co-Founder, Chief Executive Officer (3) */}
-        <div className="flex flex-wrap justify-center gap-8 w-full">
+        <div className="flex flex-wrap justify-center gap-6 sm:gap-8 w-full">
           {row1.map((leader) => (
             <StaggerItem
               key={leader.id}
-              className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm flex"
+              className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm flex justify-center"
             >
               <LeaderCard leader={leader} />
             </StaggerItem>
@@ -105,11 +108,11 @@ export function LeadershipSection() {
         </div>
 
         {/* Row 2: Chief Technology Officer, Chief Community Officer (2) */}
-        <div className="flex flex-wrap justify-center gap-8 w-full">
+        <div className="flex flex-wrap justify-center gap-6 sm:gap-8 w-full">
           {row2.map((leader) => (
             <StaggerItem
               key={leader.id}
-              className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm flex"
+              className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm flex justify-center"
             >
               <LeaderCard leader={leader} />
             </StaggerItem>
@@ -117,11 +120,11 @@ export function LeadershipSection() {
         </div>
 
         {/* Row 3: Chief Operating Officer, Chief Brand Officer (2) */}
-        <div className="flex flex-wrap justify-center gap-8 w-full">
+        <div className="flex flex-wrap justify-center gap-6 sm:gap-8 w-full">
           {row3.map((leader) => (
             <StaggerItem
               key={leader.id}
-              className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm flex"
+              className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm flex justify-center"
             >
               <LeaderCard leader={leader} />
             </StaggerItem>
