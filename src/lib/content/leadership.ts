@@ -14,7 +14,7 @@ export interface Leader {
 
 export const leadershipSection = {
   eyebrow: "OUR LEADERSHIP",
-  heading: "The People Building CSC Circle",
+  heading: "The People Behind CSC Circle",
   description:
     "The Coimbatore Startup Community was founded and is being built by the people below. With gratitude for their work, we recognize the team guiding CSC — from its founding vision and community initiatives to events and technology-enabled growth.",
 };
@@ -49,16 +49,6 @@ export const leaders: Leader[] = [
     order: 3,
   },
   {
-    id: "kishore",
-    name: "Kishore C",
-    role: "Chief Operating Officer (COO), Coimbatore Startup Community",
-    additionalRole: "Founder, APARÈ Clothing",
-    responsibility:
-      "Kishore C drives operational and logistical excellence at CSC as Chief Operating Officer. Founder of APARÈ Clothing, he owns end-to-end event management — from planning and venue coordination to flawless on-ground execution, elevating every CSC community experience.",
-    portrait: "/images/team/kishore.jpg",
-    order: 4,
-  },
-  {
     id: "vikash",
     name: "Vikash Saravanan",
     role: "Chief Technology Officer (CTO) — Coimbatore Startup Community (CSC)",
@@ -66,8 +56,8 @@ export const leaders: Leader[] = [
     responsibility:
       "As CSC's Chief Technology Officer, leads its technology strategy, digital platform architecture, software development, system integrations, infrastructure management, and technical security, delivered through Logic Intelligence Technologies.",
     portrait: "/images/team/vikash-new.jpg",
-    org: { name: siteConfig.technologyPartner.shortName, logo: brandAssets.litLogo, url: siteConfig.technologyPartner.url },
-    order: 5,
+    org: { name: "Logic Intelligence Technologies", logo: brandAssets.litLogo, url: siteConfig.technologyPartner.url },
+    order: 4,
   },
   {
     id: "swathi",
@@ -76,6 +66,16 @@ export const leaders: Leader[] = [
     responsibility:
       "Swathi spearheads member coordination and community engagement at CSC. She leads event coordination, fosters collaboration, and serves as the core communicative link — keeping the community united, informed, and engaged while shaping a sustainable startup ecosystem.",
     portrait: "/images/team/swathi.jpg",
+    order: 5,
+  },
+  {
+    id: "kishore",
+    name: "Kishore C",
+    role: "Chief Operating Officer (COO), Coimbatore Startup Community",
+    additionalRole: "Founder, APARÈ Clothing",
+    responsibility:
+      "Kishore C drives operational and logistical excellence at CSC as Chief Operating Officer. Founder of APARÈ Clothing, he owns end-to-end event management — from planning and venue coordination to flawless on-ground execution, elevating every CSC community experience.",
+    portrait: "/images/team/kishore.jpg",
     order: 6,
   },
   {
