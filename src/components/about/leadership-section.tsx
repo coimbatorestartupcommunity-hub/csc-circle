@@ -2,7 +2,6 @@ import * as React from "react";
 import Image from "next/image";
 import { UserRound } from "lucide-react";
 import { Section, SectionHeading } from "@/components/common/section";
-import { StaggerContainer, StaggerItem } from "@/components/motion";
 import { leaders, leadershipSection, type Leader } from "@/lib/content/leadership";
 
 /** 4:5 portrait: the verified photo where supplied, otherwise an intentional
@@ -88,49 +87,49 @@ export function LeadershipSection() {
   const row3 = ordered.slice(5, 7);
 
   return (
-    <Section className="bg-brand-white">
+    <Section id="leadership" className="bg-brand-white">
       <SectionHeading
         eyebrow={leadershipSection.eyebrow}
         title={leadershipSection.heading}
         description={leadershipSection.description}
       />
-      <StaggerContainer className="mx-auto mt-8 sm:mt-12 flex flex-col gap-6 sm:gap-10 items-center w-full max-w-6xl">
+      <div className="mx-auto mt-8 sm:mt-12 flex flex-col gap-6 sm:gap-10 items-center w-full max-w-6xl">
         {/* Row 1: Founder, Co-Founder, Chief Executive Officer (3) */}
         <div className="flex flex-wrap justify-center gap-6 sm:gap-8 w-full">
           {row1.map((leader) => (
-            <StaggerItem
+            <div
               key={leader.id}
               className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm flex justify-center"
             >
               <LeaderCard leader={leader} />
-            </StaggerItem>
+            </div>
           ))}
         </div>
 
         {/* Row 2: Chief Technology Officer, Chief Community Officer (2) */}
         <div className="flex flex-wrap justify-center gap-6 sm:gap-8 w-full">
           {row2.map((leader) => (
-            <StaggerItem
+            <div
               key={leader.id}
               className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm flex justify-center"
             >
               <LeaderCard leader={leader} />
-            </StaggerItem>
+            </div>
           ))}
         </div>
 
         {/* Row 3: Chief Operating Officer, Chief Brand Officer (2) */}
         <div className="flex flex-wrap justify-center gap-6 sm:gap-8 w-full">
           {row3.map((leader) => (
-            <StaggerItem
+            <div
               key={leader.id}
               className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-sm flex justify-center"
             >
               <LeaderCard leader={leader} />
-            </StaggerItem>
+            </div>
           ))}
         </div>
-      </StaggerContainer>
+      </div>
     </Section>
   );
 }
