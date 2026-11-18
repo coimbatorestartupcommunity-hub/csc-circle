@@ -24,9 +24,11 @@ export const leaders: Leader[] = [
     id: "reyash",
     name: "K. N. Reyash",
     role: "Founder, Coimbatore Startup Community",
+    additionalRole: "Founder, Belvoria",
     responsibility:
       "K. N. Reyash is the Founder of CSC, providing overall community leadership, vision, and strategic direction. He builds entrepreneur networks, approves plans, and drives meetups — shaping the startup ecosystem and fostering entrepreneurial growth across Coimbatore.",
     portrait: "/images/team/reyash.jpg",
+    org: { name: "Belvoria", logo: brandAssets.belvoriaLogo, url: "https://belvoria.vercel.app/" },
     order: 1,
   },
   {
