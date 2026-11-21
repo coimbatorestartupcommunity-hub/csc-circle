@@ -51,8 +51,8 @@ export default function AboutPage() {
             <Image
               src={brandAssets.communityPhoto}
               alt="The CSC Circle community gathered in Coimbatore"
-              width={1179}
-              height={823}
+              width={1619}
+              height={972}
               className="h-auto w-full rounded-[1.6rem] object-cover"
               sizes="(max-width: 1280px) 100vw, 1200px"
             />
