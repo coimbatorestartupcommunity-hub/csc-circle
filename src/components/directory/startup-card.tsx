@@ -49,9 +49,14 @@ export function StartupCard({ startup }: { startup: Startup }) {
           {startup.isFixture ? <FixtureNotice /> : null}
         </div>
 
-        <span className="inline-flex min-w-0 w-fit max-w-full whitespace-normal break-words [overflow-wrap:anywhere] rounded-full bg-brand-cloud px-3 py-1 text-sm leading-snug text-brand-secondary">
-          {industryLabel(startup.industry)}
-        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex min-w-0 w-fit max-w-full whitespace-normal break-words [overflow-wrap:anywhere] rounded-full bg-brand-cloud px-3 py-1 text-xs font-medium leading-snug text-brand-secondary">
+            {industryLabel(startup.industry)}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900 ring-1 ring-amber-200">
+            Ecosystem Vetted
+          </span>
+        </div>
 
         <p className="min-w-0 max-w-full flex-1 break-words [overflow-wrap:anywhere] text-sm leading-relaxed text-brand-secondary">
           {startup.description}

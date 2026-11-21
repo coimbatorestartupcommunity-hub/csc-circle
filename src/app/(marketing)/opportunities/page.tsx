@@ -20,6 +20,7 @@ import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
 import { MemberOpportunityForm } from "@/components/member/member-opportunity-form";
+import { OpportunityTagsFilter, type OpportunityItem } from "@/components/opportunities/opportunity-tags-filter";
 import { listPublishedOpportunities, cmsImageUrl } from "@/lib/services/cms-public";
 
 export const metadata: Metadata = {
@@ -106,6 +107,34 @@ const fmtDate = (value: string | null) => {
 async function OpportunitiesContent() {
   const dynamicOpportunities = await listPublishedOpportunities();
 
+  const staticItems: OpportunityItem[] = continuousTracks.map((t, idx) => ({
+    id: `flagship-${idx}`,
+    slug: `flagship-track-${idx + 1}`,
+    title: t.title,
+    category: t.category,
+    organization: t.organization,
+    summary: t.summary,
+    location: t.mode,
+    participationMode: "Hybrid",
+    deadline: null,
+  }));
+
+  const allItems: OpportunityItem[] = [
+    ...(dynamicOpportunities || []).map((o) => ({
+      id: o.id,
+      slug: o.slug,
+      title: o.title,
+      category: o.category,
+      organization: o.organization,
+      summary: o.summary,
+      location: o.location,
+      participationMode: o.participationMode,
+      deadline: o.deadline,
+      orgLogoPath: o.orgLogoPath,
+    })),
+    ...staticItems,
+  ];
+
   return (
     <>
       <PageHero
@@ -116,63 +145,26 @@ async function OpportunitiesContent() {
 
       <section className="py-14 sm:py-16">
         <Container className="mx-auto flex max-w-5xl flex-col gap-12">
-          {/* Dynamic CMS Opportunities if present */}
-          {dynamicOpportunities && dynamicOpportunities.length > 0 && (
-            <div className="flex flex-col gap-4">
-              <h2 className="text-xl font-bold tracking-tight text-brand-ink">Active Public Listings</h2>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {dynamicOpportunities.map((o) => {
-                  const logo = cmsImageUrl(o.orgLogoPath);
-                  const deadline = fmtDate(o.deadline);
-                  return (
-                    <Link
-                      key={o.id}
-                      href={`/opportunities/${o.slug}`}
-                      className="group flex h-full flex-col gap-3 rounded-2xl border border-brand-border bg-brand-white p-5 transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-brand-ink"
-                    >
-                      <div className="flex items-center gap-3">
-                        {logo ? (
-                          <Image
-                            src={logo}
-                            alt={`${o.organization ?? "Organization"} logo`}
-                            width={40}
-                            height={40}
-                            unoptimized
-                            className="size-10 rounded-full object-contain ring-1 ring-brand-border"
-                          />
-                        ) : (
-                          <span className="flex size-10 items-center justify-center rounded-full bg-brand-blue/40 text-brand-ink">
-                            <Building2 className="size-5" aria-hidden />
-                          </span>
-                        )}
-                        <span className="text-xs font-semibold text-brand-accent">{o.category}</span>
-                      </div>
-                      <h3 className="text-base font-bold text-brand-ink">{o.title}</h3>
-                      {o.organization && (
-                        <p className="text-sm font-medium text-brand-secondary">{o.organization}</p>
-                      )}
-                      {o.summary && (
-                        <p className="line-clamp-3 text-sm leading-relaxed text-brand-secondary">
-                          {o.summary}
-                        </p>
-                      )}
-                      <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-1 pt-2 text-xs text-brand-muted">
-                        {o.location || o.participationMode ? (
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="size-3.5" aria-hidden />
-                            {[o.location, o.participationMode].filter(Boolean).join(" · ")}
-                          </span>
-                        ) : null}
-                        {deadline && <span>Apply by {deadline}</span>}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
+          {/* Interactive Tag-Filtered Listings Board */}
+          <div className="flex flex-col gap-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-accent">
+                Co-Founder &amp; Builder Matchmaking
+              </p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight text-brand-ink">
+                Active Listings &amp; Innovation Tracks
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm text-brand-secondary">
+                Filter by co-founder searches, engineering openings, seed grants, and mentorship tracks across Coimbatore.
+              </p>
             </div>
-          )}
 
-          {/* Continuous Ecosystem Programs */}
+            <OpportunityTagsFilter
+              opportunities={allItems}
+              cmsImageUrl={cmsImageUrl}
+              fmtDate={fmtDate}
+            />
+          </div>
           <div className="flex flex-col gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-brand-accent">

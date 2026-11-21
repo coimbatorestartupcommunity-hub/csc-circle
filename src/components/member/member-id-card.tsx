@@ -16,6 +16,7 @@ import type { MemberCard } from "@/types/member";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AccountAvatar } from "@/components/layout/account-avatar";
+import { WalletActions } from "@/components/member/wallet-actions";
 import { clipMembershipCardPng, createMembershipCardExportNode, createMembershipCardPdf, membershipCardCaptureOptions, waitForMembershipCardAssets } from "@/lib/member/card-export";
 
 export function MemberIdCard({
@@ -241,6 +242,21 @@ export function MemberIdCard({
           )}
           Download as PDF
         </Button>
+
+        {/* Apple Wallet & Google Wallet Integration */}
+        {!isDemo && (
+          <div className="col-span-2 my-1">
+            <WalletActions
+              type="member"
+              memberNumber={card.memberNumber}
+              fullName={card.fullName}
+              designation={card.designationLabel}
+              startupName={card.startupName}
+              qrPayload={buildMembershipQrPayload(card.verificationToken)}
+            />
+          </div>
+        )}
+
         <div className="col-span-2 flex gap-2">
           <Button
             variant="outline"

@@ -114,15 +114,15 @@ export function CollaborationProposalForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-full overflow-hidden">
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-900">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-900 break-words">
           {error}
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
+      <div className="grid gap-4 sm:grid-cols-2 w-full min-w-0 max-w-full">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="collab-org" className="text-xs font-semibold text-brand-ink">
             Organization or Entity Name <span className="text-red-500">*</span>
           </Label>
@@ -132,11 +132,11 @@ export function CollaborationProposalForm() {
             onChange={(e) => setOrgName(e.target.value)}
             placeholder="e.g. Coimbatore Innovation Hub"
             required
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="collab-rep" className="text-xs font-semibold text-brand-ink">
             Your Full Name <span className="text-red-500">*</span>
           </Label>
@@ -146,13 +146,13 @@ export function CollaborationProposalForm() {
             onChange={(e) => setRepName(e.target.value)}
             placeholder="e.g. Dr. Rajesh Kumar"
             required
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-1.5">
+      <div className="grid gap-4 sm:grid-cols-3 w-full min-w-0 max-w-full">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="collab-desig" className="text-xs font-semibold text-brand-ink">
             Designation / Role
           </Label>
@@ -161,11 +161,11 @@ export function CollaborationProposalForm() {
             value={designation}
             onChange={(e) => setDesignation(e.target.value)}
             placeholder="e.g. Incubation Director"
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="collab-email" className="text-xs font-semibold text-brand-ink">
             Official Email Address <span className="text-red-500">*</span>
           </Label>
@@ -174,13 +174,13 @@ export function CollaborationProposalForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="e.g. partner@institution.org"
+            placeholder="partner@institution.org"
             required
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="collab-phone" className="text-xs font-semibold text-brand-ink">
             Phone / WhatsApp Number <span className="text-red-500">*</span>
           </Label>
@@ -188,15 +188,15 @@ export function CollaborationProposalForm() {
             id="collab-phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="e.g. +91 98765 43210"
+            placeholder="+91 98765 43210"
             required
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
+      <div className="grid gap-4 sm:grid-cols-2 w-full min-w-0 max-w-full">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="collab-category" className="text-xs font-semibold text-brand-ink">
             Collaboration Nature <span className="text-red-500">*</span>
           </Label>
@@ -204,7 +204,7 @@ export function CollaborationProposalForm() {
             id="collab-category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="rounded-xl border border-brand-border bg-white p-3 text-sm text-brand-ink focus:outline-brand-ink"
+            className="rounded-xl border border-brand-border bg-white p-3 text-sm text-brand-ink focus:outline-brand-ink min-w-0 max-w-full w-full"
           >
             {categories.map((c) => (
               <option key={c} value={c}>
@@ -214,7 +214,7 @@ export function CollaborationProposalForm() {
           </select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="collab-web" className="text-xs font-semibold text-brand-ink">
             Website or LinkedIn URL
           </Label>
@@ -223,12 +223,12 @@ export function CollaborationProposalForm() {
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
             placeholder="https://example.org"
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 min-w-0 max-w-full">
         <Label htmlFor="collab-reason" className="text-sm font-semibold text-brand-ink">
           Collaboration Rationale &amp; Objectives <span className="text-red-500">*</span>
         </Label>
@@ -237,13 +237,13 @@ export function CollaborationProposalForm() {
           rows={4}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="e.g. Host a joint deep-tech hackathon and incubation track with mentoring for 20 early-stage hardware startups."
+          placeholder="e.g. Host joint hackathon or mentorship track for hardware startups"
           required
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 min-w-0 max-w-full">
         <Label htmlFor="collab-benefits" className="text-sm font-semibold text-brand-ink">
           Benefits &amp; Value to Coimbatore Founders <span className="text-red-500">*</span>
         </Label>
@@ -252,13 +252,13 @@ export function CollaborationProposalForm() {
           rows={4}
           value={benefits}
           onChange={(e) => setBenefits(e.target.value)}
-          placeholder="e.g. Provide INR 5 Lakhs in non-dilutive prototype grants, lab access, and direct industry mentor office hours."
+          placeholder="e.g. Grant funding, lab access, and direct industry mentor hours"
           required
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 min-w-0 max-w-full">
         <Label htmlFor="collab-support" className="text-sm font-semibold text-brand-ink">
           Support Requested from CSC Circle
         </Label>
@@ -267,19 +267,19 @@ export function CollaborationProposalForm() {
           rows={3}
           value={supportRequested}
           onChange={(e) => setSupportRequested(e.target.value)}
-          placeholder="e.g. Coordinate founder registrations, digital pass verification, and promote the cohort via CSC channels."
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          placeholder="e.g. Ticketing, digital pass check-in, and community promotion"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-brand-border/60 pt-5">
+      <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-brand-border/60 pt-5 min-w-0 max-w-full">
         <span className="text-xs text-brand-muted">
           All proposals are securely reviewed by CSC leadership within 24–48 hours.
         </span>
         <Button
           type="submit"
           disabled={busy}
-          className="w-full sm:w-auto min-w-[260px] min-h-12 gap-2.5 rounded-2xl bg-brand-ink px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition hover:bg-brand-ink/90 hover:shadow-lg disabled:opacity-50 cursor-pointer"
+          className="w-full sm:w-auto sm:min-w-[240px] min-h-12 gap-2.5 rounded-2xl bg-brand-ink px-6 sm:px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition hover:bg-brand-ink/90 hover:shadow-lg disabled:opacity-50 cursor-pointer"
         >
           {busy ? (
             <>

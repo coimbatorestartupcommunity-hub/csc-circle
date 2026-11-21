@@ -366,7 +366,7 @@ export function ConsultationForm() {
           id="c-challenge"
           rows={5}
           {...register("challenge")}
-          placeholder="Describe what you'd like support with — your challenge, goal, or the kind of guidance you're looking for."
+          placeholder="e.g. Scaling customer acquisition, TANSEED pitch review, or technical guidance."
           aria-invalid={!!errors.challenge}
         />
         {errors.challenge ? (

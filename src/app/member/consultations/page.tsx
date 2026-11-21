@@ -4,32 +4,40 @@ import { MemberPageHeader } from "@/components/member/member-page-header";
 import { StatusBadge } from "@/components/member/status-badge";
 import { EmptyState } from "@/components/common/empty-state";
 import { memberServices } from "@/lib/services/member/services";
+import { getMemberContext } from "@/lib/services/member/context";
 import { consultationStatusMeta } from "@/lib/content/member-taxonomy";
 import { formatEventDate } from "@/lib/format";
+import { BookOfficeHours } from "@/components/member/book-office-hours";
 
-export const metadata = { title: "Consultations" };
+export const metadata = { title: "Consultations & Founder Office Hours" };
 
 export default async function ConsultationsPage() {
-  const res = await memberServices.listConsultations();
+  const [ctx, res, profileRes] = await Promise.all([
+    getMemberContext(),
+    memberServices.listConsultations(),
+    memberServices.getProfile(),
+  ]);
+
   const consultations = res.ok ? res.data : [];
+  const profile = profileRes.ok ? profileRes.data : null;
 
   return (
-    <>
+    <div className="flex flex-col gap-6">
       <MemberPageHeader
-        title="My consultations"
-        description="Track your consultation requests and their status."
-        action={
-          <Link
-            href="/events"
-            className="inline-flex items-center gap-2 rounded-xl bg-brand-ink px-3.5 py-2 text-sm font-medium text-brand-white hover:bg-brand-ink/90"
-          >
-            Request a consultation
-          </Link>
-        }
+        title="Founder Office Hours & Consultations"
+        description="Book 1:1 advisory sessions with mentors, engineering leads, and grant advisors."
+      />
+
+      <BookOfficeHours
+        userFullName={profile?.fullName}
+        userEmail={ctx.user?.email || undefined}
+        userStartup={profile?.membership?.memberNumber ? profile.fullName : ""}
       />
 
       {consultations.length > 0 ? (
-        <ul className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
+          <h3 className="text-base font-bold text-brand-ink">Your Scheduled & Past Sessions</h3>
+          <ul className="flex flex-col gap-4">
           {consultations.map((c) => {
             const meta = consultationStatusMeta[c.status];
             return (
@@ -69,21 +77,15 @@ export default async function ConsultationsPage() {
               </li>
             );
           })}
-        </ul>
+          </ul>
+        </div>
       ) : (
         <EmptyState
           icon={MessagesSquare}
-          title="No consultation requests yet."
-          description="Request a consultation from the Events page to get tailored guidance."
-        >
-          <Link
-            href="/events"
-            className="inline-flex items-center gap-2 rounded-lg bg-brand-ink px-4 py-2 text-sm font-medium text-brand-white hover:bg-brand-ink/90"
-          >
-            Request a consultation
-          </Link>
-        </EmptyState>
+          title="No past consultation requests."
+          description="Schedule a 1:1 consultation above to get strategic engineering and grant guidance."
+        />
       )}
-    </>
+    </div>
   );
 }

@@ -142,6 +142,29 @@ export default async function StartupDetailPage({ params }: { params: Promise<{ 
                 </section>
               ) : null}
 
+              {/* Investor Relations & Pitch Deck Access */}
+              <section className="min-w-0 rounded-2xl border border-amber-200 bg-amber-50/60 p-5 sm:p-6 text-amber-950">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="w-fit rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-300">
+                      Investor Relations &amp; Seed Syndicate
+                    </span>
+                    <h2 className="text-lg font-bold text-amber-950">
+                      Confidential Pitch Deck &amp; Founder Intro
+                    </h2>
+                    <p className="text-xs sm:text-sm text-amber-800 leading-relaxed max-w-2xl">
+                      Accredited angels, venture funds, and family offices in the Coimbatore Startup Community network can request confidential deck access, revenue metrics, and founder intros directly.
+                    </p>
+                  </div>
+                  <a
+                    href={`mailto:coimbatorestartupcommunity@gmail.com?subject=Investor%20Intro%20Request%20-%20${encodeURIComponent(startup.name)}&body=Hello%20CSC%20Ecosystem%20Desk,%0A%0AI%20am%20an%20accredited%20investor/fund%20representative%20interested%20in%20connecting%20with%20${encodeURIComponent(startup.name)}.%20Please%20share%20their%20pitch%20deck%20and%20facilitate%20an%20intro.%0A%0AThank%20you.`}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-amber-950 transition cursor-pointer"
+                  >
+                    Request Investor Intro &rarr;
+                  </a>
+                </div>
+              </section>
+
               {Object.keys(contacts).length ? (
                 <section className="min-w-0 rounded-2xl border border-brand-border bg-white p-5 sm:p-6">
                   <h2 className="text-lg font-semibold text-brand-ink">Contact</h2>

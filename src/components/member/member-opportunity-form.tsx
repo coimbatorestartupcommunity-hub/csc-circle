@@ -200,7 +200,7 @@ export function MemberOpportunityForm({ userEmail = "" }: { userEmail?: string }
           />
         </div>
 
-        <div className="space-y-1.5 sm:col-span-2">
+        <div className="space-y-1.5 sm:col-span-2 min-w-0 max-w-full">
           <Label htmlFor="opp-summary" className="text-sm font-semibold text-brand-ink">
             Short Summary (1–2 sentences) <span className="text-rose-500">*</span>
           </Label>
@@ -209,12 +209,12 @@ export function MemberOpportunityForm({ userEmail = "" }: { userEmail?: string }
             required
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            placeholder="e.g. Seeking an engineering leader to build autonomous edge agents and scale our seed-funded MVP."
-            className="rounded-xl border-brand-border text-sm"
+            placeholder="e.g. Seeking co-founder to scale seed-funded MVP"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
 
-        <div className="space-y-1.5 sm:col-span-2">
+        <div className="space-y-1.5 sm:col-span-2 min-w-0 max-w-full">
           <Label htmlFor="opp-desc" className="text-sm font-semibold text-brand-ink">
             Detailed Description, Expectations &amp; Equity/Compensation <span className="text-rose-500">*</span>
           </Label>
@@ -224,20 +224,20 @@ export function MemberOpportunityForm({ userEmail = "" }: { userEmail?: string }
             rows={5}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g. Outline the role responsibilities, ideal technical background, equity allocation (e.g. 10-25%), and milestones for the next 12 months."
-            className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border bg-white p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+            placeholder="e.g. Responsibilities, background, equity allocation, and 12-month goals"
+            className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border bg-white p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
           />
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-brand-border/60 pt-5">
+      <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-brand-border/60 pt-5 min-w-0 max-w-full">
         <span className="text-xs text-brand-muted">
           All submissions are subject to the 24-hour community moderation standard.
         </span>
         <Button
           type="submit"
           disabled={busy}
-          className="w-full sm:w-auto min-w-[260px] min-h-12 gap-2.5 rounded-2xl bg-brand-ink px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition hover:bg-brand-ink/90 hover:shadow-lg disabled:opacity-50 cursor-pointer"
+          className="w-full sm:w-auto sm:min-w-[240px] min-h-12 gap-2.5 rounded-2xl bg-brand-ink px-6 sm:px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition hover:bg-brand-ink/90 hover:shadow-lg disabled:opacity-50 cursor-pointer"
         >
           {busy ? (
             <>

@@ -17,6 +17,7 @@ import { eventPassViewModel } from "@/lib/member/event-pass-view-model";
 import { createEventPassPdf, createEventPassExportNode, eventPassCaptureOptions, waitForEventPassAssets } from "@/lib/member/card-export";
 import { formatEventRange } from "@/lib/format";
 import type { EventPass } from "@/types/member";
+import { WalletActions } from "@/components/member/wallet-actions";
 
 function isMobileBrowser() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
@@ -299,6 +300,22 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
           )}
           Download Pass (PDF)
         </Button>
+
+        {/* Apple Wallet & Google Wallet Integration */}
+        {!isDemo && (
+          <div className="col-span-2 my-1">
+            <WalletActions
+              type="event"
+              idOrRegId={pass.registrationId}
+              memberNumber={pass.reference}
+              fullName={pass.memberName}
+              eventTitle={pass.eventTitle}
+              eventDate={pass.startsAt}
+              eventLocation={pass.venue || pass.location}
+              qrPayload={buildEventPassQrPayload(pass.verificationToken)}
+            />
+          </div>
+        )}
 
         <div className="col-span-2 grid grid-cols-3 gap-2">
           <Button

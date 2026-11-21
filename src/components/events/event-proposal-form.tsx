@@ -122,15 +122,15 @@ export function EventProposalForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 w-full max-w-full overflow-hidden">
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-900">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-900 break-words">
           {error}
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
+      <div className="grid gap-4 sm:grid-cols-2 w-full min-w-0 max-w-full">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="evt-org-name" className="text-xs font-semibold text-brand-ink">
             Organizer / Host Name <span className="text-red-500">*</span>
           </Label>
@@ -140,11 +140,11 @@ export function EventProposalForm() {
             onChange={(e) => setOrganizerName(e.target.value)}
             placeholder="e.g. Senthil Nathan"
             required
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="evt-company" className="text-xs font-semibold text-brand-ink">
             Organization or Startup Affiliation
           </Label>
@@ -153,13 +153,13 @@ export function EventProposalForm() {
             value={organization}
             onChange={(e) => setOrganization(e.target.value)}
             placeholder="e.g. TechSprint Labs"
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
+      <div className="grid gap-4 sm:grid-cols-2 w-full min-w-0 max-w-full">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="evt-email" className="text-xs font-semibold text-brand-ink">
             Contact Email <span className="text-red-500">*</span>
           </Label>
@@ -168,13 +168,13 @@ export function EventProposalForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="e.g. organizer@startup.in"
+            placeholder="organizer@startup.in"
             required
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="evt-phone" className="text-xs font-semibold text-brand-ink">
             Phone / WhatsApp Number <span className="text-red-500">*</span>
           </Label>
@@ -182,14 +182,14 @@ export function EventProposalForm() {
             id="evt-phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="e.g. +91 98765 43210"
+            placeholder="+91 98765 43210"
             required
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
         <Label htmlFor="evt-title" className="text-xs font-semibold text-brand-ink">
           Proposed Event Title <span className="text-red-500">*</span>
         </Label>
@@ -197,14 +197,14 @@ export function EventProposalForm() {
           id="evt-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Scaling AI Infrastructure from Coimbatore: Founder Workshop"
+          placeholder="e.g. AI infrastructure founder workshop"
           required
-          className="rounded-xl border-brand-border text-sm"
+          className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-1.5">
+      <div className="grid gap-4 sm:grid-cols-3 w-full min-w-0 max-w-full">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="evt-category" className="text-xs font-semibold text-brand-ink">
             Format Category <span className="text-red-500">*</span>
           </Label>
@@ -212,7 +212,7 @@ export function EventProposalForm() {
             id="evt-category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="rounded-xl border border-brand-border bg-white p-3 text-sm text-brand-ink focus:outline-brand-ink"
+            className="rounded-xl border border-brand-border bg-white p-3 text-sm text-brand-ink focus:outline-brand-ink min-w-0 max-w-full w-full"
           >
             {eventCategories.map((c) => (
               <option key={c} value={c}>
@@ -222,7 +222,7 @@ export function EventProposalForm() {
           </select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="evt-format" className="text-xs font-semibold text-brand-ink">
             Mode / Venue Type <span className="text-red-500">*</span>
           </Label>
@@ -230,7 +230,7 @@ export function EventProposalForm() {
             id="evt-format"
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="rounded-xl border border-brand-border bg-white p-3 text-sm text-brand-ink focus:outline-brand-ink"
+            className="rounded-xl border border-brand-border bg-white p-3 text-sm text-brand-ink focus:outline-brand-ink min-w-0 max-w-full w-full"
           >
             {eventFormats.map((f) => (
               <option key={f} value={f}>
@@ -240,7 +240,7 @@ export function EventProposalForm() {
           </select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="evt-capacity" className="text-xs font-semibold text-brand-ink">
             Expected Capacity
           </Label>
@@ -249,13 +249,13 @@ export function EventProposalForm() {
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
             placeholder="e.g. 50"
-            className="rounded-xl border-brand-border text-sm"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
+      <div className="grid gap-4 sm:grid-cols-2 w-full min-w-0 max-w-full">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="evt-date" className="text-xs font-semibold text-brand-ink">
             Preferred Date &amp; Time Window
           </Label>
@@ -264,12 +264,12 @@ export function EventProposalForm() {
             type="text"
             value={proposedDate}
             onChange={(e) => setProposedDate(e.target.value)}
-            placeholder="e.g. Mid December 2026, Saturday 4:00 PM IST"
-            className="rounded-xl border-brand-border text-sm"
+            placeholder="e.g. Saturday 4:00 PM IST"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
           <Label htmlFor="evt-venue" className="text-xs font-semibold text-brand-ink">
             Proposed Location / Venue Address
           </Label>
@@ -277,13 +277,13 @@ export function EventProposalForm() {
             id="evt-venue"
             value={venue}
             onChange={(e) => setVenue(e.target.value)}
-            placeholder="e.g. PSG-STEP Auditorium, Avinashi Rd"
-            className="rounded-xl border-brand-border text-sm"
+            placeholder="e.g. PSG-STEP Auditorium, Coimbatore"
+            className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 min-w-0 max-w-full">
         <Label htmlFor="evt-desc" className="text-sm font-semibold text-brand-ink">
           Event Outline, Agenda &amp; Target Audience <span className="text-red-500">*</span>
         </Label>
@@ -292,13 +292,13 @@ export function EventProposalForm() {
           rows={4}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="e.g. 90-minute masterclass covering AI infrastructure bottlenecks, model cost reductions, and live demos for seed founders and engineering leads."
+          placeholder="e.g. 90-minute workshop on AI model costs & live demos for founders"
           required
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 min-w-0 max-w-full">
         <Label htmlFor="evt-support" className="text-sm font-semibold text-brand-ink">
           Support Requested from CSC Circle
         </Label>
@@ -307,19 +307,19 @@ export function EventProposalForm() {
           rows={3}
           value={supportRequested}
           onChange={(e) => setSupportRequested(e.target.value)}
-          placeholder="e.g. Digital pass ticketing, check-in QR scanner support, and announcement broadcast across Coimbatore startup channels."
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          placeholder="e.g. Ticketing passes, QR check-in, and community broadcast"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-brand-border/60 pt-5">
+      <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-brand-border/60 pt-5 min-w-0 max-w-full">
         <span className="text-xs text-brand-muted">
           All proposals are evaluated by CSC Events desk within 24–48 hours.
         </span>
         <Button
           type="submit"
           disabled={busy}
-          className="w-full sm:w-auto min-w-[260px] min-h-12 gap-2.5 rounded-2xl bg-brand-ink px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition hover:bg-brand-ink/90 hover:shadow-lg disabled:opacity-50 cursor-pointer"
+          className="w-full sm:w-auto sm:min-w-[240px] min-h-12 gap-2.5 rounded-2xl bg-brand-ink px-6 sm:px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition hover:bg-brand-ink/90 hover:shadow-lg disabled:opacity-50 cursor-pointer"
         >
           {busy ? (
             <>

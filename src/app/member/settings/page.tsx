@@ -2,6 +2,7 @@ import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import Link from "next/link";
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { MemberSettingsForm } from "@/components/member/member-settings-form";
+import { DpdpCompliancePanel } from "@/components/member/dpdp-compliance-panel";
 import { EmptyState } from "@/components/common/empty-state";
 import { Settings, ShieldCheck } from "lucide-react";
 import { getMemberContext } from "@/lib/services/member/context";
@@ -69,6 +70,12 @@ export default async function MemberSettingsPage() {
 
           <MemberSettingsForm key={profile.id} profile={profile} isDemo={ctx.mode === "preview"} />
         </div>
+
+        <DpdpCompliancePanel
+          email={profile.email}
+          fullName={profile.fullName}
+          memberNumber={profile.membership?.memberNumber}
+        />
 
         {ctx.mode === "live" ? <ChangePasswordForm /> : null}
       </div>
