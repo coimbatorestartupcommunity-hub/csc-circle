@@ -12,6 +12,19 @@ type StatusResult = { ok: true; authenticated: boolean; registered: boolean; sta
 export function PaidEventRegistration({ event }: { event: EventRecord }) {
   const [result, setResult] = React.useState<StatusResult | null>(null);
   const [failed, setFailed] = React.useState(false);
+  const [localRegistered, setLocalRegistered] = React.useState<{ reference?: string; passHref?: string } | null>(null);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem(`csc_event_registered_${event.slug}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.reference) setLocalRegistered(parsed);
+        }
+      }
+    } catch {}
+  }, [event.slug]);
 
   React.useEffect(() => {
     let active = true;
@@ -26,20 +39,51 @@ export function PaidEventRegistration({ event }: { event: EventRecord }) {
   }, [event.id]);
 
   if (!result && !failed) return <div className="flex min-h-28 items-center justify-center gap-2 rounded-2xl bg-brand-white p-6 text-sm text-brand-secondary ring-1 ring-brand-border" role="status"><Loader2 className="size-4 animate-spin" />Checking your registration…</div>;
-  if (failed) return <div className="rounded-2xl bg-brand-white p-5 text-sm text-brand-secondary ring-1 ring-brand-border" role="alert">We couldn’t check your registration status. Refresh this page before registering.</div>;
+  if (failed && !localRegistered) return <div className="rounded-2xl bg-brand-white p-5 text-sm text-brand-secondary ring-1 ring-brand-border" role="alert">We couldn’t check your registration status. Refresh this page before registering.</div>;
 
   if (result?.registered) {
     const state = result.state ?? "confirmation_pending";
     const presentation = getPaidRegistrationPresentation(state);
     const passReady = presentation.passReady && result.passHref;
-    return <section className="rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border" aria-live="polite">
+    return <section className="rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border" aria-live="polite">
       <div className="flex items-start gap-3">
         <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-brand-accent" aria-hidden />
-        <div><h5 className="font-semibold text-brand-ink">{presentation.heading}</h5><p className="mt-1 text-sm leading-relaxed text-brand-secondary">{presentation.message}</p></div>
+        <div>
+          <h5 className="font-semibold text-brand-ink">You Have Already Registered for This Event!</h5>
+          <p className="mt-1 text-sm leading-relaxed text-brand-secondary">{presentation.message}</p>
+          <p className="mt-1 text-xs text-brand-muted leading-relaxed">
+            Google Meet check-in unlocks 1 hour before meeting (at 2:00 PM IST).
+          </p>
+        </div>
       </div>
       {passReady ? <Link href={result.passHref!} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"><Ticket className="size-4" />View and download your event pass</Link> : null}
     </section>;
   }
 
-  return <PaidRegistrationForm event={event} />;
+  if (localRegistered) {
+    return <section className="rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border" aria-live="polite">
+      <div className="flex items-start gap-3">
+        <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-brand-accent" aria-hidden />
+        <div>
+          <h5 className="font-semibold text-brand-ink">You Have Already Registered for This Event!</h5>
+          <p className="mt-1 text-sm leading-relaxed text-brand-secondary">
+            Pass Reference: <span className="font-mono font-semibold text-brand-accent">{localRegistered.reference}</span>
+          </p>
+          <p className="mt-1 text-xs text-brand-muted leading-relaxed">
+            Google Meet check-in unlocks 1 hour before meeting (at 2:00 PM IST). Your registration is confirmed.
+          </p>
+        </div>
+      </div>
+      {localRegistered.passHref ? (
+        <Link
+          href={localRegistered.passHref}
+          className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <Ticket className="size-4" /> View and download your event pass
+        </Link>
+      ) : null}
+    </section>;
+  }
+
+  return <PaidRegistrationForm event={event} isAuthenticated={result?.authenticated ?? false} />;
 }

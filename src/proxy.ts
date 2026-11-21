@@ -13,11 +13,10 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const pathname = request.nextUrl.pathname;
   const isAuthPublic = [
-    "/about", "/collaborations", "/directory", "/members",
     "/login", "/signup", "/forgot-password", "/reset-password",
     "/privacy", "/terms", "/security", "/help", "/contact", "/community-guidelines", "/membership",
-    "/resources", "/opportunities", "/updates",
-    "/survey/member-onboarding",
+    "/updates",
+    "/events",
     "/auth/callback", "/auth/confirm", "/auth/signout",
     // Invitees do not have an admin role yet. This page must load so its
     // client can exchange the email URL fragment for a short-lived HttpOnly
@@ -30,9 +29,6 @@ export async function proxy(request: NextRequest) {
     "/events/meet-access",
   ].some((path) => pathname === path || pathname.startsWith(`${path}/`))
     || pathname === "/"
-    // The Events & Booking listing requires sign-in, but an individual event
-    // page stays public so shared links (WhatsApp/social) show their preview
-    // and visitors can read details before signing in to register.
     || /^\/events\/[^/]+$/.test(pathname);
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

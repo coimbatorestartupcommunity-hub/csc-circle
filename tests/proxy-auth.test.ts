@@ -39,7 +39,7 @@ it("keeps auth-public pages available without initializing Supabase Auth", async
   expect(mocks.createServerClient).not.toHaveBeenCalled();
 });
 
-it.each(["/", "/about", "/events/synthetic-event", "/events/google-meet/check-in", "/events/check-in", "/events/meet-access/token123", "/directory", "/members", "/members/synthetic-profile", "/collaborations", "/help", "/contact", "/community-guidelines", "/membership", "/resources", "/opportunities", "/updates", "/updates/synthetic-update", "/survey/member-onboarding"]) (
+it.each(["/", "/events", "/events/synthetic-event", "/events/google-meet/check-in", "/events/check-in", "/events/meet-access/token123", "/help", "/contact", "/community-guidelines", "/membership", "/updates", "/updates/synthetic-update"]) (
   "keeps public marketing route %s available without a session",
   async (path) => {
     configureLocalAuth();
@@ -52,14 +52,17 @@ it.each(["/", "/about", "/events/synthetic-event", "/events/google-meet/check-in
   },
 );
 
-it("requires sign-in for the Events & Booking listing while keeping shared event detail links public", async () => {
-  configureLocalAuth();
-  const response = await proxy(new NextRequest("http://localhost/events"));
+it.each(["/about", "/directory", "/members", "/members/synthetic-profile", "/collaborations", "/resources", "/opportunities", "/survey/member-onboarding"]) (
+  "requires login for protected community route %s",
+  async (path) => {
+    configureLocalAuth();
+    const response = await proxy(new NextRequest(`http://localhost${path}`));
 
-  expect(response.status).toBe(307);
-  expect(new URL(response.headers.get("location")!).pathname).toBe("/login");
-  expect(new URL(response.headers.get("location")!).searchParams.get("next")).toBe("/events");
-});
+    expect(response.status).toBe(307);
+    expect(new URL(response.headers.get("location")!).pathname).toBe("/login");
+    expect(new URL(response.headers.get("location")!).searchParams.get("next")).toBe(path);
+  },
+);
 
 it("keeps the administrator invitation acceptance page public so email tokens survive the initial navigation", async () => {
   configureLocalAuth();

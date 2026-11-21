@@ -1,33 +1,21 @@
 import Link from "next/link";
-import { Clock, CheckCircle2, XCircle, ShieldAlert } from "lucide-react";
+import { CheckCircle2, XCircle, ShieldAlert } from "lucide-react";
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { ClaimForm } from "@/components/member/claim-form";
-import { StatusBadge } from "@/components/member/status-badge";
+import { ClaimCountdown } from "@/components/member/claim-countdown";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
+import { autoApproveDueMembershipClaims } from "@/lib/services/member/auto-approve";
+import { createClient } from "@/lib/supabase/server";
 import { membershipStatusMeta } from "@/lib/content/member-taxonomy";
 import type { MembershipStatus } from "@/types/member";
 
 export const metadata = { title: "Claim membership" };
 
-function StateView({ status }: { status: MembershipStatus }) {
+function StateView({ status, submittedAt }: { status: MembershipStatus; submittedAt?: string | null }) {
   const meta = membershipStatusMeta[status];
   if (status === "claim_submitted" || status === "pending_verification") {
-    return (
-      <div className="flex flex-col items-center gap-4 rounded-3xl bg-brand-cloud p-10 text-center ring-1 ring-brand-border">
-        <span className="flex size-14 items-center justify-center rounded-full bg-brand-gold text-brand-ink">
-          <Clock className="size-7" />
-        </span>
-        <h2 className="text-2xl font-bold text-brand-ink">
-          Your CSC Membership Is Under Review.
-        </h2>
-        <p className="max-w-md text-brand-secondary">
-          Thank you for submitting your membership request. Once verified, your
-          CSC digital membership ID will become available in your member portal.
-        </p>
-        <StatusBadge label={meta.label} tone={meta.tone} />
-      </div>
-    );
+    return <ClaimCountdown submittedAt={submittedAt} />;
   }
   if (status === "approved" || status === "active") {
     return (
@@ -35,16 +23,16 @@ function StateView({ status }: { status: MembershipStatus }) {
         <span className="flex size-14 items-center justify-center rounded-full bg-green-100 text-green-700">
           <CheckCircle2 className="size-7" />
         </span>
-        <h2 className="text-2xl font-bold text-brand-ink">Welcome to the CSC Circle.</h2>
+        <h2 className="text-2xl font-bold text-brand-ink">You Have Already Claimed Your Membership!</h2>
         <p className="max-w-md text-brand-secondary">
-          Your membership is {status === "active" ? "active" : "approved"}. Your
-          digital membership ID is ready.
+          Your CSC Circle membership is {status === "active" ? "active" : "approved"}. Your
+          official digital membership ID card is ready to view and download.
         </p>
         <Link
           href="/member/id-card"
           className="inline-flex items-center gap-2 rounded-lg bg-brand-ink px-5 py-2.5 text-sm font-medium text-brand-white hover:bg-brand-ink/90"
         >
-          View My Digital ID
+          View My Digital ID Card
         </Link>
       </div>
     );
@@ -84,8 +72,29 @@ function StateView({ status }: { status: MembershipStatus }) {
 
 export default async function ClaimPage() {
   const ctx = await getMemberContext();
+
+  // Run auto-approval check for any claims older than 5 minutes
+  await autoApproveDueMembershipClaims().catch(() => {});
+
   const res = await memberServices.getProfile();
   const status = res.ok ? res.data.membership.status : "not_started";
+
+  let submittedAt: string | null = null;
+  if (ctx.user?.id) {
+    try {
+      const sb = await createClient();
+      const { data: claim } = await sb
+        .from("membership_claims")
+        .select("submitted_at")
+        .eq("user_id", ctx.user.id)
+        .order("submitted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (claim?.submitted_at) submittedAt = claim.submitted_at;
+    } catch {
+      // Fallback
+    }
+  }
 
   const showForm = status === "not_started" || status === "profile_incomplete" || status === "rejected";
 
@@ -93,11 +102,11 @@ export default async function ClaimPage() {
     <>
       <MemberPageHeader
         title="Claim your CSC membership"
-        description="Request official CSC Circle membership. Claims are reviewed by administrators."
+        description="Request official CSC Circle membership. Submissions are automatically approved within 5 minutes."
       />
       {status !== "not_started" && status !== "profile_incomplete" ? (
         <div className="mb-6">
-          <StateView status={status} />
+          <StateView status={status} submittedAt={submittedAt} />
         </div>
       ) : null}
       {showForm ? <ClaimForm isDemo={ctx.mode === "preview"} /> : null}

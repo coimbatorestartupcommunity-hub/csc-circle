@@ -25,12 +25,12 @@ const audience = [
 ];
 
 const steps = [
-  { icon: UserPlus, title: "Create an account", body: "Sign up with a verified email account to get started." },
-  { icon: ClipboardList, title: "Complete your details", body: "Provide accurate personal and profile information so the community team can review your application." },
-  { icon: Send, title: "Submit your application", body: "Submit your membership details for review by CSC administrators." },
-  { icon: Clock, title: "Track your status", body: "Sign in any time to see whether your application is pending, approved, or needs more information." },
-  { icon: BadgeCheck, title: "Get access after approval", body: "Once approved, your digital membership card becomes available and you unlock member features." },
-  { icon: Compass, title: "Explore the community", body: "Browse the founder directory, register for events, and connect with other members." },
+  { icon: UserPlus, title: "Create an account", body: "Sign up with a verified Google or email account to get started." },
+  { icon: ClipboardList, title: "Complete your details", body: "Provide accurate personal and startup details to request your free community membership." },
+  { icon: Send, title: "Submit your claim", body: "Submit your membership claim. Membership is 100% free for all founders, creators, and builders." },
+  { icon: Clock, title: "Automatic 5-minute approval", body: "Your claim undergoes automated verification and is automatically approved within 5 minutes." },
+  { icon: BadgeCheck, title: "Instant digital card activation", body: "Once approved, your digital membership ID is issued immediately, with instant confirmation sent to your email and inbox." },
+  { icon: Compass, title: "Explore the community", body: "Browse the founder directory, register for events, and collaborate with founders across Coimbatore." },
 ];
 
 const benefits = [
@@ -66,7 +66,7 @@ export default function MembershipPage() {
             <p className="text-sm leading-relaxed text-brand-secondary">
               CSC membership connects you to the Coimbatore Startup Community&apos;s platform activities and member
               services — a member profile, a digital membership card, the founder directory, and event registration.
-              Membership is reviewed and approved by CSC administrators so the community stays trusted and authentic.
+              Membership is 100% free and claims are automatically approved within 5 minutes so members can quickly connect and participate.
             </p>
             <p className="rounded-xl bg-brand-cloud p-4 text-sm leading-relaxed text-brand-secondary">
               A CSC member-information survey is not a membership application. Survey responses help the team understand

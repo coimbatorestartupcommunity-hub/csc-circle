@@ -18,6 +18,7 @@ import {
   toCreateOrderBody,
 } from "@/lib/validations/paid-registration";
 import { UpiCheckoutModal, type OrderInfo } from "@/components/events/upi-checkout-modal";
+import { createClient } from "@/lib/supabase/client";
 import type { PaymentDeepLinks } from "@/lib/payments/orders";
 import type { EventRecord } from "@/types";
 import { z } from "zod";
@@ -26,7 +27,7 @@ type Values = z.input<typeof paidRegistrationSchema>;
 const selectClass =
   "h-10 w-full rounded-lg border border-input bg-brand-white px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export function PaidRegistrationForm({ event }: { event: EventRecord }) {
+export function PaidRegistrationForm({ event, isAuthenticated = false }: { event: EventRecord; isAuthenticated?: boolean }) {
   const [saving, setSaving] = React.useState(false);
   const isFree = event.admission === "free" || (event.pricePerAttendee ?? 0) <= 0;
   const [freeConfirmedData, setFreeConfirmedData] = React.useState<{ ok: boolean; reference: string; passHref?: string; message?: string } | null>(null);
@@ -61,6 +62,32 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
 
   const values = useWatch({ control });
   const total = calculatePaidRegistrationTotal(event.pricePerAttendee ?? 0, Number(values.attendeeCount ?? 1));
+
+  // Restore draft from localStorage if present
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const storedDraft = localStorage.getItem(`csc_event_draft_${event.slug}`);
+      if (storedDraft) {
+        const draft = JSON.parse(storedDraft);
+        Object.keys(draft).forEach((key) => {
+          if (draft[key] !== undefined && draft[key] !== null) {
+            setValue(key as any, draft[key], { shouldValidate: false });
+          }
+        });
+      }
+    } catch {}
+  }, [event.slug, setValue]);
+
+  // Persist form changes to localStorage draft so details are not lost
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (values && (values.fullName || values.email || values.whatsapp)) {
+        localStorage.setItem(`csc_event_draft_${event.slug}`, JSON.stringify(values));
+      }
+    } catch {}
+  }, [values, event.slug]);
 
   // Check for 1-click email verification completion or saved session
   React.useEffect(() => {
@@ -266,6 +293,28 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
 
     const normalizedEmail = String(currentValues.email || "").trim().toLowerCase();
 
+    // If not authenticated, require Google sign-in to confirm registration without losing details
+    if (!isAuthenticated) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`csc_event_draft_${event.slug}`, JSON.stringify(currentValues));
+      }
+      toast.info("Please sign in with Google to complete your registration.");
+      try {
+        const supabase = createClient();
+        const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(`/events/${event.slug}?resume_registration=1`)}`;
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo },
+        });
+        if (error) {
+          window.location.href = `/login?next=${encodeURIComponent(`/events/${event.slug}?resume_registration=1`)}`;
+        }
+      } catch {
+        window.location.href = `/login?next=${encodeURIComponent(`/events/${event.slug}?resume_registration=1`)}`;
+      }
+      return;
+    }
+
     if (isFree) {
       setSaving(true);
       try {
@@ -298,6 +347,15 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
         }
 
         setFreeConfirmedData(data);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`csc_event_registered_${event.slug}`, JSON.stringify({
+            reference: data.reference,
+            passHref: data.passHref,
+            name: currentValues.fullName,
+            email: currentValues.email,
+          }));
+          localStorage.removeItem(`csc_event_draft_${event.slug}`);
+        }
         toast.success(data.message || "Registration confirmed! Your digital event pass has been emailed to you.");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to register.");
@@ -646,7 +704,9 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
               {saving ? <Loader2 className="size-4 animate-spin" /> : isFree ? <CheckCircle2 className="size-4" /> : <Smartphone className="size-4" />}
               {saving
                 ? isFree ? "Confirming Registration…" : "Generating Payment Session…"
-                : isFree ? "Register Now — Free Admission" : "Pay using UPI instant confirmation."}
+                : !isAuthenticated
+                  ? isFree ? "Register Now · Continue with Google" : "Proceed to Payment · Continue with Google"
+                  : isFree ? "Register Now — Free Admission" : "Pay using UPI instant confirmation."}
               {!saving && <ArrowRight className="size-4" />}
             </Button>
           </div>

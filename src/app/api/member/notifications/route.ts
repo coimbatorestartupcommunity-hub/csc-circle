@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
+import { autoApproveDueMembershipClaims } from "@/lib/services/member/auto-approve";
 
 export async function GET() {
   const requestStarted = performance.now();
@@ -33,6 +34,9 @@ export async function GET() {
   if (claimsError || !userId) {
     return send({ error: "Sign in to view notifications." }, 401, true);
   }
+
+  // Ensure any claims reaching 5 minutes are approved so the notification inbox reflects approval
+  await autoApproveDueMembershipClaims().catch(() => {});
 
   const inboxStarted = performance.now();
   // This invoker RPC combines session validation, the RLS-filtered inbox and

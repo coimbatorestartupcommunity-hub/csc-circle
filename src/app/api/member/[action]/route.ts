@@ -1,4 +1,5 @@
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
+import { checkOrScheduleAutoApproval, autoApproveDueMembershipClaims } from "@/lib/services/member/auto-approve";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -39,7 +40,10 @@ export async function POST(request: Request, context: { params: Promise<{ action
       if (!parsed.success) return authResponse({ error: "Check all claim fields and your declaration." }, 422);
       const v = parsed.data;
       const { data, error } = await sb.from("membership_claims").insert({ user_id: user.id, full_name: v.fullName, linked_account_email: user.email!, applicant_type: v.applicantType, reference: v.reference || null, whatsapp: v.whatsapp.replace(/[ -]/g, ""), designation: v.designation as Database["public"]["Enums"]["member_designation"], designation_other: v.designation === "other" ? v.designationOther?.trim() || null : null, startup_affiliation: v.startupAffiliation || null, declaration_accurate: true }).select("id").single();
-      if (!error) scheduleNotificationDelivery();
+      if (!error) {
+        scheduleNotificationDelivery();
+        checkOrScheduleAutoApproval(user.id).catch(() => {});
+      }
       return error ? authResponse({ error: "Claim was not saved. You may already have a pending claim." }, 409) : authResponse({ ok: true, id: data.id });
     }
     if (action === "review") {

@@ -51,7 +51,11 @@ export function ClaimForm({ isDemo }: { isDemo: boolean }) {
     try {
       const result = await memberRequest("claim", values);
       if (result.error) { toast.error(result.error); return; }
-      notifySubmissionSuccess({ title: "Successfully submitted", message: "Your membership claim has been sent to CSC for review." });
+      if (typeof window !== "undefined") {
+        localStorage.setItem("csc_membership_claimed", "true");
+        localStorage.setItem("csc_membership_claimed_at", new Date().toISOString());
+      }
+      notifySubmissionSuccess({ title: "Successfully submitted", message: "Your membership claim has been submitted. It will be automatically approved within 5 minutes." });
       router.refresh();
     } finally {
       setSubmitting(false);
@@ -66,8 +70,8 @@ export function ClaimForm({ isDemo }: { isDemo: boolean }) {
       <div className="flex items-start gap-3 rounded-2xl bg-brand-blue/60 p-4 text-sm text-brand-ink">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand-accent" aria-hidden />
         <p>
-          Membership claims are reviewed by CSC administrators. Submitting a
-          claim does not grant membership until it is verified and approved.
+          Membership claims are automatically verified and approved within 5 minutes.
+          Once approved, your official CSC digital membership ID will be available in your portal and sent to your email.
         </p>
       </div>
 

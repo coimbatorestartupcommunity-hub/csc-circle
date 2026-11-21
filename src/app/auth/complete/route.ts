@@ -33,13 +33,15 @@ export async function GET(request: Request) {
   if (membershipError || profileError) return NextResponse.redirect(new URL("/access-denied", url.origin));
   if (membership && ["suspended", "revoked", "rejected"].includes(membership.status))
     return NextResponse.redirect(new URL("/access-denied", url.origin));
-  // Active members continue to where they were headed (their dashboard by
-  // default). Anyone who has not yet become an active member is sent to the
-  // membership claim / digital ID page, which shows the claim form or their
-  // current claim status so they can claim their membership ID.
-  const next = membership?.status === "active"
-    ? safeNext(url.searchParams.get("next"))
-    : "/member/claim";
+  // If the user was signing in from an event page (e.g. /events/[slug]), respect that requested target
+  // so they return to complete their event registration rather than being sent to membership claim.
+  const rawNext = url.searchParams.get("next");
+  const requested = safeNext(rawNext, "/member/claim");
+  const isEventReturn = requested.startsWith("/events/") || requested === "/events";
+
+  const next = isEventReturn
+    ? requested
+    : (rawNext && rawNext !== "/member/profile" ? requested : "/member/claim");
   // Incomplete profiles are completed on the profile page itself; avoid
   // splitting first-time members into an unrelated empty onboarding screen.
   if (!profile) return NextResponse.redirect(new URL("/access-denied", url.origin));

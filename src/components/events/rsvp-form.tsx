@@ -237,6 +237,23 @@ export function RsvpForm({
 /* -------------------------------------------------------------------------- */
 
 export function ConsultationForm() {
+  const [existingSubmission, setExistingSubmission] = React.useState<{ reference?: string; submittedAt?: string } | null>(null);
+  const [showNewForm, setShowNewForm] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("csc_consultation_submission");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.reference) {
+            setExistingSubmission(parsed);
+          }
+        }
+      }
+    } catch {}
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -275,11 +292,46 @@ export function ConsultationForm() {
         return;
       }
       setReference(json.reference);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("csc_consultation_submission", JSON.stringify({
+          reference: json.reference,
+          submittedAt: new Date().toISOString(),
+          fullName: values.fullName,
+        }));
+      }
       notifySubmissionSuccess({ title: "Consultation request submitted", message: "Your request has been received. The CSC team will contact you to schedule a consultation.", reference: json.reference });
     } catch {
       toast.error("Network error. Please try again.");
     }
   };
+
+  if (existingSubmission && !showNewForm && !reference) {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-2xl bg-brand-cloud p-6 sm:p-8 text-center ring-1 ring-brand-border">
+        <span className="flex size-12 items-center justify-center rounded-full bg-green-100 text-green-700">
+          <CheckCircle2 className="size-6" />
+        </span>
+        <div className="flex flex-col gap-1 max-w-md">
+          <h4 className="text-lg font-bold text-brand-ink">
+            You Have Already Submitted a Consultation Request
+          </h4>
+          <p className="text-sm text-brand-secondary">
+            Reference: <span className="font-mono font-semibold text-brand-accent">{existingSubmission.reference}</span>
+          </p>
+          <p className="mt-1 text-xs text-brand-muted leading-relaxed">
+            Our team has received your submission and will get in touch with you via email or WhatsApp to schedule your 1:1 consultation.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowNewForm(true)}
+          className="mt-2 text-xs font-semibold text-brand-accent hover:underline underline-offset-4"
+        >
+          Need to submit another enquiry? Click here
+        </button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5" noValidate>

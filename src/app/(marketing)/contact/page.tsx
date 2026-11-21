@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail, Globe, LifeBuoy, ShieldCheck, CalendarDays } from "lucide-react";
+import { Mail, Globe, LifeBuoy, ShieldCheck, CalendarDays, Sparkles } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { InstagramIcon, WhatsappIcon } from "@/components/common/brand-icons";
 import { siteConfig } from "@/lib/content/site";
+import { ConsultationForm } from "@/components/events/rsvp-form";
 
 export const metadata: Metadata = {
   title: "Contact CSC Circle",
@@ -56,6 +57,19 @@ export default function ContactPage() {
                 </span>
               </a>
             ))}
+          </div>
+
+          <div className="flex flex-col gap-5 rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-10 shadow-xs ring-1 ring-brand-border">
+            <div className="flex flex-col gap-2">
+              <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-cloud px-3 py-1 text-xs font-semibold text-brand-accent">
+                <Sparkles className="size-3.5" /> 1:1 Founder Guidance
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-brand-ink">Request a Founder Consultation</h2>
+              <p className="text-sm leading-relaxed text-brand-secondary">
+                Looking for advice on your startup, digital platform architecture, product validation, or founder networking? Fill out this consultation form. Our advisory team will review your challenge and reach out directly to schedule a 1:1 session.
+              </p>
+            </div>
+            <ConsultationForm />
           </div>
 
           <div className="flex flex-col gap-4">
