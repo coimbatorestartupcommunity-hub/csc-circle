@@ -1,69 +1,158 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ShieldAlert, Video, MessageSquareX, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 
 export const metadata: Metadata = {
-  title: "Community Guidelines",
+  title: "Community Guidelines — Coimbatore Startup Community",
   description:
-    "How members of the Coimbatore Startup Community are expected to communicate, collaborate, and participate respectfully.",
+    "Standards of professional collaboration, virtual meeting etiquette, anti-spam policies, and our 3-stage escalation protocol for CSC Circle.",
   alternates: { canonical: "/community-guidelines" },
 };
 
-const sections: { title: string; body: string }[] = [
-  { title: "Respectful communication", body: "Treat every member with courtesy and respect. Keep conversations constructive, and disagree without personal attacks, hostility, or demeaning language." },
-  { title: "Professional collaboration", body: "Engage openly and in good faith. Share knowledge generously, give helpful feedback, and support fellow founders and builders." },
-  { title: "Accurate member and survey information", body: "Provide truthful details about yourself in accounts, applications, and community surveys. Do not misrepresent your identity, role, affiliations, business, startup, or idea." },
-  { title: "Startup information integrity", body: "Share accurate information about your startup. Only submit details and media you have the right to share, and do not publish misleading claims." },
-  { title: "Honest sharing of opportunities and material", body: "When you point others to an opportunity, resource, or link, make sure it is genuine and relevant. Do not circulate misleading offers, scams, or content designed to deceive members. Resources and Opportunities on the platform are curated and published by the CSC team." },
-  { title: "Respect intellectual property", body: "Share only content, images, and documents you created or have permission to use, and credit sources where appropriate. Do not post copyrighted or confidential material without the right to do so." },
-  { title: "Constructive, good-faith feedback", body: "Feedback helps founders grow. Offer it kindly and specifically, assume good intent, and focus on the idea or work rather than the person." },
-  { title: "Event participation", body: "Follow the guidance provided for each event, register honestly, and respect capacity limits, organizers, and other attendees." },
-  { title: "Privacy and confidentiality", body: "Respect the privacy of other members. Do not share someone else's personal information, private messages, or non-public details without their consent." },
-  { title: "Appropriate use of communication channels", body: "Use official community channels for their intended purpose. Avoid spam, repeated unsolicited promotion, and off-topic or disruptive content." },
-  { title: "No harassment or impersonation", body: "Harassment, threats, discrimination, and impersonation of any person or organization are not allowed in the community." },
-  { title: "No unauthorized account access", body: "Your account is personal. Do not attempt to access another member's account, and keep your own credentials secure." },
-  { title: "Protecting the platform", body: "Do not attempt to probe, disrupt, overload, or circumvent the security of CSC Circle. If you discover a vulnerability, report it responsibly rather than exploiting it." },
-  { title: "Reporting community concerns", body: "If you see behavior that breaks these guidelines, report it to the CSC team so it can be reviewed." },
-  { title: "Moderation and administrator decisions", body: "CSC administrators may review content and take appropriate action to keep the community safe and welcoming. These guidelines complement the Terms of Use." },
+const guidelines = [
+  {
+    title: "1. Respectful & Inclusive Communication",
+    body: "Treat fellow founders, developers, creators, and mentors with dignity. We maintain zero tolerance for harassment, personal insults, discriminatory language, or hostile discourse in any official forum, comment thread, or live event.",
+  },
+  {
+    title: "2. Honest Representation & Information Integrity",
+    body: "Provide accurate details regarding your startup, operational metrics, funding status, and team credentials. Do not misrepresent yourself as an officer, partner, or spokesperson of CSC or third-party organizations without explicit authorization.",
+  },
+  {
+    title: "3. Virtual Google Meet & Workshop Etiquette",
+    body: "When attending virtual sessions: keep microphones muted when not speaking; turn on video cameras when introducing yourself or pitching; keep chat commentary constructive; and respect meeting facilitators. Unsolicited screen sharing or disruption will result in instant room removal.",
+  },
+  {
+    title: "4. Anti-Spam & Unsolicited Sales Restrictions",
+    body: "CSC Circle is a founder collaboration space, not a broadcast lead generator. Do not blast unsolicited sales pitches, speculative cryptocurrency schemes, multi-level marketing campaigns, or generic cold pitches in community groups or member direct messages.",
+  },
+  {
+    title: "5. Anti-Scraping & Directory Protection",
+    body: "Scraping member directories, extracting founder emails, downloading member ID cards, or capturing profile data via automated scrapers, scripts, or headless bots is strictly prohibited. Violators trigger automated IP bans and legal enforcement.",
+  },
+  {
+    title: "6. Intellectual Property & Confidentiality",
+    body: "Respect proprietary technology, trade secrets, and pitch deck materials shared by other founders in trust. Never post or redistribute third-party code, pitch materials, or confidential customer metrics without documented consent.",
+  },
+  {
+    title: "7. Authentic Event Registration & Pass Use",
+    body: "Register for events only when genuinely planning to attend. Digital QR passes are issued to individual registered members and are strictly non-transferable. If unable to attend, cancel at least 48 hours prior to free up space for waitlisted founders.",
+  },
+  {
+    title: "8. Platform Security & Ethical Disclosures",
+    body: "Do not attempt to probe, bypass rate limiters, or test vulnerabilities against CSC Circle infrastructure. If you discover a potential vulnerability, submit an encrypted report directly to our security engineering team under safe harbor rules.",
+  },
+];
+
+const escalationSteps = [
+  {
+    step: "Stage 1",
+    title: "Formal Notice & Warning",
+    description: "First-time minor infractions (e.g. promotional spam in open chat) result in a written warning from community moderators and deletion of the offending material.",
+    icon: AlertTriangle,
+    accent: "text-amber-600 bg-amber-50 border-amber-200",
+  },
+  {
+    step: "Stage 2",
+    title: "30-Day Suspension & Pass Revocation",
+    description: "Repeated misconduct or deliberate disruptions result in a 30-day suspension of member portal access, withdrawal of active event passes, and temporary directory delisting.",
+    icon: ShieldAlert,
+    accent: "text-rose-600 bg-rose-50 border-rose-200",
+  },
+  {
+    step: "Stage 3",
+    title: "Permanent ID Cancellation & Ban",
+    description: "Severe violations (harassment, data scraping, credential abuse, fraudulent claims) lead to permanent revocation of the CSC Digital ID Card and an irreversible ecosystem ban.",
+    icon: MessageSquareX,
+    accent: "text-red-700 bg-red-100 border-red-300",
+  },
 ];
 
 export default function CommunityGuidelinesPage() {
   return (
     <>
       <PageHero
-        eyebrow="Community"
+        eyebrow="Community Standards"
         title="Community Guidelines"
-        description="CSC Circle is built on trust and collaboration. These guidelines describe how we expect members to participate."
+        description="Our shared code of conduct to ensure Coimbatore Startup Community remains an open, trusted, and high-impact environment for all builders."
       />
+
       <section className="py-14">
-        <Container className="mx-auto flex max-w-2xl flex-col gap-6">
-          <p className="text-sm leading-relaxed text-brand-secondary">
-            These guidelines help keep the Coimbatore Startup Community respectful, safe, and useful for everyone. They
-            complement — and do not replace — our{" "}
-            <Link href="/terms" className="font-semibold text-brand-accent underline underline-offset-2">Terms of Use</Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="font-semibold text-brand-accent underline underline-offset-2">Privacy Policy</Link>.
-          </p>
-          <ol className="flex flex-col gap-4">
-            {sections.map((s, index) => (
-              <li key={s.title} className="flex gap-4 rounded-2xl border border-brand-border bg-brand-white p-5">
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-purple/40 text-sm font-bold text-brand-ink">
-                  {index + 1}
-                </span>
-                <div>
-                  <h2 className="text-sm font-semibold text-brand-ink">{s.title}</h2>
-                  <p className="mt-1 text-sm leading-relaxed text-brand-secondary">{s.body}</p>
+        <Container className="mx-auto flex max-w-3xl flex-col gap-12">
+          {/* Intro callout */}
+          <div className="rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-8">
+            <h2 className="text-base font-bold text-brand-ink">Building on Mutual Respect and Integrity</h2>
+            <p className="mt-2 text-sm leading-relaxed text-brand-secondary">
+              These guidelines apply across all CSC touchpoints — including digital portal interactions, WhatsApp discussion communities, virtual Google Meet workshops, and in-person hackathons. They operate in conjunction with our{" "}
+              <Link href="/terms" className="font-semibold text-brand-accent underline underline-offset-2">
+                Terms of Use
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="font-semibold text-brand-accent underline underline-offset-2">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          </div>
+
+          {/* Guideline items */}
+          <div className="flex flex-col gap-4">
+            <h2 className="text-xl font-bold tracking-tight text-brand-ink">Core Principles</h2>
+            <div className="flex flex-col gap-3">
+              {guidelines.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-brand-border bg-brand-white p-5 shadow-xs"
+                >
+                  <h3 className="text-sm font-bold text-brand-ink">{item.title}</h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-brand-secondary">{item.body}</p>
                 </div>
-              </li>
-            ))}
-          </ol>
-          <p className="rounded-2xl bg-brand-cloud p-5 text-center text-sm text-brand-secondary">
-            Questions about these guidelines? Visit the{" "}
-            <Link href="/help" className="font-semibold text-brand-accent underline underline-offset-2">Help &amp; FAQ</Link>{" "}
-            or{" "}
-            <Link href="/contact" className="font-semibold text-brand-accent underline underline-offset-2">Contact</Link> the community team.
-          </p>
+              ))}
+            </div>
+          </div>
+
+          {/* Escalation Framework */}
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-brand-ink">3-Stage Escalation Protocol</h2>
+              <p className="mt-0.5 text-xs text-brand-secondary">
+                How our moderation team manages guideline infractions and maintains community safety.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              {escalationSteps.map((s) => (
+                <div
+                  key={s.step}
+                  className={`flex flex-col justify-between rounded-2xl border p-5 ${s.accent}`}
+                >
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider">{s.step}</span>
+                    <h3 className="text-sm font-bold text-brand-ink">{s.title}</h3>
+                    <p className="text-xs leading-relaxed text-brand-secondary">{s.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Reporting Footer */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl bg-brand-cloud p-6 text-center sm:text-left">
+            <div>
+              <h3 className="text-sm font-bold text-brand-ink">Report a Concern or Guideline Infraction</h3>
+              <p className="mt-0.5 text-xs text-brand-secondary">
+                All reports are handled with strict confidentiality by community administrators.
+              </p>
+            </div>
+            <a
+              href="mailto:coimbatorestartup.csc@gmail.com?subject=Guideline%20Violation%20Report"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-ink px-4 py-2 text-xs font-semibold text-brand-white transition hover:bg-brand-ink/90"
+            >
+              <ShieldCheck className="size-3.5" /> Submit Confidential Report
+            </a>
+          </div>
         </Container>
       </section>
     </>

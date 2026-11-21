@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import * as React from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ShieldCheck, Mail, HelpCircle, Sparkles } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { siteConfig } from "@/lib/content/site";
@@ -9,79 +9,245 @@ import { siteConfig } from "@/lib/content/site";
 export const metadata: Metadata = {
   title: "Help & FAQ",
   description:
-    "Answers to common questions about CSC Circle — membership, accounts, startups, events, security, and getting support.",
+    "Answers to common questions about CSC Circle — digital membership IDs, Google Meet check-in, event passes, founder consultations, security, and getting support.",
   alternates: { canonical: "/help" },
 };
 
 const email = siteConfig.social.email;
 
-const faq: { category: string; items: { q: string; a: React.ReactNode }[] }[] = [
+interface FAQItem {
+  q: string;
+  a: React.ReactNode;
+}
+
+interface FAQCategory {
+  category: string;
+  description: string;
+  items: FAQItem[];
+}
+
+const faq: FAQCategory[] = [
   {
-    category: "General CSC",
+    category: "General CSC & Ecosystem",
+    description: "Learn about the mission, eligibility, and community structure of Coimbatore Startup Community.",
     items: [
-      { q: "What is CSC Circle?", a: "CSC Circle is the online platform of the Coimbatore Startup Community (CSC) — a founder-focused community that brings entrepreneurs, builders, creators, students and professionals together to connect, build and grow." },
-      { q: "Who can join CSC?", a: "CSC welcomes startup founders, aspiring entrepreneurs, students, builders and creators, professionals, and mentors or ecosystem collaborators who want to take part in the community." },
-      { q: "Is CSC Circle only for registered startup founders?", a: "No. You do not need a registered company to participate. The community is open to founders and to anyone building, learning, or contributing to Coimbatore's startup ecosystem." },
-      { q: "How can a student or aspiring entrepreneur participate?", a: "Create an account, complete your profile, and explore the events and founder directory. You can take part in community activities while you build toward your own venture." },
-      { q: "Where can members find official CSC activities?", a: <>Upcoming activities are published on the <Link href="/events" className="font-semibold text-brand-accent underline underline-offset-2">Events</Link> page, community work is showcased under <Link href="/collaborations" className="font-semibold text-brand-accent underline underline-offset-2">Collaborations</Link>, and community news is shared under <Link href="/updates" className="font-semibold text-brand-accent underline underline-offset-2">Updates</Link>. The <Link href="/resources" className="font-semibold text-brand-accent underline underline-offset-2">Resources</Link> and <Link href="/opportunities" className="font-semibold text-brand-accent underline underline-offset-2">Opportunities</Link> sections carry curated material the CSC team publishes.</> },
+      {
+        q: "What is CSC Circle?",
+        a: "CSC Circle is the official digital platform of the Coimbatore Startup Community (CSC) — an independent founder-first initiative uniting entrepreneurs, early builders, innovators, and mentors across Coimbatore and Tamil Nadu to collaborate, accelerate growth, and showcase ventures.",
+      },
+      {
+        q: "Who can participate in CSC Circle?",
+        a: "CSC welcomes early-stage founders, bootstrapped creators, student builders, technical engineers, and ecosystem partners. Whether you run an established venture or are validating your first MVP, CSC offers community support, mentorship, and peer collaboration.",
+      },
+      {
+        q: "Do I need a registered entity (Pvt Ltd, LLP) to join?",
+        a: "No. You do not need a registered legal entity to join the community or attend open events. Anyone actively conceptualizing, building, or mentoring a venture can register for a member profile and access community resources.",
+      },
+      {
+        q: "Where can members find official CSC updates and programs?",
+        a: (
+          <>
+            Official updates are posted across the{" "}
+            <Link href="/events" className="font-semibold text-brand-accent underline underline-offset-2">
+              Events
+            </Link>{" "}
+            schedule, curated in{" "}
+            <Link href="/resources" className="font-semibold text-brand-accent underline underline-offset-2">
+              Resources
+            </Link>
+            , announced on{" "}
+            <Link href="/updates" className="font-semibold text-brand-accent underline underline-offset-2">
+              Updates
+            </Link>
+            , and highlighted in our official WhatsApp and Instagram channels.
+          </>
+        ),
+      },
     ],
   },
   {
-    category: "Account & membership",
+    category: "Digital Membership ID & Cards",
+    description: "Understanding issuance, automated verification, lost cards, and ID privileges.",
     items: [
-      { q: "Is the member information survey a membership application?", a: "No. The unlisted member information survey is a separate community data-collection form. Submitting it does not create an account, approve membership, issue a membership card, or guarantee an opportunity. To apply for CSC membership, use the normal account and membership flow." },
-      { q: "How do I create an account?", a: <>Choose <Link href="/signup" className="font-semibold text-brand-accent underline underline-offset-2">Join the Community</Link>, sign up with a verified email account, then complete your membership details.</> },
-      { q: "How does membership approval work?", a: "Membership card claims are automatically approved within 5 minutes of submission. Once 5 minutes elapse, your official CSC digital membership ID is activated automatically, and a confirmation is sent directly to your email and in-app notification inbox." },
-      { q: "When does my membership card become available?", a: "Your digital membership card becomes ready automatically within 5 minutes of submitting your claim. You can view, verify, and download your card anytime by signing into your account and opening Digital ID." },
-      { q: "Do I need to sign in to browse events and check in?", a: "No. The home page, events calendar, event descriptions, and Google Meet check-in portal are all publicly accessible without signing in. To register for an event, you fill in your details and sign in with Google to securely confirm your spot and receive your encrypted digital pass." },
-      { q: "What should I do if my account information is incorrect?", a: <>Update it from your profile where possible. If something cannot be corrected, email <a href={`mailto:${email}`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a> with the details.</> },
-      { q: "How do I correct or delete information submitted through a survey?", a: <>Email <a href={`mailto:${email}?subject=CSC%20survey%20data%20request`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a> from the address used in the submission. CSC may ask for reasonable identity verification before correcting or deleting private contact information, subject to applicable recordkeeping requirements.</> },
+      {
+        q: "How does the digital membership ID card approval pipeline work?",
+        a: "Membership ID claims are processed via an automated 5-minute cryptographic verification pipeline. Upon submitting your profile details and verifying your account via Google Auth, your cryptographic ID card hash is minted and ready automatically after 5 minutes.",
+      },
+      {
+        q: "Where do I access or view my Digital Membership ID?",
+        a: (
+          <>
+            Sign in to your account and navigate to{" "}
+            <Link href="/member/id-card" className="font-semibold text-brand-accent underline underline-offset-2">
+              Digital ID Card
+            </Link>
+            . You can view your real-time verified badge, verification QR token, issue date, and member tier anytime.
+          </>
+        ),
+      },
+      {
+        q: "Can I transfer my Digital Membership ID to a co-founder or colleague?",
+        a: "No. Digital IDs are strictly non-transferable, bound to the verified individual's authenticated email and cryptographic public record. Lending or transferring digital passes results in immediate ID revocation.",
+      },
+      {
+        q: "How do ecosystem partners verify my CSC Digital ID?",
+        a: "Each digital card displays a secure verification QR code and unique member slug. Scanning the QR code resolves to our public verification endpoint (e.g. /verify/member/[id]), confirming active membership status, name, and validity without exposing private contact credentials.",
+      },
+      {
+        q: "What should I do if my name, startup, or designation is wrong on the ID?",
+        a: (
+          <>
+            You can update your display profile from the member dashboard. If your core verified data requires
+            re-minting, email{" "}
+            <a
+              href="mailto:coimbatorestartup.csc@gmail.com?subject=ID%20Card%20Update%20Request"
+              className="font-semibold text-brand-accent underline underline-offset-2"
+            >
+              coimbatorestartup.csc@gmail.com
+            </a>{" "}
+            with your registered account details.
+          </>
+        ),
+      },
     ],
   },
   {
-    category: "Startups",
+    category: "Event Passes & Google Meet Check-In",
+    description: "RSVPs, QR access passes, refund terms, and virtual meeting access.",
     items: [
-      { q: "How do I submit my startup?", a: "Sign in, open your member startups area, and provide accurate details about your startup. Your submission is sent to the CSC team for review." },
-      { q: "Why is my startup not publicly visible yet?", a: "Startup listings appear publicly only after they are reviewed, approved, and published. Submitting a startup does not publish it automatically." },
-      { q: "Can I update my startup information?", a: "Yes. You can edit your startup and submit the changes. Updates may go through review before the public listing changes." },
-      { q: "What happens if revisions are requested?", a: "If the review team requests changes, update the requested details and resubmit. Once approved, the updated information is published where applicable." },
+      {
+        q: "Do I need to sign in to browse events or join the live check-in portal?",
+        a: (
+          <>
+            No. Browsing the{" "}
+            <Link href="/events" className="font-semibold text-brand-accent underline underline-offset-2">
+              Events calendar
+            </Link>
+            , viewing agendas, and accessing the{" "}
+            <Link href="/events/google-meet/check-in" className="font-semibold text-brand-accent underline underline-offset-2">
+              Google Meet Check-in portal
+            </Link>{" "}
+            are publicly open. Signing in with Google Auth is required only to confirm your reserved pass and claim a ticket.
+          </>
+        ),
+      },
+      {
+        q: "How does the virtual Google Meet check-in process work?",
+        a: (
+          <>
+            Online check-in opens on the{" "}
+            <Link href="/events/google-meet/check-in" className="font-semibold text-brand-accent underline underline-offset-2">
+              Check-in page
+            </Link>{" "}
+            exactly <strong>1 hour before session kickoff</strong> (e.g., at 2:00 PM IST for a 3:00 PM session). You can scan or upload your pass QR code or type your Pass Reference / registered email. Once verified, you are automatically redirected into the private Google Meet session.
+          </>
+        ),
+      },
+      {
+        q: "What happens if I lose my digital event pass or QR code?",
+        a: (
+          <>
+            Sign in to your member account to view your active passes under &ldquo;My Events&rdquo;. Alternatively, enter your registered email address on the{" "}
+            <Link href="/events/google-meet/check-in" className="font-semibold text-brand-accent underline underline-offset-2">
+              Check-in portal
+            </Link>{" "}
+            to look up your active registration instantly.
+          </>
+        ),
+      },
+      {
+        q: "What is the cancellation and refund policy for paid workshops?",
+        a: "For ticketed events with fees, cancellation requests submitted up to 48 hours before session start qualify for a 100% refund (minus payment processing charges). If CSC cancels or reschedules an event, full refunds are issued automatically within 7 business days to the originating UPI or bank account.",
+      },
     ],
   },
   {
-    category: "Events",
+    category: "1:1 Founder Guidance & Consultations",
+    description: "Booking advice sessions with senior founders, mentors, and technology architects.",
     items: [
-      { q: "How do I register for a CSC event?", a: <>Open the <Link href="/events" className="font-semibold text-brand-accent underline underline-offset-2">Events</Link> page, view the event details, sign in when prompted, and submit your registration.</> },
-      { q: "Does submitting a registration guarantee a seat?", a: "No. Submitting a registration records your interest. A seat is confirmed only when CSC confirms your registration, which can depend on event capacity." },
-      { q: "What does waitlisted mean?", a: "If an event is full, you may be added to a waitlist. A place is not reserved unless CSC later confirms your registration." },
-      { q: "Where do I find a confirmed event pass?", a: "When your registration is confirmed, your individual QR code pass is displayed immediately on your screen, sent to your email, and stored under your account events." },
-      { q: "How does the Google Meet check-in work?", a: <>Online check-in opens on the <Link href="/events/google-meet/check-in" className="font-semibold text-brand-accent underline underline-offset-2">Check-in page</Link> exactly 1 hour before the meeting starts (at 2:00 PM IST for 3:00 PM sessions). Upload or scan your digital QR code pass, or enter your Pass Reference / registered email. Attendance is verified instantly, and you are automatically redirected into Google Meet within 2 seconds.</> },
-      { q: "What happens if event information changes?", a: "If details change, the updated information is shown on the event and communicated through your account notifications where applicable. Review the latest details before attending." },
+      {
+        q: "Who qualifies for a 1:1 Founder Guidance session?",
+        a: (
+          <>
+            Registered CSC members and regional startup founders building active products are eligible. Fill out the request form on our{" "}
+            <Link href="/contact" className="font-semibold text-brand-accent underline underline-offset-2">
+              Contact Page
+            </Link>{" "}
+            specifying your current development stage, domain, and primary bottlenecks.
+          </>
+        ),
+      },
+      {
+        q: "What topics can be covered during the consultation?",
+        a: "Sessions cover product architecture, tech stack selection, go-to-market strategies, TANSEED/government grant navigation, pitch deck reviews, and founder co-founder alignment.",
+      },
+      {
+        q: "What is the typical response SLA for consultation requests?",
+        a: "Our advisory committee reviews consultation briefs weekly and responds within 48 to 72 business hours to schedule a 30-minute virtual advisory session.",
+      },
     ],
   },
   {
-    category: "Updates, Resources & Opportunities",
+    category: "Startup Directory & Moderation",
+    description: "Showcasing your venture, submission requirements, and moderation guidelines.",
     items: [
-      { q: "What is the Updates section?", a: <><Link href="/updates" className="font-semibold text-brand-accent underline underline-offset-2">Updates</Link> is where the CSC team shares community news, announcements, and highlights. Posts appear there once they are published; until then the section shows a short placeholder.</> },
-      { q: "What will I find under Resources?", a: <><Link href="/resources" className="font-semibold text-brand-accent underline underline-offset-2">Resources</Link> is a curated library of material the CSC team publishes — guides, references, and downloadable documents. While the library is still being prepared, the page shows a &ldquo;coming soon&rdquo; message, and published resources appear there automatically once they go live.</> },
-      { q: "What are Opportunities?", a: <><Link href="/opportunities" className="font-semibold text-brand-accent underline underline-offset-2">Opportunities</Link> lists openings the CSC team shares with the community. Each listing can carry a deadline, and an opportunity is hidden automatically once its deadline has passed. Until the first ones are published, the page shows a &ldquo;coming soon&rdquo; message.</> },
-      { q: "Can members submit their own resources or opportunities?", a: <>These sections are published by the CSC team. If you have something you believe would help the community, email <a href={`mailto:${email}`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a> and the team can review it.</> },
-      { q: "Do I need to sign in to view them?", a: "No. Updates, Resources, and Opportunities are public — you can read whatever has been published without an account." },
+      {
+        q: "How do I list my startup in the CSC Directory?",
+        a: (
+          <>
+            Registered members can submit their company via the member portal. Provide your venture name, website, industry sector, stage, and founder team. Submissions undergo community moderation before appearing in the public{" "}
+            <Link href="/directory" className="font-semibold text-brand-accent underline underline-offset-2">
+              Startup Directory
+            </Link>
+            .
+          </>
+        ),
+      },
+      {
+        q: "What criteria must a startup meet for approval?",
+        a: "Startups must represent a legitimate venture, prototype, or tech-enabled business with clear contact credentials. Spam submissions, speculative cryptocurrency schemes, and deceptive listings are permanently rejected.",
+      },
+      {
+        q: "Can I update my startup pitch, logo, or hiring status later?",
+        a: "Yes. From your member dashboard, you can update your pitch deck link, company description, hiring status, and key achievements at any time. Substantive changes are re-reviewed within 24 hours.",
+      },
     ],
   },
   {
-    category: "Security & privacy",
+    category: "Security, Privacy & Data Rights",
+    description: "DPDP compliance, data protection, sub-processors, and vulnerability disclosures.",
     items: [
-      { q: "How does CSC protect private account information?", a: <>CSC uses authenticated access and database-level access controls so members see only what they are permitted to. See the <Link href="/security" className="font-semibold text-brand-accent underline underline-offset-2">Security</Link> page for more.</> },
-      { q: "Can I share my login with another person?", a: "No. Your account is personal. Keep your credentials private and do not let anyone else sign in as you." },
-      { q: "How do I report suspicious activity?", a: <>Email <a href={`mailto:${email}?subject=CSC%20Circle%20security%20report`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a> with a clear description of what you noticed.</> },
-      { q: "Where can I read the Privacy Policy and Terms?", a: <>See the <Link href="/privacy" className="font-semibold text-brand-accent underline underline-offset-2">Privacy Policy</Link> and <Link href="/terms" className="font-semibold text-brand-accent underline underline-offset-2">Terms of Use</Link>.</> },
-    ],
-  },
-  {
-    category: "Support",
-    items: [
-      { q: "How do I contact CSC?", a: <>Email <a href={`mailto:${email}`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a>, or see the <Link href="/contact" className="font-semibold text-brand-accent underline underline-offset-2">Contact</Link> page for all the ways to reach the community.</> },
-      { q: "What information should I provide when reporting a website issue?", a: "Describe what you were trying to do, what happened, the page or feature involved, and the device or browser you used. Screenshots help us understand the issue faster." },
+      {
+        q: "How does CSC protect member personal information under Indian DPDP Act 2023?",
+        a: (
+          <>
+            CSC implements Row-Level Security (RLS), role-based privilege isolation, and strict purpose limitation. Personal contact details (phone, email) are never publicly exposed on member directory profiles. Read our comprehensive{" "}
+            <Link href="/privacy" className="font-semibold text-brand-accent underline underline-offset-2">
+              Privacy Policy
+            </Link>{" "}
+            and{" "}
+            <Link href="/security" className="font-semibold text-brand-accent underline underline-offset-2">
+              Security Practices
+            </Link>
+            .
+          </>
+        ),
+      },
+      {
+        q: "Who should security researchers contact regarding vulnerabilities?",
+        a: (
+          <>
+            Send responsible disclosure reports to{" "}
+            <a
+              href="mailto:hello@logicintelligencetechnologies.in?subject=Security%20Vulnerability%20Report"
+              className="font-semibold text-brand-accent underline underline-offset-2"
+            >
+              hello@logicintelligencetechnologies.in
+            </a>
+            . We acknowledge valid reports within 48 hours and triage within 7 business days under safe harbor principles.
+          </>
+        ),
+      },
     ],
   },
 ];
@@ -90,24 +256,30 @@ export default function HelpPage() {
   return (
     <>
       <PageHero
-        eyebrow="Help Center"
+        eyebrow="Knowledge Base & FAQ"
         title="Help & FAQ"
-        description="Answers to the most common questions about CSC Circle. If you need more help, you can always reach the community directly."
+        description="Comprehensive answers covering membership IDs, event check-in, founder consultations, startup directory moderation, and platform security."
       />
       <section className="py-14">
-        <Container className="mx-auto flex max-w-3xl flex-col gap-10">
+        <Container className="mx-auto flex max-w-4xl flex-col gap-12">
           {faq.map((group) => (
-            <div key={group.category} className="flex flex-col gap-3">
-              <h2 className="text-lg font-bold text-brand-ink">{group.category}</h2>
+            <div key={group.category} className="flex flex-col gap-4">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight text-brand-ink">{group.category}</h2>
+                <p className="mt-1 text-xs text-brand-secondary">{group.description}</p>
+              </div>
               <div className="flex flex-col gap-3">
                 {group.items.map((item) => (
                   <details
                     key={item.q}
-                    className="group rounded-2xl border border-brand-border bg-brand-white p-5 transition-colors open:bg-brand-cloud/50"
+                    className="group rounded-2xl border border-brand-border bg-brand-white p-5 transition-colors open:bg-brand-cloud/40"
                   >
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-brand-ink [&::-webkit-details-marker]:hidden">
                       <span>{item.q}</span>
-                      <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-brand-muted transition-transform duration-200 group-open:rotate-180" />
+                      <ChevronDown
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-brand-muted transition-transform duration-200 group-open:rotate-180"
+                      />
                     </summary>
                     <div className="mt-3 text-sm leading-relaxed text-brand-secondary">{item.a}</div>
                   </details>
@@ -115,12 +287,40 @@ export default function HelpPage() {
               </div>
             </div>
           ))}
-          <p className="rounded-2xl bg-brand-cloud p-5 text-center text-sm text-brand-secondary">
-            Still need help? Email{" "}
-            <a href={`mailto:${email}`} className="font-semibold text-brand-accent underline underline-offset-2">{email}</a>{" "}
-            or visit the{" "}
-            <Link href="/contact" className="font-semibold text-brand-accent underline underline-offset-2">Contact</Link> page.
-          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2 rounded-3xl border border-brand-border bg-brand-white p-6 shadow-xs">
+              <span className="flex size-9 items-center justify-center rounded-full bg-brand-cloud text-brand-ink">
+                <Mail className="size-4" />
+              </span>
+              <h3 className="text-base font-bold text-brand-ink">Segmented Department Desks</h3>
+              <p className="text-xs leading-relaxed text-brand-secondary">
+                Reach our team across dedicated inboxes for membership, event passes, or technical platform architecture. Committed 24–48h SLA.
+              </p>
+              <Link
+                href="/contact"
+                className="mt-2 inline-flex items-center text-xs font-semibold text-brand-accent hover:underline"
+              >
+                View all department contacts &rarr;
+              </Link>
+            </div>
+
+            <div className="flex flex-col gap-2 rounded-3xl border border-brand-border bg-brand-white p-6 shadow-xs">
+              <span className="flex size-9 items-center justify-center rounded-full bg-brand-cloud text-brand-ink">
+                <Sparkles className="size-4" />
+              </span>
+              <h3 className="text-base font-bold text-brand-ink">Request Founder Consultation</h3>
+              <p className="text-xs leading-relaxed text-brand-secondary">
+                Need customized guidance on your tech stack, MVP roadmap, or early grant applications? Request a 1:1 advisory slot.
+              </p>
+              <Link
+                href="/contact#consultation"
+                className="mt-2 inline-flex items-center text-xs font-semibold text-brand-accent hover:underline"
+              >
+                Submit consultation form &rarr;
+              </Link>
+            </div>
+          </div>
         </Container>
       </section>
     </>
