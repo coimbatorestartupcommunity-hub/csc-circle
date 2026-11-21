@@ -3,41 +3,53 @@
 🕒 *Time:* 3:00 PM – 5:00 PM IST
 📍 *Platform:* Google Meet (Virtual Room)
 
-Dear CSC Members & Founders,
+Dear CSC Members, Founders & Builders,
 
-We are pleased to announce that the online registration form is now fully active, verified, and open for the upcoming **CSC Joint Online Meeting**.
+We are thrilled to announce that the registration form is fully active and verified for the upcoming **CSC First Joint Online Meeting**. Over 19 members have already registered!
 
 ---
 
-### 🎟️ 1. Event Registration & Digital QR Pass
-Registration is 100% free for all community members, founders, engineers, and creators.
+### 🌟 What to Expect in This Meeting:
+This inaugural online meeting is an interactive, collaborative networking session:
+• **Open Introductions:** Every single attendee will have the floor to introduce themselves, their personal background, and their journey.
+• **Showcase Your Startup & Business:** Pitch what you are building, your product vision, and your venture’s milestones.
+• **Direct Founder Networking:** Connect with fellow founders, engineers, and creators to exchange valuable contact details, discover potential co-founders, and build lasting partnerships across Coimbatore and beyond.
+• **CSC Community Roadmap:** Get early insights into upcoming CSC initiatives, offline meetups, resource grants, and founder opportunities.
+
+---
+
+### 🎟️ 1. Free Registration & Individual Digital Pass
+Registration is 100% free for all community members:
 👉 *Register here:* https://csc.logicintelligencetechnologies.in/events/csc-joint-online-meeting
 
-Upon completing the registration form, your seat is confirmed immediately, and you will receive your **individual digital event pass containing your unique QR code** on your screen and via email. Please save, screenshot, or download your QR pass to have it ready on your phone or computer.
+Upon registering, your seat is confirmed immediately, and you will receive your **individual digital pass with your unique QR code** directly on your screen and in your email. Please download or screenshot your QR pass so you have it ready.
+
+*Note for existing registrations:* If you are one of the 19 members who already registered, your seat is confirmed and active! Keep your pass reference or QR screenshot ready.
 
 ---
 
 ### ⏱️ 2. Event Schedule & Check-In Window
-• **Meeting Timing:** Sunday, November 22, 2026, from **3:00 PM to 5:00 PM IST**.
+• **Meeting Time:** Sunday, November 22, 2026, from **3:00 PM to 5:00 PM IST**.
 • **Check-In Unlocks:** At **2:00 PM IST** (exactly 1 hour before the session begins).
 
 ---
 
-### 📲 3. How to Check In & Access Google Meet
-When check-in unlocks at 2:00 PM IST:
-1. Open the CSC Check-in Portal:
+### 📲 3. How to Check In & Automatically Join Google Meet
+When check-in unlocks at 2:00 PM IST tomorrow:
+1. Open the CSC Check-In Portal:
    👉 *Check-In Link:* https://csc.logicintelligencetechnologies.in/events/google-meet/check-in
-2. Upload the screenshot/image of your QR pass, or scan it directly using your device camera.
-3. Our portal will automatically verify your registration, mark your check-in as completed on the platform, and instantly redirect you to the **Google Meet conference room**.
+2. Upload the screenshot/image of your QR pass, or scan it directly with your device camera. (You can also simply enter your Pass Reference or registered email).
+3. The system will automatically verify your registration, record your attendance on our website, and **automatically redirect you to Google Meet within 2 seconds**.
 
 ---
 
-🔗 *Quick Links:*
+🔗 *Official Links:*
 • Event Registration: https://csc.logicintelligencetechnologies.in/events/csc-joint-online-meeting
-• Check-In & Meet Access: https://csc.logicintelligencetechnologies.in/events/google-meet/check-in
-• Official Website: https://csc.logicintelligencetechnologies.in
+• Check-In Portal: https://csc.logicintelligencetechnologies.in/events/google-meet/check-in
+• Official Updates: https://csc.logicintelligencetechnologies.in/updates
+• Community Portal: https://csc.logicintelligencetechnologies.in
 
-We look forward to having you join us for an inspiring session bringing together Coimbatore's vibrant startup and builder ecosystem!
+We look forward to an incredible session connecting and growing Coimbatore’s startup ecosystem together!
 
 Warm regards,  
 *Coimbatore Startup Community (CSC) Team*

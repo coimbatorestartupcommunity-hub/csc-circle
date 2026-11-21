@@ -102,6 +102,7 @@ export function QrCheckInClient({
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState<boolean>(false);
   const [countdown, setCountdown] = React.useState<number>(2);
   const [cameraActive, setCameraActive] = React.useState<boolean>(false);
+  const [manualInput, setManualInput] = React.useState<string>("");
 
   // Automatic countdown and new-tab redirection to Google Meet upon successful check-in
   React.useEffect(() => {
@@ -613,6 +614,36 @@ export function QrCheckInClient({
                   <Camera className="size-4" /> Scan with Device Camera
                 </Button>
               ) : null}
+            </div>
+
+            {/* Alternative: Enter Pass Reference or Registered Email */}
+            <div className="mt-6 w-full border-t border-slate-100 pt-5 text-left">
+              <label htmlFor="manual-token" className="block text-xs font-semibold text-slate-700">
+                Having trouble scanning? Enter your Pass Reference or Registered Email:
+              </label>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (manualInput.trim()) void verifyToken(manualInput.trim());
+                }}
+                className="mt-2 flex gap-2"
+              >
+                <Input
+                  id="manual-token"
+                  type="text"
+                  placeholder="e.g. CSC-EVT-... or your registered email"
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value)}
+                  className="h-10 text-xs rounded-xl"
+                />
+                <Button
+                  type="submit"
+                  disabled={!manualInput.trim()}
+                  className="h-10 shrink-0 rounded-xl bg-teal-600 px-4 text-xs font-semibold text-white hover:bg-teal-700"
+                >
+                  Check In
+                </Button>
+              </form>
             </div>
           </div>
         )}

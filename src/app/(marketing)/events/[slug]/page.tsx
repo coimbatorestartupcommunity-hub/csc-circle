@@ -58,7 +58,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
         </div>
         <p className="mt-2 text-xs leading-relaxed text-indigo-900 sm:text-sm">
           <strong>Confirmed Schedule:</strong> Coimbatore Startup Community (CSC) First Joint Online Meeting is scheduled for <strong>Sunday, November 22, 2026, from 3:00 PM to 5:00 PM IST</strong> via <strong>Google Meet</strong>.
-          Google Meet check-in unlocks <strong>one hour before the meeting starts</strong> (at 2:00 PM IST). Free admission registration is open below.
+          This inaugural session features <strong>open attendee introductions, startup pitches, and direct founder networking</strong>. Google Meet check-in unlocks <strong>one hour before the meeting starts</strong> (at 2:00 PM IST). Free admission registration is open below.
         </p>
       </div>
     ) : null}

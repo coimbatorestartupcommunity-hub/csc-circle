@@ -16,12 +16,13 @@ export default function PrivacyPage() {
       <PageHero eyebrow="Legal" title="Privacy Policy" />
       <section className="py-14">
         <Container className="mx-auto flex max-w-2xl flex-col gap-4 text-brand-secondary">
-          <p className="text-sm text-brand-muted">Last updated November 9, 2026.</p>
+          <p className="text-sm text-brand-muted">Last updated November 21, 2026.</p>
           <p>
-            Coimbatore Startup Community (CSC) operates CSC Circle to support
-            community membership, startup discovery, events, consultations,
-            and related community services. This policy explains the personal
-            information the platform may process when you use those services.
+            Coimbatore Startup Community (CSC) operates CSC Circle in partnership with
+            Technical Partner Logic Intelligence Technologies (LIT) to support community
+            membership, startup discovery, events, consultations, and related community
+            services. This policy explains the personal information the platform may process
+            when you use those services.
           </p>
           <h2 className="text-lg font-semibold text-brand-ink">What we collect</h2>
           <p>
@@ -50,6 +51,13 @@ export default function PrivacyPage() {
             and your visibility choices permit it. Operational messages may be
             sent when needed to complete a request or communicate an account or
             event status.
+          </p>
+          <h2 className="text-lg font-semibold text-brand-ink">Event passes and check-in privacy</h2>
+          <p>
+            Event QR codes carry opaque, cryptographically generated tokens without exposing your
+            email, phone number, or passwords in raw QR text. When you scan or upload your QR pass
+            at the check-in portal, attendance records (timestamp, verification method, and conference session link)
+            are logged securely to ensure verified access to sessions such as Google Meet.
           </p>
           <h2 className="text-lg font-semibold text-brand-ink">Service providers and retention</h2>
           <p>

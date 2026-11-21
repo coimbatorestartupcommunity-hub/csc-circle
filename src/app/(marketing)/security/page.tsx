@@ -16,12 +16,12 @@ export default function SecurityPage() {
       <PageHero eyebrow="Trust and safety" title="Security at CSC Circle" />
       <section className="py-14">
         <Container className="mx-auto flex max-w-2xl flex-col gap-4 text-brand-secondary">
-          <p className="text-sm text-brand-muted">Last updated November 9, 2026.</p>
+          <p className="text-sm text-brand-muted">Last updated November 21, 2026.</p>
           <p>
-            CSC Circle works to protect community accounts and information through
-            safeguards appropriate to the service. Security is an ongoing
-            responsibility; no internet service can promise that risk is
-            eliminated entirely.
+            CSC Circle works in partnership with Technical Partner Logic Intelligence
+            Technologies (LIT) to protect community accounts, digital passes, and information
+            through safeguards appropriate to the service. Security is an ongoing
+            responsibility; no internet service can promise that risk is eliminated entirely.
           </p>
           <h2 className="text-lg font-semibold text-brand-ink">Account and data protection</h2>
           <p>

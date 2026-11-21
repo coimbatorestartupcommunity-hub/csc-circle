@@ -39,19 +39,33 @@ export async function GET() {
     if (event) {
       const currentSettings = (event.settings as Record<string, unknown> | null) ?? {};
 
-      const dynamicDescription = `Welcome to the official registration for the **Coimbatore Startup Community (CSC) Joint Online Meeting**, proudly powered by Technical Partner **Logic Intelligence Technologies**.
+      const dynamicDescription = `Welcome to the official registration for the **Coimbatore Startup Community (CSC) First Joint Online Meeting**, proudly organized by **Coimbatore Startup Community** and powered by Technical Partner **Logic Intelligence Technologies**.
 
+---
+
+### 🌟 About This Event: Introductions, Showcases & Founder Networking
+This inaugural online meeting brings together founders, tech entrepreneurs, builders, engineers, and creators from across Coimbatore and Tamil Nadu.
+
+The primary focus of this first event is **Open Introductions & High-Impact Networking**:
+* **Every Participant Introduces Themselves:** An open floor where all attendees introduce their personal background, professional journey, and core expertise.
+* **Showcase Your Business & Startup:** Present what your venture builds, your product vision, target market, and current milestones.
+* **Direct Networking & Contact Exchange:** Build direct connections with fellow founders, explore strategic partnerships, discover potential co-founders, and expand your contact network.
+* **CSC Ecosystem Roadmap:** Learn about upcoming offline meetups, funding opportunities, technical mentorship programs, and resource grants.
+
+---
+
+### 🗓 Event Details & Schedule:
 * **Event Date:** **Sunday, November 22, 2026**
 * **Session Timing:** **3:00 PM – 5:00 PM IST** *(Sunday)*
-* **Conference Mode:** **Online via Google Meet** *(Private verified room access)*
-* **Registration:** **Free Admission · Open Community Registration** *(Instant encrypted digital QR pass)*
+* **Conference Mode:** **Online via Google Meet** *(Direct room access)*
+* **Registration:** **100% Free Admission · Open Community Registration** *(Instant encrypted digital QR pass)*
 
-**📋 Agenda & Highlights:**
-* **Founder Networking & Collaborations:** Connect directly with Coimbatore’s founders, engineers, and ecosystem builders.
-* **Ecosystem Roadmap & Open Floor:** Collaborative peer discussions on product scaling, architecture, and funding.
-* **Instant Digital Event Pass:** Every confirmed attendee receives an **individual encrypted QR code** for automated Google Meet check-in.
+---
 
-> **Important Notes:** Online check-in and Google Meet access unlock **1 hour before the meeting** (2:00 PM IST). Complete your details below to secure your free seat.`;
+### ⏱ Check-In & Google Meet Access:
+* **Check-In Unlocks:** At **2:00 PM IST** (exactly 1 hour before the 3:00 PM session begins).
+* **Instant Automatic Redirection:** Simply upload or scan your QR pass at the Check-In Portal to be automatically verified and connected to Google Meet.
+* **Already Registered (19 Members) & New Attendees:** All confirmed registrations receive individual encrypted QR passes for automated entrance.`;
 
       const cleanSettings = { ...currentSettings };
       delete cleanSettings.registrationMode;
@@ -115,6 +129,18 @@ export async function GET() {
         .eq("status", "pending");
 
       // 3. Create or update Event Notice for Featured Event Notices on /events
+      const noticePayload = {
+        event_id: event.id,
+        title: "CSC Joint Online Meeting · Introductions, Startup Showcases & Founder Networking",
+        message:
+          "Join Coimbatore’s founders, builders, and ecosystem leaders on Google Meet on Sunday, Nov 22, 2026 (3:00 PM – 5:00 PM IST). Every attendee will be introduced to showcase their business, background, and vision. Network directly, exchange contacts, and discover potential co-founders and collaborators. Check-in unlocks at 2:00 PM IST.",
+        button_label: "Register Free Now",
+        status: "published",
+        visible_from: "2026-11-20T00:00:00+05:30",
+        visible_until: "2026-11-22T23:59:59+05:30",
+        display_priority: 100,
+      };
+
       const { data: existingNotice } = (await dynamicDb
         .from("event_notices")
         .select("id")
@@ -124,25 +150,10 @@ export async function GET() {
       if (existingNotice) {
         await dynamicDb
           .from("event_notices")
-          .update({
-            title: "CSC Joint Online Meeting · Free Registration Open",
-            message:
-              "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet on Sunday, Nov 22, 2026 (3:00 PM – 5:00 PM IST). Free community registration is now open with instant digital pass issuance.",
-            button_label: "Register Free Now",
-            status: "published",
-            display_priority: 100,
-          })
+          .update(noticePayload)
           .eq("id", existingNotice.id);
       } else {
-        await dynamicDb.from("event_notices").insert({
-          event_id: event.id,
-          title: "CSC Joint Online Meeting · Free Registration Open",
-          message:
-            "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet on Sunday, Nov 22, 2026 (3:00 PM – 5:00 PM IST). Free community registration is now open with instant digital pass issuance.",
-          button_label: "Register Free Now",
-          status: "published",
-          display_priority: 100,
-        });
+        await dynamicDb.from("event_notices").insert(noticePayload);
       }
 
       // 4. Create or update Community Update for Updates & Highlights (/updates)
@@ -155,42 +166,48 @@ export async function GET() {
 
       const updatePayload = {
         slug: updateSlug,
-        title: "Announcing CSC Joint Online Meeting — Nov 22, 2026 (3:00 PM – 5:00 PM)",
+        title: "Announcing CSC Joint Online Meeting — Introductions, Startup Pitches & Founder Networking",
         category: "Announcements",
         summary:
-          "Coimbatore Startup Community (CSC) is hosting its First Joint Online Meeting on Google Meet for founders, builders, and ecosystem leaders on Sunday, Nov 22, 2026, from 3:00 PM to 5:00 PM IST.",
+          "Coimbatore Startup Community (CSC) is hosting its First Joint Online Meeting on Google Meet on Sunday, Nov 22, 2026, from 3:00 PM to 5:00 PM IST, featuring personal introductions, startup showcases, and direct founder networking.",
         body: `## Coimbatore Startup Community · Official Community Announcement
 
-Welcome to the official announcement for the **Coimbatore Startup Community (CSC) Joint Online Meeting**, proudly organized by **Coimbatore Startup Community** and powered by our Technical Partner, **Logic Intelligence Technologies**.
+Welcome to the official announcement for the **Coimbatore Startup Community (CSC) First Joint Online Meeting**, proudly organized by **Coimbatore Startup Community** and powered by Technical Partner **Logic Intelligence Technologies**.
 
 ---
 
-### 🌟 Executive Overview
-This high-impact online gathering unites Coimbatore’s most ambitious **founders**, **tech innovators**, **software architects**, and **ecosystem leaders**. Whether you are bootstrap-building your MVP, scaling an early-stage venture, or seeking high-caliber co-founders, this forum is your launchpad.
+### 🌟 About This Event: Introductions, Showcases & Founder Networking
+This inaugural online meeting is designed as an open, collaborative forum uniting Coimbatore’s founders, entrepreneurs, software architects, creators, and builders.
+
+The primary focus of this session is **Open Introductions & High-Impact Networking**:
+* **Every Participant Introduces Themselves:** An open floor where all attendees introduce their personal background, professional journey, and core expertise.
+* **Showcase Your Business & Startup:** Present what your venture builds, your product vision, target market, and current milestones.
+* **Direct Networking & Contact Exchange:** Build direct connections with fellow founders, explore strategic partnerships, discover potential co-founders, and expand your contact network.
+* **CSC Ecosystem Roadmap:** Learn about upcoming offline meetups, funding opportunities, technical mentorship programs, and resource grants.
 
 ---
 
-### 🗓 Key Event Information
+### 🗓 Key Event Schedule & Information
 * **Official Date:** **Sunday, November 22, 2026**
 * **Session Timing:** **3:00 PM – 5:00 PM IST** *(Sunday)*
-* **Conference Platform:** **Google Meet** *(Private verified room access)*
-* **Event Pass:** **Free Admission** *(Instant digital QR pass delivery)*
+* **Conference Platform:** **Google Meet** *(Direct room access)*
+* **Event Pass:** **100% Free Community Admission** *(Instant digital QR pass)*
 
 ---
 
-### 📋 Structured Agenda & Highlights
-1. **Welcome Address & Ecosystem Roadmaps:** Discover upcoming initiatives, resource grants, and community opportunities within CSC Circle.
-2. **Founder Introductions & Speed Networking:** Showcase what you are engineering, pitch your mission, and connect directly with fellow builders.
-3. **Peer Advisory & Technical Problem-Solving:** Open collaborative discussions tackling product traction, infrastructure architecture, hiring, and early-stage capital.
+### 📲 Automated Check-In & Google Meet Access
+* **Check-In Unlocks:** At **2:00 PM IST** (exactly 1 hour before the 3:00 PM meeting starts).
+* **Automatic Google Meet Entry:** Attendees simply upload or scan their QR pass at [Check-in Portal](https://csc.logicintelligencetechnologies.in/events/google-meet/check-in). The portal verifies attendance in real time and automatically redirects directly to Google Meet within 2 seconds.
+* **Existing & New Registrations:** All confirmed attendees (including the 19 registered members and all new registrations) receive an individual encrypted QR pass.
 
 ---
 
-### 🎯 Why You Should Register Now
-* **Guaranteed Admission:** Capacity is strictly capped to foster meaningful peer engagement.
-* **Instant Digital QR Pass:** Verified attendees receive an encrypted digital pass with one-click automatic check-in and instant Google Meet launch.
-* **Direct Network Access:** Join the curated roster of Coimbatore's foremost entrepreneurs and builders.
+### 🔗 Official Links
+* **Free Event Registration:** [https://csc.logicintelligencetechnologies.in/events/csc-joint-online-meeting](https://csc.logicintelligencetechnologies.in/events/csc-joint-online-meeting)
+* **Check-In Portal:** [https://csc.logicintelligencetechnologies.in/events/google-meet/check-in](https://csc.logicintelligencetechnologies.in/events/google-meet/check-in)
+* **Community Updates:** [https://csc.logicintelligencetechnologies.in/updates](https://csc.logicintelligencetechnologies.in/updates)
 
-> **Notice:** Registrations are now officially open. Complete your free community registration on CSC Circle to secure your seat.`,
+We look forward to an energetic and productive session connecting Coimbatore's vibrant startup builders!`,
         featured: true,
         publication_consent: true,
         publication_status: "published",

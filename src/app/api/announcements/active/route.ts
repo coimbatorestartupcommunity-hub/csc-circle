@@ -17,6 +17,7 @@ export async function GET() {
       .order("display_priority", { ascending: false })
       .order("visible_from", { ascending: true })
       .limit(6);
+
     if (error) return authResponse({ notices: [], error: "Featured event notices could not be loaded." }, 503);
     if (!data) return authResponse({ notices: [] });
     const now = Date.now();
@@ -31,12 +32,36 @@ export async function GET() {
       }, now);
     }).map((notice) => {
       const event = (Array.isArray(notice.events) ? notice.events[0] : notice.events) as Record<string, unknown>;
+      const isJointMeeting =
+        event.slug === "csc-joint-online-meeting" ||
+        event.id === "948bfc48-c627-4b06-a665-5c2cd8226505" ||
+        String(event.title).includes("Joint Online Meeting");
+
+      const eventStartsAt = isJointMeeting ? "2026-11-22T15:00:00+05:30" : String(event.starts_at);
+      const title = isJointMeeting
+        ? "CSC Joint Online Meeting · Introductions, Startup Showcases & Founder Networking"
+        : String(notice.title);
+      const message = isJointMeeting
+        ? "Join Coimbatore's founders, builders, and ecosystem leaders on Google Meet on Sunday, Nov 22, 2026 (3:00 PM – 5:00 PM IST). Every attendee will be introduced to showcase their business, background, and vision. Network directly, exchange contacts, and discover potential co-founders and collaborators. Check-in unlocks at 2:00 PM IST."
+        : String(notice.message);
+      const buttonLabel = notice.completed_at
+        ? "Completed · View event"
+        : (isJointMeeting ? "Register Free Now" : String(notice.button_label));
+      const venue = isJointMeeting ? "Online via Google Meet" : (event.venue ? String(event.venue) : null);
+      const registrationState = isJointMeeting ? "open" : String(event.registration_state ?? "open");
+
       return {
-        id: String(notice.id), title: String(notice.title), message: String(notice.message), buttonLabel: notice.completed_at ? "Completed · View event" : String(notice.button_label),
+        id: String(notice.id),
+        title,
+        message,
+        buttonLabel,
         bannerUrl: notice.banner_path ? `/api/announcements/banner?noticeId=${encodeURIComponent(String(notice.id))}` : null,
         eventPath: `/events/${encodeURIComponent(String(event.slug))}`,
-        eventTitle: String(event.title), eventStartsAt: String(event.starts_at), venue: event.venue ? String(event.venue) : null,
-        registrationState: String(event.registration_state ?? "coming-soon"), priority: Number(notice.display_priority ?? 0),
+        eventTitle: String(event.title),
+        eventStartsAt,
+        venue,
+        registrationState,
+        priority: Number(notice.display_priority ?? 100),
         visibleUntil: notice.visible_until ? String(notice.visible_until) : null,
       };
     });

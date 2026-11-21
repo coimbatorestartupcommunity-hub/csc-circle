@@ -16,11 +16,12 @@ export default function TermsPage() {
       <PageHero eyebrow="Legal" title="Terms of Use" />
       <section className="py-14">
         <Container className="prose-brand mx-auto flex max-w-2xl flex-col gap-4 text-brand-secondary">
-          <p className="text-sm text-brand-muted">Last updated November 9, 2026.</p>
+          <p className="text-sm text-brand-muted">Last updated November 21, 2026.</p>
           <p>
             These Terms and Conditions govern your use of CSC Circle, operated
-            by Coimbatore Startup Community (CSC). By using the website or
-            creating an account, you agree to these terms. If you do not agree,
+            by Coimbatore Startup Community (CSC) in partnership with Technical
+            Partner Logic Intelligence Technologies (LIT). By using the website or
+            registering for events, you agree to these terms. If you do not agree,
             discontinue use of the service.
           </p>
           <h2 className="text-lg font-semibold text-brand-ink">Using the platform</h2>
@@ -58,14 +59,14 @@ export default function TermsPage() {
             review, restrict, or remove submissions that violate these terms or
             create a safety or legal concern.
           </p>
-          <h2 className="text-lg font-semibold text-brand-ink">Events and payments</h2>
+          <h2 className="text-lg font-semibold text-brand-ink">Events, digital passes, and check-in</h2>
           <p>
-            Event descriptions, capacity, registration deadlines, and any
-            applicable payment instructions are shown with the relevant event.
-            A registration is confirmed only when CSC&apos;s stated approval and
-            payment requirements are satisfied. Refunds, cancellations, and
-            changes follow the policy shown for that event or communicated by
-            CSC. Do not rely on a pending registration as a confirmed place.
+            Event descriptions, schedule, capacity, registration deadlines, and admission terms
+            are specified on each event page. For community gatherings (including the CSC Joint Online Meeting),
+            admission is free upon confirmed registration. Confirmed attendees receive an individual encrypted
+            digital pass with a verifiable QR code. Automated check-in and virtual room access (such as via Google Meet)
+            unlock before session start as designated on the event portal. Passes are individual and non-transferable.
+            For paid workshops, registrations are finalized upon successful payment reconciliation.
           </p>
           <h2 className="text-lg font-semibold text-brand-ink">Availability and changes</h2>
           <p>
