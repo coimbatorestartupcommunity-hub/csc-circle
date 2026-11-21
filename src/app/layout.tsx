@@ -60,10 +60,11 @@ export const metadata: Metadata = {
     description:
       "A platform bringing together Founders, Entrepreneurs, Innovators & Aspiring Builders in Coimbatore.",
     images: [{
-      url: "/brand/csc-homepage-banner.png",
+      url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122",
       width: 1200,
       height: 630,
-      alt: "CSC Circle homepage — Connect. Build. Grow.",
+      type: "image/png",
+      alt: "Coimbatore Startup Community — The People Behind CSC Circle",
     }],
   },
   twitter: {
@@ -71,7 +72,7 @@ export const metadata: Metadata = {
     title: "Coimbatore Startup Community (CSC) — Connect, Build & Grow",
     description:
       "A platform bringing together Founders, Entrepreneurs, Innovators & Aspiring Builders in Coimbatore.",
-    images: ["/brand/csc-homepage-banner.png"],
+    images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122"],
   },
   robots: {
     index: true,

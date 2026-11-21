@@ -3,6 +3,7 @@ import { IdCard, ShieldCheck, CalendarDays, MapPin, Ticket, Sparkles, Share2 } f
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { MemberIdCard } from "@/components/member/member-id-card";
 import { EmptyState } from "@/components/common/empty-state";
+import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 import { eventPassViewModel } from "@/lib/member/event-pass-view-model";
@@ -84,17 +85,24 @@ export default async function IdCardPage() {
                   <p className="mt-1 font-medium text-brand-ink">{cardRes.data.startupName || "Coimbatore Startup Community"}</p>
                 </div>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-3 border-t border-brand-border/60 pt-4">
-                <a
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://csc.logicintelligencetechnologies.in")}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold text-sky-800 transition hover:bg-sky-100"
-                >
-                  <Share2 className="size-3.5 text-sky-600" /> Share Credential on LinkedIn
-                </a>
+              <div className="mt-4 flex flex-col items-center justify-center gap-2 border-t border-brand-border/60 pt-4 text-center">
+                <SocialShareToolbar
+                  url={
+                    profile?.id
+                      ? `https://csc.logicintelligencetechnologies.in/members/${profile.id}`
+                      : "https://csc.logicintelligencetechnologies.in"
+                  }
+                  title={`Official Member Credential — ${cardRes.data.fullName} | CSC Circle`}
+                  summary={`Verified Member (${cardRes.data.memberNumber}) at Coimbatore Startup Community. Designation: ${cardRes.data.designationLabel || "Founder"} · ${cardRes.data.startupName || "CSC Circle"}. View verified credential.`}
+                  hashtags={[
+                    "#CoimbatoreStartups",
+                    "#CSCCircle",
+                    "#VerifiedFounder",
+                    "#TamilNaduFounders",
+                  ]}
+                />
                 <span className="text-[11px] text-brand-muted">
-                  Cryptographically verified · Non-transferable
+                  Cryptographically verified · Non-transferable digital membership card
                 </span>
               </div>
             </section>

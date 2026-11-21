@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
+import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
 import { listPublishedOpportunities, cmsImageUrl } from "@/lib/services/cms-public";
 
 export const metadata: Metadata = {
@@ -25,6 +26,29 @@ export const metadata: Metadata = {
   description:
     "Explore active founder residencies, grant fellowships, demo day nominations, and mentorship opportunities in Coimbatore.",
   alternates: { canonical: "/opportunities" },
+  openGraph: {
+    title: "Startup Opportunities & Ecosystem Programs — CSC Circle",
+    description:
+      "Explore active founder residencies, grant fellowships, demo day nominations, and mentorship opportunities in Coimbatore.",
+    url: "https://csc.logicintelligencetechnologies.in/opportunities",
+    siteName: "Coimbatore Startup Community",
+    images: [
+      {
+        url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122",
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: "Coimbatore Startup Community Opportunities — The People Behind CSC Circle",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Startup Opportunities & Ecosystem Programs — CSC Circle",
+    description:
+      "Explore active founder residencies, grant fellowships, demo day nominations, and mentorship opportunities in Coimbatore.",
+    images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122"],
+  },
 };
 
 const continuousTracks = [
@@ -194,30 +218,47 @@ async function OpportunitiesContent() {
             </div>
           </div>
 
-          {/* Share an opportunity callout */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-5 rounded-3xl bg-brand-cloud p-6 sm:p-8">
-            <div>
-              <h3 className="text-base font-bold text-brand-ink">Are You Hiring, Building, or Hosting an Opportunity?</h3>
-              <p className="text-xs text-brand-secondary">
-                Founders, startups, and business leaders can list co-founder searches, seed grants, hackathons, and technical openings directly with the CSC community.
-              </p>
+          {/* Share an opportunity callout — centered layout */}
+          <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center rounded-3xl border border-brand-border/80 bg-brand-cloud p-8 text-center sm:p-10 shadow-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-white px-3.5 py-1 text-xs font-semibold text-brand-accent shadow-2xs">
+              <Sparkles className="size-3.5" /> Founder Ecosystem Listings
+            </span>
+            <h3 className="mt-3 text-xl font-bold tracking-tight text-brand-ink sm:text-2xl">
+              Are You Hiring, Building, or Hosting an Opportunity?
+            </h3>
+            <p className="mt-2 max-w-xl text-xs sm:text-sm leading-relaxed text-brand-secondary">
+              Founders, startups, and business leaders can list co-founder searches, seed grants, hackathons, and technical openings directly with the Coimbatore Startup Community.
+            </p>
+
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 w-full">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/member/opportunities"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-brand-ink px-6 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-brand-ink"
+                >
+                  <Rocket className="size-3.5" /> Post an Opportunity
+                </Link>
+              </div>
+
+              <div className="mt-2 flex w-full justify-center">
+                <SocialShareToolbar
+                  url="https://csc.logicintelligencetechnologies.in/opportunities"
+                  title="Startup Opportunities & Ecosystem Programs — CSC Circle"
+                  summary="Explore active founder residencies, grant fellowships, demo day nominations, and mentorship tracks in Coimbatore. Post listings and connect with regional builders."
+                  hashtags={[
+                    "#CoimbatoreStartups",
+                    "#CSCCircle",
+                    "#TamilNaduFounders",
+                    "#StartupJobs",
+                    "#BuildInPublic",
+                  ]}
+                />
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <a
-                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://csc.logicintelligencetechnologies.in/opportunities")}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex shrink-0 items-center gap-2 rounded-full border border-sky-300 bg-sky-50 px-4 py-2.5 text-xs font-semibold text-sky-800 transition hover:bg-sky-100"
-              >
-                Share on LinkedIn
-              </a>
-              <a
-                href="mailto:coimbatorestartup.csc@gmail.com?subject=Submit%20a%20Founder%20Opportunity"
-                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-ink px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-ink/90"
-              >
-                <Rocket className="size-3.5" /> Post an Opportunity
-              </a>
-            </div>
+
+            <p className="mt-4 text-[11px] text-brand-muted">
+              Submitted listings undergo 24-hour moderation before appearing on the public ecosystem board.
+            </p>
           </div>
         </Container>
       </section>

@@ -18,6 +18,7 @@ import {
   UsersRound,
   Menu,
   Home,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "cn";
 import { Container } from "@/components/common/container";
@@ -33,11 +34,10 @@ const nav = [
   { href: "/member/id-card", label: "Member ID", icon: IdCard },
   { href: "/member/events", label: "Events Pass", icon: Ticket },
   { href: "/member/profile", label: "Profile", icon: UserCircle },
-  { href: "/member/resume", label: "Resume Creation", icon: FileText },
   { href: "/member/startups", label: "My Startups", icon: Rocket },
+  { href: "/member/opportunities", label: "Post Opportunities", icon: Briefcase },
   { href: "/members", label: "View CSC Profiles", icon: UsersRound },
   { href: "/member/consultations", label: "Consultations", icon: MessagesSquare },
-  { href: "/member/reviews", label: "Reviews", icon: Star },
   { href: "/member/settings", label: "Settings", icon: Settings },
 ];
 

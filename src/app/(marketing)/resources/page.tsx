@@ -20,6 +20,7 @@ import {
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { ResourceCard } from "@/components/cms/resource-card";
+import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
 import { listPublishedResources } from "@/lib/services/cms-public";
 
 export const metadata: Metadata = {
@@ -27,6 +28,29 @@ export const metadata: Metadata = {
   description:
     "Curated guides, TANSEED grant checklists, founder equity agreements, pitch deck blueprints, and regional incubation directories for Coimbatore startups.",
   alternates: { canonical: "/resources" },
+  openGraph: {
+    title: "Startup Resources & Founder Playbooks — CSC Circle",
+    description:
+      "Curated guides, TANSEED grant checklists, founder equity agreements, pitch deck blueprints, and regional incubation directories for Coimbatore startups.",
+    url: "https://csc.logicintelligencetechnologies.in/resources",
+    siteName: "Coimbatore Startup Community",
+    images: [
+      {
+        url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122",
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: "Coimbatore Startup Community Resources & Playbooks",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Startup Resources & Founder Playbooks — CSC Circle",
+    description:
+      "Curated guides, TANSEED grant checklists, founder equity agreements, pitch deck blueprints, and regional incubation directories for Coimbatore startups.",
+    images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122"],
+  },
 };
 
 const foundationalGuides = [
@@ -156,20 +180,47 @@ async function ResourcesContent() {
             </div>
           </div>
 
-          {/* Request / Suggest a Resource Banner */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-5 rounded-3xl bg-brand-cloud p-6 sm:p-8">
-            <div className="flex flex-col gap-1 text-center sm:text-left">
-              <h3 className="text-base font-bold text-brand-ink">Need a Specific Legal or Technical Template?</h3>
-              <p className="text-xs text-brand-secondary">
-                Suggest documents, financial model spreadsheets, or guides you want our advisory team to compile.
-              </p>
+          {/* Request / Suggest a Resource Banner — centered layout */}
+          <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center rounded-3xl border border-brand-border/80 bg-brand-cloud p-8 text-center sm:p-10 shadow-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-white px-3.5 py-1 text-xs font-semibold text-brand-accent shadow-2xs">
+              <FileText className="size-3.5" /> Founder Knowledge Base
+            </span>
+            <h3 className="mt-3 text-xl font-bold tracking-tight text-brand-ink sm:text-2xl">
+              Need a Specific Legal, Pitch, or Technical Template?
+            </h3>
+            <p className="mt-2 max-w-xl text-xs sm:text-sm leading-relaxed text-brand-secondary">
+              Suggest documents, financial model spreadsheets, or regulatory checklists you want our advisory team to compile for the ecosystem.
+            </p>
+
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 w-full">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <a
+                  href="mailto:coimbatorestartup.csc@gmail.com?subject=Resource%20Request%20or%20Suggestion"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-brand-ink px-6 py-2.5 text-xs font-semibold text-brand-white shadow-xs transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-brand-ink"
+                >
+                  <FileText className="size-3.5" /> Suggest a Resource
+                </a>
+              </div>
+
+              <div className="mt-2 flex w-full justify-center">
+                <SocialShareToolbar
+                  url="https://csc.logicintelligencetechnologies.in/resources"
+                  title="Startup Resources & Founder Playbooks — CSC Circle"
+                  summary="Access curated TANSEED grant blueprints, co-founder equity agreements, pitch deck templates, and regional incubator directories for Coimbatore founders."
+                  hashtags={[
+                    "#CoimbatoreStartups",
+                    "#CSCCircle",
+                    "#StartupTN",
+                    "#TANSEED",
+                    "#FoundersHub",
+                  ]}
+                />
+              </div>
             </div>
-            <a
-              href="mailto:coimbatorestartup.csc@gmail.com?subject=Resource%20Request%20or%20Suggestion"
-              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-ink px-5 py-2.5 text-xs font-semibold text-brand-white transition hover:bg-brand-ink/90"
-            >
-              <FileText className="size-3.5" /> Suggest a Resource
-            </a>
+
+            <p className="mt-4 text-[11px] text-brand-muted">
+              Peer-reviewed by CSC mentors &amp; regional startup advisors.
+            </p>
           </div>
         </Container>
       </section>

@@ -1,16 +1,17 @@
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, MapPin, MessageCircle, UserRound, Share2, ShieldCheck, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
 import { getMemberContext } from "@/lib/services/member/context";
 import { MemberUnavailable } from "@/components/member/member-unavailable";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicStartups } from "@/lib/services/public-data";
 import { siteConfig } from "@/lib/content/site";
 
-export const metadata = { title: "CSC Member Profile — Founder Circle" };
 export const instant = false;
 
 type PublicMember = {
@@ -25,6 +26,59 @@ type PublicMember = {
   has_photo: boolean;
   startup_website: string | null;
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  if (!/^[0-9a-f-]{36}$/i.test(slug)) {
+    return { title: "CSC Member Profile — Founder Circle" };
+  }
+  const sb = await createClient();
+  const { data } = await sb.rpc("get_discoverable_member", { p_member_id: slug });
+  const member = data?.[0] as PublicMember | undefined;
+  if (!member) {
+    return { title: "CSC Member Profile — Founder Circle" };
+  }
+
+  const designation = member.designation ? member.designation.replaceAll("_", " ") : "Founder";
+  const startup = member.startup_name ? ` at ${member.startup_name}` : "";
+  const title = `${member.display_name} — ${designation}${startup} | CSC Circle`;
+  const description =
+    member.about_me?.slice(0, 160) ||
+    `Verified founder profile of ${member.display_name} (${designation}${startup}) on Coimbatore Startup Community (CSC Circle).`;
+  const profileUrl = `${siteConfig.url}/members/${member.member_id}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/members/${member.member_id}` },
+    openGraph: {
+      type: "profile",
+      title,
+      description,
+      url: profileUrl,
+      siteName: "Coimbatore Startup Community",
+      images: [
+        {
+          url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122",
+          width: 1200,
+          height: 630,
+          type: "image/png",
+          alt: `${member.display_name} — Coimbatore Startup Community`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122"],
+    },
+  };
+}
 
 export default async function CommunityMemberPage({
   params,
@@ -105,35 +159,45 @@ export default async function CommunityMemberPage({
           </p>
         )}
 
-        <div className="mt-6 flex w-full max-w-md flex-col justify-center gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3">
-          {phone && (
-            <a
-              href={`https://wa.me/${phone}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white transition hover:bg-emerald-700"
-            >
-              <MessageCircle className="size-4 shrink-0" /> Contact on WhatsApp
-            </a>
-          )}
-          {member.startup_website && /^https?:\/\//i.test(member.startup_website) && (
-            <a
-              href={member.startup_website}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-border px-4 text-xs font-semibold text-brand-ink transition hover:bg-brand-cloud"
-            >
-              <ExternalLink className="size-4 shrink-0" /> Company Website
-            </a>
-          )}
-          <a
-            href={linkedinShareUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 text-xs font-semibold text-sky-800 transition hover:bg-sky-100"
-          >
-            <Share2 className="size-4 shrink-0 text-sky-600" /> Share on LinkedIn
-          </a>
+        <div className="mt-6 flex w-full max-w-lg flex-col items-center justify-center gap-3">
+          <div className="flex w-full flex-wrap items-center justify-center gap-2.5">
+            {phone && (
+              <a
+                href={`https://wa.me/${phone}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white transition hover:bg-emerald-700 shadow-2xs"
+              >
+                <MessageCircle className="size-4 shrink-0" /> Contact on WhatsApp
+              </a>
+            )}
+            {member.startup_website && /^https?:\/\//i.test(member.startup_website) && (
+              <a
+                href={member.startup_website}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-brand-border px-4 text-xs font-semibold text-brand-ink transition hover:bg-brand-cloud shadow-2xs"
+              >
+                <ExternalLink className="size-4 shrink-0" /> Company Website
+              </a>
+            )}
+          </div>
+
+          <div className="mt-1 flex w-full justify-center">
+            <SocialShareToolbar
+              url={profileUrl}
+              title={`${member.display_name} — ${member.designation ? member.designation.replaceAll("_", " ") : "Founder"}${member.startup_name ? ` at ${member.startup_name}` : ""} | CSC Circle`}
+              summary={member.about_me || `Verified ecosystem member and founder at Coimbatore Startup Community (CSC Circle). Connect and collaborate.`}
+              hashtags={[
+                "#CoimbatoreStartups",
+                "#CSCCircle",
+                "#VerifiedFounder",
+                "#TamilNaduFounders",
+              ]}
+              showWhatsApp={false}
+              showCopyCaption={true}
+            />
+          </div>
         </div>
       </header>
 
