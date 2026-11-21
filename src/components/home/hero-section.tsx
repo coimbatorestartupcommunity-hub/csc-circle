@@ -72,8 +72,8 @@ export function HeroSection() {
             <Image
               src={brandAssets.communityPhoto}
               alt="The CSC Circle community gathered in Coimbatore"
-              width={1619}
-              height={972}
+              width={2000}
+              height={1333}
               className="h-auto w-full rounded-[1.6rem] object-cover"
               priority
               sizes="(max-width: 1024px) 100vw, 460px"
