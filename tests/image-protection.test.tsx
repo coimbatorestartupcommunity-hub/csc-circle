@@ -60,4 +60,39 @@ describe("ImageProtection Component", () => {
     btn.dispatchEvent(btnEvent);
     expect(btnEvent.defaultPrevented).toBe(false);
   });
+
+  it("prevents contextmenu, selectstart, and copy on data-no-copy elements", () => {
+    const { container } = render(
+      <div>
+        <ImageProtection />
+        <div data-no-copy="true">
+          <p id="protected-para">This is protected community information.</p>
+        </div>
+        <input id="test-input" type="text" defaultValue="Normal input" />
+      </div>
+    );
+
+    const para = container.querySelector("#protected-para")!;
+
+    // Context menu prevented
+    const contextEvent = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+    para.dispatchEvent(contextEvent);
+    expect(contextEvent.defaultPrevented).toBe(true);
+
+    // Select start prevented
+    const selectEvent = new Event("selectstart", { bubbles: true, cancelable: true });
+    para.dispatchEvent(selectEvent);
+    expect(selectEvent.defaultPrevented).toBe(true);
+
+    // Copy event prevented
+    const copyEvent = new Event("copy", { bubbles: true, cancelable: true });
+    para.dispatchEvent(copyEvent);
+    expect(copyEvent.defaultPrevented).toBe(true);
+
+    // Input elements are not prevented
+    const input = container.querySelector("#test-input")!;
+    const inputSelectEvent = new Event("selectstart", { bubbles: true, cancelable: true });
+    input.dispatchEvent(inputSelectEvent);
+    expect(inputSelectEvent.defaultPrevented).toBe(false);
+  });
 });

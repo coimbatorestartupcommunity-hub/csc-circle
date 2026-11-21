@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Section, SectionHeading } from "@/components/common/section";
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <>
+    <div data-no-copy="true">
       <PageHero
         eyebrow={aboutHero.eyebrow}
         title={aboutHero.headline}
@@ -47,13 +48,13 @@ export default function AboutPage() {
       {/* Approved community photograph */}
       <div className="bg-brand-white pt-12 sm:pt-16">
         <Container>
-          <RevealOnScroll className="overflow-hidden rounded-[2rem] bg-brand-white p-2 shadow-sm ring-1 ring-brand-border">
+          <RevealOnScroll className="overflow-hidden rounded-[2rem] shadow-sm ring-1 ring-brand-border">
             <Image
               src={brandAssets.communityPhoto}
               alt="The CSC Circle community gathered in Coimbatore"
               width={2000}
               height={1332}
-              className="h-auto w-full rounded-[1.6rem] object-cover"
+              className="h-auto w-full object-cover"
               sizes="(max-width: 1280px) 100vw, 1200px"
             />
           </RevealOnScroll>
@@ -116,7 +117,6 @@ export default function AboutPage() {
           </RevealOnScroll>
         </Container>
       </section>
-    </>
+    </div>
   );
 }
-import { Suspense } from "react";

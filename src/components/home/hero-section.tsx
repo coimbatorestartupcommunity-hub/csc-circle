@@ -14,7 +14,7 @@ import { homeHero } from "@/lib/content/home";
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden" data-no-copy="true">
       <AmbientPastelBackground />
       <Container className="grid items-center gap-10 py-16 sm:py-20 lg:grid-cols-[1.2fr_1fr] lg:gap-14 lg:py-28">
         {/* Text column */}
@@ -68,13 +68,13 @@ export function HeroSection() {
           direction="left"
           className="relative"
         >
-          <div className="relative overflow-hidden rounded-[2rem] bg-brand-white p-2 shadow-xl ring-1 ring-brand-border">
+          <div className="relative overflow-hidden rounded-[2rem] shadow-xl ring-1 ring-brand-border">
             <Image
               src={brandAssets.communityPhoto}
               alt="The CSC Circle community gathered in Coimbatore"
               width={2000}
               height={1332}
-              className="h-auto w-full rounded-[1.6rem] object-cover"
+              className="h-auto w-full object-cover"
               priority
               sizes="(max-width: 1024px) 100vw, 460px"
             />
