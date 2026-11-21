@@ -898,4 +898,16 @@
       transition-duration: 0.001ms !important;
     }
   }
+
+  /* Prevent mobile long-press image download, callouts, and drag-and-drop */
+  img,
+  picture,
+  a:has(img),
+  [data-no-download] {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+    user-drag: none !important;
+  }
 }

@@ -4,6 +4,7 @@ import * as React from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { SubmissionFeedbackHost } from "@/components/layout/submission-feedback-host";
+import { ImageProtection } from "@/components/layout/image-protection";
 
 /**
  * The public site is intentionally light-dominant (per brand guidelines), so we
@@ -18,6 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem={false}
       disableTransitionOnChange
     >
+      <ImageProtection />
       {children}
       <Toaster position="top-center" richColors />
       <SubmissionFeedbackHost />
