@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Mail, Globe, LifeBuoy, ShieldCheck, CalendarDays, Sparkles, Clock, MapPin, Building2, CheckCircle2 } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
-import { InstagramIcon, WhatsappIcon } from "@/components/common/brand-icons";
+import { CircularSocialIcon } from "@/components/common/brand-icons";
 import { siteConfig } from "@/lib/content/site";
 import { ConsultationForm } from "@/components/events/rsvp-form";
 
@@ -42,25 +42,25 @@ export default function ContactPage() {
 
   const socialChannels = [
     {
-      icon: InstagramIcon,
-      label: "Instagram",
-      value: "@coimbatorestartupcommunity",
-      href: siteConfig.social.instagram,
-      note: "Follow for announcements, live coverage, and photo highlights.",
-    },
-    {
-      icon: WhatsappIcon,
+      network: "whatsapp" as const,
       label: "WhatsApp Community",
-      value: "Official CSC Announcements",
+      value: "Official Broadcast Channel",
       href: siteConfig.social.whatsapp,
       note: "Instant broadcast alerts, event pass reminders, and updates.",
     },
     {
-      icon: Globe,
-      label: "Web Platform",
-      value: "csc.logicintelligencetechnologies.in",
-      href: siteConfig.url,
-      note: "Browse founder directories, digital IDs, and open resources.",
+      network: "linkedin" as const,
+      label: "LinkedIn Profile",
+      value: "Coimbatore Startup Community",
+      href: siteConfig.social.linkedin,
+      note: "Connect with leadership, founder updates, and ecosystem news.",
+    },
+    {
+      network: "instagram" as const,
+      label: "Instagram Community",
+      value: "@coimbatorestartupcommunity",
+      href: siteConfig.social.instagram,
+      note: "Follow for announcements, live coverage, and photo highlights.",
     },
   ];
 
@@ -152,12 +152,10 @@ export default function ContactPage() {
                   href={c.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col justify-between rounded-2xl border border-brand-border bg-brand-white p-5 transition hover:bg-brand-cloud focus-visible:outline-2 focus-visible:outline-brand-ink"
+                  className="group flex flex-col justify-between rounded-2xl border border-brand-border bg-brand-white p-5 transition hover:bg-brand-cloud hover:shadow-xs focus-visible:outline-2 focus-visible:outline-brand-ink"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-purple/40 text-brand-ink">
-                      <c.icon className="size-4" aria-hidden="true" />
-                    </span>
+                    <CircularSocialIcon network={c.network} size={42} className="group-hover:scale-105" />
                     <div>
                       <span className="block text-sm font-semibold text-brand-ink">{c.label}</span>
                       <span className="mt-0.5 block text-xs font-medium text-brand-accent">{c.value}</span>

@@ -5,7 +5,7 @@ import { Mail, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/common/container";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { CtaLink } from "@/components/common/cta-link";
-import { InstagramIcon, WhatsappIcon } from "@/components/common/brand-icons";
+import { InstagramIcon, WhatsappIcon, LinkedinIcon, CircularSocialIcon } from "@/components/common/brand-icons";
 import { brandAssets, routes, siteConfig } from "@/lib/content/site";
 
 const helpLinks = [
@@ -55,19 +55,50 @@ export function SiteFooter() {
             <p className="mt-2 max-w-xs text-xs leading-relaxed text-brand-muted sm:text-sm">
               Follow CSC Circle, stay informed about community activities, and connect with founders and builders across Coimbatore.
             </p>
-            <ul data-testid="footer-social" className="mt-4 flex items-center gap-3">
+            <ul data-testid="footer-social" className="mt-4 flex flex-wrap items-center gap-3">
               <li>
-                <a href={siteConfig.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="CSC Circle on Instagram" className={socialLinkClass}>
-                  <InstagramIcon className="size-4" />
+                <a
+                  href={siteConfig.social.whatsapp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Join the CSC Circle WhatsApp community"
+                  title="WhatsApp Community Broadcast"
+                  className="inline-block transition-transform hover:scale-105 active:scale-95"
+                >
+                  <CircularSocialIcon network="whatsapp" size={42} />
                 </a>
               </li>
               <li>
-                <a href={siteConfig.social.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="Join the CSC Circle WhatsApp community" className={socialLinkClass}>
-                  <WhatsappIcon className="size-4" />
+                <a
+                  href={siteConfig.social.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Connect with CSC on LinkedIn"
+                  title="LinkedIn Official Profile"
+                  className="inline-block transition-transform hover:scale-105 active:scale-95"
+                >
+                  <CircularSocialIcon network="linkedin" size={42} />
                 </a>
               </li>
               <li>
-                <a href={`mailto:${siteConfig.social.email}`} aria-label="Email CSC Circle" className={socialLinkClass}>
+                <a
+                  href={siteConfig.social.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="CSC Circle on Instagram"
+                  title="Instagram Official Highlights"
+                  className="inline-block transition-transform hover:scale-105 active:scale-95"
+                >
+                  <CircularSocialIcon network="instagram" size={42} />
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`mailto:${siteConfig.social.email}`}
+                  aria-label="Email CSC Circle"
+                  title="Email Community Desk"
+                  className={socialLinkClass}
+                >
                   <Mail className="size-4" />
                 </a>
               </li>

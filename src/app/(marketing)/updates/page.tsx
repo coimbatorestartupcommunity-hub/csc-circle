@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { FileText, Bell, Send, Sparkles, ArrowRight } from "lucide-react";
 import { Container } from "@/components/common/container";
 import { PageHero } from "@/components/common/page-hero";
-import { WhatsappIcon, InstagramIcon } from "@/components/common/brand-icons";
+import { CircularSocialIcon } from "@/components/common/brand-icons";
 import { listPublishedUpdates, cmsImageUrl } from "@/lib/services/cms-public";
 import { siteConfig } from "@/lib/content/site";
 
@@ -61,46 +61,66 @@ async function UpdatesContent() {
 
       <section className="py-12 sm:py-16">
         <Container className="max-w-6xl flex flex-col gap-10">
-          {/* Real-time Broadcast Channels Banner */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          {/* Real-time Broadcast Channels Banner — Circular Icons for WhatsApp, LinkedIn, Instagram */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <a
               href={siteConfig.social.whatsapp}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6 transition hover:bg-emerald-50"
+              className="group flex flex-col justify-between rounded-3xl border border-emerald-200 bg-emerald-50/50 p-6 transition hover:bg-emerald-50 hover:shadow-xs"
             >
-              <div className="flex items-center gap-4">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-emerald-600 text-white">
-                  <WhatsappIcon className="size-5" />
-                </span>
-                <div>
-                  <h3 className="text-sm font-bold text-brand-ink">WhatsApp Broadcast Group</h3>
-                  <p className="text-xs text-brand-secondary">
-                    Get instant event pass links, Google Meet reminders &amp; announcements.
+              <div className="flex items-start gap-4">
+                <CircularSocialIcon network="whatsapp" size={48} className="group-hover:scale-105" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-brand-ink">WhatsApp Broadcast</h3>
+                    <ArrowRight className="size-4 text-emerald-700 transition-transform group-hover:translate-x-1" />
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-brand-secondary">
+                    Official announcements, instant pass access, and real-time community links.
                   </p>
                 </div>
               </div>
-              <ArrowRight className="size-4 text-emerald-700" />
+            </a>
+
+            <a
+              href={siteConfig.social.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col justify-between rounded-3xl border border-sky-200 bg-sky-50/50 p-6 transition hover:bg-sky-50 hover:shadow-xs"
+            >
+              <div className="flex items-start gap-4">
+                <CircularSocialIcon network="linkedin" size={48} className="group-hover:scale-105" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-brand-ink">LinkedIn Official Profile</h3>
+                    <ArrowRight className="size-4 text-sky-700 transition-transform group-hover:translate-x-1" />
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-brand-secondary">
+                    Connect with regional founders, ecosystem partners &amp; leadership.
+                  </p>
+                </div>
+              </div>
             </a>
 
             <a
               href={siteConfig.social.instagram}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between rounded-3xl border border-pink-200 bg-pink-50/50 p-6 transition hover:bg-pink-50"
+              className="group flex flex-col justify-between rounded-3xl border border-pink-200 bg-pink-50/50 p-6 transition hover:bg-pink-50 hover:shadow-xs sm:col-span-2 lg:col-span-1"
             >
-              <div className="flex items-center gap-4">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white">
-                  <InstagramIcon className="size-5" />
-                </span>
-                <div>
-                  <h3 className="text-sm font-bold text-brand-ink">Instagram Community Highlights</h3>
-                  <p className="text-xs text-brand-secondary">
-                    Follow @coimbatorestartupcommunity for photo carousels &amp; reels.
+              <div className="flex items-start gap-4">
+                <CircularSocialIcon network="instagram" size={48} className="group-hover:scale-105" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-brand-ink">Instagram Highlights</h3>
+                    <ArrowRight className="size-4 text-pink-700 transition-transform group-hover:translate-x-1" />
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-brand-secondary">
+                    Follow @coimbatorestartupcommunity for event reels &amp; photo carousels.
                   </p>
                 </div>
               </div>
-              <ArrowRight className="size-4 text-pink-700" />
             </a>
           </div>
 

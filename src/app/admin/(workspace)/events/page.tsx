@@ -52,7 +52,7 @@ export default async function AdminEventsPage() {
     <>
       <AdminPageHeader
         title="Event management"
-        description="Create, schedule, publish and manage CSC events."
+        description="Create, schedule, publish and manage CSC events. Community host proposals submitted via /events appear under Drafts for moderation."
         isDemo={ctx.mode === "preview"}
         action={
           can(ctx, "events.create") ? (

@@ -138,7 +138,7 @@ function htmlFooter(base: string, support: string, dark: boolean) {
   const muted = dark ? "#CBC4DC" : colors.muted;
   const social = [
     ["Instagram", `${base}/email-assets/reference/social-instagram.png`, "https://www.instagram.com/coimbatorestartupcommunity/"],
-    ["WhatsApp group", `${base}/email-assets/reference/social-whatsapp.png`, "https://chat.whatsapp.com/EMaSXe8j6cA9s94hGOCEqf?s=cl&p=a&mlu=4&ilr=4"],
+    ["WhatsApp group", `${base}/email-assets/reference/social-whatsapp.png`, "https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2"],
     ["Email CSC", `${base}/email-assets/reference/social-email.png`, `mailto:${support}`],
     ["CSC website", `${base}/email-assets/reference/social-website.png`, base],
   ];
@@ -218,7 +218,7 @@ export function renderNotification(key: TemplateKey, payload: Record<string, unk
         "5. Join Meeting: Click 'Join meeting' to participate in the session!"
       : ""
     : "";
-  const text = `${effectiveHeading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${passText}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/EMaSXe8j6cA9s94hGOCEqf?s=cl&p=a&mlu=4&ilr=4\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
+  const text = `${effectiveHeading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${passText}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
   const isOrange = tone === "orange";
   const isSky = tone === "sky";
   const brandBg = isOrange ? colors.orangeHero : colors.white;

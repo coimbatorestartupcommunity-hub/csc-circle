@@ -41,6 +41,15 @@ const facets: Facet[] = [
       { label: "Archived", value: "archived" },
     ],
   },
+  {
+    key: "status",
+    label: "Pipeline Stage",
+    options: [
+      { label: "Community Proposals", value: "proposal" },
+      { label: "Active", value: "active" },
+      { label: "Completed", value: "completed" },
+    ],
+  },
 ];
 
 export default async function AdminCollaborationsPage() {

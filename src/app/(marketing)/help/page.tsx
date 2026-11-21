@@ -59,7 +59,7 @@ const faq: FAQCategory[] = [
             <Link href="/updates" className="font-semibold text-brand-accent underline underline-offset-2">
               Updates
             </Link>
-            , and highlighted in our official WhatsApp and Instagram channels.
+            , and broadcast across our official WhatsApp, LinkedIn, and Instagram channels.
           </>
         ),
       },

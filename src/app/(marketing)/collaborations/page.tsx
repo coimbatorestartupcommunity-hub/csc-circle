@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { CtaLink } from "@/components/common/cta-link";
 import { StaggerContainer, StaggerItem } from "@/components/motion";
 import { CollaborationCard } from "@/components/collaborations/collaboration-card";
+import { CollaborationProposalForm } from "@/components/collaborations/collaboration-proposal-form";
 import { getPublicCollaborations } from "@/lib/services/public-data";
 import { siteConfig } from "@/lib/content/site";
 
@@ -54,6 +55,28 @@ export default async function CollaborationsPage() {
               </CtaLink>
             </EmptyState>
           )}
+
+          {/* Partner & Ecosystem Collaboration Intake Form */}
+          <div
+            id="propose"
+            className="mt-16 flex flex-col gap-6 rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-10 shadow-xs ring-1 ring-brand-border"
+          >
+            <div className="flex flex-col gap-2">
+              <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-cloud px-3 py-1 text-xs font-semibold text-brand-accent">
+                <Handshake className="size-3.5" /> Institutional &amp; Partner Intake
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-brand-ink">
+                Propose a Strategic Collaboration with CSC Circle
+              </h2>
+              <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-brand-secondary">
+                Are you an incubator, university innovation cell, angel network, corporate accelerator, or maker space? Partner with Coimbatore Startup Community to co-host hackathons, mentorship tracks, pitch days, and founder fellowships.
+              </p>
+            </div>
+
+            <div className="border-t border-brand-border/60 pt-4">
+              <CollaborationProposalForm />
+            </div>
+          </div>
         </Container>
       </section>
     </>

@@ -5,6 +5,7 @@ import { Container } from "@/components/common/container";
 import { PageHero } from "@/components/common/page-hero";
 import { FeaturedEventNotices } from "@/components/events/featured-event-notices";
 import { EventsClient } from "@/components/events/events-client";
+import { EventProposalForm } from "@/components/events/event-proposal-form";
 import { getPublicEvents } from "@/lib/services/public-data";
 import { siteConfig } from "@/lib/content/site";
 
@@ -100,6 +101,28 @@ export default async function EventsPage() {
               <h2 className="mt-1 text-2xl font-semibold text-brand-ink sm:text-3xl">Upcoming Events</h2>
             </div>
             <EventsClient events={events} />
+          </div>
+
+          {/* Host or Organize an Event / Community Gathering Proposal Form */}
+          <div
+            id="host"
+            className="mt-6 flex flex-col gap-6 rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-10 shadow-xs ring-1 ring-brand-border"
+          >
+            <div className="flex flex-col gap-2">
+              <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-cloud px-3 py-1 text-xs font-semibold text-brand-accent">
+                <Sparkles className="size-3.5" /> Community Organizer &amp; Host Desk
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-brand-ink">
+                Host an Event, Workshop, or Founder Gathering
+              </h2>
+              <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-brand-secondary">
+                Are you a startup founder, community leader, or tech team looking to organize a meetup, hackathon, product demo, or virtual workshop? Propose your session below. Approved events receive ticketing pass generation, check-in infrastructure, and community broadcast outreach.
+              </p>
+            </div>
+
+            <div className="border-t border-brand-border/60 pt-4">
+              <EventProposalForm />
+            </div>
           </div>
         </Container>
       </section>

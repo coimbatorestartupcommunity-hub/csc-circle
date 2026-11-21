@@ -16,12 +16,14 @@ export const metadata: Metadata = {
 const email = siteConfig.social.email;
 
 const audience = [
-  "Startup founders",
-  "Aspiring entrepreneurs",
-  "Students",
-  "Builders and creators",
-  "Professionals",
-  "Mentors and ecosystem collaborators",
+  "Startup Founders & Co-Founders",
+  "Aspiring Entrepreneurs & Idea-Stage Builders",
+  "Early-Stage Venture Operators",
+  "Serial Entrepreneurs & Business Leaders",
+  "Angel Investors & Syndicate Partners",
+  "Technical Innovators & System Architects",
+  "Industry Mentors & Ecosystem Advisors",
+  "Hardware, DeepTech & AI Researchers",
 ];
 
 const steps = [
