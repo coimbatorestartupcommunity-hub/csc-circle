@@ -169,3 +169,52 @@ export function clientIp(req: Request): string {
   return "unknown";
 }
 
+/**
+ * Standard HTTP rate-limit response headers adhering to RFC 6585 and IETF drafts.
+ */
+export function rateLimitHeaders(
+  result: RateLimitResult,
+  limit?: number
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Retry-After": String(result.retryAfter || 60),
+  };
+  if (limit !== undefined) {
+    headers["X-RateLimit-Limit"] = String(limit);
+  }
+  if (result.remaining !== undefined) {
+    headers["X-RateLimit-Remaining"] = String(result.remaining);
+  }
+  if (result.resetAt) {
+    headers["X-RateLimit-Reset"] = result.resetAt;
+  }
+  return headers;
+}
+
+/**
+ * Returns a standardized 429 response with rate limit headers and structured JSON payload.
+ */
+export function rateLimitResponse(
+  message = "Too many requests. Please try again shortly.",
+  result?: RateLimitResult,
+  limit?: number
+): Response {
+  const retryAfter = result?.retryAfter || 60;
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    ...(result ? rateLimitHeaders(result, limit) : { "Retry-After": String(retryAfter) }),
+  });
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: {
+        code: "RATE_LIMIT_EXCEEDED",
+        message,
+        retryAfter,
+      },
+    }),
+    { status: 429, headers }
+  );
+}
+
