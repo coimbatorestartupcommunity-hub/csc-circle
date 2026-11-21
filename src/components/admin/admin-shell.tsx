@@ -170,14 +170,14 @@ export function AdminShell({
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-brand-cloud">
+    <div className="flex min-h-screen min-w-0 max-w-full overflow-x-clip bg-brand-cloud">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-5 overflow-y-auto border-r border-brand-border bg-brand-white p-4 lg:flex">
         <BrandLogo showWordmark={false} markSize={34} />
         <NavList permissions={permissions} />
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 max-w-full flex-1 flex-col overflow-x-clip">
         {/* Top bar */}
         <header className="sticky top-0 z-30 flex h-14 min-w-0 items-center justify-between gap-3 border-b border-brand-border bg-brand-white/90 px-3 backdrop-blur-md sm:px-4">
           <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ export function AdminShell({
           </div>
         </header>
 
-        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="min-w-0 max-w-full flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

@@ -24,13 +24,18 @@ export function rateLimit(
   key: string,
   limit = 5,
   windowMs = 60_000,
-): { allowed: boolean; retryAfter: number } {
+): { allowed: boolean; retryAfter: number; remaining: number; resetAt: string } {
   const now = Date.now();
   const hits = (buckets.get(key) ?? []).filter((t) => now - t < windowMs);
   if (hits.length >= limit) {
     const retryAfter = Math.ceil((windowMs - (now - hits[0])) / 1000);
     buckets.set(key, hits);
-    return { allowed: false, retryAfter };
+    return {
+      allowed: false,
+      retryAfter,
+      remaining: 0,
+      resetAt: new Date(hits[0] + windowMs).toISOString(),
+    };
   }
   hits.push(now);
   buckets.set(key, hits);
@@ -40,7 +45,9 @@ export function rateLimit(
       if (v.every((t) => now - t >= windowMs)) buckets.delete(k);
     }
   }
-  return { allowed: true, retryAfter: 0 };
+  const remaining = Math.max(0, limit - hits.length);
+  const resetAt = new Date(hits[0] + windowMs).toISOString();
+  return { allowed: true, retryAfter: 0, remaining, resetAt };
 }
 
 /**
@@ -176,9 +183,7 @@ export function rateLimitHeaders(
   result: RateLimitResult,
   limit?: number
 ): Record<string, string> {
-  const headers: Record<string, string> = {
-    "Retry-After": String(result.retryAfter || 60),
-  };
+  const headers: Record<string, string> = {};
   if (limit !== undefined) {
     headers["X-RateLimit-Limit"] = String(limit);
   }
@@ -186,7 +191,11 @@ export function rateLimitHeaders(
     headers["X-RateLimit-Remaining"] = String(result.remaining);
   }
   if (result.resetAt) {
-    headers["X-RateLimit-Reset"] = result.resetAt;
+    const epochSec = Math.floor(new Date(result.resetAt).getTime() / 1000);
+    headers["X-RateLimit-Reset"] = isNaN(epochSec) ? result.resetAt : String(epochSec);
+  }
+  if (!result.allowed && result.retryAfter) {
+    headers["Retry-After"] = String(result.retryAfter);
   }
   return headers;
 }

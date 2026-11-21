@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, Check, Copy, MessageCircle } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 
 interface SocialShareToolbarProps {
   url: string;
@@ -25,7 +25,7 @@ const DEFAULT_HASHTAGS = [
 function LinkedInIcon({ className = "size-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9h2.77v8.37H6.46v-8.37M7.85 6.4a1.62 1.62 0 1 0 0 3.24 1.62 1.62 0 0 0 0-3.24Z" />
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451c.979 0 1.778-.773 1.778-1.729V1.73C24 .774 23.205 0 22.222 0h.003z" />
     </svg>
   );
 }
@@ -36,9 +36,7 @@ export function SocialShareToolbar({
   summary,
   hashtags = DEFAULT_HASHTAGS,
   className = "",
-  showWhatsApp = true,
   showCopyCaption = true,
-  variant = "pill",
 }: SocialShareToolbarProps) {
   const [copied, setCopied] = useState(false);
   const [openingLinkedIn, setOpeningLinkedIn] = useState(false);
@@ -67,11 +65,6 @@ export function SocialShareToolbar({
     setTimeout(() => setOpeningLinkedIn(false), 1500);
   }
 
-  function handleWhatsAppShare() {
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(formattedCaption)}`;
-    window.open(waUrl, "_blank", "noopener,noreferrer");
-  }
-
   async function handleCopyCaption() {
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -87,48 +80,36 @@ export function SocialShareToolbar({
   return (
     <div className={`flex flex-col items-center justify-center gap-2 ${className}`}>
       <div className="flex flex-wrap items-center justify-center gap-2.5">
-        <button
-          type="button"
-          onClick={handleLinkedInShare}
-          className="inline-flex items-center gap-2 rounded-full border border-sky-300 bg-sky-50 px-4 py-2.5 text-xs font-semibold text-sky-900 shadow-2xs transition hover:bg-sky-100 hover:border-sky-400 focus-visible:outline-2 focus-visible:outline-sky-600 active:scale-98"
-          title="Copies full formatted post caption and opens LinkedIn share dialog with live banner preview"
-        >
-          <LinkedInIcon className="size-4 text-sky-700" />
-          <span>{openingLinkedIn ? "Opening LinkedIn…" : "Share on LinkedIn"}</span>
-        </button>
-
-        {showWhatsApp && (
-          <button
-            type="button"
-            onClick={handleWhatsAppShare}
-            className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-900 shadow-2xs transition hover:bg-emerald-100 hover:border-emerald-400 focus-visible:outline-2 focus-visible:outline-emerald-600 active:scale-98"
-            title="Share via WhatsApp with pre-filled caption & link preview"
-          >
-            <MessageCircle className="size-4 text-emerald-700" />
-            <span>WhatsApp</span>
-          </button>
-        )}
-
         {showCopyCaption && (
           <button
             type="button"
             onClick={handleCopyCaption}
-            className="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-white px-3.5 py-2.5 text-xs font-medium text-brand-secondary shadow-2xs transition hover:bg-brand-cloud hover:text-brand-ink focus-visible:outline-2 focus-visible:outline-brand-ink active:scale-98"
+            className="inline-flex items-center gap-2 rounded-full border border-brand-border bg-white px-4 py-2.5 text-xs sm:text-sm font-medium text-brand-ink shadow-2xs transition hover:bg-brand-cloud hover:border-brand-border/80 focus-visible:outline-2 focus-visible:outline-brand-ink active:scale-98 cursor-pointer"
             title="Copy full caption and hashtags to clipboard"
           >
             {copied ? (
               <>
-                <Check className="size-3.5 text-emerald-600" />
-                <span className="text-emerald-700 font-semibold">Caption Copied!</span>
+                <Check className="size-4 text-emerald-600" />
+                <span className="font-semibold text-emerald-700">Caption Copied!</span>
               </>
             ) : (
               <>
-                <Copy className="size-3.5" />
+                <Copy className="size-4 text-brand-muted" />
                 <span>Copy Caption</span>
               </>
             )}
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={handleLinkedInShare}
+          className="inline-flex items-center gap-2 rounded-full bg-[#0A66C2] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs transition hover:bg-[#004182] focus-visible:outline-2 focus-visible:outline-[#0A66C2] active:scale-98 cursor-pointer"
+          title="Copies full formatted post caption and opens LinkedIn share dialog with live banner preview"
+        >
+          <LinkedInIcon className="size-4 shrink-0 text-white fill-white" />
+          <span>{openingLinkedIn ? "Opening LinkedIn…" : "Share on LinkedIn"}</span>
+        </button>
       </div>
 
       {copied && (

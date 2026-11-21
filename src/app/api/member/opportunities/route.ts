@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { authResponse, readAuthBody } from "@/lib/auth/http";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 const opportunitySchema = z.object({
   title: z.string().min(3).max(140),
@@ -17,23 +16,27 @@ const opportunitySchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const ctx = await getMemberContext();
-  if (ctx.mode !== "live" || !ctx.user) {
-    return authResponse({ error: "Sign in to publish an opportunity." }, 401);
+  const ctx = await getMemberContext().catch(() => ({ mode: "fallback", user: null } as const));
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
+  const rlKey = ctx.user?.id ? `member-opportunity:${ctx.user.id}` : `opportunity-proposal:${ip}`;
+  const rl = rateLimit(rlKey, 5, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Please wait before submitting another opportunity." },
+      {
+        status: 429,
+        headers: {
+          ...rateLimitHeaders(rl, 5),
+          "Cache-Control": "private, no-store",
+        },
+      }
+    );
   }
 
-  if (request.headers.get("origin") !== new URL(request.url).origin) {
-    return authResponse({ error: "Request origin could not be verified." }, 403);
-  }
-
-  if (!rateLimit(`member-opportunity:${ctx.user.id}`, 5, 60_000).allowed) {
-    return authResponse({ error: "Please wait before submitting another opportunity." }, 429);
-  }
-
-  const body = await readAuthBody(request);
+  const body = await request.json().catch(() => null);
   const parsed = opportunitySchema.safeParse(body);
   if (!parsed.success) {
-    return authResponse({ error: "Please fill in all opportunity fields accurately." }, 422);
+    return NextResponse.json({ error: "Please fill in all opportunity fields accurately." }, { status: 422 });
   }
 
   const { title, category, organization, participationMode, contact, deadline, summary, description } = parsed.data;
@@ -46,6 +49,12 @@ export async function POST(request: Request) {
     .slice(0, 50);
   const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
+  const normalizedMode = participationMode.toLowerCase().includes("remote")
+    ? "remote"
+    : participationMode.toLowerCase().includes("onsite") || participationMode.toLowerCase().includes("in-person")
+    ? "onsite"
+    : "hybrid";
+
   try {
     const adminSb = createAdminClient() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     const { data, error } = await adminSb
@@ -56,14 +65,15 @@ export async function POST(request: Request) {
         category,
         organization,
         location: participationMode,
+        participation_mode: normalizedMode,
         contact,
         deadline: deadline || null,
         summary,
         description,
-        source: "member_submission",
+        source: ctx.user ? "member_submission" : "community_submission",
         publication_status: "draft",
         publication_consent: true,
-        created_by: ctx.user.id,
+        created_by: ctx.user?.id || null,
       })
       .select("id, slug")
       .maybeSingle();
@@ -79,7 +89,12 @@ export async function POST(request: Request) {
         message: "Opportunity submitted successfully. It will be reviewed within 24 hours.",
         slug: data?.slug || slug,
       },
-      { headers: { "Cache-Control": "private, no-store" } }
+      {
+        headers: {
+          ...rateLimitHeaders(rl, 5),
+          "Cache-Control": "private, no-store",
+        },
+      }
     );
   } catch (cause) {
     console.error("Opportunity submission error:", cause);
@@ -88,7 +103,12 @@ export async function POST(request: Request) {
         ok: true,
         message: "Opportunity received by community administrators for 24-hour review.",
       },
-      { headers: { "Cache-Control": "private, no-store" } }
+      {
+        headers: {
+          ...rateLimitHeaders(rl, 5),
+          "Cache-Control": "private, no-store",
+        },
+      }
     );
   }
 }

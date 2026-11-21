@@ -78,27 +78,6 @@ const partners = [
     desc: "Architects of the CSC Circle digital portal, real-time verification pipeline, and infrastructure security.",
     link: "https://logicintelligencetechnologies.in",
   },
-  {
-    name: "Belvoria",
-    role: "Creative Brand & Experience Partner",
-    desc: "Collaborating on founder storytelling, aesthetic branding, and community media initiatives.",
-    link: "https://belvoria.vercel.app/",
-  },
-  {
-    name: "CECIL Groups",
-    role: "Industrial & Ecosystem Collaborator",
-    desc: "Bridging traditional Coimbatore manufacturing expertise with emerging deep-tech and B2B startups.",
-  },
-  {
-    name: "Flickkora",
-    role: "Digital Media & Community Outreach",
-    desc: "Amplifying grassroots founder stories, demo day recordings, and podcast spotlights across Tamil Nadu.",
-  },
-  {
-    name: "APARÈ",
-    role: "Design & Merchandising Collaborator",
-    desc: "Partnering on official community merchandise, physical hackathon badges, and founder gear.",
-  },
 ];
 
 const milestones = [
@@ -209,28 +188,28 @@ export default function AboutPage() {
           title="Strategic Partners & Collaborating Organizations"
           description="CSC Circle thrives through trusted partnerships with forward-thinking organizations across technology, design, and industry."
         />
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 flex justify-center">
           {partners.map((partner) => (
             <div
               key={partner.name}
-              className="flex flex-col justify-between rounded-3xl border border-brand-border bg-brand-cloud/40 p-6 transition hover:bg-brand-white hover:shadow-xs"
+              className="flex w-full max-w-2xl flex-col justify-between rounded-3xl border border-brand-border bg-brand-cloud/40 p-6 sm:p-8 transition hover:bg-brand-white hover:shadow-xs"
             >
               <div className="flex flex-col gap-2">
                 <span className="w-fit rounded-full bg-brand-white px-2.5 py-1 text-[11px] font-semibold text-brand-accent ring-1 ring-brand-border">
                   {partner.role}
                 </span>
-                <h3 className="mt-2 text-base font-bold text-brand-ink">{partner.name}</h3>
-                <p className="text-xs leading-relaxed text-brand-secondary">{partner.desc}</p>
+                <h3 className="mt-2 text-lg font-bold text-brand-ink">{partner.name}</h3>
+                <p className="text-sm leading-relaxed text-brand-secondary">{partner.desc}</p>
               </div>
               {partner.link && (
-                <div className="mt-4 pt-3 border-t border-brand-border/60">
+                <div className="mt-6 border-t border-brand-border/60 pt-4">
                   <a
                     href={partner.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-accent hover:underline"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-accent hover:underline"
                   >
-                    Visit partner portal <ArrowRight className="size-3" />
+                    Visit partner portal <ArrowRight className="size-3.5" />
                   </a>
                 </div>
               )}

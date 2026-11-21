@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 const proposalSchema = z.object({
   organizationName: z.string().min(2).max(120),
@@ -18,10 +18,17 @@ const proposalSchema = z.object({
 
 export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
-  if (!rateLimit(`collab-proposal:${ip}`, 5, 60_000).allowed) {
+  const rl = rateLimit(`collab-proposal:${ip}`, 5, 60_000);
+  if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many proposal submissions. Please wait a moment." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: {
+          ...rateLimitHeaders(rl, 5),
+          "Cache-Control": "private, no-store",
+        },
+      }
     );
   }
 
@@ -83,7 +90,12 @@ export async function POST(request: Request) {
         referenceCode: refCode,
         message: "Collaboration proposal queued successfully for administrative review.",
       },
-      { headers: { "Cache-Control": "private, no-store" } }
+      {
+        headers: {
+          ...rateLimitHeaders(rl, 5),
+          "Cache-Control": "private, no-store",
+        },
+      }
     );
   } catch (cause) {
     console.error("Collaboration proposal failure:", cause);
@@ -93,7 +105,12 @@ export async function POST(request: Request) {
         referenceCode: refCode,
         message: "Proposal recorded and queued for leadership evaluation.",
       },
-      { headers: { "Cache-Control": "private, no-store" } }
+      {
+        headers: {
+          ...rateLimitHeaders(rl, 5),
+          "Cache-Control": "private, no-store",
+        },
+      }
     );
   }
 }

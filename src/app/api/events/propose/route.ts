@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 
 const eventProposalSchema = z.object({
   organizerName: z.string().min(2).max(80),
@@ -20,10 +20,17 @@ const eventProposalSchema = z.object({
 
 export async function POST(request: Request) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
-  if (!rateLimit(`event-proposal:${ip}`, 5, 60_000).allowed) {
+  const rl = rateLimit(`event-proposal:${ip}`, 5, 60_000);
+  if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many event proposals submitted. Please wait a moment." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: {
+          ...rateLimitHeaders(rl, 5),
+          "Cache-Control": "private, no-store",
+        },
+      }
     );
   }
 
@@ -83,7 +90,12 @@ export async function POST(request: Request) {
         referenceCode: refCode,
         message: "Event proposal submitted successfully and queued in admin dashboard.",
       },
-      { headers: { "Cache-Control": "private, no-store" } }
+      {
+        headers: {
+          ...rateLimitHeaders(rl, 5),
+          "Cache-Control": "private, no-store",
+        },
+      }
     );
   } catch (cause) {
     console.error("Event proposal error:", cause);
@@ -93,7 +105,12 @@ export async function POST(request: Request) {
         referenceCode: refCode,
         message: "Event proposal received and queued for committee review.",
       },
-      { headers: { "Cache-Control": "private, no-store" } }
+      {
+        headers: {
+          ...rateLimitHeaders(rl, 5),
+          "Cache-Control": "private, no-store",
+        },
+      }
     );
   }
 }

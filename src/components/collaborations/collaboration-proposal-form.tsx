@@ -130,9 +130,9 @@ export function CollaborationProposalForm() {
             id="collab-org"
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
-            placeholder="e.g. Forge Innovation & Ventures / Rathinam TBI"
+            placeholder="e.g. Coimbatore Innovation Hub"
             required
-            className="rounded-xl border-brand-border text-xs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
 
@@ -146,7 +146,7 @@ export function CollaborationProposalForm() {
             onChange={(e) => setRepName(e.target.value)}
             placeholder="e.g. Dr. Rajesh Kumar"
             required
-            className="rounded-xl border-brand-border text-xs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
       </div>
@@ -160,8 +160,8 @@ export function CollaborationProposalForm() {
             id="collab-desig"
             value={designation}
             onChange={(e) => setDesignation(e.target.value)}
-            placeholder="e.g. Incubation Director / Founder"
-            className="rounded-xl border-brand-border text-xs"
+            placeholder="e.g. Incubation Director"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
 
@@ -174,9 +174,9 @@ export function CollaborationProposalForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="e.g. partner@organization.ac.in"
+            placeholder="e.g. partner@institution.org"
             required
-            className="rounded-xl border-brand-border text-xs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
 
@@ -190,7 +190,7 @@ export function CollaborationProposalForm() {
             onChange={(e) => setPhone(e.target.value)}
             placeholder="e.g. +91 98765 43210"
             required
-            className="rounded-xl border-brand-border text-xs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
       </div>
@@ -204,7 +204,7 @@ export function CollaborationProposalForm() {
             id="collab-category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="rounded-xl border border-brand-border bg-white p-2.5 text-xs text-brand-ink focus:outline-brand-ink"
+            className="rounded-xl border border-brand-border bg-white p-3 text-sm text-brand-ink focus:outline-brand-ink"
           >
             {categories.map((c) => (
               <option key={c} value={c}>
@@ -222,64 +222,64 @@ export function CollaborationProposalForm() {
             id="collab-web"
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
-            placeholder="https://..."
-            className="rounded-xl border-brand-border text-xs"
+            placeholder="https://example.org"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="collab-reason" className="text-xs font-semibold text-brand-ink">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="collab-reason" className="text-sm font-semibold text-brand-ink">
           Collaboration Rationale &amp; Objectives <span className="text-red-500">*</span>
         </Label>
         <textarea
           id="collab-reason"
-          rows={3}
+          rows={4}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Why do you wish to collaborate with CSC Circle? Outline the proposed initiative (e.g. joint hackathon, incubation support, demo day partnership, mentorship pipeline)."
+          placeholder="e.g. Host a joint deep-tech hackathon and incubation track with mentoring for 20 early-stage hardware startups."
           required
-          className="rounded-2xl border border-brand-border p-3 text-xs text-brand-ink placeholder:text-brand-muted focus:outline-brand-ink"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="collab-benefits" className="text-xs font-semibold text-brand-ink">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="collab-benefits" className="text-sm font-semibold text-brand-ink">
           Benefits &amp; Value to Coimbatore Founders <span className="text-red-500">*</span>
         </Label>
         <textarea
           id="collab-benefits"
-          rows={3}
+          rows={4}
           value={benefits}
           onChange={(e) => setBenefits(e.target.value)}
-          placeholder="What tangible benefits, resources, grants, prototyping infrastructure, or exposure will your organization provide to participating founders and startups?"
+          placeholder="e.g. Provide INR 5 Lakhs in non-dilutive prototype grants, lab access, and direct industry mentor office hours."
           required
-          className="rounded-2xl border border-brand-border p-3 text-xs text-brand-ink placeholder:text-brand-muted focus:outline-brand-ink"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="collab-support" className="text-xs font-semibold text-brand-ink">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="collab-support" className="text-sm font-semibold text-brand-ink">
           Support Requested from CSC Circle
         </Label>
         <textarea
           id="collab-support"
-          rows={2}
+          rows={3}
           value={supportRequested}
           onChange={(e) => setSupportRequested(e.target.value)}
-          placeholder="What specific support do you request from our team? (e.g. Founder invitations, speaker curation, community co-marketing, digital pass verification)."
-          className="rounded-2xl border border-brand-border p-3 text-xs text-brand-ink placeholder:text-brand-muted focus:outline-brand-ink"
+          placeholder="e.g. Coordinate founder registrations, digital pass verification, and promote the cohort via CSC channels."
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="mt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-brand-border/60 pt-4">
-        <span className="text-[11px] text-brand-muted">
+      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-brand-border/60 pt-5">
+        <span className="text-xs text-brand-muted">
           All proposals are securely reviewed by CSC leadership within 24–48 hours.
         </span>
         <Button
           type="submit"
           disabled={busy}
-          className="w-full sm:w-auto min-w-[200px] gap-2 rounded-xl bg-brand-ink px-6 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-brand-ink/90 disabled:opacity-50"
+          className="w-full sm:w-auto min-w-[260px] min-h-12 gap-2.5 rounded-2xl bg-brand-ink px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition hover:bg-brand-ink/90 hover:shadow-lg disabled:opacity-50 cursor-pointer"
         >
           {busy ? (
             <>

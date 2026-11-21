@@ -140,7 +140,7 @@ export function EventProposalForm() {
             onChange={(e) => setOrganizerName(e.target.value)}
             placeholder="e.g. Senthil Nathan"
             required
-            className="rounded-xl border-brand-border text-xs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
 
@@ -152,8 +152,8 @@ export function EventProposalForm() {
             id="evt-company"
             value={organization}
             onChange={(e) => setOrganization(e.target.value)}
-            placeholder="e.g. TechSprint Labs / Independent Host"
-            className="rounded-xl border-brand-border text-xs"
+            placeholder="e.g. TechSprint Labs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
       </div>
@@ -170,7 +170,7 @@ export function EventProposalForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="e.g. organizer@startup.in"
             required
-            className="rounded-xl border-brand-border text-xs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
 
@@ -184,7 +184,7 @@ export function EventProposalForm() {
             onChange={(e) => setPhone(e.target.value)}
             placeholder="e.g. +91 98765 43210"
             required
-            className="rounded-xl border-brand-border text-xs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
       </div>
@@ -197,9 +197,9 @@ export function EventProposalForm() {
           id="evt-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Zero to One: Scaling AI Infrastructure from Coimbatore"
+          placeholder="e.g. Scaling AI Infrastructure from Coimbatore: Founder Workshop"
           required
-          className="rounded-xl border-brand-border text-xs"
+          className="rounded-xl border-brand-border text-sm"
         />
       </div>
 
@@ -212,7 +212,7 @@ export function EventProposalForm() {
             id="evt-category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="rounded-xl border border-brand-border bg-white p-2.5 text-xs text-brand-ink focus:outline-brand-ink"
+            className="rounded-xl border border-brand-border bg-white p-3 text-sm text-brand-ink focus:outline-brand-ink"
           >
             {eventCategories.map((c) => (
               <option key={c} value={c}>
@@ -230,7 +230,7 @@ export function EventProposalForm() {
             id="evt-format"
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="rounded-xl border border-brand-border bg-white p-2.5 text-xs text-brand-ink focus:outline-brand-ink"
+            className="rounded-xl border border-brand-border bg-white p-3 text-sm text-brand-ink focus:outline-brand-ink"
           >
             {eventFormats.map((f) => (
               <option key={f} value={f}>
@@ -249,7 +249,7 @@ export function EventProposalForm() {
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
             placeholder="e.g. 50"
-            className="rounded-xl border-brand-border text-xs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
       </div>
@@ -265,7 +265,7 @@ export function EventProposalForm() {
             value={proposedDate}
             onChange={(e) => setProposedDate(e.target.value)}
             placeholder="e.g. Mid December 2026, Saturday 4:00 PM IST"
-            className="rounded-xl border-brand-border text-xs"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
 
@@ -277,49 +277,49 @@ export function EventProposalForm() {
             id="evt-venue"
             value={venue}
             onChange={(e) => setVenue(e.target.value)}
-            placeholder="e.g. PSG-STEP Auditorium, Avinashi Rd or Google Meet"
-            className="rounded-xl border-brand-border text-xs"
+            placeholder="e.g. PSG-STEP Auditorium, Avinashi Rd"
+            className="rounded-xl border-brand-border text-sm"
           />
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="evt-desc" className="text-xs font-semibold text-brand-ink">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="evt-desc" className="text-sm font-semibold text-brand-ink">
           Event Outline, Agenda &amp; Target Audience <span className="text-red-500">*</span>
         </Label>
         <textarea
           id="evt-desc"
-          rows={3}
+          rows={4}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe the session outline, learning takeaways, speaker profiles, and whether it caters to seed-stage founders, engineers, or early ideators."
+          placeholder="e.g. 90-minute masterclass covering AI infrastructure bottlenecks, model cost reductions, and live demos for seed founders and engineering leads."
           required
-          className="rounded-2xl border border-brand-border p-3 text-xs text-brand-ink placeholder:text-brand-muted focus:outline-brand-ink"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="evt-support" className="text-xs font-semibold text-brand-ink">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="evt-support" className="text-sm font-semibold text-brand-ink">
           Support Requested from CSC Circle
         </Label>
         <textarea
           id="evt-support"
-          rows={2}
+          rows={3}
           value={supportRequested}
           onChange={(e) => setSupportRequested(e.target.value)}
-          placeholder="What do you need from us? (e.g. Venue partnership, digital pass issuance, WhatsApp broadcast promotion, audio/visual setup, speaker curation)."
-          className="rounded-2xl border border-brand-border p-3 text-xs text-brand-ink placeholder:text-brand-muted focus:outline-brand-ink"
+          placeholder="e.g. Digital pass ticketing, check-in QR scanner support, and announcement broadcast across Coimbatore startup channels."
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-4 text-sm text-brand-ink placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
-      <div className="mt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-brand-border/60 pt-4">
-        <span className="text-[11px] text-brand-muted">
+      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-brand-border/60 pt-5">
+        <span className="text-xs text-brand-muted">
           All proposals are evaluated by CSC Events desk within 24–48 hours.
         </span>
         <Button
           type="submit"
           disabled={busy}
-          className="w-full sm:w-auto min-w-[200px] gap-2 rounded-xl bg-brand-ink px-6 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-brand-ink/90 disabled:opacity-50"
+          className="w-full sm:w-auto min-w-[260px] min-h-12 gap-2.5 rounded-2xl bg-brand-ink px-8 py-3.5 text-sm sm:text-base font-bold text-white shadow-md transition hover:bg-brand-ink/90 hover:shadow-lg disabled:opacity-50 cursor-pointer"
         >
           {busy ? (
             <>

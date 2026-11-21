@@ -18,8 +18,8 @@ type Values = z.input<typeof collaborationSaveSchema>;
 type OrganizationOption = { id: string; name: string; slug: string; logoPath?: string | null; organizationType?: string; description?: string | null; websiteUrl?: string | null };
 type EventOption = { id: string; title: string; startsAt: string };
 
-const inputClass = "min-w-0 rounded-xl border border-brand-border bg-white px-3 py-2.5 text-sm text-brand-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-accent";
-const labelClass = "flex flex-col gap-1.5 text-sm font-medium text-brand-ink";
+const inputClass = "min-w-0 max-w-full w-full break-words [overflow-wrap:anywhere] rounded-xl border border-brand-border bg-white px-3 py-2.5 text-sm text-brand-ink outline-none focus-visible:ring-2 focus-visible:ring-brand-accent";
+const labelClass = "flex min-w-0 max-w-full flex-col gap-1.5 text-sm font-medium text-brand-ink";
 
 export function CollaborationEditor({
   initial,

@@ -19,6 +19,7 @@ import {
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
+import { MemberOpportunityForm } from "@/components/member/member-opportunity-form";
 import { listPublishedOpportunities, cmsImageUrl } from "@/lib/services/cms-public";
 
 export const metadata: Metadata = {
@@ -218,47 +219,36 @@ async function OpportunitiesContent() {
             </div>
           </div>
 
-          {/* Share an opportunity callout — centered layout */}
-          <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center rounded-3xl border border-brand-border/80 bg-brand-cloud p-8 text-center sm:p-10 shadow-xs">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-white px-3.5 py-1 text-xs font-semibold text-brand-accent shadow-2xs">
-              <Sparkles className="size-3.5" /> Founder Ecosystem Listings
-            </span>
-            <h3 className="mt-3 text-xl font-bold tracking-tight text-brand-ink sm:text-2xl">
-              Are You Hiring, Building, or Hosting an Opportunity?
-            </h3>
-            <p className="mt-2 max-w-xl text-xs sm:text-sm leading-relaxed text-brand-secondary">
-              Founders, startups, and business leaders can list co-founder searches, seed grants, hackathons, and technical openings directly with the Coimbatore Startup Community.
-            </p>
-
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 w-full">
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <Link
-                  href="/member/opportunities"
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-brand-ink px-6 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-brand-ink"
-                >
-                  <Rocket className="size-3.5" /> Post an Opportunity
-                </Link>
-              </div>
-
-              <div className="mt-2 flex w-full justify-center">
-                <SocialShareToolbar
-                  url="https://csc.logicintelligencetechnologies.in/opportunities"
-                  title="Startup Opportunities & Ecosystem Programs — CSC Circle"
-                  summary="Explore active founder residencies, grant fellowships, demo day nominations, and mentorship tracks in Coimbatore. Post listings and connect with regional builders."
-                  hashtags={[
-                    "#CoimbatoreStartups",
-                    "#CSCCircle",
-                    "#TamilNaduFounders",
-                    "#StartupJobs",
-                    "#BuildInPublic",
-                  ]}
-                />
-              </div>
+          {/* Interactive Opportunity Proposal Form */}
+          <div className="mx-auto w-full max-w-4xl rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-10 shadow-xs ring-1 ring-brand-border/60">
+            <div className="mb-6 border-b border-brand-border/60 pb-5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-cloud px-3.5 py-1 text-xs font-semibold text-brand-accent">
+                <Sparkles className="size-3.5" /> Founder &amp; Startup Intake
+              </span>
+              <h3 className="mt-3 text-xl font-bold tracking-tight text-brand-ink sm:text-2xl">
+                Publish a Founder Opportunity
+              </h3>
+              <p className="mt-1 text-xs sm:text-sm leading-relaxed text-brand-secondary">
+                Founders, startups, and business leaders can list co-founder searches, seed grants, hackathons, and technical openings directly with the Coimbatore Startup Community. All postings undergo 24-hour moderation before going live.
+              </p>
             </div>
 
-            <p className="mt-4 text-[11px] text-brand-muted">
-              Submitted listings undergo 24-hour moderation before appearing on the public ecosystem board.
-            </p>
+            <MemberOpportunityForm />
+
+            <div className="mt-8 flex w-full justify-center border-t border-brand-border/60 pt-6">
+              <SocialShareToolbar
+                url="https://csc.logicintelligencetechnologies.in/opportunities"
+                title="Startup Opportunities & Ecosystem Programs — CSC Circle"
+                summary="Explore active founder residencies, grant fellowships, demo day nominations, and mentorship tracks in Coimbatore. Post listings and connect with regional builders."
+                hashtags={[
+                  "#CoimbatoreStartups",
+                  "#CSCCircle",
+                  "#TamilNaduFounders",
+                  "#StartupJobs",
+                  "#BuildInPublic",
+                ]}
+              />
+            </div>
           </div>
         </Container>
       </section>
