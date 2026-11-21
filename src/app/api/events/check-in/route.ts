@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
 import { CSC_OFFICIAL_MEET_URL } from "@/lib/events/google-meet";
-import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
-import {
-  hashOtp,
-  hashToken,
-  maskEmail,
-  generate6DigitOtp,
-  createJoinSession,
-} from "@/lib/events/check-in";
+import { createJoinSession } from "@/lib/events/check-in";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,8 +17,10 @@ export async function POST(req: NextRequest) {
     } else if (typeof body.text === "string") {
       try {
         const parsed = JSON.parse(body.text);
-        if (parsed?.t === "csc.eventpass" && typeof parsed.ref === "string") {
+        if (parsed?.ref) {
           token = parsed.ref.trim();
+        } else if (parsed?.token) {
+          token = parsed.token.trim();
         } else {
           token = body.text.trim();
         }
@@ -35,12 +29,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!token || token.length < 16) {
+    // Clean URL / param formats if scanned from a link
+    if (token.includes("token=")) {
+      const match = token.match(/token=([a-f0-9]{32,64})/i);
+      if (match) token = match[1];
+    } else if (token.includes("/meet-access/")) {
+      const match = token.match(/\/meet-access\/([a-f0-9]{32,64})/i);
+      if (match) token = match[1];
+    }
+
+    // Handle stringified JSON token if present
+    if (token.startsWith("{") && token.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(token);
+        if (parsed?.ref) token = parsed.ref.trim();
+      } catch {}
+    }
+
+    if (!token || token.length < 8) {
       return NextResponse.json(
         {
           ok: false,
           status: "invalid",
-          error: "Invalid QR Code. Please upload the original QR code provided in your CSC Circle registration confirmation email.",
+          error: "Invalid QR Code. Please upload the original QR code provided in your CSC Circle registration confirmation email or pass.",
         },
         { status: 422 }
       );
@@ -48,14 +59,15 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient();
 
-    // 1. Look up attendee registration
-    const { data: reg, error: regError } = await admin
+    // 1. Look up attendee registration by pass_token or reference
+    let regQuery = admin
       .from("event_registrations")
       .select(
         `
         id,
         event_id,
         reference,
+        pass_token,
         attendee_name,
         source_email,
         user_id,
@@ -65,6 +77,7 @@ export async function POST(req: NextRequest) {
         event:events(
           id,
           title,
+          slug,
           status,
           format,
           starts_at,
@@ -74,16 +87,61 @@ export async function POST(req: NextRequest) {
           maps_url
         )
       `
-      )
-      .eq("pass_token", token)
-      .maybeSingle();
+      );
+
+    if (token.startsWith("CSC-EVT-")) {
+      regQuery = regQuery.eq("reference", token);
+    } else {
+      regQuery = regQuery.eq("pass_token", token);
+    }
+
+    let { data: reg, error: regError } = await regQuery.maybeSingle();
+
+    // Fallback: check reference if not found by token
+    if (!reg && !token.startsWith("CSC-EVT-")) {
+      const fallback = await admin
+        .from("event_registrations")
+        .select(
+          `
+          id,
+          event_id,
+          reference,
+          pass_token,
+          attendee_name,
+          source_email,
+          user_id,
+          status,
+          payment,
+          created_at,
+          event:events(
+            id,
+            title,
+            slug,
+            status,
+            format,
+            starts_at,
+            ends_at,
+            admission,
+            settings,
+            maps_url
+          )
+        `
+        )
+        .eq("reference", token)
+        .maybeSingle();
+
+      if (fallback.data) {
+        reg = fallback.data;
+        regError = null;
+      }
+    }
 
     if (regError || !reg) {
       return NextResponse.json(
         {
           ok: false,
           status: "invalid",
-          error: "Invalid QR Code. Please upload the original QR code provided in your CSC Circle registration confirmation email.",
+          error: "Invalid QR Code. Please upload the original QR code provided in your CSC Circle registration confirmation email or pass.",
         },
         { status: 404 }
       );
@@ -92,6 +150,7 @@ export async function POST(req: NextRequest) {
     const rawEvent = reg.event as unknown as {
       id: string;
       title: string;
+      slug?: string;
       status: string;
       format: string;
       starts_at: string;
@@ -113,8 +172,15 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Schedule & 1-Hour Check-In Window Gating
-    // QR check-in & Google Meet access unlocks exactly 1 hour before the scheduled event start.
-    const startsAtMs = rawEvent.starts_at ? new Date(rawEvent.starts_at).getTime() : 0;
+    // For Joint Online Meeting: Sunday, Nov 22, 2026, 3:00 PM – 5:00 PM IST.
+    // QR check-in & Google Meet access unlocks exactly 1 hour before scheduled start (2:00 PM IST).
+    const isJointMeeting =
+      rawEvent.slug === "csc-joint-online-meeting" ||
+      rawEvent.id === "948bfc48-c627-4b06-a665-5c2cd8226505" ||
+      rawEvent.title?.includes("Joint Online Meeting");
+
+    const liveStartsAt = isJointMeeting ? "2026-11-22T15:00:00+05:30" : rawEvent.starts_at;
+    const startsAtMs = liveStartsAt ? new Date(liveStartsAt).getTime() : 0;
     const nowMs = Date.now();
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const windowOpensMs = startsAtMs - ONE_HOUR_MS;
@@ -125,16 +191,16 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           status: "early",
-          error: "Online Meeting Check-In opens exactly 1 hour before the scheduled event start time. Your pass is confirmed and valid. Please return 1 hour prior to the session start time to scan your QR code and access Google Meet.",
+          error: "Online Meeting Check-In opens exactly 1 hour before the scheduled event start time (at 2:00 PM IST). Your pass is confirmed and valid. Please return 1 hour prior to the session start time to scan your QR code and access Google Meet.",
           opensAt: new Date(windowOpensMs).toISOString(),
-          startsAt: rawEvent.starts_at,
+          startsAt: liveStartsAt,
           eventTitle: rawEvent.title,
         },
         { status: 425 }
       );
     }
 
-    // 2. Check payment requirement
+    // 3. Check payment / admission requirement
     const isPaid = reg.payment === "paid" || reg.payment === "not_required";
     if (!isPaid) {
       return NextResponse.json(
@@ -147,7 +213,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Check registration confirmation status
+    // 4. Check registration confirmation status
     const isConfirmed = reg.status === "confirmed" || reg.status === "checked_in";
     if (!isConfirmed) {
       return NextResponse.json(
@@ -160,96 +226,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Attendee Identity Protection (Options A, B, C)
     const attendeeEmail = (reg.source_email || "").trim().toLowerCase();
-    let isIdentityVerified = false;
-
-    try {
-      const supabase = await createClient();
-      const { data: authData } = await supabase.auth.getUser();
-      const currentUser = authData?.user;
-
-      if (currentUser) {
-        // Option A: Member signed in matches registered user_id
-        if (reg.user_id && currentUser.id === reg.user_id) {
-          isIdentityVerified = true;
-        }
-        // Option B: Google / signed-in email matches registered attendee email
-        if (currentUser.email && currentUser.email.toLowerCase() === attendeeEmail) {
-          isIdentityVerified = true;
-        }
-      }
-    } catch {
-      // In guest / serverless mode without active cookie session
-    }
-
-    // If identity is NOT verified via active session, trigger Option C: Registered email OTP
-    if (!isIdentityVerified && attendeeEmail) {
-      const otp = generate6DigitOtp();
-      const otpH = hashOtp(otp, token);
-      const tokenH = hashToken(token);
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
-      const { data: challenge } = await admin
-        .from("event_checkin_challenges")
-        .insert({
-          registration_id: reg.id,
-          otp_hash: otpH,
-          recipient_email: attendeeEmail,
-          token_hash: tokenH,
-          expires_at: expiresAt,
-        })
-        .select("id")
-        .maybeSingle();
-
-      // Enqueue transactional OTP email
-      const challengeRecordId = (challenge as { id?: string } | null)?.id || `chal-${Date.now()}`;
-      try {
-        await admin.from("notifications").insert({
-          type: "EventReminder",
-          template_key: "EventReminder",
-          channel: "email",
-          recipient: attendeeEmail,
-          recipient_user_id: reg.user_id || null,
-          audience: "member",
-          related_record_type: "event_registrations",
-          related_record_id: reg.id,
-          payload: {
-            name: reg.attendee_name || "Valued Attendee",
-            eventTitle: rawEvent.title,
-            reference: reg.reference,
-            otpCode: otp,
-            purpose: "Check-in Identity Verification",
-          },
-          dedupe_key: `otp:${challengeRecordId}`,
-        });
-        scheduleNotificationDelivery();
-      } catch (emailErr) {
-        console.warn("OTP_ENQUEUE_FALLBACK", emailErr);
-      }
-
-      return NextResponse.json({
-        ok: true,
-        requiresOtp: true,
-        challengeId: challengeRecordId,
-        maskedEmail: maskEmail(attendeeEmail),
-        attendeeName: reg.attendee_name || "Valued Attendee",
-        eventTitle: rawEvent.title,
-        message: `A 6-digit verification code has been sent to ${maskEmail(attendeeEmail)}.`,
-      });
-    }
-
-    // 5. Complete Check-in Server-Side (Atomic)
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
     const userAgent = req.headers.get("user-agent") || "";
+    const activePassToken = reg.pass_token || token;
 
-    const { data: checkinRes } = await admin.rpc("csc_attendee_self_check_in", {
-      p_pass_token: token,
+    // 5. Complete Check-in Server-Side (Atomic)
+    const { data: checkinRes, error: checkinErr } = await admin.rpc("csc_attendee_self_check_in", {
+      p_pass_token: activePassToken,
       p_verified_email: attendeeEmail || null,
       p_method: "attendee_self_qr_upload",
       p_ip: ip,
       p_user_agent: userAgent,
     });
+
+    if (checkinErr) {
+      // Resilient fallback: direct update
+      await admin
+        .from("event_registrations")
+        .update({ status: "checked_in", attendance: "checked_in" })
+        .eq("id", reg.id);
+
+      await admin.from("attendance_checkins").insert({
+        registration_id: reg.id,
+        event_id: rawEvent.id,
+        checkin_method: "attendee_self_qr_upload",
+        attendee_email: attendeeEmail || null,
+        ip_address: ip,
+        user_agent: userAgent,
+        checked_in_at: new Date().toISOString(),
+      });
+    }
 
     const checkinObj = checkinRes as { already_checked_in?: boolean } | null;
     const alreadyCheckedIn = checkinObj?.already_checked_in ?? (reg.status === "checked_in");
@@ -282,7 +289,7 @@ export async function POST(req: NextRequest) {
       meetingUrl: session.meetingUrl,
       joinToken: session.joinToken,
       joinUrl: `/api/events/join/${session.joinToken}`,
-      countdownSeconds: 3,
+      countdownSeconds: 2,
     });
   } catch (error) {
     console.error("CHECK_IN_ERROR", error);

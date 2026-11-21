@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 
     const { data: existingRegs } = await admin
       .from("event_registrations")
-      .select("id, reference, status, user_id")
+      .select("id, reference, status, user_id, pass_token")
       .eq("event_id", event.id)
       .eq("source_email", lowerEmail)
       .not("status", "in", "('cancelled','revoked')")
@@ -164,8 +164,12 @@ export async function POST(request: NextRequest) {
         ok: true,
         alreadyRegistered: true,
         reference: existingRegs[0].reference,
-        passHref: `/member/events/${existingRegs[0].id}`,
-        message: "You are already registered for this event. Your confirmed pass has been sent to your email.",
+        passId: existingRegs[0].id,
+        passToken: existingRegs[0].pass_token,
+        passHref: existingRegs[0].pass_token
+          ? `/events/meet-access/${existingRegs[0].pass_token}`
+          : `/member/events/${existingRegs[0].id}`,
+        message: "You are already registered for this event. Your confirmed pass is ready below.",
       });
     }
 
@@ -285,9 +289,10 @@ export async function POST(request: NextRequest) {
       ok: true,
       reference: primaryPass.reference,
       passId: primaryPass.id,
-      passHref: `/member/events/${primaryPass.id}`,
+      passToken: primaryPassToken,
+      passHref: `/events/meet-access/${primaryPassToken}`,
       attendeeCount: data.attendeeCount,
-      message: "Registration confirmed successfully! Your digital event pass and Google Meet access details have been emailed to you.",
+      message: "Registration confirmed successfully! Your digital event pass with QR code and Google Meet access details are ready below.",
     });
   } catch (err) {
     return NextResponse.json(

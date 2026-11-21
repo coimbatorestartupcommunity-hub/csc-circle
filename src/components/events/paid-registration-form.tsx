@@ -384,7 +384,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
               </Link>
             </div>
             <p className="mt-3 text-[11px] text-slate-500">
-              Check-in and Google Meet access unlock 3 hours prior to meeting start time.
+              Check-in and Google Meet access unlock 1 hour prior to meeting start time (at 2:00 PM IST).
             </p>
           </div>
         </div>

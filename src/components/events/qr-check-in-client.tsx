@@ -47,11 +47,30 @@ interface OtpChallengeData {
   token: string;
 }
 
+function parseQrToken(rawText: string): string {
+  let token = (rawText || "").trim();
+  try {
+    const parsed = JSON.parse(token);
+    if (parsed && typeof parsed === "object") {
+      token = String(parsed.ref || parsed.token || parsed.pass_token || token).trim();
+    }
+  } catch {}
+
+  if (token.includes("token=")) {
+    const match = token.match(/token=([a-f0-9]{32,64})/i);
+    if (match) token = match[1];
+  } else if (token.includes("/meet-access/")) {
+    const match = token.match(/\/meet-access\/([a-f0-9]{32,64})/i);
+    if (match) token = match[1];
+  }
+  return token;
+}
+
 export function QrCheckInClient({
   initialToken,
   isEarlyLocked = false,
   eventTitle = "Coimbatore Startup Community (CSC) - Joint Online Meeting",
-  startsAt = "2026-11-22T04:30:00+00:00",
+  startsAt = "2026-11-22T15:00:00+05:30",
 }: {
   initialToken?: string;
   isEarlyLocked?: boolean;
@@ -59,7 +78,7 @@ export function QrCheckInClient({
   startsAt?: string;
 }) {
   const [step, setStep] = React.useState<Step>(() => {
-    if (initialToken && initialToken.length >= 16) return "verifying";
+    if (initialToken && initialToken.length >= 8) return "verifying";
     if (isEarlyLocked) return "early";
     return "upload";
   });
@@ -81,7 +100,7 @@ export function QrCheckInClient({
   const [otpData, setOtpData] = React.useState<OtpChallengeData | null>(null);
   const [otpInput, setOtpInput] = React.useState<string>("");
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState<boolean>(false);
-  const [countdown, setCountdown] = React.useState<number>(3);
+  const [countdown, setCountdown] = React.useState<number>(2);
   const [cameraActive, setCameraActive] = React.useState<boolean>(false);
 
   // Automatic countdown and new-tab redirection to Google Meet upon successful check-in
@@ -183,7 +202,7 @@ export function QrCheckInClient({
         joinUrl: data.joinUrl,
         alreadyCheckedIn: data.alreadyCheckedIn,
       });
-      setCountdown(3);
+      setCountdown(2);
       setStep("success");
     } catch (err) {
       console.error(err);
@@ -194,7 +213,7 @@ export function QrCheckInClient({
 
   // Automatic token verification if supplied in query param (async inside effect callback)
   React.useEffect(() => {
-    if (!initialToken || initialToken.length < 16) return;
+    if (!initialToken || initialToken.length < 8) return;
     const controller = new AbortController();
 
     const run = async () => {
@@ -243,7 +262,7 @@ export function QrCheckInClient({
           joinUrl: data.joinUrl,
           alreadyCheckedIn: data.alreadyCheckedIn,
         });
-        setCountdown(3);
+        setCountdown(2);
         setStep("success");
       } catch (err) {
         if (!controller.signal.aborted) {
@@ -280,18 +299,9 @@ export function QrCheckInClient({
           const qrReader = new BrowserQRCodeReader();
           const result = await qrReader.decodeFromImageUrl(dataUrl);
           const rawText = result.getText();
+          const token = parseQrToken(rawText);
 
-          let token = rawText;
-          try {
-            const parsed = JSON.parse(rawText);
-            if (parsed && typeof parsed === "object" && parsed.ref) {
-              token = parsed.ref;
-            }
-          } catch {
-            // Raw token format
-          }
-
-          if (!token || token.length < 16) {
+          if (!token || token.length < 8) {
             setErrorMessage("No valid event pass token found in the uploaded image.");
             setStep("error");
             return;
@@ -389,14 +399,8 @@ export function QrCheckInClient({
         (result) => {
           if (result && !scanned) {
             const rawText = result.getText();
-            let token = rawText;
-            try {
-              const parsed = JSON.parse(rawText);
-              if (parsed?.ref) token = parsed.ref;
-            } catch {
-              // Raw token
-            }
-            if (token && token.length >= 16) {
+            const token = parseQrToken(rawText);
+            if (token && token.length >= 8) {
               scanned = true;
               stopCamera();
               void verifyToken(token);
@@ -744,7 +748,7 @@ export function QrCheckInClient({
               Check-In Opens 1 Hour Before Meeting
             </h2>
             <p className="mt-2 text-xs sm:text-sm font-medium text-slate-600 max-w-md leading-relaxed">
-              Your registration and QR pass are <strong className="text-emerald-700">confirmed and valid</strong>. To ensure an orderly session, automated Google Meet check-in unlocks <strong>1 hour prior to the session start time</strong> on the event day.
+              Your registration and QR pass are <strong className="text-emerald-700">confirmed and valid</strong>. To ensure an orderly session, automated Google Meet check-in unlocks <strong>at 2:00 PM IST</strong> (1 hour prior to the 3:00 PM session start) on <strong>Sunday, November 22, 2026</strong>.
             </p>
 
             <div className="my-5 w-full rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-left text-xs space-y-2">
@@ -753,8 +757,12 @@ export function QrCheckInClient({
                 <span className="font-bold text-slate-900 truncate max-w-[200px]">{earlyData.eventTitle}</span>
               </div>
               <div className="flex justify-between border-b border-amber-200/60 py-2">
-                <span className="text-slate-500">Check-In Window</span>
-                <span className="font-semibold text-amber-900">Opens 1 Hour Before Start Time</span>
+                <span className="text-slate-500">Meeting Time</span>
+                <span className="font-semibold text-slate-900">3:00 PM – 5:00 PM IST</span>
+              </div>
+              <div className="flex justify-between border-b border-amber-200/60 py-2">
+                <span className="text-slate-500">Check-In Unlocks</span>
+                <span className="font-semibold text-amber-900">2:00 PM IST (1 Hour Prior)</span>
               </div>
               <div className="flex justify-between pt-1">
                 <span className="text-slate-500">Meeting Platform</span>

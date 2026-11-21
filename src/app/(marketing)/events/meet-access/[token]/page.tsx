@@ -62,6 +62,7 @@ export default async function MeetAccessPage({
         title,
         starts_at,
         ends_at,
+        admission,
         settings,
         maps_url,
         status,
@@ -106,6 +107,7 @@ export default async function MeetAccessPage({
     title: string;
     starts_at: string;
     ends_at: string | null;
+    admission?: string;
     settings?: Record<string, unknown> | null;
     maps_url?: string | null;
     status: string;
@@ -228,7 +230,7 @@ export default async function MeetAccessPage({
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Pass Reference</span>
                 <p className="font-mono text-sm font-bold text-teal-700">{registration.reference}</p>
                 <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-800">
-                  <UserCheck className="size-3" /> Payment Verified
+                  <UserCheck className="size-3" /> {rawEvent?.admission === "free" || registration.payment === "not_required" ? "Registration Confirmed" : "Payment Verified"}
                 </span>
               </div>
               <div className="sm:col-span-2 border-t border-slate-200/60 pt-3">
@@ -240,7 +242,7 @@ export default async function MeetAccessPage({
                   </div>
                   <div className="flex items-center gap-2 text-slate-600 pl-6">
                     <Clock className="size-3.5 text-slate-400 shrink-0" />
-                    <span>Time: To Be Announced (Will be updated via email and the CSC WhatsApp Group)</span>
+                    <span>Time: 3:00 PM – 5:00 PM IST (Check-in unlocks at 2:00 PM IST)</span>
                   </div>
                 </div>
               </div>
@@ -251,27 +253,25 @@ export default async function MeetAccessPage({
               <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-sm">
                 <Video className="size-6" />
               </div>
-              <h2 className="text-lg font-bold text-slate-900">Join Google Meet Conference</h2>
+              <h2 className="text-lg font-bold text-slate-900">Google Meet Conference Access</h2>
               <p className="mx-auto mt-1 max-w-md text-xs text-slate-600">
-                Your admission is confirmed. Click the button below to join the meeting room directly on Google Meet.
+                Your admission is confirmed. Google Meet check-in unlocks at <strong>2:00 PM IST</strong> (1 hour before the meeting starts).
               </p>
 
               <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link
+                  href={`/events/google-meet/check-in?token=${token}`}
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-teal-700 transition"
+                >
+                  <ShieldCheck className="size-5" /> Open QR Check-in Portal <ArrowLeft className="size-4 rotate-180" />
+                </Link>
                 <a
                   href={meetUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-3.5 text-sm font-bold text-white shadow-md hover:bg-teal-700 transition"
-                >
-                  <Video className="size-5" /> Join Google Meet <ExternalLink className="size-4" />
-                </a>
-                <a
-                  href={calendarUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-teal-600 bg-white px-5 py-3.5 text-sm font-bold text-teal-700 shadow-xs hover:bg-teal-50 transition"
                 >
-                  <Calendar className="size-4" /> Add to Google Calendar <ExternalLink className="size-3.5" />
+                  <Video className="size-4" /> Direct Google Meet Link <ExternalLink className="size-3.5" />
                 </a>
               </div>
 
