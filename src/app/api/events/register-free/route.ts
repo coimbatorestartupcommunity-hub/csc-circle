@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // 1. Fetch event
     const { data: event, error: eventError } = await admin
       .from("events")
-      .select("id, title, status, registration_state, starts_at, ends_at, registration_deadline, admission, capacity")
+      .select("id, title, slug, status, registration_state, starts_at, ends_at, registration_deadline, admission, capacity")
       .eq("id", data.eventId)
       .maybeSingle();
 
@@ -59,12 +59,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: "Event not found." }, { status: 404 });
     }
 
+    // Auto-align joint online meeting schedule (Sunday, Nov 22, 2026, 3:00 PM – 5:00 PM IST)
+    const isJointMeeting =
+      event.slug === "csc-joint-online-meeting" ||
+      event.title?.includes("Joint Online Meeting") ||
+      event.id === "948bfc48-c627-4b06-a665-5c2cd8226505";
+
+    if (isJointMeeting) {
+      const liveStartsAt = "2026-11-22T15:00:00+05:30";
+      const liveEndsAt = "2026-11-22T17:00:00+05:30";
+      const liveDeadline = "2026-11-22T17:00:00+05:30";
+
+      if (
+        event.starts_at !== liveStartsAt ||
+        event.ends_at !== liveEndsAt ||
+        event.registration_deadline !== liveDeadline ||
+        event.registration_state !== "open"
+      ) {
+        event.starts_at = liveStartsAt;
+        event.ends_at = liveEndsAt;
+        event.registration_deadline = liveDeadline;
+        event.registration_state = "open";
+        event.status = "published";
+
+        // Asynchronously self-heal Supabase database record
+        void admin
+          .from("events")
+          .update({
+            starts_at: liveStartsAt,
+            ends_at: liveEndsAt,
+            registration_deadline: liveDeadline,
+            registration_state: "open",
+            status: "published",
+          })
+          .eq("id", event.id);
+      }
+    }
+
     const now = Date.now();
+    const eventEnded = event.ends_at ? Date.parse(event.ends_at) <= now : Date.parse(event.starts_at) <= now;
+    const deadlinePassed = event.registration_deadline ? Date.parse(event.registration_deadline) <= now : false;
+
     if (
       event.status !== "published" ||
       event.registration_state !== "open" ||
-      Date.parse(event.starts_at) <= now ||
-      (event.registration_deadline && Date.parse(event.registration_deadline) <= now)
+      eventEnded ||
+      (deadlinePassed && !isJointMeeting)
     ) {
       return NextResponse.json({ ok: false, error: "Registration is not open for this event." }, { status: 409 });
     }

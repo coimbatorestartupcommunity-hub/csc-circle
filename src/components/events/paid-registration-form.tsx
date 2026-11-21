@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Loader2, Smartphone, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Loader2, Smartphone, ArrowRight, ShieldCheck, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -619,7 +619,7 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
                 <>
                   <li><strong>Admission:</strong> Free access for approved attendees and community members.</li>
                   <li><strong>Pass Delivery:</strong> Your <strong>individual QR pass</strong> and <strong>Google Meet check-in link</strong> will be dispatched immediately to your email.</li>
-                  <li><strong>Check-in Notice:</strong> Google Meet check-in unlocks <strong>3 hours before the meeting start time</strong>.</li>
+                  <li><strong>Check-in Notice:</strong> Google Meet check-in unlocks <strong>one hour before the meeting starts</strong>.</li>
                 </>
               ) : (
                 <>
@@ -629,6 +629,12 @@ export function PaidRegistrationForm({ event }: { event: EventRecord }) {
                 </>
               )}
             </ul>
+          </div>
+
+          {/* Check-in unlock notice before the button */}
+          <div className="flex items-center justify-center gap-2 rounded-xl border border-teal-200/90 bg-teal-50/90 px-3.5 py-2.5 text-center text-xs font-semibold text-teal-950">
+            <Clock className="size-4 shrink-0 text-teal-700" />
+            <span>Google Meet check-in unlocks one hour before the meeting starts.</span>
           </div>
 
           <div className="flex flex-col gap-3 pt-1">

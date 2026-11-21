@@ -23,6 +23,7 @@ import { ResourceContentRenderer } from "@/components/cms/resource-content-rende
 import {
   formatEventDate,
   formatEventRange,
+  formatEventTime,
 } from "@/lib/format";
 import type { EventRecord } from "@/types";
 
@@ -42,10 +43,7 @@ export function EventDetailsPanel({
   loginHref?: string;
 }) {
   const handleEventChange = onEventChange ?? (() => undefined);
-  const isTimeTba =
-    event.timeTba ||
-    event.slug === "csc-joint-online-meeting" ||
-    event.slug === "csc-first-online-google-meet";
+  const isTimeTba = Boolean(event.timeTba);
   const registrationCover =
     event.slug === "csc-joint-online-meeting" || event.slug === "csc-first-online-google-meet"
       ? "/events/csc-joint-online-meeting-cover.webp"
@@ -55,7 +53,9 @@ export function EventDetailsPanel({
     {
       icon: Clock,
       label: "Time",
-      value: isTimeTba ? "To be announced" : formatEventRange(event.startsAt, event.endsAt),
+      value: isTimeTba
+        ? "To be announced"
+        : `${formatEventTime(event.startsAt)} – ${formatEventTime(event.endsAt)} IST`,
     },
     event.format === "online"
       ? { icon: Video, label: "Format", value: "Online (Google Meet)" }

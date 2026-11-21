@@ -28,6 +28,12 @@ import { isStartupLogoPath } from "@/lib/startups/media-paths";
 type Row = Record<string, unknown>;
 
 function mapEvent(r: Row): EventRecord {
+  const isJointMeeting = r.slug === "csc-joint-online-meeting" || r.slug === "csc-first-online-google-meet";
+  const startsAt = isJointMeeting ? "2026-11-22T15:00:00+05:30" : ((r.starts_at as string) ?? new Date().toISOString());
+  const endsAt = isJointMeeting ? "2026-11-22T17:00:00+05:30" : ((r.ends_at as string) ?? new Date().toISOString());
+  const registrationDeadline = isJointMeeting ? "2026-11-22T17:00:00+05:30" : ((r.registration_deadline as string) ?? undefined);
+  const timeTba = isJointMeeting ? false : Boolean((r.settings as Record<string, unknown>)?.timeTba);
+
   return {
     id: String(r.id),
     slug: (r.slug as string) ?? String(r.id),
@@ -37,15 +43,15 @@ function mapEvent(r: Row): EventRecord {
     coverImage: typeof r.cover_image === "string" && /^event-covers\/[0-9a-f-]{36}\.webp$/i.test(r.cover_image)
       ? `/api/admin/events/cover?event=${String(r.id)}`
       : (r.cover_image as string) ?? undefined,
-    startsAt: (r.starts_at as string) ?? new Date().toISOString(),
-    endsAt: (r.ends_at as string) ?? new Date().toISOString(),
+    startsAt,
+    endsAt,
     location: (r.location as string) ?? "",
     venue: (r.venue as string) ?? undefined,
     capacity: (r.capacity as number) ?? undefined,
-    registrationDeadline: (r.registration_deadline as string) ?? undefined,
+    registrationDeadline,
     status: "published",
     admission: (r.admission as EventRecord["admission"]) ?? "free",
-    registrationState: Date.parse(String(r.ends_at)) <= Date.now() ? "completed" : (r.registration_state as EventRecord["registrationState"]) ?? "coming-soon",
+    registrationState: Date.parse(endsAt) <= Date.now() ? "completed" : (isJointMeeting ? "open" : ((r.registration_state as EventRecord["registrationState"]) ?? "coming-soon")),
     registrationMode: (r.registration_mode as EventRecord["registrationMode"]) ?? (r.admission === "paid" ? "paid_upi" : "rsvp"),
     pricePerAttendee: typeof r.price_per_attendee === "number"
       ? r.price_per_attendee
@@ -56,6 +62,7 @@ function mapEvent(r: Row): EventRecord {
           : undefined,
     maxAttendeesPerRegistration: Number(r.max_attendees_per_registration ?? 10),
     upiPayeeName: (r.upi_payee_name as string) ?? undefined,
+    timeTba,
     // The payee VPA and static QR reference are never shipped to public
     // clients: checkout uses the server-issued order payload exclusively,
     // and nothing on the public site renders these fields.
@@ -66,12 +73,6 @@ function mapEvent(r: Row): EventRecord {
     onlineInfo: typeof (r.settings as Record<string, unknown> | null)?.onlineInfo === "string" ? (r.settings as Record<string, string>).onlineInfo : undefined,
     format: (r.format as EventRecord["format"]) ?? "offline",
     featured: !!r.featured,
-    timeTba: Boolean(
-      (r.settings as Record<string, unknown> | null)?.timeTba ||
-      (r.settings as Record<string, unknown> | null)?.isTimeTba ||
-      r.slug === "csc-joint-online-meeting" ||
-      r.slug === "csc-first-online-google-meet"
-    ),
     isTestEvent: Boolean((r.settings as Record<string, unknown> | null)?.is_test_event || (r.settings as Record<string, unknown> | null)?.isTestEvent),
     testRunId: typeof (r.settings as Record<string, unknown> | null)?.test_run_id === "string" ? ((r.settings as Record<string, unknown> | null)?.test_run_id as string) : undefined,
   };

@@ -114,7 +114,7 @@ export const eventFixtures: EventRecord[] = [
     description: `Welcome to the official registration for the **Coimbatore Startup Community (CSC) Joint Online Meeting**, proudly powered by Technical Partner **Logic Intelligence Technologies**.
 
 * **Event Date:** **Sunday, November 22, 2026**
-* **Session Timing:** **To Be Announced** *(Notified directly via email pass & CSC WhatsApp Community)*
+* **Session Timing:** **3:00 PM – 5:00 PM IST** *(Sunday)*
 * **Conference Mode:** **Online via Google Meet** *(Private verified room access)*
 * **Registration:** **Free Admission · Open Community Registration** *(Instant encrypted digital QR pass)*
 
@@ -123,14 +123,14 @@ export const eventFixtures: EventRecord[] = [
 * **Ecosystem Roadmap & Open Floor:** Collaborative peer discussions on product scaling, architecture, and funding.
 * **Instant Digital Event Pass:** Every confirmed attendee receives an **individual encrypted QR code** for automated Google Meet check-in.
 
-> **Important Notes:** Online check-in and Google Meet access open **3 hours before the meeting**. Complete your details below to secure your free seat.`,
+> **Important Notes:** Online check-in and Google Meet access unlock **1 hour before the meeting** (2:00 PM IST). Complete your details below to secure your free seat.`,
     coverImage: "/events/csc-joint-online-meeting-cover.webp",
-    startsAt: "2026-11-22T00:00:00+05:30",
-    endsAt: "2026-11-22T23:59:59+05:30",
+    startsAt: "2026-11-22T15:00:00+05:30",
+    endsAt: "2026-11-22T17:00:00+05:30",
     location: "Online via Google Meet",
     venue: "Google Meet Virtual Room (Link delivered upon registration)",
     capacity: 250,
-    registrationDeadline: "2026-11-22T09:00:00+05:30",
+    registrationDeadline: "2026-11-22T17:00:00+05:30",
     status: "published",
     admission: "free",
     registrationState: "open",

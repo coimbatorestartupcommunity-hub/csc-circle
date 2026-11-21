@@ -120,9 +120,11 @@ export function EventCard({
         <ul className="flex flex-col gap-1.5 text-sm text-brand-muted">
           <li className="flex items-center gap-2">
             <Clock className="size-4 shrink-0" aria-hidden />
-            {event.timeTba || event.slug === "csc-joint-online-meeting" || event.slug === "csc-first-online-google-meet"
+            {event.timeTba
               ? `${formatEventDate(event.startsAt)} · Time to be announced`
-              : `${formatEventDate(event.startsAt)} · ${formatEventTime(event.startsAt)} IST`}
+              : event.endsAt
+                ? `${formatEventDate(event.startsAt)} · ${formatEventTime(event.startsAt)}–${formatEventTime(event.endsAt)} IST`
+                : `${formatEventDate(event.startsAt)} · ${formatEventTime(event.startsAt)} IST`}
           </li>
           <li className="flex items-center gap-2">
             <MapPin className="size-4 shrink-0" aria-hidden />

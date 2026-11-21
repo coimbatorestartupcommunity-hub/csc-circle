@@ -42,7 +42,7 @@ export async function GET() {
       const dynamicDescription = `Welcome to the official registration for the **Coimbatore Startup Community (CSC) Joint Online Meeting**, proudly powered by Technical Partner **Logic Intelligence Technologies**.
 
 * **Event Date:** **Sunday, November 22, 2026**
-* **Session Timing:** **To Be Announced** *(Notified directly via email pass & CSC WhatsApp Community)*
+* **Session Timing:** **3:00 PM – 5:00 PM IST** *(Sunday)*
 * **Conference Mode:** **Online via Google Meet** *(Private verified room access)*
 * **Registration:** **Free Admission · Open Community Registration** *(Instant encrypted digital QR pass)*
 
@@ -51,7 +51,7 @@ export async function GET() {
 * **Ecosystem Roadmap & Open Floor:** Collaborative peer discussions on product scaling, architecture, and funding.
 * **Instant Digital Event Pass:** Every confirmed attendee receives an **individual encrypted QR code** for automated Google Meet check-in.
 
-> **Important Notes:** Online check-in and Google Meet access open **3 hours before the meeting**. Complete your details below to secure your free seat.`;
+> **Important Notes:** Online check-in and Google Meet access unlock **1 hour before the meeting** (2:00 PM IST). Complete your details below to secure your free seat.`;
 
       const cleanSettings = { ...currentSettings };
       delete cleanSettings.registrationMode;
@@ -67,8 +67,8 @@ export async function GET() {
         coverImage: "/events/csc-joint-online-meeting-cover.webp",
         bannerImage: "/events/csc-joint-online-meeting-banner.webp",
         posterImage: "/events/csc-joint-online-meeting-poster.webp",
-        timeNote: "To Be Announced (Will be notified via email and CSC WhatsApp Group)",
-        timeTba: true,
+        timeNote: "3:00 PM – 5:00 PM IST (Google Meet)",
+        timeTba: false,
         admission: "free",
         registrationMode: "rsvp",
         registration_mode: "rsvp",
@@ -91,6 +91,11 @@ export async function GET() {
           registration_mode: "rsvp",
           location: "Online via Google Meet",
           venue: "Online (Google Meet)",
+          starts_at: "2026-11-22T15:00:00+05:30",
+          ends_at: "2026-11-22T17:00:00+05:30",
+          registration_deadline: "2026-11-22T17:00:00+05:30",
+          registration_state: "open",
+          status: "published",
           price_per_attendee: null,
           price_minor: 0,
           settings: updatedSettings,
@@ -122,7 +127,7 @@ export async function GET() {
           .update({
             title: "CSC Joint Online Meeting · Free Registration Open",
             message:
-              "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet (Nov 22, 2026). Free community registration is now open with instant digital pass issuance.",
+              "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet on Sunday, Nov 22, 2026 (3:00 PM – 5:00 PM IST). Free community registration is now open with instant digital pass issuance.",
             button_label: "Register Free Now",
             status: "published",
             display_priority: 100,
@@ -133,7 +138,7 @@ export async function GET() {
           event_id: event.id,
           title: "CSC Joint Online Meeting · Free Registration Open",
           message:
-            "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet (Nov 22, 2026). Free community registration is now open with instant digital pass issuance.",
+            "Join Coimbatore’s founders, builders, and ecosystem leaders for our official online meeting on Google Meet on Sunday, Nov 22, 2026 (3:00 PM – 5:00 PM IST). Free community registration is now open with instant digital pass issuance.",
           button_label: "Register Free Now",
           status: "published",
           display_priority: 100,
@@ -150,10 +155,10 @@ export async function GET() {
 
       const updatePayload = {
         slug: updateSlug,
-        title: "Announcing CSC Joint Online Meeting — Nov 22, 2026",
+        title: "Announcing CSC Joint Online Meeting — Nov 22, 2026 (3:00 PM – 5:00 PM)",
         category: "Announcements",
         summary:
-          "Coimbatore Startup Community (CSC) is hosting its First Joint Online Meeting on Google Meet for founders, builders, and ecosystem leaders. Official timing to be announced.",
+          "Coimbatore Startup Community (CSC) is hosting its First Joint Online Meeting on Google Meet for founders, builders, and ecosystem leaders on Sunday, Nov 22, 2026, from 3:00 PM to 5:00 PM IST.",
         body: `## Coimbatore Startup Community · Official Community Announcement
 
 Welcome to the official announcement for the **Coimbatore Startup Community (CSC) Joint Online Meeting**, proudly organized by **Coimbatore Startup Community** and powered by our Technical Partner, **Logic Intelligence Technologies**.
@@ -167,9 +172,9 @@ This high-impact online gathering unites Coimbatore’s most ambitious **founder
 
 ### 🗓 Key Event Information
 * **Official Date:** **Sunday, November 22, 2026**
-* **Session Timing:** **To Be Announced** *(Detailed schedule updates will be dispatched directly to confirmed attendees via registered email and the official CSC WhatsApp Community)*
-* **Conference Platform:** **Google Meet** *(Verified, passwordless room access)*
-* **Event Pass Fee:** **₹10 per attendee** *(Instant automated bank verification & digital QR pass delivery)*
+* **Session Timing:** **3:00 PM – 5:00 PM IST** *(Sunday)*
+* **Conference Platform:** **Google Meet** *(Private verified room access)*
+* **Event Pass:** **Free Admission** *(Instant digital QR pass delivery)*
 
 ---
 
