@@ -38,7 +38,7 @@ export default async function AdminPaymentsPage() {
     <>
       <AdminPageHeader
         title="Payment & UPI Reconciliation"
-        description="Review bank evidence, inspect cryptographic auth provenance, reconcile UPI payments, and monitor the payment worker."
+        description="Review bank evidence, inspect cryptographic auth provenance, reconcile UPI payments, and enforce the 48-hour workshop refund guarantee."
         isDemo={ctx.mode === "preview"}
       />
 

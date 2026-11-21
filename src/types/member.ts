@@ -79,15 +79,20 @@ export interface Membership {
 
 export type MemberDesignation =
   | "startup_founder"
+  | "founder"
   | "co_founder"
+  | "aspiring_entrepreneur"
+  | "early_entrepreneur"
+  | "entrepreneur"
+  | "business_person"
+  | "investor"
+  | "innovator"
+  | "mentor"
   | "team_member"
   | "developer"
   | "student_entrepreneur"
   | "designer"
   | "marketing"
-  | "investor"
-  | "mentor"
-  | "aspiring_entrepreneur"
   | "other";
 
 export interface MembershipClaim {

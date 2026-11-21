@@ -29,6 +29,22 @@ const facets: Facet[] = [
       { label: "Revoked", value: "revoked" },
     ],
   },
+  {
+    key: "designation",
+    label: "Founder Persona",
+    options: [
+      { label: "Startup Founder", value: "startup_founder" },
+      { label: "Founder", value: "founder" },
+      { label: "Co-Founder", value: "co_founder" },
+      { label: "Idea Stage / Aspiring", value: "aspiring_entrepreneur" },
+      { label: "Early-Stage Entrepreneur", value: "early_entrepreneur" },
+      { label: "Entrepreneur", value: "entrepreneur" },
+      { label: "Business Leader", value: "business_person" },
+      { label: "Investor / Angel", value: "investor" },
+      { label: "Innovator", value: "innovator" },
+      { label: "Mentor", value: "mentor" },
+    ],
+  },
 ];
 
 export default async function AdminMembersPage() {

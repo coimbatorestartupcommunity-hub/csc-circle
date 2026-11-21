@@ -26,7 +26,7 @@ export default async function CheckInPage() {
     <>
       <AdminPageHeader
         title="Event check-in"
-        description="Scan attendee passes. Final admission is decided by the trusted server, never by the scanner alone."
+        description="Scan attendee passes and monitor admissions. Virtual Google Meet check-in opens automatically 1 hour prior to session start."
         isDemo={ctx.mode === "preview"}
       />
       {events.length > 0 ? (

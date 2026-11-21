@@ -273,6 +273,13 @@ export function CommunityDataDashboard({
         <StatCard label="Idea Stage Members" value={summary.ideaStage} />
       </div>
 
+      <div className="flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50/60 px-4 py-2.5 text-xs text-sky-900">
+        <span className="font-medium">
+          DPDP Act 2023 Compliance Notice: All member survey data is restricted to authorized community administration under strict purpose limitation.
+        </span>
+        <span className="hidden sm:inline font-mono text-[11px] text-sky-700">Internal Audit Monitored</span>
+      </div>
+
       <form onSubmit={applyFilters} className="rounded-2xl border border-brand-border bg-white p-4 shadow-sm">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="space-y-1.5 md:col-span-2">

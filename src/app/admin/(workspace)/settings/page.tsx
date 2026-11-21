@@ -51,15 +51,23 @@ export default async function AdminSettingsPage() {
       />
 
       <div className="flex flex-col gap-6">
-        <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
-          <h2 className="text-sm font-semibold text-brand-ink">Organisation</h2>
+        <section className="flex flex-col gap-4 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-brand-ink">Organisation & Ecosystem Details</h2>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+              Live Production Hub
+            </span>
+          </div>
           <dl className="grid gap-3 sm:grid-cols-2 text-sm">
-            <Field label="Name" value={siteConfig.legalName} />
+            <Field label="Community Legal Name" value={siteConfig.legalName} />
             <Field label="Established" value={String(siteConfig.established)} />
-            <Field label="Email" value={siteConfig.social.email} />
-            <Field label="City" value={`${siteConfig.city}, ${siteConfig.region}`} />
-            <Field label="Member ID format" value="CSC-2026-000000" mono />
-            <Field label="Timezone" value={siteConfig.timezone} />
+            <Field label="General & Membership Desk" value="coimbatorestartup.csc@gmail.com (24h SLA)" mono />
+            <Field label="Event Passes & Check-In Desk" value="coimbatorestartupcommunity@gmail.com (12-24h SLA)" mono />
+            <Field label="Engineering & Platform Architecture" value="hello@logicintelligencetechnologies.in (48h SLA)" mono />
+            <Field label="Technical Partner" value="Logic Intelligence Technologies" />
+            <Field label="Regional Ecosystem Hub" value={`${siteConfig.city}, ${siteConfig.region}, India`} />
+            <Field label="Member ID Format" value="CSC-2026-000000" mono />
+            <Field label="Platform Timezone" value={`${siteConfig.timezone} (India Standard Time)`} />
           </dl>
         </section>
 

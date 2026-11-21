@@ -35,7 +35,7 @@ export default async function ClaimsPage() {
     <>
       <AdminPageHeader
         title="Membership claim review"
-        description="Review and decide on CSC membership applications."
+        description="Review and verify CSC digital membership claims. Automated 5-minute issuance pipeline with manual oversight."
         isDemo={ctx.mode === "preview"}
       />
       <DataTable

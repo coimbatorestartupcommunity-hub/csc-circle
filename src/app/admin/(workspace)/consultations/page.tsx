@@ -39,8 +39,8 @@ export default async function AdminConsultationsPage() {
   return (
     <>
       <AdminPageHeader
-        title="Consultation management"
-        description="Review and manage consultation requests from the website."
+        title="1:1 Founder Guidance & Consultations"
+        description="Review incoming startup consultation requests, assign mentors, and schedule private advisory sessions via coimbatorestartup.csc@gmail.com."
         isDemo={ctx.mode === "preview"}
       />
       <DataTable

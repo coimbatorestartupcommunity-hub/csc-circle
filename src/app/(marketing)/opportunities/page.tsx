@@ -197,17 +197,27 @@ async function OpportunitiesContent() {
           {/* Share an opportunity callout */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-5 rounded-3xl bg-brand-cloud p-6 sm:p-8">
             <div>
-              <h3 className="text-base font-bold text-brand-ink">Are You Hiring or Hosting an Opportunity?</h3>
+              <h3 className="text-base font-bold text-brand-ink">Are You Hiring, Building, or Hosting an Opportunity?</h3>
               <p className="text-xs text-brand-secondary">
-                Incubators, companies, and mentors can list relevant hackathons, grants, and hiring openings for CSC members.
+                Founders, startups, and business leaders can list co-founder searches, seed grants, hackathons, and technical openings directly with the CSC community.
               </p>
             </div>
-            <a
-              href="mailto:coimbatorestartup.csc@gmail.com?subject=Submit%20an%20Opportunity"
-              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-ink px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-ink/90"
-            >
-              <Rocket className="size-3.5" /> Submit an Opportunity
-            </a>
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://csc.logicintelligencetechnologies.in/opportunities")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex shrink-0 items-center gap-2 rounded-full border border-sky-300 bg-sky-50 px-4 py-2.5 text-xs font-semibold text-sky-800 transition hover:bg-sky-100"
+              >
+                Share on LinkedIn
+              </a>
+              <a
+                href="mailto:coimbatorestartup.csc@gmail.com?subject=Submit%20a%20Founder%20Opportunity"
+                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-ink px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-ink/90"
+              >
+                <Rocket className="size-3.5" /> Post an Opportunity
+              </a>
+            </div>
           </div>
         </Container>
       </section>

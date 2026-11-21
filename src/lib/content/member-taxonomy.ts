@@ -9,17 +9,42 @@ import type {
 
 export const designationLabels: Record<MemberDesignation, string> = {
   startup_founder: "Startup Founder",
+  founder: "Founder",
   co_founder: "Co-Founder",
-  team_member: "Startup Team Member",
-  developer: "Developer / Technical Builder",
+  aspiring_entrepreneur: "Idea-Stage Builder / Aspiring Founder",
+  early_entrepreneur: "Early-Stage Entrepreneur",
+  entrepreneur: "Entrepreneur",
+  business_person: "Business Person / Business Leader",
+  investor: "Investor / Angel",
+  innovator: "Innovator",
+  mentor: "Mentor / Industry Advisor",
+  // Legacy labels preserved for safe backward-compatible display:
   student_entrepreneur: "Student Entrepreneur",
-  designer: "Designer / Creative Professional",
-  marketing: "Marketing Professional",
-  investor: "Investor",
-  mentor: "Mentor",
-  aspiring_entrepreneur: "Aspiring Entrepreneur",
-  other: "Other",
+  team_member: "Startup Co-Builder",
+  developer: "Technical Innovator",
+  designer: "Creative Innovator",
+  marketing: "Growth Entrepreneur",
+  other: "Ecosystem Builder",
 };
+
+/** Active founder personas displayed in forms and selection pickers */
+export const activeFounderDesignations: MemberDesignation[] = [
+  "startup_founder",
+  "founder",
+  "co_founder",
+  "aspiring_entrepreneur",
+  "early_entrepreneur",
+  "entrepreneur",
+  "business_person",
+  "investor",
+  "innovator",
+  "mentor",
+];
+
+export const designationOptions = activeFounderDesignations.map((value) => ({
+  value,
+  label: designationLabels[value],
+}));
 
 export const goalLabels: Record<CommunityGoal, string> = {
   networking: "Networking",
@@ -27,16 +52,12 @@ export const goalLabels: Record<CommunityGoal, string> = {
   finding_co_founder: "Finding a Co-Founder",
   mentorship: "Mentorship",
   product_development: "Product Development",
-  marketing: "Marketing",
-  funding_connections: "Funding Connections",
-  hiring: "Hiring",
-  startup_learning: "Startup Learning",
+  marketing: "Growth & Marketing",
+  funding_connections: "Funding & Angel Connections",
+  hiring: "Co-Founder & Core Team Hiring",
+  startup_learning: "Startup Learning & Masterclasses",
   community_participation: "Community Participation",
 };
-
-export const designationOptions = (
-  Object.keys(designationLabels) as MemberDesignation[]
-).map((value) => ({ value, label: designationLabels[value] }));
 
 export const goalOptions = (Object.keys(goalLabels) as CommunityGoal[]).map(
   (value) => ({ value, label: goalLabels[value] }),
