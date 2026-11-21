@@ -28,14 +28,22 @@ const CATEGORY_TAGS = [
   { label: "Mentorship & Fellowship", icon: Users },
 ];
 
+function toCmsImageUrl(path: string | null | undefined): string | null {
+  return path ? `/api/cms/image?path=${encodeURIComponent(path)}` : null;
+}
+
+function toDeadline(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const d = new Date(`${value}T00:00:00+05:30`);
+  return Number.isNaN(d.getTime())
+    ? null
+    : new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(d);
+}
+
 export function OpportunityTagsFilter({
   opportunities,
-  cmsImageUrl,
-  fmtDate,
 }: {
   opportunities: OpportunityItem[];
-  cmsImageUrl: (path?: string | null) => string | null;
-  fmtDate: (val: string | null) => string | null;
 }) {
   const [selectedTag, setSelectedTag] = React.useState("All Opportunities");
   const [query, setQuery] = React.useState("");
@@ -102,8 +110,8 @@ export function OpportunityTagsFilter({
       {filtered.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((o) => {
-            const logo = cmsImageUrl(o.orgLogoPath);
-            const deadline = fmtDate(o.deadline || null);
+            const logo = toCmsImageUrl(o.orgLogoPath);
+            const deadline = toDeadline(o.deadline || null);
             return (
               <Link
                 key={o.id}

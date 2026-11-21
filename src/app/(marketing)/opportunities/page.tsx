@@ -21,7 +21,7 @@ import { Container } from "@/components/common/container";
 import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
 import { MemberOpportunityForm } from "@/components/member/member-opportunity-form";
 import { OpportunityTagsFilter, type OpportunityItem } from "@/components/opportunities/opportunity-tags-filter";
-import { listPublishedOpportunities, cmsImageUrl } from "@/lib/services/cms-public";
+import { listPublishedOpportunities } from "@/lib/services/cms-public";
 
 export const metadata: Metadata = {
   title: "Startup Opportunities & Ecosystem Programs — CSC Circle",
@@ -161,8 +161,6 @@ async function OpportunitiesContent() {
 
             <OpportunityTagsFilter
               opportunities={allItems}
-              cmsImageUrl={cmsImageUrl}
-              fmtDate={fmtDate}
             />
           </div>
           <div className="flex flex-col gap-4">
