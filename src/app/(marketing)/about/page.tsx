@@ -48,15 +48,17 @@ export default function AboutPage() {
       {/* Approved community photograph */}
       <div className="bg-brand-white pt-12 sm:pt-16">
         <Container>
-          <RevealOnScroll className="overflow-hidden rounded-[2rem] shadow-sm ring-1 ring-brand-border">
-            <Image
-              src={brandAssets.communityPhoto}
-              alt="The CSC Circle community gathered in Coimbatore"
-              width={2000}
-              height={1332}
-              className="h-auto w-full object-cover"
-              sizes="(max-width: 1280px) 100vw, 1200px"
-            />
+          <RevealOnScroll className="relative overflow-hidden rounded-[2rem] bg-brand-white p-2.5 sm:p-3.5 shadow-xl ring-1 ring-brand-border">
+            <div className="overflow-hidden rounded-[1.4rem] sm:rounded-[1.6rem]">
+              <Image
+                src={brandAssets.communityPhoto}
+                alt="The CSC Circle community gathered in Coimbatore"
+                width={2000}
+                height={1398}
+                className="h-auto w-full object-cover"
+                sizes="(max-width: 1280px) 100vw, 1200px"
+              />
+            </div>
           </RevealOnScroll>
         </Container>
       </div>
