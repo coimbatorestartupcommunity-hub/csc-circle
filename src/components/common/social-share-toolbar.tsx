@@ -41,10 +41,8 @@ export function SocialShareToolbar({
   const [copied, setCopied] = useState(false);
   const [openingLinkedIn, setOpeningLinkedIn] = useState(false);
 
-  // Append cache buster to guarantee LinkedIn scrapers fetch fresh OpenGraph metadata & banner
-  const cleanUrl = url.replace(/(\?|&)v=\d+/, "");
-  const separator = cleanUrl.includes("?") ? "&" : "?";
-  const shareUrl = `${cleanUrl}${separator}v=20261122`;
+  // Clean canonical URL without any cache-busting query parameter
+  const shareUrl = url.replace(/(\?|&)v=\d+/, "");
 
   const formattedCaption = `${title}\n\n${summary}\n\n🔗 ${shareUrl}\n\n${hashtags.join(" ")}`;
 

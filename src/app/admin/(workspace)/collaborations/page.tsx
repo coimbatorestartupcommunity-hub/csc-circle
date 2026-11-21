@@ -4,6 +4,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { CompleteContentButton } from "@/components/admin/complete-content-button";
 import { DeleteContentButton } from "@/components/admin/delete-content-button";
+import { InboundProposalsManager, type InboundProposal } from "@/components/admin/inbound-proposals-manager";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 import { CtaLink } from "@/components/common/cta-link";
 import { requireAdminPagePermission, can } from "@/lib/admin/gate";
@@ -61,13 +62,16 @@ export default async function AdminCollaborationsPage() {
   }
 
   let rows: CollabRow[] = [];
+  let proposals: InboundProposal[] = [];
+
   if (ctx.mode === "live") {
     try {
       const sb = await createClient();
       const { data } = await sb
         .from("collaborations")
-        .select("id, slug, title, category, status, publication_status, created_at, collaboration_partners(collaboration_organizations(name))")
+        .select("id, slug, title, category, status, publication_status, highlights, summary, story, created_at, collaboration_partners(collaboration_organizations(name))")
         .order("created_at", { ascending: false });
+
       rows = (data ?? []).map((r) => {
         const row = r as Record<string, unknown>;
         const partners = ((row.collaboration_partners as { collaboration_organizations?: { name?: string } }[]) ?? [])
@@ -85,8 +89,32 @@ export default async function AdminCollaborationsPage() {
           createdAt: (row.created_at as string) ?? "",
         };
       });
+
+      proposals = (data ?? []).map((p: any) => {
+        const h = (p.highlights as Record<string, any>) || {};
+        return {
+          id: String(p.id),
+          slug: p.slug,
+          title: p.title || "Collaboration Proposal",
+          organization: h.organizationName || p.title?.split("—")[0]?.trim(),
+          representative: h.representativeName,
+          designation: h.designation,
+          email: h.email,
+          phone: h.phone,
+          website: h.website,
+          category: p.category,
+          summary: p.summary || p.story?.slice(0, 300),
+          benefits: h.benefits,
+          supportRequested: h.supportRequested,
+          referenceCode: h.referenceCode,
+          publicationStatus: p.publication_status ?? "draft",
+          pipelineStatus: p.status,
+          createdAt: p.created_at,
+        };
+      });
     } catch {
       rows = [];
+      proposals = [];
     }
   } else {
     // Dev preview — show the seeded CSC × Outlier so the module is visible.
@@ -108,10 +136,24 @@ export default async function AdminCollaborationsPage() {
     <>
       <AdminPageHeader
         title="Collaborations"
-        description="Community partnerships and joint events shown on the public site. New collaborations appear here and on /collaborations automatically once published."
+        description="Community partnerships and joint events shown on the public site. Inbound proposals appear under Review Proposals for one-click approval."
         isDemo={ctx.mode === "preview"}
-        action={<CtaLink href="/admin/collaborations/new" size="md">New collaboration</CtaLink>}
+        action={
+          <div className="flex items-center gap-2">
+            <CtaLink href="/admin/collaborations/new" size="md">
+              New collaboration
+            </CtaLink>
+          </div>
+        }
       />
+
+      {/* Inbound Community Form Proposals Manager */}
+      <InboundProposalsManager
+        kind="collaboration"
+        proposals={proposals}
+        className="mb-6"
+      />
+
       <DataTable
         rows={rows}
         columns={columns}

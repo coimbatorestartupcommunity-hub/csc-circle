@@ -232,6 +232,7 @@ async function OpportunitiesContent() {
                 url="https://csc.logicintelligencetechnologies.in/opportunities"
                 title="Startup Opportunities & Ecosystem Programs — CSC Circle"
                 summary="Explore active founder residencies, grant fellowships, demo day nominations, and mentorship tracks in Coimbatore. Post listings and connect with regional builders."
+                showCopyCaption={false}
                 hashtags={[
                   "#CoimbatoreStartups",
                   "#CSCCircle",

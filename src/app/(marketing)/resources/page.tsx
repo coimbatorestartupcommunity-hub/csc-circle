@@ -207,6 +207,7 @@ async function ResourcesContent() {
                   url="https://csc.logicintelligencetechnologies.in/resources"
                   title="Startup Resources & Founder Playbooks — CSC Circle"
                   summary="Access curated TANSEED grant blueprints, co-founder equity agreements, pitch deck templates, and regional incubator directories for Coimbatore founders."
+                  showCopyCaption={false}
                   hashtags={[
                     "#CoimbatoreStartups",
                     "#CSCCircle",

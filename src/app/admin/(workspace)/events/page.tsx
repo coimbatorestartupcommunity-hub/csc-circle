@@ -4,8 +4,10 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { CompleteContentButton } from "@/components/admin/complete-content-button";
 import { DeleteContentButton } from "@/components/admin/delete-content-button";
+import { InboundProposalsManager, type InboundProposal } from "@/components/admin/inbound-proposals-manager";
 import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { adminServices } from "@/lib/admin/services";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Events" };
 
@@ -48,11 +50,52 @@ export default async function AdminEventsPage() {
   const res = await adminServices.listEvents();
   const rows = res.ok ? res.data : [];
 
+  let eventProposals: InboundProposal[] = [];
+  if (ctx.mode === "live") {
+    try {
+      const sb = await createClient();
+      const { data: rawEvents } = await sb
+        .from("events")
+        .select("id, slug, title, summary, description, category, format, venue, capacity, status, starts_at, created_at")
+        .or("status.eq.draft,title.ilike.%[Proposal]%")
+        .order("created_at", { ascending: false });
+
+      eventProposals = (rawEvents ?? []).map((e: any) => {
+        const desc = String(e.description || "");
+        const organizerMatch = desc.match(/Organizer:\s*([^\n]+)/i);
+        const orgMatch = desc.match(/Organization:\s*([^\n]+)/i);
+        const emailMatch = desc.match(/Email:\s*([^\n]+)/i);
+        const phoneMatch = desc.match(/Phone\/WhatsApp:\s*([^\n]+)/i);
+        const supportMatch = desc.match(/Support Requested from CSC:\s*([\s\S]+)/i);
+        const outlineMatch = desc.match(/Outline & Agenda:\s*([\s\S]+?)(?=\n\nSupport Requested|$)/i);
+
+        return {
+          id: String(e.id),
+          slug: e.slug,
+          title: String(e.title || "").replace(/^\[Proposal\]\s*/i, ""),
+          organization: orgMatch ? orgMatch[1].trim() : undefined,
+          representative: organizerMatch ? organizerMatch[1].trim() : undefined,
+          email: emailMatch ? emailMatch[1].trim() : undefined,
+          phone: phoneMatch ? phoneMatch[1].trim() : undefined,
+          venue: e.venue,
+          capacity: e.capacity,
+          category: e.category,
+          summary: e.summary || (outlineMatch ? outlineMatch[1].trim().slice(0, 300) : desc.slice(0, 300)),
+          supportRequested: supportMatch ? supportMatch[1].trim() : undefined,
+          publicationStatus: e.status,
+          createdAt: e.created_at || e.starts_at,
+        };
+      });
+    } catch {
+      eventProposals = [];
+    }
+  }
+
   return (
     <>
       <AdminPageHeader
         title="Event management"
-        description="Create, schedule, publish and manage CSC events. Community host proposals submitted via /events appear under Drafts for moderation."
+        description="Create, schedule, publish and manage CSC events. Community host proposals submitted via /events appear under Review Proposals for one-click approval."
         isDemo={ctx.mode === "preview"}
         action={
           can(ctx, "events.create") ? (
@@ -65,6 +108,14 @@ export default async function AdminEventsPage() {
           ) : null
         }
       />
+
+      {/* Inbound Host Event Proposals Review Manager */}
+      <InboundProposalsManager
+        kind="event"
+        proposals={eventProposals}
+        className="mb-6"
+      />
+
       <DataTable
         rows={rows}
         columns={columns}
