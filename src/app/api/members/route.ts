@@ -14,5 +14,14 @@ export async function GET(request: Request) {
   const sb = await createClient();
   const { data, error } = await sb.rpc("list_discoverable_members", { p_search: search, p_limit: 30, p_offset: offset });
   if (error) return authResponse({ error: error.message.includes("membership") ? "An active CSC membership is required to view profiles." : "Member profiles could not be loaded." }, 403);
-  return NextResponse.json({ members: data ?? [] }, { headers: { "Cache-Control": "private, no-store" } });
+  return NextResponse.json(
+    { members: data ?? [] },
+    {
+      headers: {
+        "Cache-Control": search
+          ? "private, max-age=15, stale-while-revalidate=60"
+          : "private, max-age=60, stale-while-revalidate=300",
+      },
+    }
+  );
 }

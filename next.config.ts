@@ -28,6 +28,18 @@ const nextConfig: NextConfig = {
         { key: "X-Frame-Options", value: "DENY" },
         { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
       ] },
+      { source: "/images/:path*", headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ] },
+      { source: "/brand/:path*", headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ] },
+      { source: "/posters/:path*", headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ] },
+      { source: "/fonts/:path*", headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ] },
       { source: "/auth/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "Cache-Control", value: "private, no-store" }] },
     ];
   },

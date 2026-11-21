@@ -37,13 +37,30 @@ export async function GET(request: Request) {
       ]);
       referenced = Boolean(banners?.length || logos?.length);
     }
-    if (!referenced) return new Response(null, { status: 404, headers: { "Cache-Control": "private, no-store" } });
+    if (!referenced) return new Response(null, { status: 404, headers: { "Cache-Control": "public, max-age=60" } });
+
+    const etag = `W/"${Buffer.from(path).toString("base64url")}"`;
+    if (request.headers.get("if-none-match") === etag) {
+      return new Response(null, {
+        status: 304,
+        headers: {
+          "ETag": etag,
+          "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+        },
+      });
+    }
 
     const admin = createAdminClient();
     const { data: image, error } = await admin.storage.from("member-portraits").download(path);
     if (error || !image) return new Response(null, { status: 404 });
     return new Response(await image.arrayBuffer(), {
-      headers: { "Content-Type": "image/webp", "Content-Length": String(image.size), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" },
+      headers: {
+        "Content-Type": "image/webp",
+        "Content-Length": String(image.size),
+        "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+        "ETag": etag,
+        "X-Content-Type-Options": "nosniff",
+      },
     });
   } catch {
     return new Response(null, { status: 404 });

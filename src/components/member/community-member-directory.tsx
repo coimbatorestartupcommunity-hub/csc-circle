@@ -8,26 +8,37 @@ import { Input } from "@/components/ui/input";
 
 type CommunityMember = { member_id: string; display_name: string; city: string | null; designation: string | null; about_me: string | null; skills: string[]; startup_name: string | null; whatsapp: string | null; has_photo: boolean };
 
-export function CommunityMemberDirectory() {
+export function CommunityMemberDirectory({ initialMembers = [] }: { initialMembers?: CommunityMember[] }) {
   const [query, setQuery] = React.useState("");
-  const [members, setMembers] = React.useState<CommunityMember[]>([]);
-  const [busy, setBusy] = React.useState(true);
+  const [members, setMembers] = React.useState<CommunityMember[]>(initialMembers);
+  const [busy, setBusy] = React.useState(initialMembers.length === 0);
   const [error, setError] = React.useState("");
+  const hasMountedRef = React.useRef(false);
+
   React.useEffect(() => {
+    // If initial members were provided on SSR and this is the first render with no search query, skip redundant client fetch
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      if (initialMembers.length > 0 && !query) {
+        setBusy(false);
+        return;
+      }
+    }
+
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setBusy(true); setError("");
       try {
-        const response = await fetch(`/api/members?q=${encodeURIComponent(query)}`, { cache: "no-store", signal: controller.signal });
+        const response = await fetch(`/api/members?q=${encodeURIComponent(query)}`, { signal: controller.signal });
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error ?? "Member profiles are unavailable.");
         setMembers(payload.members ?? []);
       } catch (cause) {
         if (!controller.signal.aborted) { setMembers([]); setError(cause instanceof Error ? cause.message : "Member profiles are unavailable."); }
       } finally { if (!controller.signal.aborted) setBusy(false); }
-    }, query ? 220 : 0);
+    }, query ? 250 : 0);
     return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [query]);
+  }, [query, initialMembers.length]);
 
   return <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-5 sm:gap-6">
     <label className="relative block w-full min-w-0"><Search className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-brand-muted sm:left-4" /><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search CSC members by name, city, profession or startup" className="h-12 w-full min-w-0 rounded-2xl pl-11 pr-3 text-sm sm:h-14 sm:pl-12 sm:pr-4 sm:text-base" aria-label="Search CSC members" /></label>

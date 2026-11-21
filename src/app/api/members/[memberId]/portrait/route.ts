@@ -3,7 +3,7 @@ import { getMemberContext } from "@/lib/services/member/context";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ memberId: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ memberId: string }> }) {
   const ctx = await getMemberContext();
   if (ctx.mode !== "live") return new NextResponse(null, { status: 401 });
   const { memberId } = await params;
@@ -18,7 +18,27 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mem
   ]);
   const consent = profile?.consent as Record<string, unknown> | null;
   if (!profile?.portrait_path || membership?.status !== "active" || consent?.communityProfileVisible !== true || consent?.showProfilePhotoToMembers !== true) return new NextResponse(null, { status: 404 });
+
+  const etag = `W/"${Buffer.from(profile.portrait_path).toString("base64url")}"`;
+  if (request.headers.get("if-none-match") === etag) {
+    return new NextResponse(null, {
+      status: 304,
+      headers: {
+        "ETag": etag,
+        "Cache-Control": "private, max-age=86400, stale-while-revalidate=604800",
+      },
+    });
+  }
+
   const { data, error } = await admin.storage.from("member-portraits").download(profile.portrait_path);
   if (error || !data) return new NextResponse(null, { status: 404 });
-  return new NextResponse(data, { headers: { "Content-Type": "image/webp", "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Content-Disposition": "inline; filename=member-profile.webp" } });
+  return new NextResponse(data, {
+    headers: {
+      "Content-Type": "image/webp",
+      "Cache-Control": "private, max-age=86400, stale-while-revalidate=604800",
+      "ETag": etag,
+      "X-Content-Type-Options": "nosniff",
+      "Content-Disposition": "inline; filename=member-profile.webp",
+    },
+  });
 }
