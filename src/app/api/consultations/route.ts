@@ -11,11 +11,11 @@ import { rateLimit, clientIp } from "@/lib/rate-limit";
  */
 export async function POST(req: Request) {
   const ip = clientIp(req);
-  const limit = rateLimit(`consult:${ip}`, 5, 60_000);
+  const limit = rateLimit(`consult:ip:${ip}`, 5, 300_000);
   if (!limit.allowed) {
     return NextResponse.json(
-      { ok: false, error: "Too many requests. Please try again shortly." },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+      { ok: false, error: "Too many requests from this device. Please wait a few minutes." },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter || 300) } },
     );
   }
 
@@ -34,6 +34,14 @@ export async function POST(req: Request) {
     );
   }
   const v = parsed.data;
+
+  const emailLimit = rateLimit(`consult:email:${v.email.toLowerCase().trim()}`, 3, 600_000);
+  if (!emailLimit.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Too many consultation requests for this email. Please wait a few minutes." },
+      { status: 429, headers: { "Retry-After": String(emailLimit.retryAfter || 600) } },
+    );
+  }
 
   const supabase = createSubmissionClient();
   if (!supabase) return NextResponse.json({ ok: false, error: "Submissions are temporarily unavailable." }, { status: 503 });

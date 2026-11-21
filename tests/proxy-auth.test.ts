@@ -39,7 +39,7 @@ it("keeps auth-public pages available without initializing Supabase Auth", async
   expect(mocks.createServerClient).not.toHaveBeenCalled();
 });
 
-it.each(["/", "/events", "/events/synthetic-event", "/events/google-meet/check-in", "/events/check-in", "/events/meet-access/token123", "/help", "/contact", "/community-guidelines", "/membership", "/updates", "/updates/synthetic-update"]) (
+it.each(["/", "/events", "/events/synthetic-event", "/events/google-meet/check-in", "/events/check-in", "/events/meet-access/token123", "/help", "/contact", "/community-guidelines", "/membership", "/updates", "/updates/synthetic-update", "/survey/member-onboarding"]) (
   "keeps public marketing route %s available without a session",
   async (path) => {
     configureLocalAuth();
@@ -52,7 +52,7 @@ it.each(["/", "/events", "/events/synthetic-event", "/events/google-meet/check-i
   },
 );
 
-it.each(["/about", "/directory", "/members", "/members/synthetic-profile", "/collaborations", "/resources", "/opportunities", "/survey/member-onboarding"]) (
+it.each(["/about", "/directory", "/members", "/members/synthetic-profile", "/collaborations", "/resources", "/opportunities"]) (
   "requires login for protected community route %s",
   async (path) => {
     configureLocalAuth();

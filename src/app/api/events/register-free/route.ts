@@ -40,11 +40,22 @@ export async function POST(request: NextRequest) {
     const data = parsed.data;
     const admin = createAdminClient();
     const ip = clientIp(request);
-    const limited = await distributedRateLimit(admin, "free-event-registration", ip, 10, 60_000);
-    if (!limited.allowed) {
+
+    // IP-level rate limit: max 5 attempts per 5 minutes
+    const ipLimited = await distributedRateLimit(admin, "free-event-registration-ip", ip, 5, 300_000);
+    if (!ipLimited.allowed) {
       return NextResponse.json(
-        { ok: false, error: "Too many requests. Please wait a moment." },
-        { status: 429, headers: { "Retry-After": String(limited.retryAfter || 60) } }
+        { ok: false, error: "Too many registration attempts from this device. Please wait a few minutes." },
+        { status: 429, headers: { "Retry-After": String(ipLimited.retryAfter || 300) } }
+      );
+    }
+
+    // Email-level rate limit: max 3 attempts per 10 minutes
+    const emailLimited = await distributedRateLimit(admin, "free-event-registration-email", data.email.toLowerCase().trim(), 3, 600_000);
+    if (!emailLimited.allowed) {
+      return NextResponse.json(
+        { ok: false, error: "Too many registration attempts for this email address. Please wait a few minutes." },
+        { status: 429, headers: { "Retry-After": String(emailLimited.retryAfter || 600) } }
       );
     }
 

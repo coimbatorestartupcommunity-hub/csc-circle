@@ -109,11 +109,19 @@ export async function POST(request: NextRequest) {
 
     const admin = createAdminClient();
     const ip = clientIp(request);
-    const limited = await distributedRateLimit(admin, "create-payment-order", ip, 10, 60_000);
-    if (!limited.allowed) {
+    const ipLimited = await distributedRateLimit(admin, "create-payment-order-ip", ip, 5, 300_000);
+    if (!ipLimited.allowed) {
       return NextResponse.json(
-        { ok: false, error: "Too many requests. Please wait a moment." },
-        { status: 429, headers: { "Retry-After": String(limited.retryAfter || 60), "Cache-Control": "no-store" } }
+        { ok: false, error: "Too many payment orders from this device. Please wait a few minutes." },
+        { status: 429, headers: { "Retry-After": String(ipLimited.retryAfter || 300), "Cache-Control": "no-store" } }
+      );
+    }
+
+    const emailLimited = await distributedRateLimit(admin, "create-payment-order-email", parsed.data.email.toLowerCase().trim(), 3, 600_000);
+    if (!emailLimited.allowed) {
+      return NextResponse.json(
+        { ok: false, error: "Too many payment orders for this email. Please wait a few minutes." },
+        { status: 429, headers: { "Retry-After": String(emailLimited.retryAfter || 600), "Cache-Control": "no-store" } }
       );
     }
 

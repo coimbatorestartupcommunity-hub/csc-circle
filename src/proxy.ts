@@ -17,6 +17,7 @@ export async function proxy(request: NextRequest) {
     "/privacy", "/terms", "/security", "/help", "/contact", "/community-guidelines", "/membership",
     "/updates",
     "/events",
+    "/survey/member-onboarding",
     "/auth/callback", "/auth/confirm", "/auth/signout",
     // Invitees do not have an admin role yet. This page must load so its
     // client can exchange the email URL fragment for a short-lived HttpOnly

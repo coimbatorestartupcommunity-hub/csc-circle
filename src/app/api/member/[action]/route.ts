@@ -36,6 +36,9 @@ export async function POST(request: Request, context: { params: Promise<{ action
     const sb = await createClient();
     const user = ctx.user!;
     if (action === "claim") {
+      if (!rateLimit(`member:claim:${user.id}`, 2, 600_000).allowed) {
+        return authResponse({ error: "You have submitted a claim recently. Please wait a few minutes." }, 429);
+      }
       const parsed = claimSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check all claim fields and your declaration." }, 422);
       const v = parsed.data;

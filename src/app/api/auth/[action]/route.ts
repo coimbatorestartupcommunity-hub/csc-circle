@@ -9,11 +9,20 @@ import { safeNext } from "@/lib/auth/redirects";
 export async function POST(request: Request, context: { params: Promise<{ action: string }> }) {
   const { action } = await context.params;
   if (!["login", "signup", "recover", "reset", "reauthenticate", "change-password", "resend"].includes(action)) return authResponse({ error: "Not found." }, 404);
-  const limit = rateLimit(`auth:${action}:${clientIp(request)}`, 5, 60_000);
-  if (!limit.allowed) return authResponse({ error: "Too many attempts. Please wait before trying again." }, 429);
+  const ip = clientIp(request);
+  const limit = rateLimit(`auth:${action}:${ip}`, 10, 120_000);
+  if (!limit.allowed) return authResponse({ error: "Too many attempts. Please wait a few minutes before trying again." }, 429);
   try {
     const body = await readAuthBody(request);
     if (!body) return authResponse({ error: "Invalid request." }, 400);
+
+    // Email-level throttle to prevent targeted password spraying
+    if (body.email && typeof body.email === "string") {
+      const emailThrottle = rateLimit(`auth:${action}:email:${body.email.toLowerCase().trim()}`, 5, 300_000);
+      if (!emailThrottle.allowed) {
+        return authResponse({ error: "Too many attempts for this email. Please wait a few minutes." }, 429);
+      }
+    }
     const sb = await createClient();
     const origin = new URL(request.url).origin;
     const captchaToken = typeof body.captchaToken === "string" ? body.captchaToken : undefined;

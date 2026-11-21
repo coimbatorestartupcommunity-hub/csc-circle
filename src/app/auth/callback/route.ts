@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/redirects";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 /**
  * OAuth / magic-link callback. Exchanges the auth code for a session cookie,
@@ -9,6 +10,16 @@ import { safeNext } from "@/lib/auth/redirects";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const { searchParams, origin } = url;
+  const ip = clientIp(request);
+
+  // Rate limit OAuth code exchanges to prevent flood abuse (max 10 in 2 minutes)
+  const limit = rateLimit(`oauth-callback:${ip}`, 10, 120_000);
+  if (!limit.allowed) {
+    return NextResponse.redirect(
+      new URL("/login?error=too_many_requests", origin),
+    );
+  }
+
   const code = searchParams.get("code");
   const next = safeNext(searchParams.get("next"));
 
