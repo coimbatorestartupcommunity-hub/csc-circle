@@ -82,8 +82,8 @@ export function OpportunityTagsFilter({
           />
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap gap-2">
+        {/* Filter Pills with smooth horizontal right scroll */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
           {CATEGORY_TAGS.map((tag) => {
             const Icon = tag.icon;
             const isSelected = selectedTag === tag.label;
@@ -92,7 +92,7 @@ export function OpportunityTagsFilter({
                 key={tag.label}
                 type="button"
                 onClick={() => setSelectedTag(tag.label)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition active:scale-98 cursor-pointer ${
+                className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold transition active:scale-98 cursor-pointer ${
                   isSelected
                     ? "bg-brand-ink text-white shadow-xs"
                     : "bg-white text-brand-secondary border border-brand-border hover:bg-brand-cloud hover:text-brand-ink"

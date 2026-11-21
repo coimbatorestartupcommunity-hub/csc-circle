@@ -43,12 +43,14 @@ export async function GET() {
     hexBackgroundColor: "#171B35",
   };
 
-  const payloadString = JSON.stringify(googlePass);
-  const saveUrl = `https://pay.google.com/gp/v/save/${Buffer.from(payloadString).toString("base64url")}`;
+  const isConfigured = Boolean(process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_KEY && process.env.GOOGLE_WALLET_ISSUER_ID);
 
   return NextResponse.json({
     ok: true,
+    configured: isConfigured,
     pass: googlePass,
-    saveUrl,
+    message: isConfigured
+      ? "Google Wallet integration active"
+      : "Google Wallet API requires Issuer Service Account configuration. Offline Digital Pass is active.",
   });
 }

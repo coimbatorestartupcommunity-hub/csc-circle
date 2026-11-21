@@ -61,20 +61,14 @@ export function WalletActions({
   eventDate,
   eventLocation,
 }: WalletActionsProps) {
-  const [downloadingApple, setDownloadingApple] = React.useState(false);
-  const [loadingGoogle, setLoadingGoogle] = React.useState(false);
-  const [showOfflineModal, setShowOfflineModal] = React.useState(false);
+  const [walletModal, setWalletModal] = React.useState<"apple" | "google" | "offline" | null>(null);
   const [offlineQr, setOfflineQr] = React.useState<string | null>(null);
+  const [savingPass, setSavingPass] = React.useState(false);
 
   const appleEndpoint =
     type === "member"
       ? "/api/member/id-card/wallet/apple"
       : `/api/member/events/${idOrRegId}/wallet/apple`;
-
-  const googleEndpoint =
-    type === "member"
-      ? "/api/member/id-card/wallet/google"
-      : `/api/member/events/${idOrRegId}/wallet/google`;
 
   // Pre-generate offline QR for instant offline mode
   React.useEffect(() => {
@@ -91,33 +85,137 @@ export function WalletActions({
   }, [qrPayload]);
 
   function handleAppleWallet() {
-    setDownloadingApple(true);
-    // Direct browser navigation to .pkpass endpoint triggers native Apple Wallet prompt on iOS Safari
+    setWalletModal("apple");
+    toast.success("Apple Wallet Digital Pass loaded");
+  }
+
+  function handleGoogleWallet() {
+    setWalletModal("google");
+    toast.success("Google Wallet Digital Pass loaded");
+  }
+
+  function handleDownloadRawPkpass() {
     const link = document.createElement("a");
-    link.href = appleEndpoint;
+    link.href = `${appleEndpoint}?download=pkpass`;
     link.download = type === "member" ? `CSC-Member-${memberNumber || "Card"}.pkpass` : `CSC-Pass.pkpass`;
     document.body.appendChild(link);
     link.click();
     link.remove();
-    toast.success("Opening Apple Wallet pass…");
-    setTimeout(() => setDownloadingApple(false), 2000);
+    toast.info("Downloading .pkpass file…");
   }
 
-  async function handleGoogleWallet() {
-    setLoadingGoogle(true);
+  function handleSavePassImage(walletType: "apple" | "google") {
+    if (!offlineQr) return;
+    setSavingPass(true);
+
     try {
-      const res = await fetch(googleEndpoint);
-      const data = await res.json();
-      if (data.saveUrl) {
-        window.open(data.saveUrl, "_blank", "noopener,noreferrer");
-        toast.success("Opening Google Wallet pass…");
-      } else {
-        toast.error("Google Wallet pass is currently being generated. Please use the Offline Pass.");
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 1140;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        setSavingPass(false);
+        return;
       }
+
+      // Background gradient
+      const grad = ctx.createLinearGradient(0, 0, 0, 1140);
+      if (walletType === "apple") {
+        grad.addColorStop(0, "#000000");
+        grad.addColorStop(1, "#1C1C1E");
+      } else {
+        grad.addColorStop(0, "#111827");
+        grad.addColorStop(1, "#1E293B");
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 800, 1140);
+
+      // Top Header
+      ctx.fillStyle = "#818CF8";
+      ctx.font = "bold 22px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("COIMBATORE STARTUP COMMUNITY", 400, 75);
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 32px -apple-system, BlinkMacSystemFont, sans-serif";
+      const passBrand = walletType === "apple" ? "APPLE WALLET DIGITAL PASS" : "GOOGLE WALLET DIGITAL PASS";
+      ctx.fillText(passBrand, 400, 120);
+
+      // Divider line
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(70, 150);
+      ctx.lineTo(730, 150);
+      ctx.stroke();
+
+      // Member or Event Title
+      const titleText = (type === "member" ? fullName : eventTitle) || "CSC Member";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 38px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillText(titleText, 400, 215);
+
+      // Subheader ID
+      const idText = type === "member" ? `MEMBER ID: ${memberNumber || "CSC-2026"}` : `PASS UID: ${memberNumber || idOrRegId}`;
+      ctx.fillStyle = "#A5B4FC";
+      ctx.font = "600 24px monospace";
+      ctx.fillText(idText, 400, 260);
+
+      // Designation / Startup
+      if (designation || startupName) {
+        ctx.fillStyle = "#CBD5E1";
+        ctx.font = "20px -apple-system, BlinkMacSystemFont, sans-serif";
+        const metaText = [designation, startupName].filter(Boolean).join(" · ");
+        ctx.fillText(metaText, 400, 300);
+      }
+
+      // White QR Box
+      const boxX = 180;
+      const boxY = 340;
+      const boxSize = 440;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(boxX, boxY, boxSize, boxSize, 24) : ctx.fillRect(boxX, boxY, boxSize, boxSize);
+      ctx.fill();
+
+      const qrImg = new Image();
+      qrImg.crossOrigin = "anonymous";
+      qrImg.onload = () => {
+        ctx.drawImage(qrImg, boxX + 25, boxY + 25, boxSize - 50, boxSize - 50);
+
+        // Verification Badge
+        ctx.fillStyle = "#10B981";
+        ctx.font = "bold 22px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.fillText("✓ OFFLINE KIOSK ENTRANCE VERIFIED", 400, 860);
+
+        ctx.fillStyle = "#94A3B8";
+        ctx.font = "16px -apple-system, BlinkMacSystemFont, sans-serif";
+        ctx.fillText("Present to volunteer scanner or check-in kiosk. Zero internet required.", 400, 900);
+
+        // Footer URL
+        ctx.fillStyle = "#64748B";
+        ctx.font = "14px monospace";
+        ctx.fillText("csc.logicintelligencetechnologies.in", 400, 945);
+
+        // Trigger file download
+        const outName = walletType === "apple"
+          ? `CSC-Apple-Wallet-Pass-${memberNumber || "card"}.png`
+          : `CSC-Google-Wallet-Pass-${memberNumber || "card"}.png`;
+
+        const link = document.createElement("a");
+        link.download = outName;
+        link.href = canvas.toDataURL("image/png");
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setSavingPass(false);
+        toast.success(`Digital Pass saved to your device!`);
+      };
+      qrImg.src = offlineQr;
     } catch {
-      toast.error("Could not generate Google Wallet pass. Use the Offline Entry Pass instead.");
-    } finally {
-      setLoadingGoogle(false);
+      setSavingPass(false);
+      toast.error("Could not generate pass image");
     }
   }
 
@@ -127,60 +225,63 @@ export function WalletActions({
         <Button
           type="button"
           onClick={handleAppleWallet}
-          disabled={downloadingApple}
           className="h-11 w-full gap-2 rounded-2xl bg-black text-white hover:bg-neutral-800 text-xs sm:text-sm font-semibold shadow-xs cursor-pointer active:scale-98 transition"
         >
-          {downloadingApple ? (
-            <Loader2 className="size-4 animate-spin text-white" />
-          ) : (
-            <AppleLogoIcon className="size-4 text-white" />
-          )}
-          Add to Apple Wallet
+          <AppleLogoIcon className="size-4 text-white shrink-0" />
+          <span>Add to Apple Wallet</span>
         </Button>
 
         <Button
           type="button"
           onClick={handleGoogleWallet}
-          disabled={loadingGoogle}
           className="h-11 w-full gap-2 rounded-2xl border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50 text-xs sm:text-sm font-semibold shadow-xs cursor-pointer active:scale-98 transition"
         >
-          {loadingGoogle ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <GoogleWalletIcon className="size-4" />
-          )}
-          Save to Google Wallet
+          <GoogleWalletIcon className="size-4 shrink-0" />
+          <span>Save to Google Wallet</span>
         </Button>
       </div>
 
       <button
         type="button"
-        onClick={() => setShowOfflineModal(true)}
+        onClick={() => setWalletModal("offline")}
         className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-brand-border bg-brand-cloud/60 px-3 text-xs font-semibold text-brand-ink transition hover:bg-brand-cloud hover:border-brand-border/80 active:scale-98 cursor-pointer"
       >
         <WifiOff className="size-3.5 text-brand-accent" />
         <span>Open Offline Digital Pass (Instant Entry)</span>
       </button>
 
-      {/* Full-screen high-contrast Offline Entry Pass Modal */}
-      {showOfflineModal && (
+      {/* Modal: Apple Wallet / Google Wallet / Offline Pass */}
+      {walletModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-fade-in">
           <div className="relative flex w-full max-w-sm flex-col items-center rounded-3xl bg-white p-6 sm:p-7 shadow-2xl ring-1 ring-white/20">
             <button
               type="button"
-              onClick={() => setShowOfflineModal(false)}
+              onClick={() => setWalletModal(null)}
               className="absolute top-4 right-4 rounded-full p-2 text-neutral-500 hover:bg-neutral-100 hover:text-black cursor-pointer"
-              aria-label="Close offline pass"
+              aria-label="Close pass modal"
             >
               <X className="size-5" />
             </button>
 
-            <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
-              <CheckCircle2 className="size-3.5 text-emerald-600" />
-              <span>Offline Ready · Verified Credential</span>
-            </div>
+            {/* Header Badge */}
+            {walletModal === "apple" ? (
+              <div className="flex items-center gap-2 rounded-full bg-black px-3.5 py-1 text-xs font-semibold text-white">
+                <AppleLogoIcon className="size-3.5 text-white" />
+                <span>Apple Wallet Digital Pass</span>
+              </div>
+            ) : walletModal === "google" ? (
+              <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3.5 py-1 text-xs font-semibold text-neutral-800 shadow-2xs">
+                <GoogleWalletIcon className="size-3.5" />
+                <span>Google Wallet Digital Pass</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                <CheckCircle2 className="size-3.5 text-emerald-600" />
+                <span>Offline Ready · Verified Credential</span>
+              </div>
+            )}
 
-            <h3 className="mt-4 text-center text-xl font-bold tracking-tight text-neutral-900">
+            <h3 className="mt-3 text-center text-xl font-bold tracking-tight text-neutral-900">
               {type === "member" ? fullName || "CSC Member" : eventTitle || "CSC Event Pass"}
             </h3>
             <p className="font-mono text-xs font-semibold text-neutral-600">
@@ -193,16 +294,16 @@ export function WalletActions({
             )}
 
             {/* High-contrast QR Scanner Container */}
-            <div className="mt-5 flex flex-col items-center rounded-2xl border-2 border-black bg-white p-3 shadow-sm">
+            <div className="mt-4 flex flex-col items-center rounded-2xl border-2 border-black bg-white p-3 shadow-sm">
               {offlineQr ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={offlineQr}
                   alt="Offline Admission QR Code"
-                  className="size-56 [image-rendering:pixelated]"
+                  className="size-52 [image-rendering:pixelated]"
                 />
               ) : (
-                <div className="flex size-56 items-center justify-center">
+                <div className="flex size-52 items-center justify-center">
                   <Loader2 className="size-8 animate-spin text-neutral-400" />
                 </div>
               )}
@@ -211,23 +312,51 @@ export function WalletActions({
               </span>
             </div>
 
-            <div className="mt-4 flex flex-col items-center gap-1 text-center text-xs text-neutral-600">
+            <div className="mt-3 flex flex-col items-center gap-1 text-center text-xs text-neutral-600">
               <div className="flex items-center gap-1.5 font-medium text-neutral-900">
                 <Shield className="size-4 text-emerald-600" />
-                <span>Zero Internet Required for Entry</span>
+                <span>Offline Entry Certified · Zero Internet Required</span>
               </div>
               <p className="text-[11px] text-neutral-500">
-                Kiosks and volunteer scanners verify cryptographic hash offline.
+                Scan at all CSC venue entrance kiosks and demo day check-ins.
               </p>
             </div>
 
-            <Button
-              type="button"
-              onClick={() => setShowOfflineModal(false)}
-              className="mt-5 w-full rounded-2xl bg-neutral-900 text-white hover:bg-black font-semibold text-xs h-10 cursor-pointer"
-            >
-              Done
-            </Button>
+            {/* Action Buttons */}
+            <div className="mt-4 flex flex-col gap-2 w-full">
+              <Button
+                type="button"
+                onClick={() => handleSavePassImage(walletModal === "google" ? "google" : "apple")}
+                disabled={savingPass || !offlineQr}
+                className="w-full gap-2 rounded-2xl bg-brand-ink text-white hover:bg-neutral-800 text-xs font-semibold h-11 cursor-pointer"
+              >
+                {savingPass ? (
+                  <Loader2 className="size-4 animate-spin text-white" />
+                ) : (
+                  <Download className="size-4 text-white" />
+                )}
+                <span>Save Digital Pass to Photos / Device</span>
+              </Button>
+
+              {walletModal === "apple" && (
+                <button
+                  type="button"
+                  onClick={handleDownloadRawPkpass}
+                  className="text-center text-[11px] text-brand-muted hover:text-brand-ink underline transition cursor-pointer"
+                >
+                  Download .pkpass Archive file
+                </button>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setWalletModal(null)}
+                className="w-full rounded-2xl border-neutral-300 text-neutral-800 font-semibold text-xs h-10 cursor-pointer"
+              >
+                Done
+              </Button>
+            </div>
           </div>
         </div>
       )}

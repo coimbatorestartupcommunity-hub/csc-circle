@@ -107,33 +107,18 @@ const fmtDate = (value: string | null) => {
 async function OpportunitiesContent() {
   const dynamicOpportunities = await listPublishedOpportunities();
 
-  const staticItems: OpportunityItem[] = continuousTracks.map((t, idx) => ({
-    id: `flagship-${idx}`,
-    slug: `flagship-track-${idx + 1}`,
-    title: t.title,
-    category: t.category,
-    organization: t.organization,
-    summary: t.summary,
-    location: t.mode,
-    participationMode: "Hybrid",
-    deadline: null,
+  const allItems: OpportunityItem[] = (dynamicOpportunities || []).map((o) => ({
+    id: o.id,
+    slug: o.slug,
+    title: o.title,
+    category: o.category,
+    organization: o.organization,
+    summary: o.summary,
+    location: o.location,
+    participationMode: o.participationMode,
+    deadline: o.deadline,
+    orgLogoPath: o.orgLogoPath,
   }));
-
-  const allItems: OpportunityItem[] = [
-    ...(dynamicOpportunities || []).map((o) => ({
-      id: o.id,
-      slug: o.slug,
-      title: o.title,
-      category: o.category,
-      organization: o.organization,
-      summary: o.summary,
-      location: o.location,
-      participationMode: o.participationMode,
-      deadline: o.deadline,
-      orgLogoPath: o.orgLogoPath,
-    })),
-    ...staticItems,
-  ];
 
   return (
     <>
