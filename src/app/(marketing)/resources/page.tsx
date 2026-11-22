@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     siteName: "Coimbatore Startup Community",
     images: [
       {
-        url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122",
+        url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122_opening",
         width: 1200,
         height: 630,
         type: "image/png",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     title: "Startup Resources & Founder Playbooks — CSC Circle",
     description:
       "Curated guides, TANSEED grant checklists, founder equity agreements, pitch deck blueprints, and regional incubation directories for Coimbatore startups.",
-    images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122"],
+    images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122_opening"],
   },
 };
 

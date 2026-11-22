@@ -50,13 +50,17 @@ export function OpportunityTagsFilter({
 
   const filtered = React.useMemo(() => {
     return opportunities.filter((item) => {
+      const cat = (item.category || "").toLowerCase();
+      const title = (item.title || "").toLowerCase();
+
       const matchesTag =
         selectedTag === "All Opportunities" ||
-        item.category.toLowerCase().includes(selectedTag.toLowerCase()) ||
-        (selectedTag.includes("Co-Founder") && item.category.toLowerCase().includes("co-founder")) ||
-        (selectedTag.includes("Engineering") && (item.category.toLowerCase().includes("tech") || item.category.toLowerCase().includes("engineering"))) ||
-        (selectedTag.includes("Grant") && (item.category.toLowerCase().includes("grant") || item.category.toLowerCase().includes("funding"))) ||
-        (selectedTag.includes("Fellowship") && (item.category.toLowerCase().includes("fellow") || item.category.toLowerCase().includes("mentor")));
+        cat.includes(selectedTag.toLowerCase()) ||
+        (selectedTag.includes("Co-Founder") && (cat.includes("co-founder") || cat.includes("mentorship") || title.includes("founder"))) ||
+        (selectedTag.includes("Engineering") && (cat.includes("tech") || cat.includes("engineering") || title.includes("engineering"))) ||
+        (selectedTag.includes("Grant") && (cat.includes("grant") || cat.includes("funding") || cat.includes("capital") || title.includes("grant") || title.includes("demo day"))) ||
+        (selectedTag.includes("Hackathon") && (cat.includes("hackathon") || cat.includes("challenge") || cat.includes("student") || title.includes("innovation") || title.includes("prototype"))) ||
+        (selectedTag.includes("Fellowship") && (cat.includes("fellow") || cat.includes("mentor") || title.includes("fellowship") || title.includes("residence")));
 
       const matchesQuery =
         !query.trim() ||

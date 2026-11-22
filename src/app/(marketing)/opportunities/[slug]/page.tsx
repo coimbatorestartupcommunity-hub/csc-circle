@@ -7,10 +7,42 @@ import { ArrowLeft, ExternalLink, Building2 } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { getPublishedOpportunity, cmsImageUrl } from "@/lib/services/cms-public";
+import { continuousTracks } from "@/lib/opportunities/continuous-tracks";
+
+function getOpportunityOrTrack(slug: string) {
+  const track = continuousTracks.find((t) => t.slug === slug);
+  if (!track) return null;
+  return {
+    id: track.slug,
+    slug: track.slug,
+    title: track.title,
+    category: track.category,
+    organization: track.organization,
+    summary: track.summary,
+    description: track.description,
+    eligibility: track.eligibility,
+    skills: null,
+    applicationInstructions: "Submit your expression of interest directly to the CSC advisory team.",
+    applicationUrl: track.applicationUrl,
+    location: track.mode,
+    participationMode: track.participationMode,
+    audience: "Entrepreneurs & Builders",
+    startsOn: null,
+    deadline: null,
+    endsOn: null,
+    contact: "coimbatorestartup.csc@gmail.com",
+    source: "CSC Circle Ecosystem Flagship",
+    bannerPath: null,
+    orgLogoPath: null,
+    seoTitle: `${track.title} — CSC Circle`,
+    metaDescription: track.summary,
+  };
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const o = await getPublishedOpportunity(slug);
+  const dbOpp = await getPublishedOpportunity(slug);
+  const o = dbOpp || getOpportunityOrTrack(slug);
   if (!o) return { title: "Opportunity", robots: { index: false, follow: false } };
   return {
     title: o.seoTitle || o.title,
@@ -28,7 +60,8 @@ const fmtDate = (value: string | null) => {
 
 async function OpportunityDetailContent({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const o = await getPublishedOpportunity(slug);
+  const dbOpp = await getPublishedOpportunity(slug);
+  const o = dbOpp || getOpportunityOrTrack(slug);
   if (!o) notFound();
   const banner = cmsImageUrl(o.bannerPath);
   const logo = cmsImageUrl(o.orgLogoPath);
