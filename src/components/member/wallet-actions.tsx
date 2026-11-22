@@ -78,30 +78,30 @@ export function WalletActions({
   return (
     <div className="flex flex-col gap-2.5 w-full">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
-        {/* Apple Wallet Button — Locked until Apple Developer Pass Type ID (WWDR CA) is issued */}
+        {/* Apple Wallet Button — Locked with original black color and glass-morphism blur */}
         <Button
           type="button"
           disabled
           aria-disabled="true"
           title="Add to Apple Wallet is currently locked pending Apple Developer Program Pass Type Certificate (WWDR CA) enrollment."
-          className="h-11 w-full gap-2 rounded-2xl bg-neutral-900 text-neutral-400 cursor-not-allowed opacity-65 text-xs sm:text-sm font-semibold shadow-none border border-neutral-800 pointer-events-none select-none"
+          className="h-11 w-full gap-2 rounded-2xl bg-black/85 backdrop-blur-md border border-white/20 text-white cursor-not-allowed text-xs sm:text-sm font-semibold shadow-sm pointer-events-none select-none"
         >
-          <AppleLogoIcon className="size-4 text-neutral-400 shrink-0" />
+          <AppleLogoIcon className="size-4 text-white shrink-0" />
           <span>Add to Apple Wallet</span>
-          <Lock className="size-3.5 ml-auto text-neutral-500" />
+          <Lock className="size-3.5 ml-auto text-white/70" />
         </Button>
 
-        {/* Google Wallet Button — Locked until Google Wallet Business Console Issuer ID is approved */}
+        {/* Google Wallet Button — Locked with original white color and glass-morphism blur */}
         <Button
           type="button"
           disabled
           aria-disabled="true"
           title="Save to Google Wallet is currently locked pending Google Pay & Wallet Business Console Issuer ID registration."
-          className="h-11 w-full gap-2 rounded-2xl border border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed opacity-65 text-xs sm:text-sm font-semibold shadow-none pointer-events-none select-none"
+          className="h-11 w-full gap-2 rounded-2xl bg-white/85 backdrop-blur-md border border-neutral-300/80 text-neutral-900 cursor-not-allowed text-xs sm:text-sm font-semibold shadow-sm pointer-events-none select-none"
         >
-          <GoogleWalletIcon className="size-4 shrink-0 opacity-40 grayscale" />
+          <GoogleWalletIcon className="size-4 shrink-0" />
           <span>Save to Google Wallet</span>
-          <Lock className="size-3.5 ml-auto text-neutral-400" />
+          <Lock className="size-3.5 ml-auto text-neutral-500" />
         </Button>
       </div>
 

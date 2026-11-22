@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     url: `${siteConfig.url}/about`,
     images: [
       {
-        url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122_opening",
+        url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png",
         width: 1200,
         height: 630,
         type: "image/png",
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     title: "About CSC Circle",
     description:
       "Building a more connected startup ecosystem in Coimbatore — our mission, vision, leadership, and partners.",
-    images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122_opening"],
+    images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png"],
   },
 };
 

@@ -63,7 +63,7 @@ export async function generateMetadata({
       siteName: "Coimbatore Startup Community",
       images: [
         {
-          url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122_opening",
+          url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png",
           width: 1200,
           height: 630,
           type: "image/png",
@@ -75,7 +75,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122_opening"],
+      images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png"],
     },
   };
 }

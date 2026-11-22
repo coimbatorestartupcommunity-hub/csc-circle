@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     description:
       "A platform bringing together Founders, Entrepreneurs, Innovators & Aspiring Builders in Coimbatore.",
     images: [{
-      url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122_opening",
+      url: "https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png",
       width: 1200,
       height: 630,
       type: "image/png",
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
     title: "Coimbatore Startup Community (CSC) — Connect, Build & Grow",
     description:
       "A platform bringing together Founders, Entrepreneurs, Innovators & Aspiring Builders in Coimbatore.",
-    images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png?v=20261122_opening"],
+    images: ["https://csc.logicintelligencetechnologies.in/brand/csc-homepage-banner.png"],
   },
   robots: {
     index: true,
