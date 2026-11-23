@@ -7,6 +7,7 @@ import { EventNoticeEditor } from "@/components/admin/event-notice-editor";
 import { can } from "@/lib/admin/gate";
 import { NotificationEmailCheck } from "@/components/admin/notification-email-check";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
+import { DispatchAllNotificationsButton } from "@/components/admin/dispatch-all-notifications-button";
 
 export const metadata = { title: "Notifications" };
 
@@ -64,6 +65,7 @@ export default async function AdminNotificationsPage({ searchParams }: { searchP
         title="Notifications"
         description={canDeliveryMonitor ? "Delivery status for email and in-app notifications. In-app availability is separate from a member's unread state; SMTP acceptance does not prove inbox delivery." : "Promote published events with independently scheduled CSC notices."}
         isDemo={ctx.mode === "preview"}
+        action={ctx.mode === "live" && canDeliveryMonitor ? <DispatchAllNotificationsButton /> : undefined}
       />
       {canPublishNotices ? <EventNoticeEditor isDemo={ctx.mode !== "live"} canPublish={canPublishNotices} canEditEvents={can(ctx, "events.update")} initialEventId={eventId} /> : null}
       {ctx.mode === "live" && can(ctx, "roles.manage") && <NotificationEmailCheck />}

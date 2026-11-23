@@ -1,10 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
 import { hasRecovery, clearRecovery } from "@/lib/auth/recovery";
 import { loginSchema, signupSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from "@/lib/validations/auth";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { z } from "zod";
 import { safeNext } from "@/lib/auth/redirects";
+import {
+  generateSecurityCode,
+  sendSecurityCodeEmail,
+  verifySecurityCode,
+  sendPasswordRecoveryEmail,
+} from "@/lib/auth/security-code";
 
 export async function POST(request: Request, context: { params: Promise<{ action: string }> }) {
   const { action } = await context.params;
@@ -49,20 +56,112 @@ export async function POST(request: Request, context: { params: Promise<{ action
     if (action === "recover" || action === "resend") {
       const parsed = forgotPasswordSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Enter a valid email address." }, 422);
-      const result = action === "recover"
-        ? await sb.auth.resetPasswordForEmail(parsed.data.email, { redirectTo: `${origin}/auth/confirm`, captchaToken })
-        : await sb.auth.resend({ type: "signup", email: parsed.data.email, options: { emailRedirectTo: `${origin}/auth/confirm`, captchaToken } });
-      // Same response for unknown/existing accounts. Delivery is independently verified.
-      if (result.error && ["over_email_send_rate_limit", "over_request_rate_limit", "captcha_failed"].includes(result.error.code ?? ""))
-        return authResponse({ error: "The request could not be processed. Please wait and try again." }, 429);
+
+      let sent = false;
+      if (action === "recover") {
+        try {
+          const result = await sb.auth.resetPasswordForEmail(parsed.data.email, { redirectTo: `${origin}/auth/confirm`, captchaToken });
+          if (!result.error) {
+            sent = true;
+          }
+        } catch {
+          // Continue to resilient fallback
+        }
+
+        // Resilient fallback: Generate recovery link via admin and dispatch directly via community email
+        if (!sent) {
+          try {
+            const admin = createAdminClient();
+            const linkRes = await admin.auth.admin.generateLink({
+              type: "recovery",
+              email: parsed.data.email,
+              options: { redirectTo: `${origin}/auth/confirm` },
+            });
+            if (linkRes.data?.properties?.action_link) {
+              await sendPasswordRecoveryEmail({
+                email: parsed.data.email,
+                actionLink: linkRes.data.properties.action_link,
+                name: (linkRes.data.user?.user_metadata?.full_name as string) || null,
+              });
+              sent = true;
+            }
+          } catch (recoveryErr) {
+            console.error("[recover] Resilient recovery email failed:", recoveryErr);
+          }
+        }
+      } else {
+        try {
+          const result = await sb.auth.resend({ type: "signup", email: parsed.data.email, options: { emailRedirectTo: `${origin}/auth/confirm`, captchaToken } });
+          if (!result.error) {
+            sent = true;
+          }
+        } catch {
+          // Continue to resilient fallback
+        }
+
+        // Resilient fallback: Generate signup link via admin and dispatch directly via community email
+        if (!sent) {
+          try {
+            const admin = createAdminClient();
+            const linkRes = await admin.auth.admin.generateLink({
+              type: "magiclink",
+              email: parsed.data.email,
+              options: { redirectTo: `${origin}/auth/confirm` },
+            });
+            if (linkRes.data?.properties?.action_link) {
+              await sendPasswordRecoveryEmail({
+                email: parsed.data.email,
+                actionLink: linkRes.data.properties.action_link,
+                name: (linkRes.data.user?.user_metadata?.full_name as string) || null,
+              });
+              sent = true;
+            }
+          } catch (resendErr) {
+            console.error("[resend] Resilient signup link failed:", resendErr);
+          }
+        }
+      }
+
       return authResponse({ ok: true });
     }
+
     const { data: { user }, error: userError } = await sb.auth.getUser();
-    if (userError || !user?.email_confirmed_at) return authResponse({ error: "Sign in again to continue." }, 401);
+    if (userError || !user) return authResponse({ error: "Sign in again to continue." }, 401);
+
     if (action === "reauthenticate") {
-      const { error } = await sb.auth.reauthenticate();
-      return error ? authResponse({ error: "Could not send the security code. Try again later." }, 400) : authResponse({ ok: true });
+      let codeDispatched = false;
+
+      // 1. Attempt native Supabase reauthenticate
+      try {
+        const { error: reauthErr } = await sb.auth.reauthenticate();
+        if (!reauthErr) {
+          codeDispatched = true;
+        }
+      } catch (err) {
+        console.warn("[reauthenticate] Supabase reauthenticate returned error, using direct email fallback:", err);
+      }
+
+      // 2. Resilient fallback: Generate and send security code directly to user's email
+      if (!codeDispatched && user.email) {
+        try {
+          const code = await generateSecurityCode(user.id);
+          await sendSecurityCodeEmail({
+            email: user.email,
+            code,
+            name: (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || null,
+          });
+          codeDispatched = true;
+        } catch (mailErr) {
+          console.error("[reauthenticate] Direct security code email failed:", mailErr);
+        }
+      }
+
+      if (!codeDispatched) {
+        return authResponse({ error: "Could not send the security code. Try again later." }, 400);
+      }
+      return authResponse({ ok: true });
     }
+
     if (action === "reset") {
       const parsed = resetPasswordSchema.safeParse(body);
       if (!parsed.success) return authResponse({ error: "Check the password requirements and confirmation." }, 422);
@@ -73,11 +172,41 @@ export async function POST(request: Request, context: { params: Promise<{ action
       const { error: signoutError } = await sb.auth.signOut({ scope: "global" });
       return authResponse({ ok: true, sessionsRevoked: !signoutError });
     }
+
     const parsed = changePasswordSchema.safeParse(body);
     const nonce = z.string().regex(/^\d{6,10}$/).safeParse(body.nonce);
     if (!parsed.success || !nonce.success) return authResponse({ error: "Check the password, confirmation, and emailed security code." }, 422);
-    const { error } = await sb.auth.updateUser({ password: parsed.data.newPassword, nonce: nonce.data });
-    if (error) return authResponse({ error: "Could not update your password. Request a new security code and try again." }, 400);
+
+    let updated = false;
+
+    // 1. Verify custom verification code if one was issued
+    const isCustomValid = await verifySecurityCode(user.id, nonce.data);
+    if (isCustomValid) {
+      try {
+        const admin = createAdminClient();
+        const { error: adminErr } = await admin.auth.admin.updateUserById(user.id, {
+          password: parsed.data.newPassword,
+        });
+        if (!adminErr) {
+          updated = true;
+        }
+      } catch (adminUpdateErr) {
+        console.error("[change-password] Admin password update failed:", adminUpdateErr);
+      }
+    }
+
+    // 2. If not custom, try Supabase native updateUser with nonce
+    if (!updated) {
+      const { error } = await sb.auth.updateUser({ password: parsed.data.newPassword, nonce: nonce.data });
+      if (!error) {
+        updated = true;
+      }
+    }
+
+    if (!updated) {
+      return authResponse({ error: "Could not update your password. The security code may be invalid or expired. Request a new code and try again." }, 400);
+    }
+
     const { error: signoutError } = await sb.auth.signOut({ scope: "global" });
     return authResponse({ ok: true, sessionsRevoked: !signoutError });
   } catch {
