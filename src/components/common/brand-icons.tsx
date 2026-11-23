@@ -48,21 +48,27 @@ export function LinkedinIcon({ className = "size-5" }: { className?: string }) {
   );
 }
 
-/** Circular image badges for WhatsApp, Instagram, and LinkedIn */
+/** Circular image badges for WhatsApp, Instagram, LinkedIn, and the 24/7 AI WhatsApp Agent */
 export function CircularSocialIcon({
   network,
   size = 44,
   className = "",
 }: {
-  network: "whatsapp" | "instagram" | "linkedin";
+  network: "whatsapp" | "instagram" | "linkedin" | "ai_agent";
   size?: number;
   className?: string;
 }) {
   const meta = {
     whatsapp: {
       src: "/brand/social/whatsapp-circle.png",
-      alt: "WhatsApp official channel icon",
+      alt: "WhatsApp official community group icon",
       bgColor: "bg-emerald-500",
+      fallback: <WhatsappIcon className="size-5 text-white" />,
+    },
+    ai_agent: {
+      src: "/brand/social/whatsapp-agent-circle.png",
+      alt: "24/7 WhatsApp Community Assistant",
+      bgColor: "bg-emerald-600",
       fallback: <WhatsappIcon className="size-5 text-white" />,
     },
     instagram: {

@@ -45,6 +45,8 @@ export const siteConfig = {
   social: {
     instagram: "https://www.instagram.com/coimbatorestartupcommunity/",
     whatsapp: "https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2",
+    whatsappAgent: "https://wa.me/917550067712?text=Hi",
+    whatsappAgentPhone: "+91 75500 67712",
     linkedin: "https://www.linkedin.com/in/csc-coimbatore-startup-community-b27b0b44b?utm_source=share_via&utm_content=profile&utm_medium=member_android",
     linkedinProfile: "https://www.linkedin.com/in/csc-coimbatore-startup-community-b27b0b44b?utm_source=share_via&utm_content=profile&utm_medium=member_android",
     email: "coimbatorestartup.csc@gmail.com",

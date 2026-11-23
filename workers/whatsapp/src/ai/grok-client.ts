@@ -230,12 +230,12 @@ function generateContextualFallback(messages: ChatMessage[]): string {
 
   // General Greetings
   if (isPureTamil) {
-    return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டிக்கு (CSC Circle) உங்களை அன்போடு வரவேற்கிறோம். நான் உங்கள் 24/7 AI உதவியாளர்.\n\nநிகழ்வுகள், ஸ்டார்ட்அப் வழிகாட்டிகள், மற்றும் உறுப்பினர் சேர்க்கை தொடர்பான எந்தவொரு கேள்விகளுக்கும் உதவ தயாராக உள்ளேன்.\n\n🌐 இணையதளம்: https://csc.logicintelligencetechnologies.in\nஉங்களுக்கு இன்று எவ்வாறு உதவலாம்?";
+    return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டிக்கு (CSC Circle) உங்களை அன்போடு வரவேற்கிறோம். ✨\n\nஉங்களுக்கு என்ன உதவி வேண்டும்? வரவிருக்கும் நிகழ்வுகள், உறுப்பினர் சேர்க்கை, ஸ்டார்ட்அப் பட்டியல் அல்லது கம்யூனிட்டி வழிகாட்டிகள் எதுவாக இருந்தாலும் சொல்லுங்கள், உடனடியாக உதவுகிறேன்!\n\n🌐 இணையதளம்: https://csc.logicintelligencetechnologies.in";
   }
 
   if (isTanglish) {
-    return "Vanakkam! Coimbatore Startup Community (CSC Circle) ku ungalai anbodhu varaverkirom! Naan ungaloda 24/7 AI Assistant.\n\nUpcoming events, membership claim, startup directory and ecosystem updates pathi ungaluku edhavadhu therinjikkanuma? Sollunga, naan help panren! ✨\n\n🌐 Website: https://csc.logicintelligencetechnologies.in";
+    return "Vanakkam! Welcome to Coimbatore Startup Community (CSC Circle)! ✨\n\nUngaluku enna help venum? Upcoming events, membership claim, startup directory and ecosystem updates pathi therinjikkanuma? Sollunga, immediately help panren!\n\n🌐 Website: https://csc.logicintelligencetechnologies.in";
   }
 
-  return "Welcome to Coimbatore Startup Community (CSC Circle)! I am your 24/7 community intelligence assistant.\n\nI can assist you with upcoming events, membership applications, startup directory listings, and ecosystem partnerships.\n\n🌐 Website: https://csc.logicintelligencetechnologies.in\nHow may I help you today?";
+  return "Welcome to Coimbatore Startup Community (CSC Circle)! ✨\n\nHow can I help you today? Tell me what you're looking for — upcoming events, membership passes, startup directory, or community connections, and I will assist you right away!\n\n🌐 Website: https://csc.logicintelligencetechnologies.in";
 }

@@ -4,6 +4,7 @@ import { detectScrapingAttempt } from "../workers/whatsapp/src/services/anti-scr
 import { formatCommunityHubInvitation, CSC_COMMUNITY_LINKS } from "../workers/whatsapp/src/services/community-hub";
 import { handleIncomingRating } from "../workers/whatsapp/src/services/feedback-pipeline";
 import { verifyAndFormatResponse } from "../workers/whatsapp/src/ai/response-verifier";
+import { normalizePhoneForWhatsApp } from "../src/lib/notifications/whatsapp-outbox";
 
 describe("CSC Circle WhatsApp Strategic Upgrades (v2.0.0)", () => {
   describe("Upgrade 1: Redis Sliding-Window Rate Limiting", () => {
@@ -104,6 +105,20 @@ describe("CSC Circle WhatsApp Strategic Upgrades (v2.0.0)", () => {
       const verified = verifyAndFormatResponse(text, true);
       expect(verified).toContain("Connect. Build. Grow.");
       expect(verified).toContain("Coimbatore Startup Community (CSC Circle)");
+    });
+  });
+
+  describe("Upgrade 7: Phone Normalization for WhatsApp", () => {
+    it("normalizes 10-digit Indian numbers to E.164 and creates @c.us JID", () => {
+      const { e164, chatId } = normalizePhoneForWhatsApp("7550067712");
+      expect(e164).toBe("917550067712");
+      expect(chatId).toBe("917550067712@c.us");
+    });
+
+    it("handles pre-formatted and international inputs cleanly", () => {
+      const { e164, chatId } = normalizePhoneForWhatsApp("+91 98765-43210");
+      expect(e164).toBe("919876543210");
+      expect(chatId).toBe("919876543210@c.us");
     });
   });
 });

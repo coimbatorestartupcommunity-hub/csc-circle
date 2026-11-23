@@ -45,9 +45,16 @@ export default function ContactPage() {
     {
       network: "whatsapp" as const,
       label: "WhatsApp Community",
-      value: "Official Broadcast Channel",
+      value: "Official Community Group",
       href: siteConfig.social.whatsapp,
-      note: "Instant broadcast alerts, event pass reminders, and updates.",
+      note: "Join active founders, network, and exchange startup collaboration opportunities.",
+    },
+    {
+      network: "ai_agent" as const,
+      label: "24/7 WhatsApp Assistant",
+      value: "+91 75500 67712",
+      href: siteConfig.social.whatsappAgent,
+      note: "Instant answers on upcoming events, digital pass verification, and ecosystem guidance.",
     },
     {
       network: "linkedin" as const,

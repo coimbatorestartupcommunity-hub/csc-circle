@@ -9,6 +9,7 @@ import QRCode from "qrcode";
 import { buildEventPassQrPayload } from "@/lib/member/qr";
 import { formatEventRange } from "@/lib/format";
 import { chooseNotificationRecipient } from "@/lib/notifications/recipients";
+import { enqueueWhatsAppNotification } from "@/lib/notifications/whatsapp-outbox";
 import type { Database } from "@/lib/supabase/database.types";
 type Job = Database["public"]["Tables"]["notifications"]["Row"];
 type Service = NonNullable<ReturnType<typeof createSubmissionClient>>;
@@ -226,6 +227,24 @@ export async function dispatchNotifications(batch = 15) {
           const recorded = await sb.rpc("csc_finish_email_delivery", { job:job.id,lease,digest,outcome:"accepted",code:"" });
           if (recorded.error) throw new Error("ACCEPTANCE_RECORD_FAILED");
           accepted++;
+
+          // Universal WhatsApp Notification Dispatch:
+          // Automatically dispatch a matching WhatsApp message to the member if phone is known
+          const recipientPhone = (typeof payload.phone === "string" && payload.phone) || (typeof payload.whatsapp === "string" && payload.whatsapp) || "";
+          if (recipientPhone && recipientPhone.replace(/\D/g, "").length >= 10 && job.audience !== "admin") {
+            try {
+              const cleanText = message.text.replace(/\r?\n\s*\r?\n/g, "\n\n").trim().slice(0, 900);
+              const whatsappMsg = `📢 *CSC Circle Notification: ${message.subject}*\n\n${cleanText}\n\n🌐 View in your account: https://csc.logicintelligencetechnologies.in/profile`;
+              await enqueueWhatsAppNotification({
+                recipientPhone,
+                text: whatsappMsg,
+                messageType: job.template_key || "universal_notification",
+                idempotencyKey: `wa-${job.id}-${digest.slice(0, 8)}`,
+              });
+            } catch (waErr) {
+              console.warn("[dispatcher] WhatsApp notification enqueue error:", waErr);
+            }
+          }
         } catch (error) {
           const failure = classifyEmailFailure(error);
           const recorded=await sb.rpc("csc_finish_email_delivery", {job:job.id,lease,digest,outcome:failure.outcome,code:failure.code});

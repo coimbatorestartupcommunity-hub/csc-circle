@@ -62,10 +62,22 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Join the CSC Circle WhatsApp community"
-                  title="WhatsApp Community Broadcast"
+                  title="WhatsApp Community Group"
                   className="inline-block transition-transform hover:scale-105 active:scale-95"
                 >
                   <CircularSocialIcon network="whatsapp" size={42} />
+                </a>
+              </li>
+              <li>
+                <a
+                  href={siteConfig.social.whatsappAgent}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Chat with 24/7 CSC WhatsApp Assistant"
+                  title="24/7 WhatsApp Community Assistant (+91 75500 67712)"
+                  className="inline-block transition-transform hover:scale-105 active:scale-95"
+                >
+                  <CircularSocialIcon network="ai_agent" size={42} />
                 </a>
               </li>
               <li>

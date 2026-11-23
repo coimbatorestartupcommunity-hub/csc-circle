@@ -33,11 +33,21 @@ export function FinalCta() {
                     href={siteConfig.social.whatsapp}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="WhatsApp Community Broadcast"
+                    aria-label="WhatsApp Community Group"
                     title="Join WhatsApp Group"
                     className="transition-transform hover:scale-110 active:scale-95"
                   >
                     <CircularSocialIcon network="whatsapp" size={44} />
+                  </a>
+                  <a
+                    href={siteConfig.social.whatsappAgent}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="24/7 WhatsApp Community Assistant"
+                    title="Chat with WhatsApp Assistant (+91 75500 67712)"
+                    className="transition-transform hover:scale-110 active:scale-95"
+                  >
+                    <CircularSocialIcon network="ai_agent" size={44} />
                   </a>
                   <a
                     href={siteConfig.social.linkedin}
