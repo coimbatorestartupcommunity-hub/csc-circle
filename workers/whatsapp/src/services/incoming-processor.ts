@@ -22,7 +22,7 @@ import { checkSlidingWindowRateLimit } from "./rate-limiter.js";
 import { detectScrapingAttempt } from "./anti-scraping.js";
 import { dispatchRealTimeAdminAlert } from "./admin-alerts.js";
 import { handleIncomingRating } from "./feedback-pipeline.js";
-import { formatBiWeeklyMeetupSchedule } from "./meetup-sync.js";
+import { formatCommunityHubInvitation } from "./community-hub.js";
 import { getFortnightlyFounderSpotlight } from "./founder-spotlight.js";
 
 export interface InboundMessageEvent {
@@ -135,11 +135,26 @@ export async function processInboundWhatsAppMessage(
     return feedbackReply;
   }
 
-  // 7. Bi-Weekly Meetup Calendar Shortcut
-  if (upperText === "MEETUP" || upperText === "CALENDAR" || upperText === "SCHEDULE") {
-    const scheduleReply = formatBiWeeklyMeetupSchedule();
-    await openwaClient.sendTextMessage(chatId, scheduleReply);
-    return scheduleReply;
+  // 7. Official Community Hub & WhatsApp Group Invitation Shortcut
+  if (
+    upperText === "COMMUNITY" ||
+    upperText === "GROUP" ||
+    upperText === "JOIN" ||
+    upperText === "CONNECT" ||
+    upperText === "MEETUP" ||
+    upperText === "CALENDAR" ||
+    upperText === "SCHEDULE" ||
+    upperText === "WHATSAPP"
+  ) {
+    let lang: "en" | "ta" | "tanglish" = "en";
+    if (/[\u0B80-\u0BFF]/.test(text)) {
+      lang = "ta";
+    } else if (/\b(eppo|eppadi|vaanga|pannunga|kudunga|iruku|romba|bro|vanakkam)\b/i.test(text)) {
+      lang = "tanglish";
+    }
+    const hubReply = formatCommunityHubInvitation(lang);
+    await openwaClient.sendTextMessage(chatId, hubReply);
+    return hubReply;
   }
 
   // 8. Founder Spotlight Shortcut

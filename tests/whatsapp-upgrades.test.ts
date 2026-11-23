@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { checkSlidingWindowRateLimit } from "../workers/whatsapp/src/services/rate-limiter";
 import { detectScrapingAttempt } from "../workers/whatsapp/src/services/anti-scraping";
-import { formatBiWeeklyMeetupSchedule } from "../workers/whatsapp/src/services/meetup-sync";
+import { formatCommunityHubInvitation, CSC_COMMUNITY_LINKS } from "../workers/whatsapp/src/services/community-hub";
 import { handleIncomingRating } from "../workers/whatsapp/src/services/feedback-pipeline";
 import { verifyAndFormatResponse } from "../workers/whatsapp/src/ai/response-verifier";
 
@@ -61,13 +61,34 @@ describe("CSC Circle WhatsApp Strategic Upgrades (v2.0.0)", () => {
     });
   });
 
-  describe("Upgrade 6: Bi-Weekly Meetup Calendar Sync", () => {
-    it("accurately computes the 1st and 3rd Saturday schedule", () => {
-      const schedule = formatBiWeeklyMeetupSchedule();
-      expect(schedule).toContain("CSC Circle Bi-Weekly Meetup Schedule");
-      expect(schedule).toContain("1st Saturday Ecosystem Meetup");
-      expect(schedule).toContain("3rd Saturday Founders Round-table");
-      expect(schedule).toContain("https://csc.logicintelligencetechnologies.in/events");
+  describe("Upgrade 6: Community Hub & WhatsApp Group Engagement Engine", () => {
+    it("delivers full community onboarding invitation with WhatsApp group, socials, and security contact in English", () => {
+      const invite = formatCommunityHubInvitation("en");
+      expect(invite).toContain(CSC_COMMUNITY_LINKS.whatsappGroup);
+      expect(invite).toContain("Introduce Yourself");
+      expect(invite).toContain("Engage & Network");
+      expect(invite).toContain(CSC_COMMUNITY_LINKS.instagram);
+      expect(invite).toContain(CSC_COMMUNITY_LINKS.linkedin);
+      expect(invite).toContain(CSC_COMMUNITY_LINKS.techEmail);
+      expect(invite).toContain(CSC_COMMUNITY_LINKS.contactUrl);
+    });
+
+    it("delivers community onboarding invitation in natural Tamil (தமிழ்)", () => {
+      const inviteTa = formatCommunityHubInvitation("ta");
+      expect(inviteTa).toContain(CSC_COMMUNITY_LINKS.whatsappGroup);
+      expect(inviteTa).toContain("வாட்ஸ்அப் குழுவில் இணைய");
+      expect(inviteTa).toContain("உங்களை அறிமுகப்படுத்துங்கள்");
+      expect(inviteTa).toContain("பாதுகாப்பு");
+      expect(inviteTa).toContain(CSC_COMMUNITY_LINKS.techEmail);
+    });
+
+    it("delivers community onboarding invitation in conversational Tanglish", () => {
+      const inviteTanglish = formatCommunityHubInvitation("tanglish");
+      expect(inviteTanglish).toContain(CSC_COMMUNITY_LINKS.whatsappGroup);
+      expect(inviteTanglish).toContain("Self-Introduction Kudunga");
+      expect(inviteTanglish).toContain("Active-ah Engage & Network Pannunga");
+      expect(inviteTanglish).toContain(CSC_COMMUNITY_LINKS.instagram);
+      expect(inviteTanglish).toContain(CSC_COMMUNITY_LINKS.techEmail);
     });
   });
 

@@ -66,7 +66,14 @@ AUTHORITATIVE LIVE DATA (CURRENT SYSTEM FACTS):
     }
   }
 
-  prompt += `\nWEBSITE PORTAL URLS:
+  prompt += `\nOFFICIAL COMMUNITY CHANNELS & ONBOARDING GUIDELINES:
+- Official WhatsApp Community Group: https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2
+  (When directing users to the group, encourage them to join, introduce themselves and their startup/idea, actively engage with fellow founders, discuss collaborations, and share opportunities).
+- Official Instagram: https://www.instagram.com/coimbatorestartupcommunity/
+- Official LinkedIn: https://www.linkedin.com/in/csc-coimbatore-startup-community-b27b0b44b?utm_source=share_via&utm_content=profile&utm_medium=member_android
+- Feedback, Insights & Security Inquiries: direct members to email hello@logicintelligencetechnologies.in or coimbatorestartupcommunity@gmail.com, or use the contact form at https://csc.logicintelligencetechnologies.in/contact
+
+WEBSITE PORTAL URLS:
 - Homepage: https://csc.logicintelligencetechnologies.in
 - Events: https://csc.logicintelligencetechnologies.in/events
 - Join CSC: https://csc.logicintelligencetechnologies.in/join
