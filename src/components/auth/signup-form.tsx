@@ -70,6 +70,24 @@ export function SignupForm() {
           <Input id="su-email" type="email" className="h-11" autoComplete="email" {...register("email")} aria-invalid={!!errors.email} />
           {errors.email ? <p className="text-sm text-destructive">{errors.email.message}</p> : null}
         </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="su-phone">Mobile Number</Label>
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500">
+              +91
+            </span>
+            <Input
+              id="su-phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="98765 43210"
+              className="h-11 pl-12"
+              {...register("phone")}
+              aria-invalid={!!errors.phone}
+            />
+          </div>
+          {errors.phone ? <p className="text-sm text-destructive">{errors.phone.message}</p> : null}
+        </div>
         <PasswordField id="su-password" label="Password" autoComplete="new-password" showStrength value={password} {...register("password")} error={errors.password?.message} />
         <PasswordField id="su-confirm" label="Confirm password" autoComplete="new-password" {...register("confirmPassword")} error={errors.confirmPassword?.message} />
 

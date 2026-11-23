@@ -20,6 +20,11 @@ export const signupSchema = z
   .object({
     fullName: z.string().trim().min(2, "Enter your full name.").max(80),
     email: z.string().trim().email("Enter a valid email address."),
+    phone: z
+      .string()
+      .trim()
+      .min(10, "Enter a valid 10-digit mobile number.")
+      .regex(/^[0-9+\s\-()]{10,20}$/, "Enter a valid mobile number."),
     password: passwordSchema,
     confirmPassword: z.string(),
     acceptTerms: z.literal(true, { message: "Please accept the terms to continue." }),

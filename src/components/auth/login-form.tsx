@@ -170,12 +170,12 @@ export function LoginForm() {
           }}
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs sm:text-sm font-semibold transition ${
             authMode === "phone"
-              ? "bg-white text-emerald-800 shadow-xs ring-1 ring-black/5"
+              ? "bg-white text-black shadow-xs ring-1 ring-black/5"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          <CircularSocialIcon network="ai_agent" size={20} className="shrink-0" />
-          <span>WhatsApp / Phone</span>
+          <CircularSocialIcon network="whatsapp" size={20} className="shrink-0" />
+          <span className={authMode === "phone" ? "text-black font-semibold" : ""}>WhatsApp</span>
         </button>
         <button
           type="button"
@@ -185,12 +185,12 @@ export function LoginForm() {
           }}
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-xs sm:text-sm font-semibold transition ${
             authMode === "email"
-              ? "bg-white text-slate-900 shadow-xs ring-1 ring-black/5"
+              ? "bg-white text-black shadow-xs ring-1 ring-black/5"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
           <Mail className="size-4 shrink-0 text-slate-500" />
-          <span>Email & Password</span>
+          <span className={authMode === "email" ? "text-black font-semibold" : ""}>Email & Password</span>
         </button>
       </div>
 
@@ -246,7 +246,7 @@ export function LoginForm() {
                     name="otp-channel"
                     checked={channel === "whatsapp"}
                     onChange={() => setChannel("whatsapp")}
-                    className="accent-emerald-600"
+                    className="accent-slate-900"
                   />
                   <span>WhatsApp</span>
                 </label>
@@ -256,7 +256,7 @@ export function LoginForm() {
                     name="otp-channel"
                     checked={channel === "email"}
                     onChange={() => setChannel("email")}
-                    className="accent-emerald-600"
+                    className="accent-slate-900"
                   />
                   <span>Email</span>
                 </label>
@@ -265,7 +265,7 @@ export function LoginForm() {
               <Button
                 type="submit"
                 disabled={sendingOtp || !phone.trim()}
-                className="mt-2 h-11 w-full gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm"
+                className="mt-2 h-11 w-full gap-2"
               >
                 {sendingOtp ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
                 Send Verification Code
@@ -284,7 +284,7 @@ export function LoginForm() {
                       setOtpSent(false);
                       setOtpCode("");
                     }}
-                    className="text-xs font-medium text-emerald-700 hover:underline"
+                    className="text-xs font-medium text-slate-900 hover:underline underline-offset-2"
                   >
                     Change Number
                   </button>
@@ -311,7 +311,7 @@ export function LoginForm() {
                     <button
                       type="button"
                       onClick={() => handleSendPhoneOtp()}
-                      className="font-semibold text-emerald-700 hover:underline"
+                      className="font-semibold text-slate-900 hover:underline underline-offset-2"
                     >
                       Resend Code
                     </button>
@@ -322,7 +322,7 @@ export function LoginForm() {
               <Button
                 type="submit"
                 disabled={verifyingOtp || otpCode.length !== 6}
-                className="mt-2 h-11 w-full gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm"
+                className="mt-2 h-11 w-full gap-2"
               >
                 {verifyingOtp ? <Loader2 className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
                 Verify & Sign In

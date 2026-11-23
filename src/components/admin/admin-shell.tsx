@@ -29,6 +29,7 @@ import {
   BookOpen,
   Target,
   Newspaper,
+  Bot,
 } from "lucide-react";
 import { cn } from "cn";
 import {
@@ -81,6 +82,8 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
       { href: "/admin/consultations", label: "Consultations", icon: MessagesSquare, perm: "consultations.manage" },
       { href: "/admin/payments", label: "Payments", icon: CreditCard, perm: "payments.verify" },
       { href: "/admin/reviews", label: "Reviews", icon: Star, perm: "reviews.moderate" },
+      { href: "/admin/whatsapp-agent", label: "WhatsApp Agent (24/7)", icon: Bot, perm: "members.read" },
+      { href: "/admin/whatsapp-agent/knowledge", label: "Agent Knowledge Base", icon: BookOpen, perm: "members.read" },
     ],
   },
   {

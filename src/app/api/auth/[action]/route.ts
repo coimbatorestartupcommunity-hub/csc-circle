@@ -44,13 +44,44 @@ export async function POST(request: Request, context: { params: Promise<{ action
     }
     if (action === "signup") {
       const parsed = signupSchema.safeParse(body);
-      if (!parsed.success) return authResponse({ error: "Check your details and password requirements." }, 422);
+      if (!parsed.success) return authResponse({ error: "Check your details, mobile number, and password requirements." }, 422);
       const v = parsed.data;
-      const { error } = await sb.auth.signUp({ email: v.email, password: v.password, options: {
-        captchaToken, emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(safeNext(typeof body.next === "string" ? body.next : null))}`,
-        data: { full_name: v.fullName, name: v.fullName, accepted_terms: true },
-      } });
+      const cleanPhone = v.phone.replace(/\D/g, "");
+      const { data: signUpData, error } = await sb.auth.signUp({
+        email: v.email,
+        password: v.password,
+        options: {
+          captchaToken,
+          emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(safeNext(typeof body.next === "string" ? body.next : null))}`,
+          data: {
+            full_name: v.fullName,
+            name: v.fullName,
+            phone: cleanPhone,
+            whatsapp: cleanPhone,
+            accepted_terms: true,
+          },
+        },
+      });
       if (error && error.code !== "user_already_exists") return authResponse({ error: "Unable to complete signup. Try again later or sign in if you already have an account." }, 400);
+
+      // Sync user profile phone to profiles
+      if (signUpData?.user?.id) {
+        try {
+          const admin = createAdminClient();
+          await admin.from("profiles").upsert(
+            {
+              id: signUpData.user.id,
+              full_name: v.fullName,
+              whatsapp: cleanPhone,
+              email: v.email,
+            },
+            { onConflict: "id" }
+          );
+        } catch (profileErr) {
+          console.warn("[signup] Profile phone sync non-fatal warning:", profileErr);
+        }
+      }
+
       return authResponse({ ok: true });
     }
     if (action === "recover" || action === "resend") {
