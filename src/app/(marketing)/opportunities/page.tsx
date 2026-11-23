@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
-import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
 import { MemberOpportunityForm } from "@/components/member/member-opportunity-form";
 import { OpportunityTagsFilter, type OpportunityItem } from "@/components/opportunities/opportunity-tags-filter";
 import { listPublishedOpportunities } from "@/lib/services/cms-public";
@@ -137,21 +136,6 @@ async function OpportunitiesContent() {
             </div>
 
             <MemberOpportunityForm />
-
-            <div className="mt-8 flex w-full justify-center border-t border-brand-border/60 pt-6">
-              <SocialShareToolbar
-                url="https://csc.logicintelligencetechnologies.in/opportunities"
-                title="Startup Opportunities & Ecosystem Programs — CSC Circle"
-                summary="Explore active founder residencies, grant fellowships, demo day nominations, and mentorship tracks in Coimbatore. Post listings and connect with regional builders."
-                hashtags={[
-                  "#CoimbatoreStartups",
-                  "#CSCCircle",
-                  "#TamilNaduFounders",
-                  "#StartupJobs",
-                  "#BuildInPublic",
-                ]}
-              />
-            </div>
           </div>
         </Container>
       </section>

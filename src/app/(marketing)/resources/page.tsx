@@ -20,7 +20,6 @@ import {
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { ResourceCard } from "@/components/cms/resource-card";
-import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
 import { ResourceSubmissionModal } from "@/components/resources/resource-submission-form";
 import { listPublishedResources } from "@/lib/services/cms-public";
 
@@ -202,21 +201,6 @@ async function ResourcesContent() {
                 >
                   <FileText className="size-3.5 text-brand-secondary" /> Request a Document
                 </a>
-              </div>
-
-              <div className="mt-2 flex w-full justify-center">
-                <SocialShareToolbar
-                  url="https://csc.logicintelligencetechnologies.in/resources"
-                  title="Startup Resources & Founder Playbooks — CSC Circle"
-                  summary="Access curated TANSEED grant blueprints, co-founder equity agreements, pitch deck templates, and regional incubator directories for Coimbatore founders."
-                  hashtags={[
-                    "#CoimbatoreStartups",
-                    "#CSCCircle",
-                    "#StartupTN",
-                    "#TANSEED",
-                    "#FoundersHub",
-                  ]}
-                />
               </div>
             </div>
 
