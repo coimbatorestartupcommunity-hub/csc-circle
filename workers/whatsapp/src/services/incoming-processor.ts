@@ -99,6 +99,18 @@ export async function processInboundWhatsAppMessage(
     return optInReply;
   }
 
+  // Exact Inbound Dedup: if this exact sender already sent this exact message within the last 60 seconds, prevent duplicate reply loop
+  if (redis && text) {
+    const dedupKey = `whatsapp:msg_dedup:${senderPhone}:${Buffer.from(text.slice(0, 50)).toString("base64")}`;
+    const alreadyProcessed = await redis.get(dedupKey);
+    if (alreadyProcessed) {
+      logger.warn("Suppressing duplicate inbound message execution from same sender", { senderPhone, text });
+      return null;
+    }
+    // Set 60-second lock
+    await redis.set(dedupKey, "1", "EX", 60);
+  }
+
   // 5. Human Escalation (HUMAN / SUPPORT) with Instant Real-Time Admin Alert
   if (upperText.startsWith("HUMAN") || upperText.startsWith("SUPPORT") || upperText.startsWith("HELP")) {
     const sb = getSupabase();

@@ -125,14 +125,13 @@ export class WhatsAppWorkerService {
     // Ensure WhatsApp markdown formatting is strictly normalized (*bold*, no stray **)
     messageText = formatForWhatsApp(messageText);
 
-    // Anti-duplicate suppression: verify if an identical message type was already delivered to this recipient
+    // Anti-duplicate suppression: verify if an identical message type OR exact content was already delivered to this recipient
     try {
       const { data: alreadyDelivered } = await this.supabase
         .from("whatsapp_message_outbox")
         .select("id")
         .eq("recipient_phone", recipientPhone)
-        .eq("message_type", job.data.messageType || "system_notification")
-        .eq("status", "sent")
+        .in("status", ["sent", "accepted_by_gateway"])
         .neq("id", outboxId)
         .limit(1);
 
