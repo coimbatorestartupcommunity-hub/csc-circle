@@ -122,6 +122,37 @@ async function main() {
     }
   }, 15 * 60 * 1000);
 
+  // 10. OpenWA Keep-Alive & Auto-Reconnect (every 30 seconds)
+  let reconnectInProgress = false;
+  const openwaKeepaliveInterval = setInterval(async () => {
+    if (reconnectInProgress) return;
+    try {
+      const { ready, status } = await openwaClient.checkSessionReadiness();
+      if (!ready) {
+        reconnectInProgress = true;
+        logger.warn(`OpenWA session not ready (status: ${status}). Attempting auto-reconnect...`);
+        const result = await openwaClient.startSession();
+        if (result.success) {
+          logger.info("OpenWA auto-reconnect initiated. Waiting for session to become ready...");
+          // Wait 15s then verify
+          await new Promise((r) => setTimeout(r, 15000));
+          const recheckRes = await openwaClient.checkSessionReadiness();
+          if (recheckRes.ready) {
+            logger.info("OpenWA session reconnected and ready ✓");
+          } else {
+            logger.warn(`OpenWA session still not ready after reconnect: ${recheckRes.status || recheckRes.error}`);
+          }
+        } else {
+          logger.error("OpenWA auto-reconnect request failed", { error: result.error });
+        }
+        reconnectInProgress = false;
+      }
+    } catch (err) {
+      reconnectInProgress = false;
+      logger.error("Exception in OpenWA keep-alive loop", { error: err });
+    }
+  }, 30000);
+
   // 10. Lightweight Inbound Webhook HTTP Server for OpenWA messages
   const server = http.createServer(async (req, res) => {
     const url = req.url || "/";
@@ -223,6 +254,7 @@ async function main() {
     clearInterval(approvalInterval);
     clearInterval(changeOutboxInterval);
     clearInterval(eventAutomationInterval);
+    clearInterval(openwaKeepaliveInterval);
 
     try {
       server.close();

@@ -1,5 +1,11 @@
 import { logger } from "../utils/logger.js";
 
+export interface OpenWaSessionStartResult {
+  success: boolean;
+  status?: string;
+  error?: string;
+}
+
 export interface OpenWaSendTextResult {
   success: boolean;
   messageId?: string;
@@ -32,6 +38,44 @@ export class OpenWaClient {
     this.sessionId = encodeURIComponent(options.sessionId.trim());
     this.apiKey = options.apiKey?.trim() || "";
     this.timeoutMs = options.timeoutMs || 15000;
+  }
+
+  /**
+   * Attempts to start/reconnect the OpenWA session via the REST API.
+   */
+  async startSession(): Promise<OpenWaSessionStartResult> {
+    const url = `${this.baseUrl}/api/sessions/${this.sessionId}/start`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+      if (this.apiKey) {
+        headers["x-api-key"] = this.apiKey;
+      }
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({}),
+        signal: controller.signal,
+      });
+
+      const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+      if (res.ok) {
+        logger.info("OpenWA session start/reconnect request succeeded", { status: String(body?.status ?? "") });
+        return { success: true, status: (body?.status != null ? String(body.status) : "starting") as string };
+      }
+      return { success: false, error: `HTTP ${res.status}` };
+    } catch (err) {
+      const isTimeout = err instanceof Error && err.name === "AbortError";
+      return { success: false, error: isTimeout ? "Reconnect request timed out" : (err instanceof Error ? err.message : String(err)) };
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /**

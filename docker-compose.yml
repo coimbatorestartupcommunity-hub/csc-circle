@@ -63,7 +63,7 @@ services:
   openwa:
     image: rmyndharis/openwa:latest
     container_name: csc-circle-openwa
-    restart: unless-stopped
+    restart: always
     ports:
       - "2785:2785"
     environment:
@@ -74,6 +74,12 @@ services:
       - SSRF_ALLOWED_HOSTS=host.docker.internal,127.0.0.1,localhost
     volumes:
       - openwa_data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:2785/api/sessions"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
   redis_data:
