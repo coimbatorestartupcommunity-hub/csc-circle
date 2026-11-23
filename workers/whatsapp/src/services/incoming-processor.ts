@@ -1,3 +1,4 @@
+import type { Redis } from "ioredis";
 import { OpenWaClient } from "./openwa.js";
 import { getWorkerEnv } from "../config/env.js";
 import { logger } from "../utils/logger.js";
@@ -17,25 +18,12 @@ import { callAIModel } from "../ai/grok-client.js";
 import { constructMessages } from "../ai/prompt-engine.js";
 import { verifyAndFormatResponse } from "../ai/response-verifier.js";
 import { CSC_WHATSAPP_FOOTER } from "../utils/message-template.js";
-
-// In-memory rate limiting: sender phone -> timestamp array
-const rateLimitMap = new Map<string, number[]>();
-const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
-const MAX_MESSAGES_PER_MINUTE = 10;
-
-function checkRateLimit(phone: string): boolean {
-  const now = Date.now();
-  const timestamps = rateLimitMap.get(phone) || [];
-  const validTimestamps = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-
-  if (validTimestamps.length >= MAX_MESSAGES_PER_MINUTE) {
-    return false; // Rate limit exceeded
-  }
-
-  validTimestamps.push(now);
-  rateLimitMap.set(phone, validTimestamps);
-  return true;
-}
+import { checkSlidingWindowRateLimit } from "./rate-limiter.js";
+import { detectScrapingAttempt } from "./anti-scraping.js";
+import { dispatchRealTimeAdminAlert } from "./admin-alerts.js";
+import { handleIncomingRating } from "./feedback-pipeline.js";
+import { formatBiWeeklyMeetupSchedule } from "./meetup-sync.js";
+import { getFortnightlyFounderSpotlight } from "./founder-spotlight.js";
 
 export interface InboundMessageEvent {
   from: string; // e.g. "919876543210@c.us" or "+919876543210"
@@ -47,18 +35,19 @@ export interface InboundMessageEvent {
 }
 
 /**
- * Handles incoming WhatsApp messages from webhooks or polling.
+ * Handles incoming WhatsApp messages with full security, rate limiting, and automated workflows.
  */
 export async function processInboundWhatsAppMessage(
   event: InboundMessageEvent,
-  openwaClient: OpenWaClient
+  openwaClient: OpenWaClient,
+  redis: Redis | null = null
 ): Promise<string | null> {
   const rawSender = event.from.replace(/@c\.us$/, "");
   const senderPhone = normalizePhoneForMatching(rawSender);
   const chatId = `${senderPhone}@c.us`;
   const text = (event.body || "").trim();
 
-  // 1. Voice Note / Audio Message Detection
+  // 1. Voice Note / Audio Message Detection (Polite text-only refusal)
   const isAudio =
     event.type === "ptt" ||
     event.type === "audio" ||
@@ -77,17 +66,25 @@ export async function processInboundWhatsAppMessage(
 
   if (!text) return null;
 
-  // 2. Rate Limit Enforcement
-  if (!checkRateLimit(senderPhone)) {
-    logger.warn("Inbound WhatsApp message rate limit reached", { senderPhone });
-    const rateLimitReply = `⚠️ *Notice:* You have reached the maximum frequency of messages for this minute. Please wait a moment before sending another message.`;
-    await openwaClient.sendTextMessage(chatId, rateLimitReply);
-    return rateLimitReply;
+  // 2. Redis-backed Sliding Window Rate Limiting & Cooldown Jail
+  const rateLimit = await checkSlidingWindowRateLimit(redis, senderPhone);
+  if (!rateLimit.allowed) {
+    const mins = Math.ceil((rateLimit.remainingJailSeconds || 900) / 60);
+    const jailReply = `⚠️ *Notice:* High message frequency detected. For security, your chat is in a brief ${mins}-minute cooldown. Please try again shortly.`;
+    await openwaClient.sendTextMessage(chatId, jailReply);
+    return jailReply;
+  }
+
+  // 3. Anti-Scraping Defense & Honeypot Analysis
+  const scraping = await detectScrapingAttempt(redis, senderPhone, text);
+  if (scraping.isMalicious && scraping.securityNotice) {
+    await openwaClient.sendTextMessage(chatId, scraping.securityNotice);
+    return scraping.securityNotice;
   }
 
   const upperText = text.toUpperCase();
 
-  // 3. Opt-out (STOP / UNSUBSCRIBE) - Formal notice with footer
+  // 4. Opt-out (STOP / UNSUBSCRIBE) - Formal notice with footer
   if (upperText === "STOP" || upperText === "UNSUBSCRIBE") {
     const optOutReply = `You have unsubscribed from Coimbatore Startup Community WhatsApp notifications. To opt back in at any time, simply send *START*.\n\n${CSC_WHATSAPP_FOOTER}`;
     await openwaClient.sendTextMessage(chatId, optOutReply);
@@ -100,7 +97,7 @@ export async function processInboundWhatsAppMessage(
     return optInReply;
   }
 
-  // 4. Human Escalation (HUMAN / SUPPORT) - Formal ticket notice with footer
+  // 5. Human Escalation (HUMAN / SUPPORT) with Instant Real-Time Admin Alert
   if (upperText.startsWith("HUMAN") || upperText.startsWith("SUPPORT") || upperText.startsWith("HELP")) {
     const sb = getSupabase();
     let ticketNum = "TICKET-PENDING";
@@ -113,16 +110,44 @@ export async function processInboundWhatsAppMessage(
         p_conversation_history: [{ from: senderPhone, text, timestamp: new Date().toISOString() }],
       });
       if (data) ticketNum = String(data);
+
+      // Trigger instant real-time admin alert dispatch
+      await dispatchRealTimeAdminAlert({
+        ticketNumber: ticketNum,
+        senderPhone,
+        userSummary: text,
+      });
     } catch (e) {
-      logger.error("Failed to create support ticket", { error: e });
+      logger.error("Failed to create support ticket or dispatch admin alert", { error: e });
     }
 
-    const humanReply = `🤝 *Support Request Logged*\n\nYour inquiry has been escalated to our Community Team.\n🎫 *Reference:* \`${ticketNum}\`\n\nAn organizer will review your request and connect with you directly.\n\n${CSC_WHATSAPP_FOOTER}`;
+    const humanReply = `🤝 *Support Request Logged*\n\nYour inquiry has been escalated to our Community Team.\n🎫 *Reference:* \`${ticketNum}\`\n\nAn organizer has been notified and will connect with you directly.\n\n${CSC_WHATSAPP_FOOTER}`;
     await openwaClient.sendTextMessage(chatId, humanReply);
     return humanReply;
   }
 
-  // 5. 6-Digit Verification Code check
+  // 6. Post-Event NPS & Feedback Collector Reply
+  const feedbackReply = await handleIncomingRating(senderPhone, text);
+  if (feedbackReply) {
+    await openwaClient.sendTextMessage(chatId, feedbackReply);
+    return feedbackReply;
+  }
+
+  // 7. Bi-Weekly Meetup Calendar Shortcut
+  if (upperText === "MEETUP" || upperText === "CALENDAR" || upperText === "SCHEDULE") {
+    const scheduleReply = formatBiWeeklyMeetupSchedule();
+    await openwaClient.sendTextMessage(chatId, scheduleReply);
+    return scheduleReply;
+  }
+
+  // 8. Founder Spotlight Shortcut
+  if (upperText === "SPOTLIGHT" || upperText === "FEATURED" || upperText === "STARTUP") {
+    const spotlightReply = await getFortnightlyFounderSpotlight();
+    await openwaClient.sendTextMessage(chatId, spotlightReply);
+    return spotlightReply;
+  }
+
+  // 9. 6-Digit Verification Code check
   if (/^\d{6}$/.test(text)) {
     const verification = await verifyOtpCode(senderPhone, text);
     if (verification.verified && verification.member) {
@@ -138,7 +163,6 @@ export async function processInboundWhatsAppMessage(
         reply += `⏳ *Estimated Approval Time:* approximately ${m.minutesRemaining ?? 2} minute(s)\n`;
         reply += `\nYour membership ID will be automatically issued once the 5-minute verification window completes.`;
       }
-      // Formal credential notification includes footer
       const formatted = verifyAndFormatResponse(reply, true);
       await openwaClient.sendTextMessage(chatId, formatted);
       return formatted;
@@ -152,14 +176,13 @@ export async function processInboundWhatsAppMessage(
     }
   }
 
-  // 6. Check if user is asking for their private membership status
+  // 10. Check if user is asking for their private membership status
   const isAskingMembership =
     /\b(membership|member number|my card|claim status|approved yet|my pass|membership id)\b/i.test(text);
 
   let verifiedMember = await getActiveVerifiedSession(senderPhone);
 
   if (isAskingMembership && !verifiedMember) {
-    // Initiate OTP Challenge (quick interactive prompt, no footer needed)
     const challenge = await initiateOtpChallenge(senderPhone);
     if (challenge.success) {
       const otpMsg = `🔒 *CSC Membership Security Verification*\n\nTo protect your personal member data, we've dispatched a 6-digit verification code to your registered email (*${challenge.maskedEmail}*).\n\n👉 Please reply with the *6-digit code* to view your membership ID and live claim status.`;
@@ -169,7 +192,7 @@ export async function processInboundWhatsAppMessage(
     }
   }
 
-  // 7. Assemble Live Context & Knowledge
+  // 11. Assemble Live Context & Knowledge
   const [upcomingEvents, knowledgeSnippets] = await Promise.all([
     getUpcomingPublishedEvents(),
     searchKnowledgeDocuments(text),
@@ -183,13 +206,13 @@ export async function processInboundWhatsAppMessage(
     knowledgeSnippets,
   });
 
-  // 8. Invoke AI Model (Groq -> Modal failover -> Contextual fallback)
+  // 12. Invoke Multi-Tier AI Model (Groq -> Modal failover -> Contextual fallback)
   const rawReply = await callAIModel(messages);
 
-  // 9. Format response: Clean conversational answers without bloated repetitive footers
+  // 13. Format response: Clean conversational answers without bloated repetitive footers
   const finalReply = verifyAndFormatResponse(rawReply, false);
 
-  // 10. Dispatch to WhatsApp
+  // 14. Dispatch to WhatsApp
   await openwaClient.sendTextMessage(chatId, finalReply);
 
   return finalReply;

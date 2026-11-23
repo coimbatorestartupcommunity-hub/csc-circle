@@ -10,6 +10,8 @@ import { OpenWaProvider } from "./services/whatsapp.js";
 import { logger } from "./utils/logger.js";
 import { processInboundWhatsAppMessage } from "./services/incoming-processor.js";
 import { syncEntityToKnowledgeStore } from "./services/live-queries.js";
+import { executePreEventReminderCycle } from "./services/event-reminders.js";
+import { executePostEventFeedbackCycle } from "./services/feedback-pipeline.js";
 
 async function main() {
   logger.info("Initializing CSC WhatsApp Background Worker, Live Intelligence & Outbox Dispatcher...");
@@ -110,7 +112,17 @@ async function main() {
     }
   }, 10000);
 
-  // 9. Lightweight Inbound Webhook HTTP Server for OpenWA messages
+  // 9. Periodic Event Reminders (24h/2h) and Post-Event Feedback (runs every 15 mins)
+  const eventAutomationInterval = setInterval(async () => {
+    try {
+      await executePreEventReminderCycle();
+      await executePostEventFeedbackCycle();
+    } catch (err) {
+      logger.error("Exception in event automation cycle", { error: err });
+    }
+  }, 15 * 60 * 1000);
+
+  // 10. Lightweight Inbound Webhook HTTP Server for OpenWA messages
   const server = http.createServer(async (req, res) => {
     const url = req.url || "/";
 
@@ -142,7 +154,8 @@ async function main() {
                 type: msgData.type,
                 mimetype: msgData.mimetype,
               },
-              openwaClient
+              openwaClient,
+              redis
             ).catch((e) => logger.error("Error processing inbound message", { error: e }));
           }
 
@@ -190,6 +203,7 @@ async function main() {
 
     clearInterval(approvalInterval);
     clearInterval(changeOutboxInterval);
+    clearInterval(eventAutomationInterval);
 
     try {
       server.close();
