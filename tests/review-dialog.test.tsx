@@ -34,7 +34,7 @@ describe("ReviewDialog", () => {
     // Check for "View in My Ratings & Reviews" link at the bottom
     const reviewsLink = screen.getByRole("link", { name: /View in My Ratings & Reviews/i });
     expect(reviewsLink).toBeInTheDocument();
-    expect(reviewsLink).toHaveAttribute("href", "/member/reviews");
+    expect(reviewsLink).toHaveAttribute("href", "/profile/reviews");
 
     vi.unstubAllGlobals();
   });

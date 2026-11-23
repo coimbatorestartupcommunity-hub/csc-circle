@@ -73,12 +73,12 @@ it("renders the individual event pass in the confirmed registration email", () =
   });
   expect(message.html).toContain("cid:csc-event-pass-job@example.csc");
   expect(message.html).toContain("Your individual event pass QR");
-  expect(message.text).toContain("Your individual event pass QR is attached");
-  expect(message.html).toContain("https://csc.logicintelligencetechnologies.in/member/events");
+  expect(message.text).toContain("INDIVIDUAL EVENT PASS & ENTRY INSTRUCTIONS");
+  expect(message.html).toContain("https://csc.logicintelligencetechnologies.in/profile/events");
   expect(message.html).not.toContain("/member/events/123e4567-e89b-12d3-a456-426614174000");
-  expect(message.text).toContain("Member → My Events");
+  expect(message.text).toContain("View & Download Your Pass");
   expect(message.text).toContain("Digital ID");
-  expect(message.text).toContain("same email address used for registration");
+  expect(message.text).toContain("Profile page on the website");
   expect(message.html).toContain("Name");
   expect(message.html).toContain("Asha Rao");
   expect(message.html).toContain("UID");

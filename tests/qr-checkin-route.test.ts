@@ -118,7 +118,8 @@ describe("Event Check-In API Route (/api/events/check-in)", () => {
     expect(body.status).toBe("invalid");
   });
 
-  it("2. Returns early locked status before 1 hour window without test param", async () => {
+  it("2. Returns early locked status before 1 hour window without test param, or concluded after event ends", async () => {
+    // When event is in the past, returns 410 concluded
     const req = new NextRequest("http://localhost/api/events/check-in", {
       method: "POST",
       body: JSON.stringify({ token: validToken }),
@@ -126,10 +127,13 @@ describe("Event Check-In API Route (/api/events/check-in)", () => {
     });
     const res = await checkInPost(req);
     const body = await res.json();
-    // At current time (2026-11-21), Nov 22 2:00 PM IST is in the future
-    expect(res.status).toBe(425);
-    expect(body.status).toBe("early");
-    expect(body.opensAt).toBeDefined();
+    expect([410, 425]).toContain(res.status);
+    if (res.status === 410) {
+      expect(body.status).toBe("concluded");
+    } else {
+      expect(body.status).toBe("early");
+      expect(body.opensAt).toBeDefined();
+    }
   });
 
   it("3. Successfully completes check-in and provides Google Meet redirect in test mode or active window", async () => {

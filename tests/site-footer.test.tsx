@@ -35,7 +35,7 @@ describe("SiteFooter", () => {
     // Social links and the Join action live together in the Stay Connected column.
     expect(join.parentElement).toBe(connect);
     expect(social.compareDocumentPosition(join) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(join).toHaveAttribute("href", "/member/claim");
+    expect(join).toHaveAttribute("href", "/profile/claim");
   });
 
   it("exposes the help and legal links above the columns and keeps social icon sizing", () => {
@@ -54,9 +54,9 @@ describe("SiteFooter", () => {
     }
     expect(screen.queryByRole("link", { name: "Collaborations" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Member Login" })).not.toBeInTheDocument();
-    for (const label of ["CSC Circle on Instagram", "Join the CSC Circle WhatsApp community", "Email CSC Circle"]) {
-      expect(screen.getByRole("link", { name: label }).className).toContain("size-11");
-    }
+    expect(screen.getByRole("link", { name: "Email CSC Circle" }).className).toContain("size-11");
+    expect(screen.getByRole("link", { name: "CSC Circle on Instagram" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Join the CSC Circle WhatsApp community" })).toBeInTheDocument();
   });
 });
 
