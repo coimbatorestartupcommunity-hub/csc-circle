@@ -125,7 +125,37 @@ export class WhatsAppWorkerService {
     // Ensure WhatsApp markdown formatting is strictly normalized (*bold*, no stray **)
     messageText = formatForWhatsApp(messageText);
 
-    // 2. Dispatch Pacing Delay (2-5s configurable non-blocking waiting)
+    // Anti-duplicate suppression: verify if an identical message type was already delivered to this recipient
+    try {
+      const { data: alreadyDelivered } = await this.supabase
+        .from("whatsapp_message_outbox")
+        .select("id")
+        .eq("recipient_phone", recipientPhone)
+        .eq("message_type", job.data.messageType || "system_notification")
+        .eq("status", "sent")
+        .neq("id", outboxId)
+        .limit(1);
+
+      if (alreadyDelivered && alreadyDelivered.length > 0) {
+        logger.warn("Skipping duplicate outbox dispatch to recipient", {
+          outboxId,
+          recipientPhone,
+          messageType: job.data.messageType,
+        });
+        await this.updateStatus(
+          outboxId,
+          "cancelled",
+          undefined,
+          "DUPLICATE_SUPPRESSED",
+          "Message already successfully delivered previously to this recipient"
+        );
+        return;
+      }
+    } catch (dedupErr) {
+      logger.warn("Deduplication check error, continuing with dispatch", { error: dedupErr });
+    }
+
+    // 2. Dispatch Pacing Delay (8-12s non-blocking pacing for anti-spam safety)
     const pacingDelay = getRandomDelay(this.delayMinMs, this.delayMaxMs);
     logger.info(`Applying dispatch pacing delay of ${pacingDelay}ms`, { outboxId, pacingDelay });
     await sleep(pacingDelay);

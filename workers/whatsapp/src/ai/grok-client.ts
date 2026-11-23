@@ -186,6 +186,32 @@ function generateContextualFallback(messages: ChatMessage[]): string {
     !isPureTamil &&
     /\b(vanakkam|epadi|eppadi|enge|engae|theriyuma|enna|solunga|sollunga|nandri|iruka|irukeenga|irukinga|panlam|pannalam|panna|venum|kedaikuma|bro|thala|machan|nanba|kooda|unga|namba|romba|aachu|aagala|sollu|paaru|paru|edhavadhu|eppovum|eppa|eppo|yar|yaaru|theriyum)\b/i.test(lower);
 
+  // Intent: User asking for their name or previous identity in conversation
+  if (
+    lower.includes("my name") ||
+    lower.includes("who am i") ||
+    lower.includes("do you remember") ||
+    lower.includes("en peyar") ||
+    lower.includes("en name") ||
+    lower.includes("ennoda name") ||
+    lower.includes("enna theriyuma")
+  ) {
+    const userMessages = messages.filter((m) => m.role === "user");
+    for (const m of userMessages) {
+      const match = m.content.match(/(?:i am|my name is|im|i'm|naan|nan|this is)\s+([A-Za-z\u0B80-\u0BFF\s]+)/i);
+      if (match && match[1]) {
+        const detectedName = match[1].trim().split(/\s+/)[0];
+        if (isPureTamil) {
+          return `நீங்கள் *${detectedName}*! உங்களுடன் இணைந்திருப்பதில் மகிழ்ச்சி. நான் உங்களுக்கு எவ்வாறு உதவ முடியும்?`;
+        }
+        if (isTanglish) {
+          return `Neenga *${detectedName}*! Ungakooda connect panradhula romba happy bro. Enna help venum sollunga?`;
+        }
+        return `You are *${detectedName}*! It's wonderful connecting with you. How can I assist you with CSC Circle today?`;
+      }
+    }
+  }
+
   // Intent A: Community Overview, Tagline, One-Liner, Mission, Vision, What are they doing
   const isCommunityQuery =
     lower.includes("one line") ||

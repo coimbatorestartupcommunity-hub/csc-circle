@@ -28,15 +28,12 @@ export function PhoneVerificationModal({
   const [countdown, setCountdown] = React.useState(0);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Check on mount if modal should appear
+  // Check on mount if modal should appear - prompts on every profile navigation until verified
   React.useEffect(() => {
     if (isVerified) return;
-    const dismissed = sessionStorage.getItem("csc_phone_prompt_dismissed");
-    if (!dismissed) {
-      // Delay slightly so layout finishes rendering smoothly
-      const timer = setTimeout(() => setOpen(true), 1200);
-      return () => clearTimeout(timer);
-    }
+    // Delay slightly so layout finishes rendering smoothly
+    const timer = setTimeout(() => setOpen(true), 1000);
+    return () => clearTimeout(timer);
   }, [isVerified]);
 
   // Resend countdown
@@ -48,7 +45,6 @@ export function PhoneVerificationModal({
   }, [countdown]);
 
   function handleDismiss() {
-    sessionStorage.setItem("csc_phone_prompt_dismissed", "true");
     setOpen(false);
   }
 

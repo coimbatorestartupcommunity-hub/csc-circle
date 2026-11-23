@@ -209,7 +209,19 @@ export async function processInboundWhatsAppMessage(
     }
   }
 
-  // 11. Assemble Live Context & Knowledge
+  // 11. Assemble Live Context, Conversation History & Knowledge
+  let conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
+  if (redis) {
+    try {
+      const raw = await redis.get(`whatsapp:convo:${senderPhone}`);
+      if (raw) {
+        conversationHistory = JSON.parse(raw);
+      }
+    } catch (e) {
+      logger.warn("Failed to load conversation history from Redis", { error: e });
+    }
+  }
+
   const [upcomingEvents, knowledgeSnippets] = await Promise.all([
     getUpcomingPublishedEvents(),
     searchKnowledgeDocuments(text),
@@ -221,6 +233,7 @@ export async function processInboundWhatsAppMessage(
     memberSummary: verifiedMember || undefined,
     upcomingEvents,
     knowledgeSnippets,
+    conversationHistory,
   });
 
   // 12. Invoke Multi-Tier AI Model (Groq -> Modal failover -> Contextual fallback)
@@ -228,6 +241,22 @@ export async function processInboundWhatsAppMessage(
 
   // 13. Format response: Clean conversational answers without bloated repetitive footers
   const finalReply = verifyAndFormatResponse(rawReply, false);
+
+  // Save updated conversation history to Redis with 24 hours TTL
+  if (redis) {
+    try {
+      const updatedHistory = [
+        ...conversationHistory,
+        { role: "user" as const, content: text },
+        { role: "assistant" as const, content: finalReply },
+      ];
+      // Keep only last 6 messages (3 conversation turns)
+      const trimmed = updatedHistory.slice(-6);
+      await redis.set(`whatsapp:convo:${senderPhone}`, JSON.stringify(trimmed), "EX", 86400);
+    } catch (e) {
+      logger.warn("Failed to save conversation history to Redis", { error: e });
+    }
+  }
 
   // 14. Dispatch to WhatsApp
   const sendRes = await openwaClient.sendTextMessage(chatId, finalReply);

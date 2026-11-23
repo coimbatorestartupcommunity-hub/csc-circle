@@ -151,15 +151,8 @@ export function ChangePasswordForm({ isDedicatedPage = false }: { isDedicatedPag
                   value={nonce}
                   onChange={(e) => setNonce(e.target.value.replace(/\D/g, ""))}
                   required
-                  className="h-11 text-base sm:text-sm font-mono tracking-wider pr-14 bg-white"
+                  className="h-11 text-base sm:text-sm font-mono tracking-wider bg-white"
                 />
-                <button
-                  type="button"
-                  onClick={handlePasteCode}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2 py-1 text-[11px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 rounded-md border border-teal-200 transition"
-                >
-                  Paste
-                </button>
               </div>
 
               <Button
