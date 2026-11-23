@@ -1756,6 +1756,339 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_submissions: {
+        Row: {
+          id: string
+          full_name: string
+          phone: string
+          phone_e164: string
+          email: string | null
+          inquiry_type: string
+          message: string
+          status: string
+          ip_address: string | null
+          user_agent: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          phone: string
+          phone_e164: string
+          email?: string | null
+          inquiry_type?: string
+          message: string
+          status?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          phone?: string
+          phone_e164?: string
+          email?: string | null
+          inquiry_type?: string
+          message?: string
+          status?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_message_outbox: {
+        Row: {
+          id: string
+          contact_id: string | null
+          recipient_phone: string
+          recipient_chat_id: string
+          message_type: string
+          message_payload: Json
+          status: string
+          attempts: number
+          max_attempts: number
+          idempotency_key: string
+          available_at: string
+          queued_at: string | null
+          sent_at: string | null
+          failed_at: string | null
+          openwa_message_id: string | null
+          last_error_code: string | null
+          last_error_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          contact_id?: string | null
+          recipient_phone: string
+          recipient_chat_id?: string
+          message_type?: string
+          message_payload?: Json
+          status?: string
+          attempts?: number
+          max_attempts?: number
+          idempotency_key: string
+          available_at?: string
+          queued_at?: string | null
+          sent_at?: string | null
+          failed_at?: string | null
+          openwa_message_id?: string | null
+          last_error_code?: string | null
+          last_error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          contact_id?: string | null
+          recipient_phone?: string
+          recipient_chat_id?: string
+          message_type?: string
+          message_payload?: Json
+          status?: string
+          attempts?: number
+          max_attempts?: number
+          idempotency_key?: string
+          available_at?: string
+          queued_at?: string | null
+          sent_at?: string | null
+          failed_at?: string | null
+          openwa_message_id?: string | null
+          last_error_code?: string | null
+          last_error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      csc_agent_change_outbox: {
+        Row: {
+          id: string
+          entity_type: string
+          entity_id: string
+          change_type: string
+          payload: Json
+          status: string
+          attempts: number
+          error_message: string | null
+          processed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          entity_type: string
+          entity_id: string
+          change_type: string
+          payload?: Json
+          status?: string
+          attempts?: number
+          error_message?: string | null
+          processed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          entity_type?: string
+          entity_id?: string
+          change_type?: string
+          payload?: Json
+          status?: string
+          attempts?: number
+          error_message?: string | null
+          processed_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      csc_agent_knowledge_documents: {
+        Row: {
+          id: string
+          source: string
+          source_id: string
+          category: string
+          title: string
+          slug: string | null
+          content: string
+          metadata: Json
+          tier: number
+          is_published: boolean
+          checksum: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          source: string
+          source_id: string
+          category: string
+          title: string
+          slug?: string | null
+          content: string
+          metadata?: Json
+          tier?: number
+          is_published?: boolean
+          checksum: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          source?: string
+          source_id?: string
+          category?: string
+          title?: string
+          slug?: string | null
+          content?: string
+          metadata?: Json
+          tier?: number
+          is_published?: boolean
+          checksum?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      csc_agent_verified_sessions: {
+        Row: {
+          id: string
+          sender_phone: string
+          user_id: string | null
+          member_number: string | null
+          email: string
+          otp_code_hash: string
+          otp_expires_at: string
+          session_token: string | null
+          verified_at: string | null
+          session_expires_at: string | null
+          attempts_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          sender_phone: string
+          user_id?: string | null
+          member_number?: string | null
+          email: string
+          otp_code_hash: string
+          otp_expires_at: string
+          session_token?: string | null
+          verified_at?: string | null
+          session_expires_at?: string | null
+          attempts_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          sender_phone?: string
+          user_id?: string | null
+          member_number?: string | null
+          email?: string
+          otp_code_hash?: string
+          otp_expires_at?: string
+          session_token?: string | null
+          verified_at?: string | null
+          session_expires_at?: string | null
+          attempts_count?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
+      csc_agent_support_tickets: {
+        Row: {
+          id: string
+          ticket_number: string
+          sender_phone: string
+          user_id: string | null
+          subject: string
+          summary: string
+          status: string
+          priority: string
+          assigned_to: string | null
+          conversation_history: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          ticket_number?: string
+          sender_phone: string
+          user_id?: string | null
+          subject: string
+          summary: string
+          status?: string
+          priority?: string
+          assigned_to?: string | null
+          conversation_history?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          ticket_number?: string
+          sender_phone?: string
+          user_id?: string | null
+          subject?: string
+          summary?: string
+          status?: string
+          priority?: string
+          assigned_to?: string | null
+          conversation_history?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      csc_agent_deployment_history: {
+        Row: {
+          id: string
+          source: string
+          commit_sha: string
+          commit_message: string | null
+          author: string | null
+          branch: string | null
+          deployment_id: string | null
+          deployment_url: string | null
+          is_production: boolean
+          status: string
+          files_changed: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          source: string
+          commit_sha: string
+          commit_message?: string | null
+          author?: string | null
+          branch?: string | null
+          deployment_id?: string | null
+          deployment_url?: string | null
+          is_production?: boolean
+          status?: string
+          files_changed?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          source?: string
+          commit_sha?: string
+          commit_message?: string | null
+          author?: string | null
+          branch?: string | null
+          deployment_id?: string | null
+          deployment_url?: string | null
+          is_production?: boolean
+          status?: string
+          files_changed?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_testimonials: {
@@ -1978,6 +2311,68 @@ export type Database = {
           p_goal: string
           p_startup: string
           p_whatsapp: string
+        }
+        Returns: string
+      }
+      submit_contact_inquiry: {
+        Args: {
+          p_name: string
+          p_phone: string
+          p_phone_chat_id: string
+          p_inquiry?: string | null
+          p_whatsapp_consent?: boolean
+          p_consent_notice_version?: string
+          p_source?: string
+          p_ip_hash?: string | null
+          p_idempotency_key?: string | null
+          p_message_payload?: Json
+        }
+        Returns: Json
+      }
+      claim_whatsapp_outbox_batch: {
+        Args: {
+          p_batch_size?: number
+          p_lease_seconds?: number
+        }
+        Returns: Database["public"]["Tables"]["whatsapp_message_outbox"]["Row"][]
+      }
+      update_whatsapp_outbox_status: {
+        Args: {
+          p_id: string
+          p_status: string
+          p_openwa_message_id?: string | null
+          p_error_code?: string | null
+          p_error_message?: string | null
+          p_retry_delay_seconds?: number
+        }
+        Returns: undefined
+      }
+      csc_process_due_membership_claims: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      claim_agent_change_outbox_batch: {
+        Args: {
+          p_batch_size?: number
+        }
+        Returns: Database["public"]["Tables"]["csc_agent_change_outbox"]["Row"][]
+      }
+      update_agent_change_outbox_status: {
+        Args: {
+          p_change_id: string
+          p_status: string
+          p_error_message?: string | null
+        }
+        Returns: undefined
+      }
+      create_agent_support_ticket: {
+        Args: {
+          p_sender_phone: string
+          p_subject: string
+          p_summary: string
+          p_priority?: string
+          p_conversation_history?: Json
+          p_user_id?: string | null
         }
         Returns: string
       }

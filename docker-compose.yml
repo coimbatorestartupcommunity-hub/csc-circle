@@ -60,6 +60,20 @@ services:
       timeout: 3s
       retries: 3
 
+  openwa:
+    image: rmyndharis/openwa:latest
+    container_name: csc-circle-openwa
+    restart: unless-stopped
+    ports:
+      - "2785:2785"
+    environment:
+      - PORT=2785
+      - BASE_PATH=/api
+      - API_KEY=${OPENWA_API_KEY:-local-dev-api-key}
+    volumes:
+      - openwa_data:/app/.sessions
+
 volumes:
   redis_data:
   postgres_data:
+  openwa_data:

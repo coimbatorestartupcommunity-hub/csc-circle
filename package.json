@@ -1,6 +1,6 @@
 {
   "name": "csc-circle",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "packageManager": "npm@11.6.2",
   "scripts": {
@@ -34,6 +34,7 @@
     "dejavu-fonts-ttf": "^2.37.3",
     "html-to-image": "^1.11.13",
     "imapflow": "^2.10.0",
+    "libphonenumber-js": "^1.13.17",
     "lucide-react": "^1.59.0",
     "mailauth": "^8.1.0",
     "motion": "^14.4.0",

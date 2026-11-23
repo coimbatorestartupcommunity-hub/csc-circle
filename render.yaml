@@ -13,3 +13,48 @@ services:
         value: https://csc.logicintelligencetechnologies.in/api/internal/payments/reconcile
       - key: RECONCILE_INTERVAL_MS
         value: "30000"
+
+  - type: worker
+    name: csc-whatsapp-worker
+    runtime: node
+    plan: starter
+    region: singapore
+    rootDir: workers/whatsapp
+    buildCommand: "npm ci && npm run build"
+    startCommand: "npm start"
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: OPENWA_BASE_URL
+        sync: false
+      - key: OPENWA_SESSION_ID
+        value: csc-circle
+      - key: OPENWA_API_KEY
+        sync: false
+      - key: COMPANY_NAME
+        value: "Coimbatore Startup Community"
+      - key: MESSAGE_DELAY_MIN_MS
+        value: "2000"
+      - key: MESSAGE_DELAY_MAX_MS
+        value: "5000"
+      - key: WORKER_CONCURRENCY
+        value: "1"
+      - key: OUTBOX_POLL_INTERVAL_MS
+        value: "3000"
+      - key: GROK_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROK_MODEL
+        value: "llama-3.3-70b-versatile"
+      - key: MODAL_AI_ENDPOINT
+        value: "https://createwithvikash--ep-muse-spark-open-816b-a42b-server.us-west.modal.direct"
+      - key: MODAL_PROXY_TOKEN
+        sync: false

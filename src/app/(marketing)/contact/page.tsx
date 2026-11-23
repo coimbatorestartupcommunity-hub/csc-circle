@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail, Globe, LifeBuoy, ShieldCheck, CalendarDays, Sparkles, Clock, MapPin, Building2, CheckCircle2 } from "lucide-react";
+import { Mail, Globe, LifeBuoy, ShieldCheck, CalendarDays, Sparkles, Clock, MapPin, Building2, CheckCircle2, MessageSquare } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { CircularSocialIcon } from "@/components/common/brand-icons";
 import { siteConfig } from "@/lib/content/site";
 import { ConsultationForm } from "@/components/events/rsvp-form";
+import { ContactForm } from "@/components/contact/contact-form";
 
 export const metadata: Metadata = {
   title: "Contact CSC Circle — Department Desks & Support",
@@ -123,6 +124,23 @@ export default function ContactPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Quick Contact & WhatsApp Assistance */}
+          <div
+            id="inquiry"
+            className="flex flex-col gap-6 rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-10 shadow-xs ring-1 ring-brand-border"
+          >
+            <div className="flex flex-col gap-2">
+              <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                <MessageSquare className="size-3.5 text-emerald-600" /> Instant Inquiry Desk
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-brand-ink">Send Us an Inquiry</h2>
+              <p className="text-sm leading-relaxed text-brand-secondary">
+                Have a question about our community, memberships, startup partnerships, or ecosystem initiatives? Send your message below and receive an immediate acknowledgement via WhatsApp.
+              </p>
+            </div>
+            <ContactForm />
           </div>
 
           {/* Founder Guidance Consultation Form */}
