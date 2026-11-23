@@ -79,7 +79,7 @@ export default async function StartupRevisionDetailPage({ params }: { params: Pr
   const proposedPublic: Bag = { name: proposed.name, slug: proposed.slug, industry: proposed.industry, description: proposed.description, website: proposed.website, details: proposed.details };
 
   return <>
-    <Link href="/admin/startups/revisions" className="mb-3 inline-flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-ink"><ArrowLeft className="size-4" />Pending changes</Link>
+    <Link href="/admin/startups?view=revisions" className="mb-3 inline-flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-ink"><ArrowLeft className="size-4" />Back to startup revisions</Link>
     <AdminPageHeader title={`Review changes: ${startup.name}`} description="The current listing remains public until you approve this revision." />
     <div className="mb-5 grid gap-4 lg:grid-cols-2">
       {[{ label: "Current published image", src: currentImage }, { label: "Proposed image", src: proposedImage }].map((image) => <figure key={image.label} className="min-w-0 rounded-2xl border border-brand-border bg-white p-3"><figcaption className="mb-2 text-xs font-semibold text-brand-muted">{image.label}</figcaption>{image.src ? <img src={image.src} alt={image.label} className="aspect-[4/3] w-full rounded-xl object-cover" /> : <div className="flex aspect-[4/3] items-center justify-center rounded-xl bg-brand-cloud text-sm text-brand-muted">No image</div>}</figure>)}

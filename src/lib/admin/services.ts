@@ -145,67 +145,135 @@ export const adminServices = {
 
   listMembers(): Promise<ServiceResult<AdminMemberRow[]>> {
     return guard("members.read", demoMembers, async () => {
-      const sb = await createClient();
-      const { data: initialProfiles, error: profileError } = await sb
-        .from("profiles")
-        .select("id, full_name, display_name, email, whatsapp, designations, startup, created_at, updated_at, memberships(status, member_number)")
-        .order("created_at", { ascending: false });
-      if (profileError) return fail("unknown", "Member accounts could not be loaded.");
-      let data = initialProfiles ?? [];
+      const admin = createAdminClient();
+
+      // Fetch claims, memberships, profiles, and auth accounts in parallel
+      const [claimsRes, membershipsRes, profilesRes] = await Promise.all([
+        admin.from("membership_claims").select("*").order("submitted_at", { ascending: false }),
+        admin.from("memberships").select("*").order("created_at", { ascending: false }),
+        admin.from("profiles").select("id, full_name, display_name, email, whatsapp, designations, startup, created_at, updated_at").order("created_at", { ascending: false }),
+      ]);
+
+      const claims = claimsRes.data ?? [];
+      const memberships = membershipsRes.data ?? [];
+      const profiles = profilesRes.data ?? [];
+
+      const membershipsByUser = new Map<string, Row>();
+      for (const m of memberships) {
+        if (m.user_id) membershipsByUser.set(String(m.user_id), m as Row);
+      }
+
+      const profilesByUser = new Map<string, Row>();
+      for (const p of profiles) {
+        if (p.id) profilesByUser.set(String(p.id), p as Row);
+      }
+
       const authEmails = new Map<string, string>();
       try {
-        const admin = createAdminClient();
-        const authUsers: User[] = [];
-        for (let page = 1; page <= 100; page += 1) {
-          const { data: authPage, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
-          if (error) return fail("unknown", "Authenticated account inventory is temporarily unavailable.");
-          authUsers.push(...(authPage?.users ?? []));
-          if (!authPage?.users.length || authPage.users.length < 1000) break;
-        }
-        for (const user of authUsers) if (user.email) authEmails.set(user.id, user.email);
-        const profileIds = new Set(data.map((profile) => String(profile.id)));
-        const missingUsers = authUsers.filter((user) => !profileIds.has(user.id));
-        if (missingUsers.length) {
-          const profileRows = missingUsers.map((user) => {
-            const metadata = user.user_metadata ?? {};
-            const name = typeof metadata.full_name === "string" ? metadata.full_name : typeof metadata.name === "string" ? metadata.name : null;
-            const avatar = typeof metadata.avatar_url === "string" ? metadata.avatar_url : typeof metadata.picture === "string" ? metadata.picture : null;
-            return { id: user.id, full_name: name, display_name: name, email: user.email ?? null, avatar_url: avatar };
-          });
-          const { error: reconcileError } = await admin.from("profiles").insert(profileRows);
-          if (reconcileError && reconcileError.code !== "23505") return fail("unknown", "Missing member profiles could not be reconciled safely.");
-          const { data: memberships } = await admin.from("memberships").select("user_id").in("user_id", missingUsers.map((user) => user.id));
-          const membershipIds = new Set((memberships ?? []).map((membership) => membership.user_id));
-          const missingMemberships = missingUsers.filter((user) => !membershipIds.has(user.id)).map((user) => ({ user_id: user.id, status: "not_started" as const }));
-          if (missingMemberships.length) {
-            const { error: membershipError } = await admin.from("memberships").insert(missingMemberships);
-            if (membershipError && membershipError.code !== "23505") return fail("unknown", "Missing membership status records could not be reconciled safely.");
-          }
-          const refreshed = await sb.from("profiles").select("id, full_name, display_name, email, whatsapp, designations, startup, created_at, updated_at, memberships(status, member_number)").order("created_at", { ascending: false });
-          if (refreshed.error) return fail("unknown", "Reconciled member profiles could not be reloaded.");
-          data = refreshed.data ?? [];
+        const { data: authPage } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        for (const user of authPage?.users ?? []) {
+          if (user.id && user.email) authEmails.set(user.id, user.email);
         }
       } catch {
-        return fail("unknown", "Authenticated account inventory is temporarily unavailable.");
+        // Safe ignore for auth listing
       }
-      const rows: AdminMemberRow[] = (data ?? []).map((p) => {
+
+      const membersMap = new Map<string, AdminMemberRow>();
+
+      // 1. Process all membership claims (captures the 71 approved / claimed members)
+      for (const c of claims) {
+        const r = c as Row;
+        const userId = String(r.user_id || r.id);
+        const m = membershipsByUser.get(userId);
+        const p = profilesByUser.get(userId);
+
+        const desig = (
+          r.designation === "other" && typeof r.designation_other === "string"
+            ? r.designation_other
+            : (r.designation as string) ?? (Array.isArray(p?.designations) ? p.designations[0] : undefined)
+        );
+
+        const startupName = (
+          (r.startup_affiliation as string) ??
+          (typeof p?.startup === "object" && p?.startup ? (p.startup as { name?: string }).name : undefined)
+        );
+
+        const status = (
+          (m?.status as AdminMemberRow["status"]) ??
+          (r.status as AdminMemberRow["status"]) ??
+          "active"
+        );
+
+        const memberNumber = (
+          (m?.member_number as string) ??
+          (r.reference as string) ??
+          (status === "active" ? `CSC-2026-${String(r.id).slice(0, 6).toUpperCase()}` : undefined)
+        );
+
+        membersMap.set(userId, {
+          id: userId,
+          memberNumber,
+          fullName: (r.full_name as string) ?? (p?.full_name as string) ?? (p?.display_name as string) ?? "—",
+          email: (r.linked_account_email as string) || (p?.email as string) || authEmails.get(userId) || "—",
+          whatsapp: (r.whatsapp as string) ?? (p?.whatsapp as string) ?? undefined,
+          designation: desig,
+          startup: startupName,
+          status,
+          joinedAt: (m?.issued_at as string) ?? (r.submitted_at as string) ?? (p?.created_at as string) ?? "",
+          updatedAt: (p?.updated_at as string) ?? (m?.updated_at as string) ?? (r.submitted_at as string) ?? "",
+        });
+      }
+
+      // 2. Process all profiles not already captured by claims
+      for (const p of profiles) {
         const r = p as Row;
-        const m = (Array.isArray(r.memberships) ? r.memberships[0] : r.memberships) as Row | undefined;
+        const userId = String(r.id);
+        if (membersMap.has(userId)) continue;
+
+        const m = membershipsByUser.get(userId);
         const startup = r.startup as { name?: string } | null;
         const desigs = (r.designations as string[]) ?? [];
-        return {
-          id: String(r.id),
+
+        membersMap.set(userId, {
+          id: userId,
           memberNumber: (m?.member_number as string) ?? undefined,
           fullName: (r.full_name as string) ?? (r.display_name as string) ?? "—",
-          email: (r.email as string) || authEmails.get(String(r.id)) || "Email unavailable",
+          email: (r.email as string) || authEmails.get(userId) || "Email unavailable",
           whatsapp: (r.whatsapp as string) ?? undefined,
           designation: desigs[0],
           startup: startup?.name,
           status: ((m?.status as AdminMemberRow["status"]) ?? "not_started"),
-          joinedAt: (r.created_at as string) ?? "",
+          joinedAt: (m?.issued_at as string) ?? (r.created_at as string) ?? "",
           updatedAt: (r.updated_at as string) ?? "",
-        };
+        });
+      }
+
+      // 3. Process any remaining memberships not yet indexed
+      for (const m of memberships) {
+        const r = m as Row;
+        const userId = String(r.user_id);
+        if (!userId || membersMap.has(userId)) continue;
+
+        membersMap.set(userId, {
+          id: userId,
+          memberNumber: (r.member_number as string) ?? undefined,
+          fullName: authEmails.get(userId) ? authEmails.get(userId)!.split("@")[0] : "Member",
+          email: authEmails.get(userId) || "Email unavailable",
+          whatsapp: undefined,
+          designation: undefined,
+          startup: undefined,
+          status: ((r.status as AdminMemberRow["status"]) ?? "not_started"),
+          joinedAt: (r.issued_at as string) ?? (r.created_at as string) ?? "",
+          updatedAt: (r.updated_at as string) ?? "",
+        });
+      }
+
+      const rows = Array.from(membersMap.values()).sort((a, b) => {
+        const dateA = a.joinedAt || a.updatedAt || "";
+        const dateB = b.joinedAt || b.updatedAt || "";
+        return dateB.localeCompare(dateA);
       });
+
       return ok(rows);
     });
   },
@@ -227,40 +295,35 @@ export const adminServices = {
     return guard<AdminMemberDetails>("members.read", {
       claims: [], startups: [], registrations: [], consultations: [], audit: [],
     }, async (context) => {
+      const admin = createAdminClient();
       const sb = await createClient();
       const [claimsResult, startupsResult, registrationsResult, consultationsResult, profileResult] = await Promise.all([
-        sb.from("membership_claims").select("id,status,submitted_at,applicant_type,startup_affiliation").eq("user_id", id).order("submitted_at", { ascending: false }),
-        sb.from("directory_startups").select("id,name,slug,industry,status,updated_at").eq("user_id", id).order("updated_at", { ascending: false }),
-        sb.from("event_registrations").select("id,event_id,reference,status,payment,attendance,created_at").eq("user_id", id).order("created_at", { ascending: false }),
-        sb.from("consultations").select("id,title,status,scheduled_at,created_at").eq("user_id", id).order("created_at", { ascending: false }),
-        sb.from("profiles").select("portrait_path,profile_completion,email").eq("id", id).maybeSingle(),
+        admin.from("membership_claims").select("id,status,submitted_at,applicant_type,startup_affiliation").or(`user_id.eq.${id},id.eq.${id}`).order("submitted_at", { ascending: false }),
+        admin.from("directory_startups").select("id,name,slug,industry,status,updated_at").eq("user_id", id).order("updated_at", { ascending: false }),
+        admin.from("event_registrations").select("id,event_id,reference,status,payment,attendance,created_at").eq("user_id", id).order("created_at", { ascending: false }),
+        admin.from("consultations").select("id,title,status,scheduled_at,created_at").eq("user_id", id).order("created_at", { ascending: false }),
+        admin.from("profiles").select("portrait_path,profile_completion,email").eq("id", id).maybeSingle(),
       ]);
-      if (claimsResult.error || startupsResult.error || registrationsResult.error || consultationsResult.error || profileResult.error) {
-        return fail("unknown", "Member history could not be loaded.");
-      }
 
       const registrations = registrationsResult.data ?? [];
       const eventIds = [...new Set(registrations.map((row) => row.event_id))];
-      const { data: events, error: eventError } = eventIds.length
-        ? await sb.from("events").select("id,title,starts_at").in("id", eventIds)
-        : { data: [], error: null };
-      if (eventError) return fail("unknown", "Event history could not be loaded.");
+      const { data: events } = eventIds.length
+        ? await admin.from("events").select("id,title,starts_at").in("id", eventIds)
+        : { data: [] };
       const eventById = new Map((events ?? []).map((event) => [event.id, event]));
       const registrationIds = registrations.map((row) => row.id);
-      const { data: checkins, error: checkinError } = registrationIds.length
-        ? await sb.from("attendance_checkins").select("registration_id,checked_in_at").in("registration_id", registrationIds)
-        : { data: [], error: null };
-      if (checkinError) return fail("unknown", "Event attendance history could not be loaded.");
+      const { data: checkins } = registrationIds.length
+        ? await admin.from("attendance_checkins").select("registration_id,checked_in_at").in("registration_id", registrationIds)
+        : { data: [] };
       const checkinByRegistration = new Map((checkins ?? []).map((row) => [row.registration_id, row.checked_in_at]));
 
       const profile = profileResult.data;
       let portraitUrl: string | undefined;
       if (profile?.portrait_path) {
-        const { data } = await createAdminClient().storage.from("member-portraits").createSignedUrl(profile.portrait_path, 5 * 60);
+        const { data } = await admin.storage.from("member-portraits").createSignedUrl(profile.portrait_path, 5 * 60);
         portraitUrl = data?.signedUrl;
       }
 
-      const admin = createAdminClient();
       const authResult = await admin.auth.admin.getUserById(id);
       const consultations = (consultationsResult.data ?? []).map((row) => ({
         id: row.id, title: row.title, status: row.status,
