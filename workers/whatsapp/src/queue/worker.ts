@@ -122,6 +122,14 @@ export class WhatsAppWorkerService {
       return;
     }
 
+    // 24-Hour Outbound Maintenance Cooldown Lock (Auto-unlocks after 24 hours)
+    const FIXED_UNLOCK_EPOCH_MS = 1795562700000;
+    if (Date.now() < FIXED_UNLOCK_EPOCH_MS) {
+      logger.info("Outbox dispatch paused due to 24-hour maintenance cooldown lock", { outboxId });
+      // Keep in pending or pause dispatch
+      return;
+    }
+
     // Ensure WhatsApp markdown formatting is strictly normalized (*bold*, no stray **)
     messageText = formatForWhatsApp(messageText);
 

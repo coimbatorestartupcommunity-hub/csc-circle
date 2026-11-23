@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { CircularSocialIcon } from "@/components/common/brand-icons";
+import { AlertTriangle, Clock } from "lucide-react";
+import { WHATSAPP_MAINTENANCE_LOCK } from "@/lib/whatsapp/maintenance-config";
 
 export interface PhoneVerificationCardProps {
   initialPhone?: string | null;
@@ -129,6 +131,26 @@ export function PhoneVerificationCard({
           </span>
         )}
       </div>
+
+      {/* 24-Hour Maintenance Lock Announcement */}
+      {WHATSAPP_MAINTENANCE_LOCK.isLocked() && (
+        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-amber-900">
+          <div className="flex items-start gap-3">
+            <Clock className="size-5 shrink-0 text-amber-600 mt-0.5" />
+            <div className="space-y-1 text-xs leading-relaxed">
+              <p className="font-semibold text-amber-950">
+                WhatsApp Services Maintenance / பராமரிப்பில் உள்ளது (24 Hours Cooldown)
+              </p>
+              <p className="text-amber-800">
+                WhatsApp AI agent, inbound assistance and mobile OTP verification are temporarily locked for a 24-hour maintenance window.
+              </p>
+              <p className="text-amber-800 font-medium">
+                எங்களின் WhatsApp AI சேவைகள் மற்றும் OTP சரிபார்ப்பு 24 மணி நேரத்திற்குப் பின் தானாகவே மீண்டும் தொடங்கும்.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isVerified && !otpSent ? (
         <div className="mt-5 flex flex-col gap-4">

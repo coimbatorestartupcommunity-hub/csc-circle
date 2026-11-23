@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { CircularSocialIcon } from "@/components/common/brand-icons";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Clock } from "lucide-react";
+import { WHATSAPP_MAINTENANCE_LOCK } from "@/lib/whatsapp/maintenance-config";
 
 export interface PhoneVerificationModalProps {
   isVerified: boolean;
@@ -30,6 +32,11 @@ export function PhoneVerificationModal({
 
   // Check on mount if modal should appear - prompts on every profile navigation until verified
   React.useEffect(() => {
+    // If WhatsApp is in 24-hour maintenance lock, suppress modal prompt
+    if (WHATSAPP_MAINTENANCE_LOCK.isLocked()) {
+      setOpen(false);
+      return;
+    }
     if (isVerified) return;
     // Delay slightly so layout finishes rendering smoothly
     const timer = setTimeout(() => setOpen(true), 1000);

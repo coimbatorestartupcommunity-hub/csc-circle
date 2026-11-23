@@ -2,9 +2,20 @@ import { getMemberContext } from "@/lib/services/member/context";
 import { authResponse, readAuthBody } from "@/lib/auth/http";
 import { sendPhoneOtp } from "@/lib/auth/phone-auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { WHATSAPP_MAINTENANCE_LOCK } from "@/lib/whatsapp/maintenance-config";
 
 export async function POST(request: Request) {
   try {
+    if (WHATSAPP_MAINTENANCE_LOCK.isLocked()) {
+      return authResponse(
+        {
+          error: "WhatsApp OTP verification is temporarily paused for 24-hour scheduled maintenance. Please try again after maintenance completes.",
+          locked: true,
+          maintenanceNotice: WHATSAPP_MAINTENANCE_LOCK.getNotice(),
+        },
+        503
+      );
+    }
     const ctx = await getMemberContext();
     if (ctx.mode !== "live" || !ctx.user) {
       return authResponse({ error: "Sign in to continue." }, 401);

@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { sendPhoneOtp } from "@/lib/auth/phone-auth";
+import { WHATSAPP_MAINTENANCE_LOCK } from "@/lib/whatsapp/maintenance-config";
 
 export async function POST(request: Request) {
+  if (WHATSAPP_MAINTENANCE_LOCK.isLocked()) {
+    return NextResponse.json(
+      {
+        error: "WhatsApp OTP verification is temporarily paused for 24-hour scheduled maintenance.",
+        locked: true,
+        maintenanceNotice: WHATSAPP_MAINTENANCE_LOCK.getNotice(),
+      },
+      { status: 503 }
+    );
+  }
   const ip = clientIp(request);
   const ipLimit = rateLimit(`auth:phone:send:${ip}`, 10, 120_000);
   if (!ipLimit.allowed) {
