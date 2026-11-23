@@ -54,9 +54,12 @@ describe("member notification inbox", () => {
     expect(panel).toHaveClass("fixed");
     expect(panel.parentElement).toBe(document.body);
     expect(panel.style.left).toBe("12px");
-    expect(panel.style.top).toBe("68px");
+    // Vertically centered in the 844px mobile viewport: (844 - 580) / 2 = 132px
+    expect(panel.style.top).toBe("132px");
     expect(panel.style.width).toBe("366px");
     expect(panel).toHaveClass("flex", "flex-col");
+    expect(screen.getByTestId("notification-backdrop")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close notifications" })).toBeInTheDocument();
   });
 
   it("bounds the notification panel to the visible mobile viewport", async () => {
@@ -78,5 +81,73 @@ describe("member notification inbox", () => {
     expect(panel.style.left).toBe("222px");
     expect(panel.style.top).toBe("78px");
     expect(panel.style.width).toBe("366px");
+  });
+
+  it("filters notifications by categories (all, events, passes, updates) and closes via close button", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        unreadCount: 0,
+        items: [
+          {
+            id: "1",
+            type: "EventConfirmed",
+            title: "You're registered — event pass approved",
+            message: "Your registration for CSC Joint Online Meeting is confirmed.",
+            action_url: "/profile/events",
+            read_at: "2026-11-15T00:00:00Z",
+            created_at: "2026-11-15T00:00:00Z",
+          },
+          {
+            id: "2",
+            type: "EventRSVPReceived",
+            title: "Event registration received",
+            message: "Your event registration has been received.",
+            action_url: "/profile/events",
+            read_at: "2026-11-03T00:00:00Z",
+            created_at: "2026-11-03T00:00:00Z",
+          },
+          {
+            id: "3",
+            type: "review.approved",
+            title: "Review approved",
+            message: "Your CSC community review has been approved.",
+            action_url: "/profile/reviews",
+            read_at: "2026-11-01T00:00:00Z",
+            created_at: "2026-11-01T00:00:00Z",
+          },
+        ],
+      }),
+    }));
+
+    render(<MemberNotificationMenu />);
+    fireEvent.click(await screen.findByRole("button", { name: "Notifications" }));
+
+    // All tab shows all 3
+    expect(await screen.findByText("You're registered — event pass approved")).toBeInTheDocument();
+    expect(screen.getByText("Event registration received")).toBeInTheDocument();
+    expect(screen.getByText("Review approved")).toBeInTheDocument();
+
+    // Events filter
+    fireEvent.click(screen.getByRole("button", { name: "Events" }));
+    expect(screen.getByText("You're registered — event pass approved")).toBeInTheDocument();
+    expect(screen.getByText("Event registration received")).toBeInTheDocument();
+    expect(screen.queryByText("Review approved")).not.toBeInTheDocument();
+
+    // Passes filter
+    fireEvent.click(screen.getByRole("button", { name: "Passes" }));
+    expect(screen.getByText("You're registered — event pass approved")).toBeInTheDocument();
+    expect(screen.queryByText("Event registration received")).not.toBeInTheDocument();
+    expect(screen.queryByText("Review approved")).not.toBeInTheDocument();
+
+    // Updates filter
+    fireEvent.click(screen.getByRole("button", { name: "Updates" }));
+    expect(screen.queryByText("You're registered — event pass approved")).not.toBeInTheDocument();
+    expect(screen.queryByText("Event registration received")).not.toBeInTheDocument();
+    expect(screen.getByText("Review approved")).toBeInTheDocument();
+
+    // Close button dismisses the panel
+    fireEvent.click(screen.getByRole("button", { name: "Close notifications" }));
+    expect(screen.queryByRole("region", { name: "Your notifications" })).not.toBeInTheDocument();
   });
 });

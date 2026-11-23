@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Bell, Check, CheckCheck, Loader2, Trash2 } from "lucide-react";
+import { Bell, Check, CheckCheck, Loader2, Trash2, X } from "lucide-react";
 import { cn } from "cn";
 import { notificationAction } from "@/lib/notifications/actions";
 
@@ -75,19 +75,37 @@ export function MemberNotificationMenu() {
     const viewportWidth = visualViewport?.width || document.documentElement.clientWidth || window.innerWidth;
     const viewportHeight = visualViewport?.height ?? window.innerHeight;
     const isMobile = viewportWidth < 640;
-    const width = Math.max(1, Math.min(384, viewportWidth - margin * 2));
-    const maxPanelHeight = Math.max(180, Math.min(viewportHeight * 0.7, 448));
-    const minLeft = viewportLeft + margin;
-    const maxLeft = viewportLeft + viewportWidth - width - margin;
-    const left = isMobile
-      ? viewportLeft + Math.max(margin, Math.round((viewportWidth - width) / 2))
-      : Math.min(Math.max(minLeft, rect.right - width), maxLeft);
-    const below = rect.bottom + 8;
-    const top = below + maxPanelHeight > viewportTop + viewportHeight - margin
-      ? Math.max(viewportTop + margin, rect.top - maxPanelHeight - 8)
-      : below;
-    setPanelPosition({ top, left, width, height: maxPanelHeight });
+
+    if (isMobile) {
+      // Mobile: Center vertically and horizontally in the viewport to avoid awkward top-anchoring
+      const width = Math.max(1, Math.min(420, viewportWidth - margin * 2));
+      const maxPanelHeight = Math.max(280, Math.min(viewportHeight - margin * 2, 580));
+      const left = viewportLeft + Math.max(margin, Math.round((viewportWidth - width) / 2));
+      const top = viewportTop + Math.max(margin, Math.round((viewportHeight - maxPanelHeight) / 2));
+      setPanelPosition({ top, left, width, height: maxPanelHeight });
+    } else {
+      // Desktop: Anchor under the bell icon
+      const width = Math.max(1, Math.min(384, viewportWidth - margin * 2));
+      const minLeft = viewportLeft + margin;
+      const maxLeft = viewportLeft + viewportWidth - width - margin;
+      const left = Math.min(Math.max(minLeft, rect.right - width), maxLeft);
+      const below = rect.bottom + 8;
+      const maxPanelHeight = Math.max(180, Math.min(viewportHeight - below - margin, 520));
+      const top = below + maxPanelHeight > viewportTop + viewportHeight - margin
+        ? Math.max(viewportTop + margin, rect.top - maxPanelHeight - 8)
+        : below;
+      setPanelPosition({ top, left, width, height: maxPanelHeight });
+    }
   }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -190,10 +208,10 @@ export function MemberNotificationMenu() {
 
   const filteredItems = items.filter((item) => {
     if (category === "all") return true;
-    const t = (item.type || item.title || "").toLowerCase();
-    if (category === "events") return t.includes("event") || t.includes("rsvp");
-    if (category === "passes") return t.includes("pass") || t.includes("membership") || t.includes("card") || t.includes("check");
-    if (category === "updates") return !t.includes("event") && !t.includes("pass") && !t.includes("membership");
+    const t = `${item.type || ""} ${item.title || ""} ${item.message || ""}`.toLowerCase();
+    if (category === "events") return t.includes("event") || t.includes("rsvp") || t.includes("meeting") || t.includes("registration");
+    if (category === "passes") return t.includes("pass") || t.includes("membership") || t.includes("card") || t.includes("digital id") || t.includes("qr") || t.includes("check");
+    if (category === "updates") return !t.includes("event") && !t.includes("pass") && !t.includes("membership") && !t.includes("registration");
     return true;
   });
 
@@ -216,37 +234,65 @@ export function MemberNotificationMenu() {
       </button>
 
       {open ? createPortal((
-        <section id="member-notification-panel" aria-label="Your notifications" style={{ top: panelPosition.top, left: panelPosition.left, width: panelPosition.width, maxHeight: panelPosition.height }} className="fixed z-[100] flex flex-col overflow-hidden rounded-3xl border border-brand-border bg-white shadow-2xl ring-1 ring-black/5">
-          <header className="flex items-center justify-between gap-2 border-b border-brand-border px-4 py-3">
-            <div>
-              <h2 className="text-sm font-bold text-brand-ink">Notifications</h2>
-              <p className="text-xs text-brand-muted">{unreadCount ? `${unreadCount} unread` : "You're all caught up"}</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                disabled={working || unreadCount === 0}
-                onClick={() => void markRead()}
-                className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold text-brand-accent hover:bg-brand-cloud disabled:opacity-40 transition cursor-pointer"
-                title="Mark all notifications as read"
-              >
-                {working ? <Loader2 className="size-3 animate-spin" /> : <CheckCheck className="size-3.5" />}
-                <span>Read all</span>
-              </button>
-              {items.length > 0 && (
+        <>
+          {/* Backdrop overlay: dims background, focuses dialog, and enables instant tap-outside dismiss */}
+          <div
+            data-testid="notification-backdrop"
+            className="fixed inset-0 z-[99] bg-black/45 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-150"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+
+          <section
+            id="member-notification-panel"
+            aria-label="Your notifications"
+            style={{
+              top: panelPosition.top,
+              left: panelPosition.left,
+              width: panelPosition.width,
+              maxHeight: panelPosition.height,
+            }}
+            className="fixed z-[100] flex flex-col overflow-hidden rounded-3xl border border-brand-border bg-white shadow-2xl ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95 duration-150"
+          >
+            <header className="flex items-center justify-between gap-2 border-b border-brand-border px-4 py-3">
+              <div>
+                <h2 className="text-sm font-bold text-brand-ink">Notifications</h2>
+                <p className="text-xs text-brand-muted">{unreadCount ? `${unreadCount} unread` : "You're all caught up"}</p>
+              </div>
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  disabled={working}
-                  onClick={() => void clearAllNotifications()}
-                  className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                  title="Clear all notifications"
+                  disabled={working || unreadCount === 0}
+                  onClick={() => void markRead()}
+                  className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold text-brand-accent hover:bg-brand-cloud disabled:opacity-40 transition cursor-pointer"
+                  title="Mark all notifications as read"
                 >
-                  <Trash2 className="size-3" />
-                  <span>Clear</span>
+                  {working ? <Loader2 className="size-3 animate-spin" /> : <CheckCheck className="size-3.5" />}
+                  <span>Read all</span>
                 </button>
-              )}
-            </div>
-          </header>
+                {items.length > 0 && (
+                  <button
+                    type="button"
+                    disabled={working}
+                    onClick={() => void clearAllNotifications()}
+                    className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                    title="Clear all notifications"
+                  >
+                    <Trash2 className="size-3" />
+                    <span>Clear</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex size-7 items-center justify-center rounded-full text-brand-muted hover:bg-brand-cloud hover:text-brand-ink transition cursor-pointer ml-0.5"
+                  aria-label="Close notifications"
+                  title="Close"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            </header>
 
           {/* Centered Symmetrical 4-Pill Filter Tabs */}
           <div className="grid grid-cols-4 gap-1.5 border-b border-brand-border/70 bg-brand-cloud/30 px-3 py-2">
@@ -278,7 +324,7 @@ export function MemberNotificationMenu() {
           </div>
 
           {error ? <div role="alert" className="border-b border-brand-border px-4 py-3 text-sm text-red-700">{error}<button type="button" onClick={() => { setLoading(true); void load(); }} className="ml-2 font-semibold underline">Retry</button></div> : null}
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-3">
             {loading ? <div className="flex justify-center px-4 py-8"><Loader2 className="size-5 animate-spin text-brand-muted" aria-label="Loading notifications" /></div> : null}
             {!loading && !error && filteredItems.length === 0 ? <p className="px-4 py-8 text-center text-sm text-brand-muted">No notifications in this category.</p> : null}
             {!loading ? filteredItems.map((item) => {
@@ -318,7 +364,7 @@ export function MemberNotificationMenu() {
             }) : null}
           </div>
         </section>
-      ), document.body) : null}
+      </>), document.body) : null}
     </div>
   );
 }
