@@ -210,7 +210,7 @@ export async function searchKnowledgeDocuments(query: string, maxTier: number = 
       .select("title, category, content, metadata")
       .eq("is_published", true)
       .lte("tier", maxTier)
-      .limit(20);
+      .limit(150);
 
     if (error || !data) return [];
 
@@ -226,7 +226,7 @@ export async function searchKnowledgeDocuments(query: string, maxTier: number = 
       })
       .filter((m) => m.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 3)
+      .slice(0, 5)
       .map((m) => `[${m.doc.category.toUpperCase()}] ${m.doc.title}: ${m.doc.content}`);
 
     return matches;

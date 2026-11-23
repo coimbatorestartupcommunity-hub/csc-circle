@@ -13,6 +13,25 @@ export interface WhatsAppNotificationPayload {
 }
 
 /**
+ * Normalizes CommonMark / LLM Markdown into standard WhatsApp formatting.
+ * - Converts markdown double asterisks **bold** to WhatsApp *bold*.
+ * - Converts ***bold-italic*** to _*bold-italic*_.
+ * - Converts markdown headings (# Heading) to *Heading*.
+ * - Converts bullet points (* or +) to • to avoid unclosed asterisk formatting bleed.
+ * - Cleans stray double-stars that cause literal *word* to show up.
+ */
+export function formatForWhatsApp(text: string): string {
+  if (!text) return "";
+  let out = text;
+  out = out.replace(/\*\*\*(.*?)\*\*\*/g, "_*$1*_");
+  out = out.replace(/\*\*(.*?)\*\*/g, "*$1*");
+  out = out.replace(/^#{1,6}\s+(.*)$/gm, "*$1*");
+  out = out.replace(/^[\*\+]\s+/gm, "• ");
+  out = out.replace(/\*\*/g, "*");
+  return out;
+}
+
+/**
  * Normalizes phone numbers to standard international format (digits only).
  * Converts 10-digit Indian numbers to 91XXXXXXXXXX.
  */
@@ -53,7 +72,7 @@ export async function enqueueWhatsAppNotification(
         recipient_chat_id: finalChatId,
         message_type: payload.messageType || "system_notification",
         message_payload: {
-          text: payload.text,
+          text: formatForWhatsApp(payload.text),
           name: payload.name,
           enqueuedAt: new Date().toISOString(),
         },

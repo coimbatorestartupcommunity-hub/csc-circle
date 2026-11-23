@@ -212,63 +212,63 @@ function generateContextualFallback(messages: ChatMessage[]): string {
 
   if (isCommunityQuery) {
     if (isPureTamil) {
-      return `**கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டி (CSC Circle)** ✨
+      return `*கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டி (CSC Circle)* ✨
 
-📌 **ஒரே வரி குறிக்கோள் (Tagline)**:
+📌 *ஒரே வரி குறிக்கோள் (Tagline)*:
 *“${CSC_IDENTITY.tagline}”*
 
-🎯 **எங்கள் நோக்கம் & செயல்பாடுகள்**:
+🎯 *எங்கள் நோக்கம் & செயல்பாடுகள்*:
 ${CSC_IDENTITY.description}
 
-🚀 **முக்கிய நோக்கங்கள்**:
+🚀 *முக்கிய நோக்கங்கள்*:
 ${CSC_IDENTITY.mission}
 
-🌐 **முக்கிய இணைப்புகள்**:
-• **நிகழ்வுகள்**: https://csc.logicintelligencetechnologies.in/events
-• **ஸ்டார்ட்அப் பட்டியல்**: https://csc.logicintelligencetechnologies.in/directory
-• **உறுப்பினர் பதிவு**: https://csc.logicintelligencetechnologies.in/join (5 நிமிடங்களில் உடனடி அனுமதி)
-• **WhatsApp குழு**: ${CSC_COMMUNITY_CONTACTS.whatsappGroup}
+🌐 *முக்கிய இணைப்புகள்*:
+• *நிகழ்வுகள்*: https://csc.logicintelligencetechnologies.in/events
+• *ஸ்டார்ட்அப் பட்டியல்*: https://csc.logicintelligencetechnologies.in/directory
+• *உறுப்பினர் பதிவு*: https://csc.logicintelligencetechnologies.in/join (5 நிமிடங்களில் உடனடி அனுமதி)
+• *WhatsApp குழு*: ${CSC_COMMUNITY_CONTACTS.whatsappGroup}
 
 உங்களுக்கு வேறு என்ன விவரங்கள் தேவை? தயங்காமல் கேளுங்கள்!`;
     }
 
     if (isTanglish) {
-      return `**Coimbatore Startup Community (CSC Circle)** ✨
+      return `*Coimbatore Startup Community (CSC Circle)* ✨
 
-📌 **Tagline & One-Liner**:
+📌 *Tagline & One-Liner*:
 *“${CSC_IDENTITY.tagline}”*
 
-🎯 **CSC Enna Panranga?**:
+🎯 *CSC Enna Panranga?*:
 ${CSC_IDENTITY.description}
 
-🚀 **Mission**:
+🚀 *Mission*:
 ${CSC_IDENTITY.mission}
 
-🌐 **Quick Links**:
-• **Events & Meetups**: https://csc.logicintelligencetechnologies.in/events
-• **Founder Directory**: https://csc.logicintelligencetechnologies.in/directory
-• **Membership Join**: https://csc.logicintelligencetechnologies.in/join (5 mins automated approval)
-• **Official WhatsApp Group**: ${CSC_COMMUNITY_CONTACTS.whatsappGroup}
+🌐 *Quick Links*:
+• *Events & Meetups*: https://csc.logicintelligencetechnologies.in/events
+• *Founder Directory*: https://csc.logicintelligencetechnologies.in/directory
+• *Membership Join*: https://csc.logicintelligencetechnologies.in/join (5 mins automated approval)
+• *Official WhatsApp Group*: ${CSC_COMMUNITY_CONTACTS.whatsappGroup}
 
 Innum edhavadhu info venuma bro? Sollunga, guide panren!`;
     }
 
-    return `**Coimbatore Startup Community (CSC Circle)** ✨
+    return `*Coimbatore Startup Community (CSC Circle)* ✨
 
-📌 **One-Liner / Tagline**:
+📌 *One-Liner / Tagline*:
 *“${CSC_IDENTITY.tagline}”*
 
-🎯 **What We Do**:
+🎯 *What We Do*:
 ${CSC_IDENTITY.description}
 
-🚀 **Our Mission**:
+🚀 *Our Mission*:
 ${CSC_IDENTITY.mission}
 
-🌐 **Ecosystem Highlights**:
-• **Upcoming Events & Meetups**: https://csc.logicintelligencetechnologies.in/events
-• **Founder Directory**: https://csc.logicintelligencetechnologies.in/directory
-• **Membership & Digital Pass**: https://csc.logicintelligencetechnologies.in/join (Auto-approved within 5 minutes)
-• **Official WhatsApp Group**: ${CSC_COMMUNITY_CONTACTS.whatsappGroup}
+🌐 *Ecosystem Highlights*:
+• *Upcoming Events & Meetups*: https://csc.logicintelligencetechnologies.in/events
+• *Founder Directory*: https://csc.logicintelligencetechnologies.in/directory
+• *Membership & Digital Pass*: https://csc.logicintelligencetechnologies.in/join (Auto-approved within 5 minutes)
+• *Official WhatsApp Group*: ${CSC_COMMUNITY_CONTACTS.whatsappGroup}
 
 How can I assist you with your startup journey today?`;
   }
@@ -288,28 +288,28 @@ How can I assist you with your startup journey today?`;
   if (isFounderQuery) {
     const leader = CSC_LEADERSHIP.founder;
     if (isPureTamil) {
-      return `**CSC Circle நிறுவனர் (Founder)**:
-👤 **${leader.name}**
-• **பொறுப்பு**: ${leader.roleTitle}
-• **கூடுதல் நிறுவனம்**: ${leader.additionalRole}
-• **செயல்பாடு**: ${leader.responsibility}
+      return `*CSC Circle நிறுவனர் (Founder)*:
+👤 *${leader.name}*
+• *பொறுப்பு*: ${leader.roleTitle}
+• *கூடுதல் நிறுவனம்*: ${leader.additionalRole}
+• *செயல்பாடு*: ${leader.responsibility}
 
 🌐 இணையதளம்: ${CSC_IDENTITY.portalUrl}`;
     }
     if (isTanglish) {
-      return `**CSC Circle Founder**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Other Venture**: ${leader.additionalRole}
-• **Details**: ${leader.responsibility}
+      return `*CSC Circle Founder*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Other Venture*: ${leader.additionalRole}
+• *Details*: ${leader.responsibility}
 
 🌐 Website: ${CSC_IDENTITY.portalUrl}`;
     }
-    return `**CSC Circle Founder**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Additional Venture**: ${leader.additionalRole}
-• **Profile**: ${leader.responsibility}
+    return `*CSC Circle Founder*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Additional Venture*: ${leader.additionalRole}
+• *Profile*: ${leader.responsibility}
 
 🌐 Learn more: ${CSC_IDENTITY.portalUrl}`;
   }
@@ -324,24 +324,24 @@ How can I assist you with your startup journey today?`;
   if (isCoFounderQuery) {
     const leader = CSC_LEADERSHIP.cofounder;
     if (isPureTamil) {
-      return `**CSC Circle இணை நிறுவனர் (Co-Founder)**:
-👤 **${leader.name}**
-• **பொறுப்பு**: ${leader.roleTitle}
-• **கூடுதல் நிறுவனம்**: ${leader.additionalRole}
-• **செயல்பாடு**: ${leader.responsibility}`;
+      return `*CSC Circle இணை நிறுவனர் (Co-Founder)*:
+👤 *${leader.name}*
+• *பொறுப்பு*: ${leader.roleTitle}
+• *கூடுதல் நிறுவனம்*: ${leader.additionalRole}
+• *செயல்பாடு*: ${leader.responsibility}`;
     }
     if (isTanglish) {
-      return `**CSC Circle Co-Founder**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Other Venture**: ${leader.additionalRole}
-• **Details**: ${leader.responsibility}`;
+      return `*CSC Circle Co-Founder*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Other Venture*: ${leader.additionalRole}
+• *Details*: ${leader.responsibility}`;
     }
-    return `**CSC Circle Co-Founder**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Additional Venture**: ${leader.additionalRole}
-• **Profile**: ${leader.responsibility}`;
+    return `*CSC Circle Co-Founder*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Additional Venture*: ${leader.additionalRole}
+• *Profile*: ${leader.responsibility}`;
   }
 
   // Intent D: Leadership - CTO & Technical Partner
@@ -357,27 +357,27 @@ How can I assist you with your startup journey today?`;
   if (isCTOQuery) {
     const leader = CSC_LEADERSHIP.cto;
     if (isPureTamil) {
-      return `**CSC Circle தலைமை தொழில்நுட்ப அதிகாரி (CTO) & Technical Partner**:
-👤 **${leader.name}**
-• **பொறுப்பு**: ${leader.roleTitle}
-• **நிறுவனம்**: ${leader.additionalRole}
-• **செயல்பாடு**: ${leader.responsibility}
-• **தொழில்நுட்ப பங்குதாரர்**: ${CSC_TECHNICAL_PARTNER.name} (${CSC_TECHNICAL_PARTNER.url})`;
+      return `*CSC Circle தலைமை தொழில்நுட்ப அதிகாரி (CTO) & Technical Partner*:
+👤 *${leader.name}*
+• *பொறுப்பு*: ${leader.roleTitle}
+• *நிறுவனம்*: ${leader.additionalRole}
+• *செயல்பாடு*: ${leader.responsibility}
+• *தொழில்நுட்ப பங்குதாரர்*: ${CSC_TECHNICAL_PARTNER.name} (${CSC_TECHNICAL_PARTNER.url})`;
     }
     if (isTanglish) {
-      return `**CSC Circle CTO & Technical Partner**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Venture**: ${leader.additionalRole}
-• **Details**: ${leader.responsibility}
-• **Tech Partner**: ${CSC_TECHNICAL_PARTNER.name} (${CSC_TECHNICAL_PARTNER.url})`;
+      return `*CSC Circle CTO & Technical Partner*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Venture*: ${leader.additionalRole}
+• *Details*: ${leader.responsibility}
+• *Tech Partner*: ${CSC_TECHNICAL_PARTNER.name} (${CSC_TECHNICAL_PARTNER.url})`;
     }
-    return `**Chief Technology Officer (CTO) & Technical Partner**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Primary Role**: ${leader.additionalRole}
-• **Profile**: ${leader.responsibility}
-• **Technical Partner**: ${CSC_TECHNICAL_PARTNER.name} (${CSC_TECHNICAL_PARTNER.url})`;
+    return `*Chief Technology Officer (CTO) & Technical Partner*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Primary Role*: ${leader.additionalRole}
+• *Profile*: ${leader.responsibility}
+• *Technical Partner*: ${CSC_TECHNICAL_PARTNER.name} (${CSC_TECHNICAL_PARTNER.url})`;
   }
 
   // Intent E: Leadership - CEO
@@ -389,11 +389,11 @@ How can I assist you with your startup journey today?`;
 
   if (isCEOQuery) {
     const leader = CSC_LEADERSHIP.ceo;
-    return `**Chief Executive Officer (CEO) of CSC Circle**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Background**: Pursuing BA (Hons) International Business at PSG Institute of Advanced Studies.
-• **Profile**: ${leader.responsibility}`;
+    return `*Chief Executive Officer (CEO) of CSC Circle*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Background*: Pursuing BA (Hons) International Business at PSG Institute of Advanced Studies.
+• *Profile*: ${leader.responsibility}`;
   }
 
   // Intent F: Leadership - COO
@@ -405,11 +405,11 @@ How can I assist you with your startup journey today?`;
 
   if (isCOOQuery) {
     const leader = CSC_LEADERSHIP.coo;
-    return `**Chief Operating Officer (COO) of CSC Circle**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Additional Venture**: ${leader.additionalRole}
-• **Profile**: ${leader.responsibility}`;
+    return `*Chief Operating Officer (COO) of CSC Circle*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Additional Venture*: ${leader.additionalRole}
+• *Profile*: ${leader.responsibility}`;
   }
 
   // Intent G: Leadership - CBO
@@ -421,11 +421,11 @@ How can I assist you with your startup journey today?`;
 
   if (isCBOQuery) {
     const leader = CSC_LEADERSHIP.cbo;
-    return `**Chief Brand Officer (CBO) of CSC Circle**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Additional Venture**: ${leader.additionalRole}
-• **Profile**: ${leader.responsibility}`;
+    return `*Chief Brand Officer (CBO) of CSC Circle*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Additional Venture*: ${leader.additionalRole}
+• *Profile*: ${leader.responsibility}`;
   }
 
   // Intent H: Leadership - CCO
@@ -436,10 +436,10 @@ How can I assist you with your startup journey today?`;
 
   if (isCCOQuery) {
     const leader = CSC_LEADERSHIP.cco;
-    return `**Chief Community Officer (CCO) of CSC Circle**:
-👤 **${leader.name}**
-• **Role**: ${leader.roleTitle}
-• **Profile**: ${leader.responsibility}`;
+    return `*Chief Community Officer (CCO) of CSC Circle*:
+👤 *${leader.name}*
+• *Role*: ${leader.roleTitle}
+• *Profile*: ${leader.responsibility}`;
   }
 
   // Intent I: General Leadership / Core Team Roster
@@ -455,17 +455,17 @@ How can I assist you with your startup journey today?`;
     lower.includes("நிர்வாகம்");
 
   if (isLeadershipRosterQuery) {
-    return `**Coimbatore Startup Community (CSC Circle) — Leadership Team**:
+    return `*Coimbatore Startup Community (CSC Circle) — Leadership Team*:
 
-• **Founder**: ${CSC_LEADERSHIP.founder.name} (${CSC_LEADERSHIP.founder.additionalRole})
-• **Co-Founder**: ${CSC_LEADERSHIP.cofounder.name} (${CSC_LEADERSHIP.cofounder.additionalRole})
-• **CEO**: ${CSC_LEADERSHIP.ceo.name} (PSG IAS)
-• **CTO**: ${CSC_LEADERSHIP.cto.name} (${CSC_LEADERSHIP.cto.additionalRole})
-• **COO**: ${CSC_LEADERSHIP.coo.name} (${CSC_LEADERSHIP.coo.additionalRole})
-• **CBO**: ${CSC_LEADERSHIP.cbo.name} (${CSC_LEADERSHIP.cbo.additionalRole})
-• **CCO**: ${CSC_LEADERSHIP.cco.name}
+• *Founder*: ${CSC_LEADERSHIP.founder.name} (${CSC_LEADERSHIP.founder.additionalRole})
+• *Co-Founder*: ${CSC_LEADERSHIP.cofounder.name} (${CSC_LEADERSHIP.cofounder.additionalRole})
+• *CEO*: ${CSC_LEADERSHIP.ceo.name} (PSG IAS)
+• *CTO*: ${CSC_LEADERSHIP.cto.name} (${CSC_LEADERSHIP.cto.additionalRole})
+• *COO*: ${CSC_LEADERSHIP.coo.name} (${CSC_LEADERSHIP.coo.additionalRole})
+• *CBO*: ${CSC_LEADERSHIP.cbo.name} (${CSC_LEADERSHIP.cbo.additionalRole})
+• *CCO*: ${CSC_LEADERSHIP.cco.name}
 
-Technical Partner: **${CSC_TECHNICAL_PARTNER.name}** (${CSC_TECHNICAL_PARTNER.url})
+Technical Partner: *${CSC_TECHNICAL_PARTNER.name}* (${CSC_TECHNICAL_PARTNER.url})
 🌐 Community Portal: ${CSC_IDENTITY.portalUrl}`;
   }
 
@@ -480,27 +480,27 @@ Technical Partner: **${CSC_TECHNICAL_PARTNER.name}** (${CSC_TECHNICAL_PARTNER.ur
 
   if (isWhatsAppGroupQuery) {
     if (isPureTamil) {
-      return `**CSC Circle அதிகாரப்பூர்வ WhatsApp குழுவில் இணைய**:
+      return `*CSC Circle அதிகாரப்பூர்வ WhatsApp குழுவில் இணைய*:
 🔗 ${CSC_COMMUNITY_CONTACTS.whatsappGroup}
 
-💡 **புதிய உறுப்பினர்களுக்கான வழிகாட்டுதல்**:
+💡 *புதிய உறுப்பினர்களுக்கான வழிகாட்டுதல்*:
 1. குழுவில் இணைந்தவுடன் உங்களையும் உங்கள் ஸ்டார்ட்அப் நிறுவனத்தையும் அறிமுகப்படுத்துங்கள்.
 2. மற்ற நிறுவனர்களுடன் கலந்துரையாடி ஆலோசனைகளைப் பெறுங்கள்.
 3. புதிய வாய்ப்புகள் மற்றும் கூட்டணிகளைப் பகிர்ந்து பயன் பெறுங்கள்! ✨`;
     }
     if (isTanglish) {
-      return `**Join Official CSC Community WhatsApp Group**:
+      return `*Join Official CSC Community WhatsApp Group*:
 🔗 ${CSC_COMMUNITY_CONTACTS.whatsappGroup}
 
-💡 **Member Guidelines**:
+💡 *Member Guidelines*:
 1. Group-la join pannitu ungalaiyum unga startup/idea-vaiyum introduce pannunga.
 2. Fellow founders kooda active-ah engage and network pannunga.
 3. Collabs and opportunities share panni connect aagunga! ✨`;
     }
-    return `**Join the Official CSC Community WhatsApp Group**:
+    return `*Join the Official CSC Community WhatsApp Group*:
 🔗 ${CSC_COMMUNITY_CONTACTS.whatsappGroup}
 
-💡 **Member Guidelines**:
+💡 *Member Guidelines*:
 1. Join the group and introduce yourself and your startup/idea.
 2. Actively engage with fellow founders in ecosystem discussions.
 3. Share relevant opportunities, collaborations, and queries.
@@ -517,7 +517,7 @@ Technical Partner: **${CSC_TECHNICAL_PARTNER.name}** (${CSC_TECHNICAL_PARTNER.ur
     lower.includes("வேலை");
 
   if (isOpportunitiesQuery) {
-    return `**CSC Opportunities Portal**:
+    return `*CSC Opportunities Portal*:
 Looking for startup jobs, internships, co-founder search, or hiring talent for your venture?
 
 Explore verified opportunities across Coimbatore startups:
@@ -534,7 +534,7 @@ Explore verified opportunities across Coimbatore startups:
     lower.includes("வழிகாட்டி");
 
   if (isResourcesQuery) {
-    return `**CSC Founder Resources & Guides**:
+    return `*CSC Founder Resources & Guides*:
 Access practical playbooks, pitch deck frameworks, legal templates, and technical resources:
 🔗 https://csc.logicintelligencetechnologies.in/resources`;
   }
@@ -548,7 +548,7 @@ Access practical playbooks, pitch deck frameworks, legal templates, and technica
     lower.includes("கூட்டணி");
 
   if (isCollaborationsQuery) {
-    return `**CSC Ecosystem Collaborations**:
+    return `*CSC Ecosystem Collaborations*:
 We collaborate with universities, student entrepreneurship cells, incubators, and industry bodies across Coimbatore.
 
 Explore or propose a partnership:
@@ -566,10 +566,10 @@ Explore or propose a partnership:
     lower.includes("தொடர்பு");
 
   if (isContactQuery) {
-    return `**Get in Touch with CSC Circle**:
-• **Website Contact Form**: https://csc.logicintelligencetechnologies.in/contact
-• **Email**: ${CSC_COMMUNITY_CONTACTS.supportEmail} or ${CSC_COMMUNITY_CONTACTS.communityEmail}
-• **Official WhatsApp Agent**: ${CSC_COMMUNITY_CONTACTS.whatsappAgentPhone}
+    return `*Get in Touch with CSC Circle*:
+• *Website Contact Form*: https://csc.logicintelligencetechnologies.in/contact
+• *Email*: ${CSC_COMMUNITY_CONTACTS.supportEmail} or ${CSC_COMMUNITY_CONTACTS.communityEmail}
+• *Official WhatsApp Agent*: ${CSC_COMMUNITY_CONTACTS.whatsappAgentPhone}
 
 We welcome your questions, feedback, and collaboration proposals!`;
   }

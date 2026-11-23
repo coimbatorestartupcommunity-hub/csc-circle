@@ -3,7 +3,7 @@ import type { Redis } from "ioredis";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { WHATSAPP_QUEUE_NAME, type WhatsAppJobData } from "./queue.js";
 import type { WhatsAppProvider } from "../services/whatsapp.js";
-import { buildContactAcknowledgementMessage } from "../utils/message-template.js";
+import { buildContactAcknowledgementMessage, formatForWhatsApp } from "../utils/message-template.js";
 import { getRandomDelay, sleep } from "../utils/delay.js";
 import { logger } from "../utils/logger.js";
 
@@ -121,6 +121,9 @@ export class WhatsAppWorkerService {
       await this.updateStatus(outboxId, "failed", undefined, "EMPTY_MESSAGE", "No text provided");
       return;
     }
+
+    // Ensure WhatsApp markdown formatting is strictly normalized (*bold*, no stray **)
+    messageText = formatForWhatsApp(messageText);
 
     // 2. Dispatch Pacing Delay (2-5s configurable non-blocking waiting)
     const pacingDelay = getRandomDelay(this.delayMinMs, this.delayMaxMs);

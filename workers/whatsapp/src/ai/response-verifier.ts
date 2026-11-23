@@ -1,4 +1,4 @@
-import { CSC_WHATSAPP_FOOTER } from "../utils/message-template.js";
+import { CSC_WHATSAPP_FOOTER, formatForWhatsApp } from "../utils/message-template.js";
 
 /**
  * Verifies and cleanses AI output before sending to WhatsApp.
@@ -19,6 +19,9 @@ export function verifyAndFormatResponse(
   cleaned = cleaned.replace(/owa_k1_[a-f0-9]{64}/g, "[REDACTED_API_KEY]");
   cleaned = cleaned.replace(/gsk_[a-zA-Z0-9]{32,}/g, "[REDACTED_KEY]");
   cleaned = cleaned.replace(/xai-[a-zA-Z0-9]{32,}/g, "[REDACTED_KEY]");
+
+  // Normalize Markdown syntax for WhatsApp (convert **bold** -> *bold*, etc.)
+  cleaned = formatForWhatsApp(cleaned);
 
   // Trim trailing whitespace
   cleaned = cleaned.trim();
