@@ -11,10 +11,8 @@ export function verifyAndFormatResponse(
 ): string {
   let cleaned = rawResponse.trim();
 
-  // Remove duplicate mentions of footer if model hallucinated it
-  cleaned = cleaned.replace(/🚀\s*\*?Connect\. Build\. Grow\.\*?/gi, "");
-  cleaned = cleaned.replace(/\*?Coimbatore Startup Community \(CSC Circle\)\*?/gi, "");
-  cleaned = cleaned.replace(/\*?Technical Partner:\s*Logic Intelligence Technologies\*?\s*🤍?/gi, "");
+  // Remove duplicate trailing footer blocks if model hallucinated it at the bottom
+  cleaned = cleaned.replace(/\n+\s*🚀\s*\*?Connect\. Build\. Grow\.\*?[\s\S]*$/i, "");
 
   // Scrub any accidental token or secret leakage (JWT tokens, OpenWA keys, Groq/xAI keys)
   cleaned = cleaned.replace(/ey[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g, "[REDACTED_TOKEN]");

@@ -16,7 +16,7 @@ export async function executePreEventReminderCycle(): Promise<number> {
     const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
     const { data: events, error: eventErr } = await sb
       .from("events")
-      .select("id, title, slug, starts_at, venue_name, venue_city")
+      .select("id, title, slug, starts_at, venue, location")
       .eq("status", "published")
       .gte("starts_at", now.toISOString())
       .lte("starts_at", next24h);
@@ -61,7 +61,7 @@ export async function executePreEventReminderCycle(): Promise<number> {
           `Hello *${att.name || "Member"}*,\n` +
           `Your spot for *${evt.title}* is confirmed! ${isTomorrow ? "We look forward to seeing you tomorrow." : "Doors are opening soon."}\n\n` +
           `📅 *Date & Time:* ${new Date(evt.starts_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}\n` +
-          `📍 *Venue:* ${evt.venue_name || "Coimbatore"}, ${evt.venue_city || "Coimbatore"}\n` +
+          `📍 *Venue:* ${evt.venue || evt.location || "Coimbatore"}\n` +
           `🎫 *Booking Reference:* \`${att.reference || "Pass Confirmed"}\`\n` +
           `🔗 *View Your Pass:* https://csc.logicintelligencetechnologies.in/member/card\n\n` +
           CSC_WHATSAPP_FOOTER;

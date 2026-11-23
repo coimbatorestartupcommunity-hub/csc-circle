@@ -42,9 +42,11 @@ export async function processInboundWhatsAppMessage(
   openwaClient: OpenWaClient,
   redis: Redis | null = null
 ): Promise<string | null> {
-  const rawSender = event.from.replace(/@c\.us$/, "");
-  const senderPhone = normalizePhoneForMatching(rawSender);
-  const chatId = `${senderPhone}@c.us`;
+  const chatId = event.from.includes("@")
+    ? event.from
+    : `${normalizePhoneForMatching(event.from)}@c.us`;
+  const rawSender = event.from.replace(/@(c\.us|lid|g\.us)$/, "");
+  const senderPhone = event.from.endsWith("@lid") ? rawSender : normalizePhoneForMatching(rawSender);
   const text = (event.body || "").trim();
 
   // 1. Voice Note / Audio Message Detection (Polite text-only refusal)

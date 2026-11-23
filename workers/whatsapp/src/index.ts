@@ -143,14 +143,33 @@ async function main() {
           const payload = JSON.parse(bodyStr);
           // OpenWA event format: { event: "onMessage", data: { from: "...", body: "...", id: "..." } }
           const msgData = payload.data || payload;
-          if (msgData.from && (msgData.body || msgData.type === "ptt" || msgData.type === "audio")) {
+
+          // Ignore self-sent messages and revoked messages
+          if (msgData.fromMe === true || msgData.type === "revoked") {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ received: true, ignored: true }));
+            return;
+          }
+
+          const senderFrom =
+            msgData.from ||
+            msgData.chatId ||
+            (msgData.id && typeof msgData.id === "object" ? msgData.id.remote : undefined);
+
+          if (senderFrom && (msgData.body || msgData.type === "ptt" || msgData.type === "audio")) {
+            logger.info("Processing inbound WhatsApp webhook message", {
+              from: senderFrom,
+              type: msgData.type,
+              bodySnippet: typeof msgData.body === "string" ? msgData.body.slice(0, 40) : "",
+            });
+
             // Process message asynchronously
             processInboundWhatsAppMessage(
               {
-                from: msgData.from,
+                from: senderFrom,
                 body: msgData.body || "",
                 senderName: msgData.sender?.pushname || msgData.pushname,
-                messageId: msgData.id,
+                messageId: typeof msgData.id === "string" ? msgData.id : msgData.id?._serialized,
                 type: msgData.type,
                 mimetype: msgData.mimetype,
               },

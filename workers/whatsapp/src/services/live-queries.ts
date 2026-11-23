@@ -48,7 +48,7 @@ export async function getUpcomingPublishedEvents(): Promise<LiveEventSummary[]> 
   try {
     const { data, error } = await sb
       .from("events")
-      .select("id, title, slug, starts_at, venue_name, venue_city, admission, ticket_price, status")
+      .select("id, title, slug, starts_at, venue, location, admission, price_minor, status")
       .eq("status", "published")
       .gte("starts_at", new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
       .order("starts_at", { ascending: true })
@@ -64,10 +64,10 @@ export async function getUpcomingPublishedEvents(): Promise<LiveEventSummary[]> 
       title: e.title,
       slug: e.slug,
       startsAt: e.starts_at,
-      venueName: e.venue_name,
-      venueCity: e.venue_city || "Coimbatore",
+      venueName: e.venue || e.location || "Coimbatore",
+      venueCity: "Coimbatore",
       admission: e.admission || "free",
-      ticketPrice: e.ticket_price,
+      ticketPrice: e.price_minor ? e.price_minor / 100 : null,
       status: e.status,
       url: `https://csc.logicintelligencetechnologies.in/events/${e.slug}`,
     }));

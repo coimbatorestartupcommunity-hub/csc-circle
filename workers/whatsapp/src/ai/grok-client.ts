@@ -112,12 +112,7 @@ async function callModalFallback(
   const modalBaseUrl = env.MODAL_AI_ENDPOINT?.trim().replace(/\/+$/, "");
   if (!modalBaseUrl) return null;
 
-  // Potential endpoints: OpenAI-compatible /v1/chat/completions or root
-  const candidateUrls = [
-    `${modalBaseUrl}/v1/chat/completions`,
-    modalBaseUrl,
-  ];
-
+  const url = `${modalBaseUrl}/v1/chat/completions`;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -126,88 +121,121 @@ async function callModalFallback(
     headers["Authorization"] = `Bearer ${env.MODAL_PROXY_TOKEN}`;
   }
 
-  for (const url of candidateUrls) {
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model: "default",
-          messages,
-          temperature: options?.temperature ?? 0.3,
-          max_tokens: options?.maxTokens ?? 1000,
-        }),
-        signal: controller.signal,
-      });
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "default",
+        messages,
+        temperature: options?.temperature ?? 0.3,
+        max_tokens: options?.maxTokens ?? 1000,
+      }),
+      signal: controller.signal,
+    });
 
-      clearTimeout(timer);
+    clearTimeout(timer);
 
-      if (res.ok) {
-        const data = (await res.json()) as any;
-        const reply =
-          data?.choices?.[0]?.message?.content ||
-          data?.text ||
-          data?.output ||
-          data?.response;
+    if (res.ok) {
+      const data = (await res.json()) as any;
+      const reply =
+        data?.choices?.[0]?.message?.content ||
+        data?.text ||
+        data?.output ||
+        data?.response;
 
-        if (reply && typeof reply === "string") {
-          logger.info("Successfully received AI response from Modal fallback endpoint");
-          return reply.trim();
-        }
+      if (reply && typeof reply === "string") {
+        logger.info("Successfully received AI response from Modal fallback endpoint");
+        return reply.trim();
       }
-    } catch {
-      // Continue to next candidate or fallback
     }
+  } catch {
+    // Quick failover to deterministic contextual fallback
   }
 
   return null;
 }
 
 /**
- * Fallback contextual engine if all external inference providers fail or are unauthenticated.
+ * Fallback contextual engine supporting English, Pure Tamil, and Tanglish.
  */
 function generateContextualFallback(messages: ChatMessage[]): string {
   const lastUserMessage = messages
     .slice()
     .reverse()
-    .find((m) => m.role === "user")?.content?.toLowerCase() || "";
+    .find((m) => m.role === "user")?.content?.trim() || "";
 
-  const isTamil =
-    /[\u0B80-\u0BFF]/.test(lastUserMessage) ||
-    /\b(vanakkam|eppadi|enge|theriyuma|enna|solunga|nandri|iruka)\b/i.test(lastUserMessage);
+  const lower = lastUserMessage.toLowerCase();
 
+  // 1. Detect Pure Tamil (Tamil script unicode)
+  const isPureTamil = /[\u0B80-\u0BFF]/.test(lastUserMessage);
+
+  // 2. Detect Tanglish (Tamil words written in English letters)
+  const isTanglish =
+    !isPureTamil &&
+    /\b(vanakkam|epadi|eppadi|enge|engae|theriyuma|enna|solunga|sollunga|nandri|iruka|irukeenga|irukinga|panlam|pannalam|panna|venum|kedaikuma|bro|thala|machan|nanba|kooda|unga|namba|romba|aachu|aagala|sollu|paaru|paru|edhavadhu|eppovum|eppa|eppo)\b/i.test(lower);
+
+  // Events / Meetups
   if (
-    lastUserMessage.includes("event") ||
-    lastUserMessage.includes("meetup") ||
-    lastUserMessage.includes("நிகழ்வு") ||
-    lastUserMessage.includes("ஈவென்ட்") ||
-    lastUserMessage.includes("மீட்டப்")
+    lower.includes("event") ||
+    lower.includes("meetup") ||
+    lower.includes("நிகழ்வு") ||
+    lower.includes("ஈவென்ட்") ||
+    lower.includes("மீட்டப்")
   ) {
-    if (isTamil) {
-      return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் (CSC Circle) அடுத்த நிகழ்வுகள் மற்றும் மீட்டப்களைப் பற்றி அறிய விரும்புகிறீர்களா?\n\nநமது வரவிருக்கும் நிகழ்வுகளைக் காண மற்றும் பதிவு செய்ய:\n🔗 https://csc.logicintelligencetechnologies.in/events\n\nவேறு ஏதேனும் விவரங்கள் தேவைப்பட்டால் தயங்காமல் கேளுங்கள்!";
+    if (isPureTamil) {
+      return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் (CSC Circle) அடுத்த நிகழ்வுகள் மற்றும் மீட்டப்களைப் பற்றி அறிய விரும்புகிறீர்களா?\n\nநமது வரவிருக்கும் நிகழ்வுகளைக் காண மற்றும் பதிவு செய்ய:\n🔗 https://csc.logicintelligencetechnologies.in/events\n\nவேறு ஏதேனும் விவரங்கள் தேவைப்பட்டால் தயங்காமல் கேளுங்கள்! ✨";
     }
-    return "Hello! Here are the upcoming events at Coimbatore Startup Community (CSC Circle).\n\nYou can view all scheduled events and reserve your pass here:\n🔗 https://csc.logicintelligencetechnologies.in/events\n\nLet me know if you would like details on any specific event!";
+    if (isTanglish) {
+      return "Vanakkam! CSC Circle oda upcoming events & meetups pathi therinjika virumbureengala? Scheduled events paaka and pass book panna:\n🔗 https://csc.logicintelligencetechnologies.in/events\n\nSpecific event pathi info venumna kooda sollunga, naan guide panren! ✨";
+    }
+    return "Hello! Here are the upcoming events at Coimbatore Startup Community (CSC Circle).\n\nYou can view all scheduled events and reserve your pass here:\n🔗 https://csc.logicintelligencetechnologies.in/events\n\nLet me know if you would like details on any specific event! ✨";
   }
 
+  // Membership & Passes
   if (
-    lastUserMessage.includes("membership") ||
-    lastUserMessage.includes("member") ||
-    lastUserMessage.includes("உறுப்பினர்") ||
-    lastUserMessage.includes("card") ||
-    lastUserMessage.includes("id")
+    lower.includes("membership") ||
+    lower.includes("member") ||
+    lower.includes("உறுப்பினர்") ||
+    lower.includes("card") ||
+    lower.includes("id")
   ) {
-    if (isTamil) {
-      return "வணக்கம்! CSC Circle உறுப்பினர் அட்டை (Membership Card) மற்றும் நிலையை சரிபார்க்க விரும்புகிறீர்களா?\n\nஉறுப்பினர் அடையாள அட்டைக்கான அங்கீகாரம் 5 நிமிடங்களுக்குள் தானாகவே செயல்படுத்தப்படுகிறது.\n\n• உங்கள் கணக்கின் நிலையை அல்லது டிஜிட்டல் கார்டைப் பார்க்க:\n🔗 https://csc.logicintelligencetechnologies.in/member/card\n• புதிய உறுப்பினராக இணைய:\n🔗 https://csc.logicintelligencetechnologies.in/join";
+    if (isPureTamil) {
+      return "வணக்கம்! CSC Circle உறுப்பினர் அட்டை (Membership Card) மற்றும் நிலையை சரிபார்க்க விரும்புகிறீர்களா?\n\nஉறுப்பினர் அடையாள அட்டைக்கான அங்கீகாரம் 5 நிமிடங்களுக்குள் தானாகவே செயல்படுத்தப்படுகிறது.\n\n• உங்கள் கணக்கின் நிலையை அல்லது டிஜிட்டல் கார்டைப் பார்க்க:\n🔗 https://csc.logicintelligencetechnologies.in/member/card\n• புதிய உறுப்பினராக இணைய:\n🔗 https://csc.logicintelligencetechnologies.in/join\n\nஏற்கனவே விண்ணப்பித்திருந்தால், உங்கள் மின்னஞ்சல் முகவரியை அனுப்பவும்.";
+    }
+    if (isTanglish) {
+      return "Vanakkam! CSC Circle membership claim panna & digital pass paaka virumbureengala? Membership claims 5 mins kula automatically approve aagidum.\n\n• Unga pass/card paaka: https://csc.logicintelligencetechnologies.in/member/card\n• New member apply panna: https://csc.logicintelligencetechnologies.in/join\n\nAlready apply pannirundha unga registered email address share pannunga, verify pannikalam!";
     }
     return "Welcome to Coimbatore Startup Community (CSC Circle)!\n\nMembership claims are automatically approved within 5 minutes of submission.\n\n• To check your membership or view your digital pass: https://csc.logicintelligencetechnologies.in/member/card\n• To apply for membership: https://csc.logicintelligencetechnologies.in/join\n\nIf you have already applied, reply with your registered email or phone number to check your status.";
   }
 
-  if (isTamil) {
-    return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டிக்கு (CSC Circle) உங்களை அன்போடு வரவேற்கிறோம். நான் உங்கள் AI உதவியாளர்.\n\nநிகழ்வுகள், ஸ்டார்ட்அப் வழிகாட்டிகள், மற்றும் உறுப்பினர் சேர்க்கை தொடர்பான எந்தவொரு கேள்விகளுக்கும் உதவ தயாராக உள்ளேன்.\n\nஇணையதளம்: https://csc.logicintelligencetechnologies.in";
+  // Startup Directory
+  if (
+    lower.includes("startup") ||
+    lower.includes("directory") ||
+    lower.includes("founder") ||
+    lower.includes("நிறுவனம்")
+  ) {
+    if (isPureTamil) {
+      return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் நிறுவனங்களின் விபரங்களை ஆராய விரும்புகிறீர்களா?\n\n• முழு ஸ்டார்ட்அப் பட்டியல்:\n🔗 https://csc.logicintelligencetechnologies.in/directory\n• உங்கள் நிறுவனத்தை சேர்க்க:\n🔗 https://csc.logicintelligencetechnologies.in/profile/startups/new";
+    }
+    if (isTanglish) {
+      return "Vanakkam! Coimbatore startup directory & founders list paaka virumbureengala?\n\n• Full Startup Directory: https://csc.logicintelligencetechnologies.in/directory\n• Unga startup-ah list panna: https://csc.logicintelligencetechnologies.in/profile/startups/new";
+    }
+    return "Explore the thriving ecosystem of Coimbatore startups!\n\n• View the Startup Directory: https://csc.logicintelligencetechnologies.in/directory\n• Register your startup: https://csc.logicintelligencetechnologies.in/profile/startups/new";
   }
 
-  return "Welcome to Coimbatore Startup Community (CSC Circle)! I am your 24/7 community intelligence assistant.\n\nI can assist you with upcoming events, membership applications, startup directory listings, and ecosystem partnerships.\n\nWebsite: https://csc.logicintelligencetechnologies.in\nHow may I help you today?";
+  // General Greetings
+  if (isPureTamil) {
+    return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டிக்கு (CSC Circle) உங்களை அன்போடு வரவேற்கிறோம். நான் உங்கள் 24/7 AI உதவியாளர்.\n\nநிகழ்வுகள், ஸ்டார்ட்அப் வழிகாட்டிகள், மற்றும் உறுப்பினர் சேர்க்கை தொடர்பான எந்தவொரு கேள்விகளுக்கும் உதவ தயாராக உள்ளேன்.\n\n🌐 இணையதளம்: https://csc.logicintelligencetechnologies.in\nஉங்களுக்கு இன்று எவ்வாறு உதவலாம்?";
+  }
+
+  if (isTanglish) {
+    return "Vanakkam! Coimbatore Startup Community (CSC Circle) ku ungalai anbodhu varaverkirom! Naan ungaloda 24/7 AI Assistant.\n\nUpcoming events, membership claim, startup directory and ecosystem updates pathi ungaluku edhavadhu therinjikkanuma? Sollunga, naan help panren! ✨\n\n🌐 Website: https://csc.logicintelligencetechnologies.in";
+  }
+
+  return "Welcome to Coimbatore Startup Community (CSC Circle)! I am your 24/7 community intelligence assistant.\n\nI can assist you with upcoming events, membership applications, startup directory listings, and ecosystem partnerships.\n\n🌐 Website: https://csc.logicintelligencetechnologies.in\nHow may I help you today?";
 }
