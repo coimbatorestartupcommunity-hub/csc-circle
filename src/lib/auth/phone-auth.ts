@@ -2,6 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enqueueWhatsAppNotification, normalizePhoneForWhatsApp } from "@/lib/notifications/whatsapp-outbox";
+export { normalizePhoneForWhatsApp } from "@/lib/notifications/whatsapp-outbox";
 import { sendSecurityCodeEmail } from "@/lib/auth/security-code";
 import { getRedisClient, withRedisTimeout } from "@/lib/redis/client";
 import { isRedisEnabled } from "@/lib/redis/config";

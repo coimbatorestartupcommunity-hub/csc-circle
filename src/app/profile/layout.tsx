@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MemberShell } from "@/components/member/member-shell";
 import { MemberUnavailable } from "@/components/member/member-unavailable";
 import { DemoBanner } from "@/components/member/demo-banner";
+import { PhoneVerificationModal } from "@/components/member/phone-verification-modal";
 import { membershipStatusMeta } from "@/lib/content/member-taxonomy";
 
 export const metadata: Metadata = {
@@ -41,9 +42,21 @@ export default async function MemberLayout({
   const meta = membershipStatusMeta[status];
   const memberNumber = profile?.membership.memberNumber;
 
+  // Phone verification check for live authenticated users
+  const isPhoneVerified = Boolean(
+    (profile?.consent as Record<string, unknown> | undefined)?.phone_verified ||
+    ctx.user?.user_metadata?.phone_verified
+  );
+
   return (
     <>
       {ctx.mode === "preview" ? <DemoBanner /> : null}
+      {ctx.mode === "live" ? (
+        <PhoneVerificationModal
+          isVerified={isPhoneVerified}
+          initialPhone={profile?.whatsapp || ""}
+        />
+      ) : null}
       <MemberShell
         memberName={profile?.displayName || profile?.fullName || "Member"}
         avatarUrl={profile?.portraitUrl ?? profile?.avatarUrl}
