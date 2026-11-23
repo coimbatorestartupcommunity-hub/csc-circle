@@ -121,4 +121,70 @@ describe("CSC Circle WhatsApp Strategic Upgrades (v2.0.0)", () => {
       expect(chatId).toBe("919876543210@c.us");
     });
   });
+
+  describe("Upgrade 8: Authoritative Knowledge Base & Intent Resolution", () => {
+    // Dynamic import to test workers AI model fallback
+    it("answers community information, mission, and tagline accurately", async () => {
+      const { callAIModel } = await import("../workers/whatsapp/src/ai/grok-client.js");
+      const reply = await callAIModel([
+        {
+          role: "user",
+          content: "So I need some information about the community. What are they doing and what is the one line of the community",
+        },
+      ]);
+      expect(reply).toContain("Connect. Build. Grow.");
+      expect(reply).toContain("Coimbatore Startup Community (CSC Circle)");
+      expect(reply).toContain("What We Do");
+    });
+
+    it("accurately names K. N. Reyash as Founder", async () => {
+      const { callAIModel } = await import("../workers/whatsapp/src/ai/grok-client.js");
+      const reply = await callAIModel([
+        { role: "user", content: "Who is the founder of CSC Circle?" },
+      ]);
+      expect(reply).toContain("K. N. Reyash");
+      expect(reply).toContain("Belvoria");
+    });
+
+    it("accurately names E. R. Sharan as Co-Founder", async () => {
+      const { callAIModel } = await import("../workers/whatsapp/src/ai/grok-client.js");
+      const reply = await callAIModel([
+        { role: "user", content: "Who is the cofounder of the community?" },
+      ]);
+      expect(reply).toContain("E. R. Sharan");
+      expect(reply).toContain("CECIL Groups");
+    });
+
+    it("accurately names Mirra Mahendran as CEO", async () => {
+      const { callAIModel } = await import("../workers/whatsapp/src/ai/grok-client.js");
+      const reply = await callAIModel([
+        { role: "user", content: "Who is the CEO of CSC?" },
+      ]);
+      expect(reply).toContain("Mirra Mahendran");
+      expect(reply).toContain("PSG");
+    });
+
+    it("accurately names Vikash Saravanan as CTO and Logic Intelligence Technologies as Tech Partner", async () => {
+      const { callAIModel } = await import("../workers/whatsapp/src/ai/grok-client.js");
+      const reply = await callAIModel([
+        { role: "user", content: "Who is the CTO and tech partner?" },
+      ]);
+      expect(reply).toContain("Vikash Saravanan");
+      expect(reply).toContain("Logic Intelligence Technologies");
+    });
+
+    it("provides full leadership roster when asked about the core team", async () => {
+      const { callAIModel } = await import("../workers/whatsapp/src/ai/grok-client.js");
+      const reply = await callAIModel([
+        { role: "user", content: "Who is on the leadership team of CSC Circle?" },
+      ]);
+      expect(reply).toContain("K. N. Reyash");
+      expect(reply).toContain("E. R. Sharan");
+      expect(reply).toContain("Mirra Mahendran");
+      expect(reply).toContain("Vikash Saravanan");
+      expect(reply).toContain("Kishore C");
+      expect(reply).toContain("Jaibharath V");
+      expect(reply).toContain("Swathi");
+    });
+  });
 });

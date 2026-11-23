@@ -230,7 +230,13 @@ export async function processInboundWhatsAppMessage(
   const finalReply = verifyAndFormatResponse(rawReply, false);
 
   // 14. Dispatch to WhatsApp
-  await openwaClient.sendTextMessage(chatId, finalReply);
+  const sendRes = await openwaClient.sendTextMessage(chatId, finalReply);
+  logger.info("Dispatched response to WhatsApp", {
+    chatId,
+    success: sendRes.success,
+    messageId: sendRes.messageId,
+    error: sendRes.errorMessage,
+  });
 
   return finalReply;
 }
