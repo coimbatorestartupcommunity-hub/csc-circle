@@ -26,22 +26,34 @@ const guidelines = [
   },
   {
     title: "4. Anti-Spam & Unsolicited Sales Restrictions",
-    body: "CSC Circle is a founder collaboration space, not a broadcast lead generator. Do not blast unsolicited sales pitches, speculative cryptocurrency schemes, multi-level marketing campaigns, or generic cold pitches in community groups or member direct messages.",
+    body: "CSC Circle is a founder collaboration space, not a broadcast sales funnel. Do not blast unsolicited sales pitches, commercial discount flyers, speculative cryptocurrency schemes, multi-level marketing campaigns, or generic cold pitches in community groups or member direct messages.",
   },
   {
-    title: "5. Anti-Scraping & Directory Protection",
+    title: "5. Member Introductions & Problem Showcases",
+    body: "New members are warmly encouraged to introduce themselves upon joining. Define who you are, the core problem your startup or idea is solving, your technology stack, and what partnerships or peer support you are looking for.",
+  },
+  {
+    title: "6. Ecosystem Links & Curated Networks Policy",
+    body: "Sharing genuine, time-sensitive startup meetups, pitch fests, demo days, and verified founder/investor community links is welcomed. Sharing unrelated group links, promotional WhatsApp/Telegram invites, or marketing broadcast links is strictly prohibited.",
+  },
+  {
+    title: "7. Zero Tolerance for Unsolicited Direct Messaging",
+    body: "Direct messaging members for cold pitching, business solicitation, or recruitment without prior public discussion and consent within official CSC channels is strictly prohibited and leads to immediate ecosystem removal.",
+  },
+  {
+    title: "8. Anti-Scraping & Directory Protection",
     body: "Scraping member directories, extracting founder emails, downloading member ID cards, or capturing profile data via automated scrapers, scripts, or headless bots is strictly prohibited. Violators trigger automated IP bans and legal enforcement.",
   },
   {
-    title: "6. Intellectual Property & Confidentiality",
+    title: "9. Intellectual Property & Confidentiality",
     body: "Respect proprietary technology, trade secrets, and pitch deck materials shared by other founders in trust. Never post or redistribute third-party code, pitch materials, or confidential customer metrics without documented consent.",
   },
   {
-    title: "7. Authentic Event Registration & Pass Use",
+    title: "10. Authentic Event Registration & Pass Use",
     body: "Register for events only when genuinely planning to attend. Digital QR passes are issued to individual registered members and are strictly non-transferable. If unable to attend, cancel at least 48 hours prior to free up space for waitlisted founders.",
   },
   {
-    title: "8. Platform Security & Ethical Disclosures",
+    title: "11. Platform Security & Ethical Disclosures",
     body: "Do not attempt to probe, bypass rate limiters, or test vulnerabilities against CSC Circle infrastructure. If you discover a potential vulnerability, submit an encrypted report directly to our security engineering team under safe harbor rules.",
   },
 ];

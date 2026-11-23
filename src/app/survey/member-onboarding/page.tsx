@@ -57,16 +57,34 @@ export default function MemberOnboardingSurveyPage() {
             />
             <p className="mt-6 text-xs font-bold tracking-[0.16em] text-brand-accent uppercase">Coimbatore Startup Community</p>
             <h1 className="mt-3 text-2xl font-bold tracking-tight text-brand-ink sm:text-3xl lg:text-4xl">
-              CSC Circle — Member Information Form
+              CSC Circle — Member Information &amp; Venture Diagnostic Form
             </h1>
             <p className="mt-3 text-lg font-semibold text-brand-ink sm:text-xl">
               Tell Us About Yourself &amp; Your Journey
             </p>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-brand-secondary sm:text-base sm:leading-7">
-              We want to understand who you are, what you&apos;re building, and how CSC Circle can support your entrepreneurial journey. Complete this short form to help us identify relevant connections, learning opportunities, and community activities.
+              We want to understand who you are, what you&apos;re building, and how CSC Circle can support your entrepreneurial journey. Completing this diagnostic helps our leadership team connect you directly with regional angel investors, verified B2B enterprise partners, grant cohorts (TANSEED &amp; SISFS), and curated founder mentorship across Western Tamil Nadu.
             </p>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 font-medium text-brand-muted">
-              Estimated completion time: 3–4 minutes
+            <div className="mx-auto mt-5 grid max-w-xl gap-2 text-left sm:grid-cols-2">
+              <div className="flex items-center gap-2 rounded-xl bg-brand-cloud/60 px-3 py-2 text-xs font-medium text-brand-ink">
+                <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-brand-accent" />
+                B2B &amp; Enterprise Partner Matching
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-brand-cloud/60 px-3 py-2 text-xs font-medium text-brand-ink">
+                <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-brand-accent" />
+                Angel Investor &amp; VC Deal-Flow
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-brand-cloud/60 px-3 py-2 text-xs font-medium text-brand-ink">
+                <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-brand-accent" />
+                TANSEED &amp; Seed Grant Eligibility
+              </div>
+              <div className="flex items-center gap-2 rounded-xl bg-brand-cloud/60 px-3 py-2 text-xs font-medium text-brand-ink">
+                <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-brand-accent" />
+                Co-Founder &amp; Core Talent Sourcing
+              </div>
+            </div>
+            <p className="mx-auto mt-4 max-w-2xl text-xs font-medium text-brand-muted">
+              Estimated completion time: 3–4 minutes · Free &amp; Confidential
             </p>
           </div>
           <SurveyForm />

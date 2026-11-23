@@ -3,19 +3,19 @@ import { membershipDesignationLabel } from "@/lib/member/membership-designation"
 
 describe("membership ID designation label", () => {
   it.each([
-    ["aspiring_entrepreneur", "Aspiring Entrepreneur"],
+    ["aspiring_entrepreneur", "Idea-Stage Builder / Aspiring Founder"],
     ["student_entrepreneur", "Student Entrepreneur"],
-    ["marketing", "Marketing Professional"],
+    ["marketing", "Growth Entrepreneur"],
     ["startup_founder", "Startup Founder"],
-    ["team_member", "Startup Team Member"],
-    ["mentor", "Mentor"],
+    ["team_member", "Startup Co-Builder"],
+    ["mentor", "Mentor / Industry Advisor"],
   ])("shows the approved %s category instead of Other", (designation, label) => {
     expect(membershipDesignationLabel(["other"], designation)).toBe(label);
   });
 
   it("shows all specific profile categories and removes Other", () => {
     expect(membershipDesignationLabel(["other", "startup_founder", "mentor", "startup_founder"], "student_entrepreneur"))
-      .toBe("Startup Founder · Mentor");
+      .toBe("Startup Founder · Mentor / Industry Advisor");
   });
 
   it("keeps Other only when no specific selection exists", () => {

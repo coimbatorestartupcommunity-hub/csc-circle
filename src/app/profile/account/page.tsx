@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, LockKeyhole, Rocket, ShieldCheck, UserCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, IdCard, LockKeyhole, Rocket, ShieldCheck, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MemberProfileForm } from "@/components/member/member-profile-form";
 import { MemberPortraitUpload } from "@/components/member/member-portrait-upload";
@@ -78,6 +78,53 @@ export default async function MemberProfilePage() {
         <Button variant="outline" render={<Link href="/profile/settings#account-security" />} className="mt-1 gap-2"><ShieldCheck className="size-4" />Account Security</Button>
       </header>
 
+      {!(["claim_submitted", "pending_verification", "approved", "active"].includes(profile.membership.status)) ? (
+        <section className="flex flex-col gap-4 rounded-3xl border-2 border-brand-accent/40 bg-gradient-to-br from-brand-purple/20 via-brand-white to-brand-blue/20 p-5 shadow-sm ring-1 ring-brand-border sm:p-7">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-brand-accent text-white shadow-xs">
+                <IdCard className="size-5" />
+              </span>
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-900">
+                  Action Required · Automated 5-Min Approval
+                </span>
+                <h2 className="text-lg font-bold text-brand-ink sm:text-xl">Claim Your Official CSC Digital ID Card</h2>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs leading-relaxed text-brand-secondary sm:text-sm">
+            Your website account is active, but your official CSC Digital ID Card has not been issued yet. Claims are automatically verified within 5 minutes. Activating your card unlocks:
+          </p>
+          <div className="grid gap-2 text-xs font-medium text-brand-ink sm:grid-cols-2">
+            <div className="flex items-center gap-2 rounded-xl bg-white/90 p-2.5 ring-1 ring-brand-border/60">
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+              <span>Mandatory Express QR Pass for offline meetups</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-xl bg-white/90 p-2.5 ring-1 ring-brand-border/60">
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+              <span>Apple Wallet &amp; Google Wallet instant integration</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-xl bg-white/90 p-2.5 ring-1 ring-brand-border/60">
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+              <span>Verified status in the regional Founder Directory</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-xl bg-white/90 p-2.5 ring-1 ring-brand-border/60">
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+              <span>Priority endorsement for TANSEED (₹15L) &amp; SISFS grants</span>
+            </div>
+          </div>
+          <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button render={<Link href="/profile/claim" />} className="gap-2 bg-brand-ink text-white hover:bg-brand-ink/90 sm:w-auto">
+              <IdCard className="size-4" /> Claim My Digital ID Pass (Takes 2 Mins) <ArrowRight className="size-4" />
+            </Button>
+            <Button variant="outline" render={<Link href="/survey/member-onboarding" />} className="gap-2 sm:w-auto">
+              <ClipboardList className="size-4" /> Fill Founder Diagnostic
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
       <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-6">
         <h2 className="text-lg font-semibold text-brand-ink">Welcome to Your CSC Circle Member Profile</h2>
         <p className="mt-2 text-sm leading-6 text-brand-secondary">Your CSC member profile keeps your personal and professional information organized in one secure location. Your official CSC member ID, verified account identity, membership approval status and site permissions are controlled by CSC Circle.</p>
@@ -136,13 +183,20 @@ export default async function MemberProfilePage() {
       <MemberProfileForm key={profile.id} profile={profile} isDemo={ctx.mode === "preview"} />
       <section className="rounded-2xl border border-brand-border bg-brand-cloud/50 p-5 sm:p-6"><h2 className="text-lg font-semibold text-brand-ink">Private Information</h2><p className="mt-1 text-sm leading-6 text-brand-secondary">Your account email and mobile/WhatsApp information are stored for CSC account and member-support workflows. They are not included in the community directory by default. Public profile and contact-sharing permissions are managed separately.</p><p className="mt-2 text-xs text-brand-muted">Review account and privacy controls in <Link href="/profile/settings" className="font-semibold text-brand-accent underline underline-offset-2">Settings</Link>.</p></section>
 
-      {!(["claim_submitted", "pending_verification", "approved", "active"].includes(profile.membership.status)) ? (
-        <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-            <h2 className="font-semibold text-brand-ink">Apply for CSC membership</h2>
-            <p className="mt-1 text-sm text-brand-muted">Your website account is ready. Submit a separate claim for community membership review.</p>
+      {["approved", "active"].includes(profile.membership.status) ? (
+        <section className="flex flex-col gap-3 rounded-2xl bg-brand-cloud/60 p-5 ring-1 ring-brand-border sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="size-4 text-brand-accent shrink-0" />
+              <h2 className="font-semibold text-brand-ink">Complete Your Founder &amp; Venture Diagnostic</h2>
+            </div>
+            <p className="mt-1 text-sm text-brand-secondary">
+              Tell us what you&apos;re building to unlock targeted introductions to regional angel investors, mentors, and enterprise B2B partners across Western Tamil Nadu.
+            </p>
           </div>
-          <Button variant="outline" render={<Link href="/profile/claim" />} className="w-full shrink-0 sm:w-auto">Review membership claim</Button>
+          <Button variant="outline" render={<Link href="/survey/member-onboarding" />} className="w-full shrink-0 gap-2 sm:w-auto">
+            Open Diagnostic Form <ArrowRight className="size-4" />
+          </Button>
         </section>
       ) : null}
 

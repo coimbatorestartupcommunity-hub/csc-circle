@@ -67,11 +67,13 @@ export function ClaimForm({ isDemo }: { isDemo: boolean }) {
       onSubmit={handleSubmit(onSubmit)}
       className="flex flex-col gap-5 rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border sm:p-8"
     >
-      <div className="flex items-start gap-3 rounded-2xl bg-brand-blue/60 p-4 text-sm text-brand-ink">
-        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand-accent" aria-hidden />
-        <p>
-          Membership claims are automatically verified and approved within 5 minutes.
-          Once approved, your official CSC digital membership ID will be available in your portal and sent to your email.
+      <div className="flex flex-col gap-2 rounded-2xl bg-brand-blue/60 p-4 text-sm text-brand-ink ring-1 ring-brand-border/60">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="size-4 shrink-0 text-brand-accent" aria-hidden />
+          <span className="font-semibold text-brand-ink">Automated 5-Minute Verification &amp; Activation</span>
+        </div>
+        <p className="text-xs leading-relaxed text-brand-secondary sm:text-sm">
+          Claiming your free membership issues your official CSC Digital ID Card with Apple &amp; Google Wallet integration. Your card acts as your express QR pass for all offline CSC meetups, verifies your listing in the Founder Directory, and grants priority endorsement for TANSEED and SISFS seed grant cohorts.
         </p>
       </div>
 

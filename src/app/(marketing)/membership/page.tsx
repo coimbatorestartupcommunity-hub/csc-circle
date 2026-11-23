@@ -16,14 +16,16 @@ export const metadata: Metadata = {
 const email = siteConfig.social.email;
 
 const audience = [
-  "Startup Founders & Co-Founders",
-  "Aspiring Entrepreneurs & Idea-Stage Builders",
-  "Early-Stage Venture Operators",
-  "Serial Entrepreneurs & Business Leaders",
-  "Angel Investors & Syndicate Partners",
-  "Technical Innovators & System Architects",
+  "Founders & Startup Founders",
+  "Co-Founders & Startup Members",
+  "Idea-Stage Persons & Aspiring Builders",
+  "Entrepreneurs & Business Innovators",
+  "Business Persons & Established Business Members",
+  "Angel Investors, VCs & Capital Enablers",
   "Industry Mentors & Ecosystem Advisors",
-  "Hardware, DeepTech & AI Researchers",
+  "Technical Innovators, Full-Stack & AI Engineers",
+  "Hardware, Manufacturing & DeepTech Operators",
+  "Early-Stage Venture Operators & Growth Leads",
 ];
 
 const steps = [
@@ -36,12 +38,12 @@ const steps = [
 ];
 
 const benefits = [
-  { title: "A member profile", body: "Your own profile within the community, which you keep current from your account." },
-  { title: "A digital membership card", body: "Issued after approval, viewable and downloadable any time you are signed in." },
-  { title: "The founder directory", body: "Browse and connect with other founders, builders, and members of the community." },
-  { title: "Event registration", body: "Register for CSC events and access your confirmed passes from your account." },
-  { title: "Community notifications", body: "Receive updates relevant to your account through the in-app notification inbox." },
-  { title: "Collaboration visibility", body: "See the community work and initiatives showcased under Collaborations." },
+  { title: "Official Digital Membership ID", body: "Issued with a unique Founding Member serial number, exportable to Apple Wallet and Google Wallet." },
+  { title: "Mandatory Event Express Pass", body: "Fast-track QR admission for all CSC physical meetups, founder dinners, and pitch arenas across Coimbatore." },
+  { title: "Verified Founder Directory", body: "Showcase your venture publicly to regional investors, corporate enablers, and potential co-founders." },
+  { title: "Grant & Funding Endorsement", body: "Priority recommendation letters and eligibility screening for TANSEED (₹15L) and SISFS (₹50L) seed grants." },
+  { title: "Founder Consultations & Clinics", body: "Direct access to book 1-on-1 strategy, architecture, and pitch clinics with CSC advisors." },
+  { title: "Community Notification Radar", body: "Receive real-time, high-priority notifications on new grant cohorts, event passes, and platform milestones." },
 ];
 
 const responsibilities = [
