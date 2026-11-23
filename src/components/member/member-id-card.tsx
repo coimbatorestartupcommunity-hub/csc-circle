@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import QRCode from "qrcode";
 import { toBlob } from "html-to-image";
-import { Download, RefreshCw, Ticket, Loader2, FileDown } from "lucide-react";
+import { Download, RefreshCw, Ticket, Loader2, FileDown, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/member/status-badge";
@@ -32,6 +32,7 @@ export function MemberIdCard({
   const [refreshing, startRefresh] = React.useTransition();
   const router = useRouter();
   const statusMeta = membershipStatusMeta[card.status];
+  const isLocked = card.status === "suspended" || card.status === "revoked";
 
   function isAppleMobileBrowser() {
     const userAgent = navigator.userAgent;
@@ -214,6 +215,25 @@ export function MemberIdCard({
           </p>
         </div>
 
+        {/* Frosted Glass Blur Overlay when Locked / Suspended */}
+        {isLocked ? (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-3xl bg-white/80 p-6 text-center backdrop-blur-md ring-2 ring-red-300 shadow-xl">
+            <div className="mb-3 flex size-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 shadow-sm animate-pulse">
+              <Lock className="size-7" />
+            </div>
+            <h3 className="text-base font-bold text-neutral-900">Digital ID Pass Locked</h3>
+            <p className="mt-1 text-xs text-neutral-600 leading-relaxed max-w-[240px]">
+              This membership pass has been suspended by community administrators. Downloads and entry verification are locked.
+            </p>
+            <a
+              href="mailto:coimbatorestartupcommunity@gmail.com"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-black transition"
+            >
+              Contact Support
+            </a>
+          </div>
+        ) : null}
+
         {/* DEMO watermark */}
         {isDemo ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -226,7 +246,7 @@ export function MemberIdCard({
 
       {/* Controls (excluded from export) */}
       <div className="grid w-full max-w-sm grid-cols-2 gap-2">
-        <Button onClick={() => download("png")} disabled={downloading !== null || !qr} className="h-11 w-full gap-1.5 px-2 text-xs sm:gap-2 sm:px-3 sm:text-sm">
+        <Button onClick={() => download("png")} disabled={isLocked || downloading !== null || !qr} className="h-11 w-full gap-1.5 px-2 text-xs sm:gap-2 sm:px-3 sm:text-sm">
           {downloading === "png" ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
@@ -234,7 +254,7 @@ export function MemberIdCard({
           )}
           Download as PNG
         </Button>
-        <Button onClick={() => download("pdf")} disabled={downloading !== null || !qr} variant="outline" className="h-11 w-full gap-1.5 px-2 text-xs sm:gap-2 sm:px-3 sm:text-sm">
+        <Button onClick={() => download("pdf")} disabled={isLocked || downloading !== null || !qr} variant="outline" className="h-11 w-full gap-1.5 px-2 text-xs sm:gap-2 sm:px-3 sm:text-sm">
           {downloading === "pdf" ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
@@ -244,7 +264,7 @@ export function MemberIdCard({
         </Button>
 
         {/* Apple Wallet & Google Wallet Integration */}
-        {!isDemo && (
+        {!isDemo && !isLocked && (
           <div className="col-span-2 my-1">
             <WalletActions
               type="member"
@@ -261,7 +281,7 @@ export function MemberIdCard({
           <Button
             variant="outline"
             className="h-10 flex-1 gap-2"
-            render={<Link href="/member/events" />}
+            render={<Link href="/profile/events" />}
           >
             <Ticket className="size-4" /> Events Pass
           </Button>

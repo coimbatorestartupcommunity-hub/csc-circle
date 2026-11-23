@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "cn";
 
-type Step = "upload" | "decoding" | "verifying" | "otp" | "success" | "error" | "early";
+type Step = "upload" | "decoding" | "verifying" | "otp" | "success" | "error" | "early" | "concluded" | "in_person_only";
 
 interface CheckInSuccessData {
   attendeeName: string;
@@ -98,6 +98,8 @@ export function QrCheckInClient({
     return null;
   });
   const [otpData, setOtpData] = React.useState<OtpChallengeData | null>(null);
+  const [concludedData, setConcludedData] = React.useState<{ eventTitle?: string; message?: string } | null>(null);
+  const [inPersonData, setInPersonData] = React.useState<{ eventTitle?: string; message?: string } | null>(null);
   const [otpInput, setOtpInput] = React.useState<string>("");
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState<boolean>(false);
   const [countdown, setCountdown] = React.useState<number>(2);
@@ -165,6 +167,22 @@ export function QrCheckInClient({
       const data = await res.json();
 
       if (!res.ok || !data.ok) {
+        if (data.status === "concluded") {
+          setConcludedData({
+            eventTitle: data.eventTitle || eventTitle,
+            message: data.error || "This event has already concluded. The Google Meet check-in session is now closed.",
+          });
+          setStep("concluded");
+          return;
+        }
+        if (data.status === "in_person_only") {
+          setInPersonData({
+            eventTitle: data.eventTitle || eventTitle,
+            message: data.error || "This is an in-person event. Check-in must be scanned at the entrance desk.",
+          });
+          setStep("in_person_only");
+          return;
+        }
         if (data.status === "early") {
           setEarlyData({
             opensAt: data.opensAt,
@@ -229,6 +247,22 @@ export function QrCheckInClient({
         if (controller.signal.aborted) return;
 
         if (!res.ok || !data.ok) {
+          if (data.status === "concluded") {
+            setConcludedData({
+              eventTitle: data.eventTitle || eventTitle,
+              message: data.error || "This event has already concluded. The Google Meet check-in session is now closed.",
+            });
+            setStep("concluded");
+            return;
+          }
+          if (data.status === "in_person_only") {
+            setInPersonData({
+              eventTitle: data.eventTitle || eventTitle,
+              message: data.error || "This is an in-person event. Check-in must be scanned at the entrance desk.",
+            });
+            setStep("in_person_only");
+            return;
+          }
           if (data.status === "early") {
             setEarlyData({
               opensAt: data.opensAt,
@@ -819,6 +853,64 @@ export function QrCheckInClient({
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition"
               >
                 <Calendar className="size-3.5" /> View Event Details &amp; Updates
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Step: Concluded Event Notice (Locked & Closed) */}
+        {step === "concluded" && (
+          <div className="flex flex-col items-center py-6 text-center">
+            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-slate-100 text-slate-700 shadow-sm">
+              <Calendar className="size-8 text-slate-600" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+              This Event Has Concluded
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm font-medium text-slate-600 max-w-md leading-relaxed">
+              {concludedData?.message || "This event has already concluded. The Google Meet check-in session is now closed."}
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/events"
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition"
+              >
+                Browse Upcoming Events
+              </Link>
+              <Link
+                href="/profile/events"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition"
+              >
+                Go to Profile
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Step: In-Person Event Guidance Notice */}
+        {step === "in_person_only" && (
+          <div className="flex flex-col items-center py-6 text-center">
+            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-blue-100 text-blue-700 shadow-sm">
+              <ShieldCheck className="size-8 text-blue-600" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+              In-Person Venue Pass
+            </h2>
+            <p className="mt-2 text-xs sm:text-sm font-medium text-slate-600 max-w-md leading-relaxed">
+              {inPersonData?.message || "This is an in-person event. Check-in must be scanned at the venue entrance registration desk. Google Meet is only available for virtual sessions."}
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/profile/events"
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition"
+              >
+                View Pass on Profile
+              </Link>
+              <Link
+                href="/events"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition"
+              >
+                Browse Events
               </Link>
             </div>
           </div>

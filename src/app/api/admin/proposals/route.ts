@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const proposalActionSchema = z.object({
-  kind: z.enum(["collaboration", "event", "opportunity"]),
+  kind: z.enum(["collaboration", "event", "opportunity", "resource"]),
   id: z.string().min(1),
   action: z.enum(["approve", "reject", "delete"]),
 });
@@ -44,11 +44,19 @@ export async function GET() {
       .or("publication_status.eq.draft,source.in.(community_submission,member_submission)")
       .order("created_at", { ascending: false });
 
+    // 4. Resource Submissions (publication_status = 'draft' or title ilike '[Proposal]%')
+    const { data: resData } = await adminSb
+      .from("resources")
+      .select("id, slug, title, category, resource_type, summary, description, external_url, author, source_name, publication_status, created_at")
+      .or("publication_status.eq.draft,title.ilike.%[Proposal]%")
+      .order("created_at", { ascending: false });
+
     return NextResponse.json({
       ok: true,
       collaborations: collabData || [],
       events: eventData || [],
       opportunities: oppData || [],
+      resources: resData || [],
     });
   } catch (err) {
     console.error("Error fetching proposals:", err);
@@ -127,16 +135,39 @@ export async function POST(request: Request) {
           })
           .eq("id", id);
         if (error) throw error;
+      } else if (kind === "resource") {
+        const { data: existing } = await adminSb
+          .from("resources")
+          .select("title")
+          .eq("id", id)
+          .maybeSingle();
+
+        const cleanTitle = (existing?.title || "")
+          .replace(/^\[Proposal\]\s*/i, "")
+          .trim() || existing?.title || "Community Resource";
+
+        const { error } = await adminSb
+          .from("resources")
+          .update({
+            title: cleanTitle,
+            publication_status: "published",
+            published_at: now,
+            updated_at: now,
+          })
+          .eq("id", id);
+        if (error) throw error;
       }
 
       // Revalidate public caches immediately so live site updates instantly
       revalidateTag("collaborations", { expire: 0 });
       revalidateTag("events", { expire: 0 });
       revalidateTag("opportunities", { expire: 0 });
+      revalidateTag("resources", { expire: 0 });
       revalidateTag("cms-public", { expire: 0 });
       revalidatePath("/collaborations");
       revalidatePath("/events");
       revalidatePath("/opportunities");
+      revalidatePath("/resources");
       revalidatePath("/");
 
       return NextResponse.json({
@@ -162,14 +193,21 @@ export async function POST(request: Request) {
           .from("opportunities")
           .update({ publication_status: "archived", updated_at: now })
           .eq("id", id);
+      } else if (kind === "resource") {
+        await adminSb
+          .from("resources")
+          .update({ publication_status: "archived", updated_at: now })
+          .eq("id", id);
       }
 
       revalidateTag("collaborations", { expire: 0 });
       revalidateTag("events", { expire: 0 });
       revalidateTag("opportunities", { expire: 0 });
+      revalidateTag("resources", { expire: 0 });
       revalidatePath("/collaborations");
       revalidatePath("/events");
       revalidatePath("/opportunities");
+      revalidatePath("/resources");
 
       return NextResponse.json({
         ok: true,
@@ -185,14 +223,18 @@ export async function POST(request: Request) {
         await adminSb.from("events").delete().eq("id", id);
       } else if (kind === "opportunity") {
         await adminSb.from("opportunities").delete().eq("id", id);
+      } else if (kind === "resource") {
+        await adminSb.from("resources").delete().eq("id", id);
       }
 
       revalidateTag("collaborations", { expire: 0 });
       revalidateTag("events", { expire: 0 });
       revalidateTag("opportunities", { expire: 0 });
+      revalidateTag("resources", { expire: 0 });
       revalidatePath("/collaborations");
       revalidatePath("/events");
       revalidatePath("/opportunities");
+      revalidatePath("/resources");
 
       return NextResponse.json({
         ok: true,

@@ -78,7 +78,7 @@ const faq: FAQCategory[] = [
         a: (
           <>
             Sign in to your account and navigate to{" "}
-            <Link href="/member/id-card" className="font-semibold text-brand-accent underline underline-offset-2">
+            <Link href="/profile/id-card" className="font-semibold text-brand-accent underline underline-offset-2">
               Digital ID Card
             </Link>
             . You can view your real-time verified badge, verification QR token, issue date, and member tier anytime.

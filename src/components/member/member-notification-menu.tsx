@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Bell, Check, CheckCheck, Loader2 } from "lucide-react";
+import { Bell, Check, CheckCheck, Loader2, Trash2 } from "lucide-react";
 import { cn } from "cn";
 import { notificationAction } from "@/lib/notifications/actions";
 
@@ -34,6 +34,7 @@ export function MemberNotificationMenu() {
   const [error, setError] = React.useState<string | null>(null);
   const [items, setItems] = React.useState<InboxItem[]>([]);
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const [category, setCategory] = React.useState<"all" | "events" | "passes" | "updates">("all");
 
   const load = React.useCallback(async (signal?: AbortSignal) => {
     try {
@@ -121,6 +122,51 @@ export function MemberNotificationMenu() {
     }
   }
 
+  async function deleteNotification(id: string) {
+    setWorking(true);
+    try {
+      const response = await fetch("/api/member/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", id }),
+      });
+      if (!response.ok) throw new Error("Could not delete notification.");
+      setItems((current) => current.filter((item) => item.id !== id));
+      setUnreadCount((current) => Math.max(0, current - (items.some((item) => item.id === id && !item.read_at) ? 1 : 0)));
+    } catch {
+      // optimistic ignore
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function clearAllNotifications() {
+    setWorking(true);
+    try {
+      const response = await fetch("/api/member/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear_all" }),
+      });
+      if (!response.ok) throw new Error("Could not clear notifications.");
+      setItems([]);
+      setUnreadCount(0);
+    } catch {
+      // optimistic ignore
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  const filteredItems = items.filter((item) => {
+    if (category === "all") return true;
+    const t = (item.type || item.title || "").toLowerCase();
+    if (category === "events") return t.includes("event") || t.includes("rsvp");
+    if (category === "passes") return t.includes("pass") || t.includes("membership") || t.includes("card") || t.includes("check");
+    if (category === "updates") return !t.includes("event") && !t.includes("pass") && !t.includes("membership");
+    return true;
+  });
+
   return (
     <div className="relative">
       <button
@@ -140,31 +186,96 @@ export function MemberNotificationMenu() {
       </button>
 
       {open ? createPortal((
-        <section id="member-notification-panel" aria-label="Your notifications" style={{ top: panelPosition.top, left: panelPosition.left, width: panelPosition.width, maxHeight: panelPosition.height }} className="fixed z-[100] flex flex-col overflow-hidden rounded-2xl border border-brand-border bg-white shadow-xl">
-          <header className="flex items-center justify-between gap-3 border-b border-brand-border px-4 py-3">
+        <section id="member-notification-panel" aria-label="Your notifications" style={{ top: panelPosition.top, left: panelPosition.left, width: panelPosition.width, maxHeight: panelPosition.height }} className="fixed z-[100] flex flex-col overflow-hidden rounded-3xl border border-brand-border bg-white shadow-2xl ring-1 ring-black/5">
+          <header className="flex items-center justify-between gap-2 border-b border-brand-border px-4 py-3">
             <div>
-              <h2 className="text-sm font-semibold text-brand-ink">Notifications</h2>
+              <h2 className="text-sm font-bold text-brand-ink">Notifications</h2>
               <p className="text-xs text-brand-muted">{unreadCount ? `${unreadCount} unread` : "You're all caught up"}</p>
             </div>
-            <button type="button" disabled={working || unreadCount === 0} onClick={() => void markRead()} className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-brand-accent hover:bg-brand-cloud disabled:opacity-50">
-              {working ? <Loader2 className="size-3 animate-spin" /> : <CheckCheck className="size-3.5" />}
-              Mark all read
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={working || unreadCount === 0}
+                onClick={() => void markRead()}
+                className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold text-brand-accent hover:bg-brand-cloud disabled:opacity-40 transition cursor-pointer"
+                title="Mark all notifications as read"
+              >
+                {working ? <Loader2 className="size-3 animate-spin" /> : <CheckCheck className="size-3.5" />}
+                <span>Read all</span>
+              </button>
+              {items.length > 0 && (
+                <button
+                  type="button"
+                  disabled={working}
+                  onClick={() => void clearAllNotifications()}
+                  className="inline-flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                  title="Clear all notifications"
+                >
+                  <Trash2 className="size-3" />
+                  <span>Clear</span>
+                </button>
+              )}
+            </div>
           </header>
+
+          {/* Curved Pill Filter Tabs — Zero Overflow */}
+          <div className="flex items-center gap-1.5 overflow-x-auto border-b border-brand-border/70 bg-brand-cloud/30 px-3 py-2 no-scrollbar">
+            {(
+              [
+                ["all", "All"],
+                ["events", "Events"],
+                ["passes", "Passes"],
+                ["updates", "Updates"],
+              ] as const
+            ).map(([key, label]) => {
+              const active = category === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setCategory(key)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-semibold transition shrink-0 cursor-pointer",
+                    active
+                      ? "bg-brand-ink text-white shadow-xs"
+                      : "bg-white text-brand-secondary ring-1 ring-brand-border hover:bg-brand-cloud hover:text-brand-ink"
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
 
           {error ? <div role="alert" className="border-b border-brand-border px-4 py-3 text-sm text-red-700">{error}<button type="button" onClick={() => { setLoading(true); void load(); }} className="ml-2 font-semibold underline">Retry</button></div> : null}
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {loading ? <div className="flex justify-center px-4 py-8"><Loader2 className="size-5 animate-spin text-brand-muted" aria-label="Loading notifications" /></div> : null}
-            {!loading && !error && items.length === 0 ? <p className="px-4 py-8 text-center text-sm text-brand-muted">You have no notifications yet.</p> : null}
-            {!loading ? items.map((item) => {
+            {!loading && !error && filteredItems.length === 0 ? <p className="px-4 py-8 text-center text-sm text-brand-muted">No notifications in this category.</p> : null}
+            {!loading ? filteredItems.map((item) => {
               const action = notificationAction(item.type, item.action_url);
-              return <div key={item.id} className={cn("border-b border-brand-border px-4 py-3 last:border-0", !item.read_at && "bg-brand-purple/10")}>
+              return <div key={item.id} className={cn("group border-b border-brand-border px-4 py-3 last:border-0 transition", !item.read_at && "bg-brand-purple/10")}>
                 <div className="flex items-start gap-2">
                   <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", item.read_at ? "bg-transparent" : "bg-brand-accent")} aria-hidden="true" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-sm font-semibold text-brand-ink">{item.title || "CSC account update"}</span>
-                      {!item.read_at ? <button type="button" aria-label="Mark as read" title="Mark as read" disabled={working} onClick={() => void markRead(item.id)} className="-mr-1 -mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-brand-muted hover:bg-white hover:text-brand-accent disabled:opacity-50"><Check className="size-3.5" /></button> : null}
+                      <div className="flex items-center gap-1 shrink-0 -mr-1 -mt-0.5">
+                        {!item.read_at ? (
+                          <button type="button" aria-label="Mark as read" title="Mark as read" disabled={working} onClick={() => void markRead(item.id)} className="flex size-7 items-center justify-center rounded-full text-brand-muted hover:bg-white hover:text-brand-accent disabled:opacity-50 cursor-pointer">
+                            <Check className="size-3.5" />
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          aria-label="Delete notification"
+                          title="Delete notification"
+                          disabled={working}
+                          onClick={() => void deleteNotification(item.id)}
+                          className="flex size-7 items-center justify-center rounded-full text-brand-muted hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50 cursor-pointer opacity-70 group-hover:opacity-100 transition"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      </div>
                     </div>
                     <p className="mt-0.5 text-sm leading-5 text-brand-secondary">{item.message}</p>
                     <div className="mt-2 flex items-center justify-between gap-3">

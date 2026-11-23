@@ -265,7 +265,7 @@ export async function POST(request: Request) {
           related_record_id: parsed.data.target,
           title,
           message,
-          action_url: "/member/reviews",
+          action_url: "/profile/reviews",
           payload: { target: parsed.data.target, kind: review.kind || "review" },
           dedupe_key: `review.${parsed.data.decision}:${parsed.data.target}:${parsed.data.decision}`,
           status: "available",

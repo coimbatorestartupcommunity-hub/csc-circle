@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 interface SocialShareToolbarProps {
   url: string;
@@ -52,6 +53,7 @@ export function SocialShareToolbar({
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(formattedCaption);
         setCopied(true);
+        toast.success("Post caption copied! Paste directly into your LinkedIn post.");
         setTimeout(() => setCopied(false), 3000);
       }
     } catch {
@@ -68,6 +70,7 @@ export function SocialShareToolbar({
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(formattedCaption);
         setCopied(true);
+        toast.success("Post description copied to clipboard! Paste directly into LinkedIn.");
         setTimeout(() => setCopied(false), 2500);
       }
     } catch {
@@ -76,45 +79,47 @@ export function SocialShareToolbar({
   }
 
   return (
-    <div className={`flex flex-col items-center justify-center gap-2 ${className}`}>
-      <div className="flex flex-wrap items-center justify-center gap-2.5">
-        {showCopyCaption && (
-          <button
-            type="button"
-            onClick={handleCopyCaption}
-            className="inline-flex items-center gap-2 rounded-full border border-brand-border bg-white px-4 py-2.5 text-xs sm:text-sm font-medium text-brand-ink shadow-2xs transition hover:bg-brand-cloud hover:border-brand-border/80 focus-visible:outline-2 focus-visible:outline-brand-ink active:scale-98 cursor-pointer"
-            title="Copy full caption and hashtags to clipboard"
-          >
-            {copied ? (
-              <>
-                <Check className="size-4 text-emerald-600" />
-                <span className="font-semibold text-emerald-700">Caption Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="size-4 text-brand-muted" />
-                <span>Copy Caption</span>
-              </>
-            )}
-          </button>
-        )}
-
+    <div className={`inline-flex items-center justify-center ${className}`}>
+      {/* Integrated Dual-Action Split Pill */}
+      <div className="inline-flex items-center overflow-hidden rounded-full bg-[#0A66C2] text-white shadow-md ring-1 ring-black/10 transition hover:bg-[#004182]">
+        {/* Left Side: Share on LinkedIn */}
         <button
           type="button"
           onClick={handleLinkedInShare}
-          className="inline-flex items-center gap-2 rounded-full bg-[#0A66C2] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs transition hover:bg-[#004182] focus-visible:outline-2 focus-visible:outline-[#0A66C2] active:scale-98 cursor-pointer"
-          title="Copies full formatted post caption and opens LinkedIn share dialog with live banner preview"
+          className="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition active:scale-98 cursor-pointer focus-visible:outline-none"
+          title="Copies full formatted post caption and opens LinkedIn share dialog"
         >
           <LinkedInIcon className="size-4 shrink-0 text-white fill-white" />
           <span>{openingLinkedIn ? "Opening LinkedIn…" : "Share on LinkedIn"}</span>
         </button>
-      </div>
 
-      {copied && (
-        <p className="animate-fade-in text-[11px] font-medium text-emerald-700">
-          ✓ Full post description copied to clipboard — paste directly into your LinkedIn post!
-        </p>
-      )}
+        {showCopyCaption && (
+          <>
+            {/* Elegant Vertical Divider */}
+            <span className="h-5 w-px bg-white/25" aria-hidden="true" />
+
+            {/* Right Side: Copy Caption Action */}
+            <button
+              type="button"
+              onClick={handleCopyCaption}
+              className="inline-flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium text-white/95 transition hover:bg-black/15 active:scale-95 cursor-pointer focus-visible:outline-none"
+              title="Copy full post description & hashtags"
+            >
+              {copied ? (
+                <>
+                  <Check className="size-3.5 text-emerald-300" />
+                  <span className="text-[11px] font-bold text-emerald-200">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="size-3.5 text-white/80" />
+                  <span className="text-[11px]">Copy Text</span>
+                </>
+              )}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

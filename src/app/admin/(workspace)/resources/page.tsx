@@ -2,6 +2,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { AdminUnavailable } from "@/components/admin/admin-unavailable";
 import { CtaLink } from "@/components/common/cta-link";
+import { InboundProposalsManager, type InboundProposal } from "@/components/admin/inbound-proposals-manager";
 import { requireAdminPagePermission, can } from "@/lib/admin/gate";
 import { listResourcesAdmin } from "@/lib/admin/cms";
 
@@ -23,19 +24,43 @@ export default async function AdminResourcesPage() {
   if (ctx.mode === "forbidden" || !can(ctx, "content.manage")) return <AdminUnavailable forbidden />;
 
   let rows: Row[] = [];
+  let proposals: InboundProposal[] = [];
+
   if (ctx.mode === "live") {
     const list = await listResourcesAdmin();
     rows = list.map((r) => ({ id: r.id, title: r.title, category: r.category, resourceType: r.resourceType, publicationStatus: r.status, updatedAt: r.updatedAt ?? "" }));
+
+    proposals = list.map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      title: r.title,
+      category: r.category,
+      organization: r.sourceOrganization || r.sourceName,
+      representative: r.author,
+      website: r.externalUrl,
+      summary: r.summary,
+      details: r.description,
+      publicationStatus: r.status,
+      createdAt: r.updatedAt,
+    }));
   }
 
   return (
     <>
       <AdminPageHeader
         title="Resources"
-        description="Learning materials, guides and documents. Published resources appear on /resources automatically; when none are published the page shows Coming Soon."
+        description="Learning materials, founder playbooks, and guides. Community-contributed resources appear in Review Proposals for one-click verification and publishing."
         isDemo={ctx.mode === "preview"}
         action={<CtaLink href="/admin/resources/new" size="md">New resource</CtaLink>}
       />
+
+      {/* Inbound Playbook & Resource Submissions Review Manager */}
+      <InboundProposalsManager
+        kind="resource"
+        proposals={proposals}
+        className="mb-6"
+      />
+
       <DataTable rows={rows} columns={columns} facets={facets} searchKeys={["title", "category"]} rowHrefBase="/admin/resources" emptyMessage="No resources yet." />
     </>
   );

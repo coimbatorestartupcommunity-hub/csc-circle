@@ -25,7 +25,7 @@ export default async function EventPassPage({
   return (
     <>
       <Link
-        href="/member/events"
+        href="/profile/events"
         className="mb-3 inline-flex items-center gap-1.5 text-sm text-brand-muted hover:text-brand-ink"
       >
         <ArrowLeft className="size-4" /> Back to Events Pass

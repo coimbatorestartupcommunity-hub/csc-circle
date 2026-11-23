@@ -89,7 +89,7 @@ export function RegistrationsClient({
                 <div className="mt-1 border-t border-brand-border pt-3">
                   {eligible ? (
                     <Link
-                      href={`/member/events/${r.id}`}
+                      href={`/profile/events/${r.id}`}
                       className="inline-flex items-center gap-2 text-sm font-medium text-brand-accent hover:underline"
                     >
                       <Ticket className="size-4" /> View event pass

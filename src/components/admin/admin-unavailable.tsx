@@ -22,7 +22,7 @@ export function AdminUnavailable({ forbidden }: { forbidden?: boolean }) {
             ? "Your account isn't provisioned with an administrator role. Contact a CSC Super Admin if you believe this is a mistake."
             : "This area is for authorised CSC administrators. Please sign in with an administrator account."}
         </p>
-        <CtaLink href={forbidden ? "/member" : "/login"} size="lg">
+        <CtaLink href={forbidden ? "/profile" : "/login"} size="lg">
           {forbidden ? "Back to member area" : "Sign in"}
         </CtaLink>
       </Container>

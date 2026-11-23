@@ -75,7 +75,7 @@ export default async function MemberProfilePage() {
           {profile.designations.map((designation) => <span key={designation} className="rounded-full bg-brand-purple px-3 py-1 text-xs font-medium text-brand-ink">{designationLabels[designation]}</span>)}
         </div>
         <p className="max-w-full break-all text-sm text-brand-muted">{identityEmail}{emailVerified ? " · Verified account" : " · Account email not verified"}</p>
-        <Button variant="outline" render={<Link href="/member/settings#account-security" />} className="mt-1 gap-2"><ShieldCheck className="size-4" />Account Security</Button>
+        <Button variant="outline" render={<Link href="/profile/settings#account-security" />} className="mt-1 gap-2"><ShieldCheck className="size-4" />Account Security</Button>
       </header>
 
       <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-6">
@@ -134,7 +134,7 @@ export default async function MemberProfilePage() {
       </section>
 
       <MemberProfileForm key={profile.id} profile={profile} isDemo={ctx.mode === "preview"} />
-      <section className="rounded-2xl border border-brand-border bg-brand-cloud/50 p-5 sm:p-6"><h2 className="text-lg font-semibold text-brand-ink">Private Information</h2><p className="mt-1 text-sm leading-6 text-brand-secondary">Your account email and mobile/WhatsApp information are stored for CSC account and member-support workflows. They are not included in the community directory by default. Public profile and contact-sharing permissions are managed separately.</p><p className="mt-2 text-xs text-brand-muted">Review account and privacy controls in <Link href="/member/settings" className="font-semibold text-brand-accent underline underline-offset-2">Settings</Link>.</p></section>
+      <section className="rounded-2xl border border-brand-border bg-brand-cloud/50 p-5 sm:p-6"><h2 className="text-lg font-semibold text-brand-ink">Private Information</h2><p className="mt-1 text-sm leading-6 text-brand-secondary">Your account email and mobile/WhatsApp information are stored for CSC account and member-support workflows. They are not included in the community directory by default. Public profile and contact-sharing permissions are managed separately.</p><p className="mt-2 text-xs text-brand-muted">Review account and privacy controls in <Link href="/profile/settings" className="font-semibold text-brand-accent underline underline-offset-2">Settings</Link>.</p></section>
 
       {!(["claim_submitted", "pending_verification", "approved", "active"].includes(profile.membership.status)) ? (
         <section className="flex flex-col gap-3 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border sm:flex-row sm:items-center sm:justify-between sm:p-6">
@@ -142,7 +142,7 @@ export default async function MemberProfilePage() {
             <h2 className="font-semibold text-brand-ink">Apply for CSC membership</h2>
             <p className="mt-1 text-sm text-brand-muted">Your website account is ready. Submit a separate claim for community membership review.</p>
           </div>
-          <Button variant="outline" render={<Link href="/member/claim" />} className="w-full shrink-0 sm:w-auto">Review membership claim</Button>
+          <Button variant="outline" render={<Link href="/profile/claim" />} className="w-full shrink-0 sm:w-auto">Review membership claim</Button>
         </section>
       ) : null}
 
@@ -152,7 +152,7 @@ export default async function MemberProfilePage() {
           <p className="mt-1 text-sm text-brand-muted">Manage up to four separate startup profiles. {startupCount} of 4 slots used.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button render={<Link href="/member/startups" />} className="w-full shrink-0 gap-2 sm:w-auto"><Rocket className="size-4" /> Manage My Startups <ArrowRight className="size-4" /></Button>
+          <Button render={<Link href="/profile/startups" />} className="w-full shrink-0 gap-2 sm:w-auto"><Rocket className="size-4" /> Manage My Startups <ArrowRight className="size-4" /></Button>
         </div>
       </section>
 
@@ -162,7 +162,7 @@ export default async function MemberProfilePage() {
 
       <div className="flex justify-center">
         {directoryReady ? (
-          <Button render={<Link href="/member/startups/new" />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Add a Startup</Button>
+          <Button render={<Link href="/profile/startups/new" />} className="w-full gap-2 sm:w-auto"><Rocket className="size-4" /> Add a Startup</Button>
         ) : (
           <DirectorySetupButton />
         )}

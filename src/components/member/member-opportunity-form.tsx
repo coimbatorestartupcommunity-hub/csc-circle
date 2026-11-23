@@ -118,7 +118,6 @@ export function MemberOpportunityForm({ userEmail = "" }: { userEmail?: string }
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Technical Co-Founder (AI / Full Stack)"
             className="rounded-xl border-brand-border text-sm"
           />
         </div>
@@ -150,7 +149,6 @@ export function MemberOpportunityForm({ userEmail = "" }: { userEmail?: string }
             required
             value={organization}
             onChange={(e) => setOrganization(e.target.value)}
-            placeholder="e.g. Acme Technologies"
             className="rounded-xl border-brand-border text-sm"
           />
         </div>
@@ -164,7 +162,6 @@ export function MemberOpportunityForm({ userEmail = "" }: { userEmail?: string }
             required
             value={mode}
             onChange={(e) => setMode(e.target.value)}
-            placeholder="e.g. Hybrid · Coimbatore"
             className="rounded-xl border-brand-border text-sm"
           />
         </div>
@@ -179,7 +176,6 @@ export function MemberOpportunityForm({ userEmail = "" }: { userEmail?: string }
             required
             value={contactEmail}
             onChange={(e) => setContactEmail(e.target.value)}
-            placeholder="e.g. founder@acme.com"
             className="rounded-xl border-brand-border text-sm"
           />
           <p className="text-[11px] text-brand-muted">
@@ -209,7 +205,6 @@ export function MemberOpportunityForm({ userEmail = "" }: { userEmail?: string }
             required
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            placeholder="e.g. Seeking co-founder to scale seed-funded MVP"
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
@@ -224,8 +219,7 @@ export function MemberOpportunityForm({ userEmail = "" }: { userEmail?: string }
             rows={5}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g. Responsibilities, background, equity allocation, and 12-month goals"
-            className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border bg-white p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+            className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border bg-white p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
           />
         </div>
       </div>

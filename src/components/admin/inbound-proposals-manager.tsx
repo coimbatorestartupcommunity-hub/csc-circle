@@ -47,7 +47,7 @@ export interface InboundProposal {
 }
 
 interface InboundProposalsManagerProps {
-  kind: "collaboration" | "event" | "opportunity";
+  kind: "collaboration" | "event" | "opportunity" | "resource";
   proposals: InboundProposal[];
   className?: string;
 }
@@ -67,12 +67,14 @@ export function InboundProposalsManager({
     collaboration: "Partnership & Collaboration Proposals",
     event: "Host Event Proposals",
     opportunity: "Opportunity Submissions",
+    resource: "Resource & Founder Playbook Proposals",
   }[kind];
 
   const publicUrlBase = {
     collaboration: "/collaborations",
     event: "/events",
     opportunity: "/opportunities",
+    resource: "/resources",
   }[kind];
 
   const pendingCount = proposals.filter(

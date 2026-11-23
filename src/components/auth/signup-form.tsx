@@ -93,7 +93,7 @@ export function SignupForm() {
       <div className="flex items-center gap-3 text-xs text-brand-muted">
         <Separator className="flex-1" /> or <Separator className="flex-1" />
       </div>
-      <GoogleButton next={next === "/member/profile" ? "/member/onboarding" : next} />
+      <GoogleButton next={next === "/profile/account" || next === "/member/profile" ? "/profile/onboarding" : next} />
 
       <p className="text-sm text-brand-muted">
         Already have an account?{" "}

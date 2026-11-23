@@ -46,6 +46,30 @@ const nextConfig: NextConfig = {
       { source: "/auth/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "Cache-Control", value: "private, no-store" }] },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/member/profile",
+        destination: "/profile/account",
+        permanent: true,
+      },
+      {
+        source: "/member",
+        destination: "/profile",
+        permanent: true,
+      },
+      {
+        source: "/member/:path*",
+        destination: "/profile/:path*",
+        permanent: true,
+      },
+      {
+        source: "/profile/profile",
+        destination: "/profile/account",
+        permanent: true,
+      },
+    ];
+  },
   cacheComponents: true,
   partialPrefetching: true,
 };

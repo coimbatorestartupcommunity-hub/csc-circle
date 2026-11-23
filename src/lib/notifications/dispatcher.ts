@@ -7,7 +7,6 @@ import { sendCommunityEmail } from "@/lib/notifications/email";
 import { classifyEmailFailure } from "@/lib/notifications/failures";
 import QRCode from "qrcode";
 import { buildEventPassQrPayload } from "@/lib/member/qr";
-import { generateServerEventPassPdf } from "@/lib/events/server-pass-pdf";
 import { formatEventRange } from "@/lib/format";
 import { chooseNotificationRecipient } from "@/lib/notifications/recipients";
 import type { Database } from "@/lib/supabase/database.types";
@@ -195,23 +194,9 @@ export async function dispatchNotifications(batch = 15) {
             qrBuffer,
           };
 
-          let pdfBuffer: Buffer | null = null;
-          try {
-            pdfBuffer = await generateServerEventPassPdf(passOptions);
-          } catch (err) {
-            console.error("Failed to generate pass PDF:", err);
-          }
-
+          // In accordance with user policy: no PDF passes are attached to emails.
+          // Attendees view and download their verified digital pass directly on the website profile page.
           attachments = [
-            ...(pdfBuffer
-              ? [
-                  {
-                    filename: `CSC-EventPass-${registration.reference}.pdf`,
-                    content: pdfBuffer,
-                    contentType: "application/pdf",
-                  },
-                ]
-              : []),
             {
               filename: `CSC-EventPass-QR-${registration.reference}.png`,
               content: qrBuffer,

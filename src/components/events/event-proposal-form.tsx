@@ -138,7 +138,6 @@ export function EventProposalForm() {
             id="evt-org-name"
             value={organizerName}
             onChange={(e) => setOrganizerName(e.target.value)}
-            placeholder="e.g. Senthil Nathan"
             required
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
@@ -152,7 +151,6 @@ export function EventProposalForm() {
             id="evt-company"
             value={organization}
             onChange={(e) => setOrganization(e.target.value)}
-            placeholder="e.g. TechSprint Labs"
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
@@ -168,7 +166,6 @@ export function EventProposalForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="organizer@startup.in"
             required
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
@@ -182,7 +179,6 @@ export function EventProposalForm() {
             id="evt-phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="+91 98765 43210"
             required
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
@@ -197,7 +193,6 @@ export function EventProposalForm() {
           id="evt-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. AI infrastructure founder workshop"
           required
           className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
         />
@@ -248,7 +243,6 @@ export function EventProposalForm() {
             id="evt-capacity"
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
-            placeholder="e.g. 50"
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
@@ -264,7 +258,6 @@ export function EventProposalForm() {
             type="text"
             value={proposedDate}
             onChange={(e) => setProposedDate(e.target.value)}
-            placeholder="e.g. Saturday 4:00 PM IST"
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
@@ -277,7 +270,6 @@ export function EventProposalForm() {
             id="evt-venue"
             value={venue}
             onChange={(e) => setVenue(e.target.value)}
-            placeholder="e.g. PSG-STEP Auditorium, Coimbatore"
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
@@ -292,9 +284,8 @@ export function EventProposalForm() {
           rows={4}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="e.g. 90-minute workshop on AI model costs & live demos for founders"
           required
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
@@ -307,8 +298,7 @@ export function EventProposalForm() {
           rows={3}
           value={supportRequested}
           onChange={(e) => setSupportRequested(e.target.value)}
-          placeholder="e.g. Ticketing passes, QR check-in, and community broadcast"
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 

@@ -206,7 +206,6 @@ export function BookOfficeHours({
                     id="oh-name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Anand Kumar"
                     required
                     className="rounded-xl border-brand-border text-sm"
                   />
@@ -220,7 +219,6 @@ export function BookOfficeHours({
                     id="oh-startup"
                     value={startup}
                     onChange={(e) => setStartup(e.target.value)}
-                    placeholder="e.g. BuildFlow Technologies"
                     required
                     className="rounded-xl border-brand-border text-sm"
                   />
@@ -235,7 +233,6 @@ export function BookOfficeHours({
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="founder@example.com"
                     required
                     className="rounded-xl border-brand-border text-sm"
                   />
@@ -249,7 +246,6 @@ export function BookOfficeHours({
                     id="oh-phone"
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(e.target.value)}
-                    placeholder="+91 98765 43210"
                     required
                     className="rounded-xl border-brand-border text-sm"
                   />
@@ -282,9 +278,8 @@ export function BookOfficeHours({
                   rows={4}
                   value={challenge}
                   onChange={(e) => setChallenge(e.target.value)}
-                  placeholder="e.g. Next.js deployment scaling, TANSEED deck review, or B2B pricing"
                   required
-                  className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+                  className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
                 />
               </div>
 

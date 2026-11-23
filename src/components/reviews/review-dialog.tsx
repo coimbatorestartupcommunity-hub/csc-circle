@@ -410,7 +410,7 @@ export function ReviewDialog({
         {/* Sticky Glassmorphism Dialog Footer with View in My Ratings & Reviews */}
         <div className="sticky bottom-0 z-10 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 border-t border-brand-border/60 bg-white/85 px-5 py-3.5 backdrop-blur-xl">
           <Link
-            href="/member/reviews"
+            href="/profile/reviews"
             className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-white/80 bg-white/90 px-4 text-xs font-semibold text-brand-ink shadow-xs ring-1 ring-brand-border/50 backdrop-blur-md transition hover:bg-white hover:shadow-sm"
           >
             View in My Ratings &amp; Reviews

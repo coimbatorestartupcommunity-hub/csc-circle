@@ -6,17 +6,14 @@ import { cn } from "cn";
 import { EventCard } from "@/components/events/event-card";
 import { EventCalendar } from "@/components/events/event-calendar";
 import { EventDetailsPanel } from "@/components/events/event-details-panel";
-import { ConsultationForm } from "@/components/events/rsvp-form";
 import { EmptyState } from "@/components/common/empty-state";
 import { CtaLink } from "@/components/common/cta-link";
 import { eventCategoryLabels } from "@/lib/content/taxonomy";
 import type { EventCategory, EventRecord } from "@/types";
 
 type View = "list" | "calendar";
-type Mode = "events" | "consultation";
 
 export function EventsClient({ events }: { events: EventRecord[] }) {
-  const [mode, setMode] = React.useState<Mode>("events");
   const [view, setView] = React.useState<View>("list");
   const [category, setCategory] = React.useState<EventCategory | "all">("all");
   const [registeringId, setRegisteringId] = React.useState<string | undefined>(
@@ -43,66 +40,21 @@ export function EventsClient({ events }: { events: EventRecord[] }) {
 
   if (events.length === 0) {
     return (
-      <div className="flex flex-col gap-10">
-        <EmptyState
-          icon={CalendarX}
-          title="The Next CSC Gathering Is in the Works."
-          description="Join the community to hear about upcoming opportunities to connect and collaborate. In the meantime, you can still request a consultation below."
-        >
-          <CtaLink href="/login" size="md">
-            Join the Community
-          </CtaLink>
-        </EmptyState>
-
-        <div className="mx-auto w-full max-w-2xl rounded-[2rem] bg-brand-cloud p-6 ring-1 ring-brand-border sm:p-8">
-          <h3 className="mb-4 text-lg font-semibold text-brand-ink">
-            Request a consultation
-          </h3>
-          <ConsultationForm />
-        </div>
-      </div>
+      <EmptyState
+        icon={CalendarX}
+        title="The Next CSC Gathering Is in the Works."
+        description="Join the community to hear about upcoming opportunities to connect and collaborate."
+      >
+        <CtaLink href="/login" size="md">
+          Join the Community
+        </CtaLink>
+      </EmptyState>
     );
   }
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Mode switch */}
-      <div
-        className="inline-flex w-fit gap-1 rounded-full bg-brand-cloud p-1 ring-1 ring-brand-border"
-        role="tablist"
-        aria-label="Events or consultation"
-      >
-        {(
-          [
-            ["events", "Browse events"],
-            ["consultation", "Request a consultation"],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            role="tab"
-            aria-selected={mode === value}
-            onClick={() => setMode(value)}
-            className={cn(
-              "rounded-full px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-3 focus-visible:ring-ring/50",
-              mode === value
-                ? "bg-brand-white text-brand-ink shadow-sm"
-                : "text-brand-muted hover:text-brand-ink",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {mode === "consultation" ? (
-        <div className="mx-auto w-full max-w-2xl rounded-[2rem] bg-brand-cloud p-6 ring-1 ring-brand-border sm:p-8">
-          <h3 className="mb-4 text-lg font-semibold text-brand-ink">
-            Request a consultation
-          </h3>
-          <ConsultationForm />
-        </div>
-      ) : registering ? (
+      {registering ? (
         <div className="mx-auto w-full max-w-3xl">
           <button
             type="button"

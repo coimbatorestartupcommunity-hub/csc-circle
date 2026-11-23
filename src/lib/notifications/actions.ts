@@ -1,4 +1,6 @@
 const memberDestinations = new Set([
+  "/profile", "/profile/claim", "/profile/id-card", "/profile/account", "/profile/settings",
+  "/profile/startups", "/profile/events", "/profile/reviews", "/profile/consultations",
   "/member", "/member/claim", "/member/id-card", "/member/profile", "/member/settings",
   "/member/startups", "/member/events", "/member/reviews", "/member/consultations",
 ]);

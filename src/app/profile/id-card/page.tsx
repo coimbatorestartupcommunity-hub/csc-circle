@@ -119,7 +119,7 @@ export default async function IdCardPage() {
                     description={cardRes.error.message}
                   >
                     <Link
-                      href={needsPortrait ? "/member/profile#profile-portrait" : "/member/claim"}
+                      href={needsPortrait ? "/profile/account#profile-portrait" : "/profile/claim"}
                       prefetch={true}
                       className="inline-flex items-center gap-2 rounded-xl bg-brand-ink px-4 py-2.5 text-sm font-semibold text-brand-white hover:bg-brand-ink/90 shadow-2xs"
                     >
@@ -172,7 +172,7 @@ export default async function IdCardPage() {
               View and download admission passes for your confirmed event registrations.
             </p>
           </div>
-          <Link href="/member/events" prefetch={true} className="text-sm font-medium text-brand-accent hover:underline">
+          <Link href="/profile/events" prefetch={true} className="text-sm font-medium text-brand-accent hover:underline">
             All registrations ({registrationsRes.ok ? registrationsRes.data.length : 0})
           </Link>
         </div>
@@ -202,7 +202,7 @@ export default async function IdCardPage() {
                     <li><strong className="text-brand-ink">Attendee:</strong> {fields.name}</li>
                   </ul>
                   <Link
-                    href={`/member/events/${registration.id}`}
+                    href={`/profile/events/${registration.id}`}
                     prefetch={true}
                     className="mt-auto inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-brand-ink px-4 text-xs font-semibold text-brand-white transition hover:bg-brand-ink/90"
                   >

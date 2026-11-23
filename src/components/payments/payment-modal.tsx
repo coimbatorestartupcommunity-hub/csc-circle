@@ -1129,10 +1129,10 @@ export function PaymentModal({
                     </Link>
                   ) : (
                     <Link
-                      href="/member/events"
+                      href="/profile/events"
                       className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-teal-700 transition"
                     >
-                      Go to Member Passes <ArrowRight className="size-4" />
+                      Go to Profile Passes <ArrowRight className="size-4" />
                     </Link>
                   )}
 

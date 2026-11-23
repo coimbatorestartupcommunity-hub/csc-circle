@@ -165,20 +165,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Schedule & 1-Hour Check-In Window Gating
-    // Joint Online Meeting: Sunday, Nov 22, 2026, 3:00 PM – 5:00 PM IST.
-    // Check-in unlocks at 2:00 PM IST (1 hour prior to session start).
+    // 2. Schedule & Format Gating
+    // Strict Format Guard: Online check-in is reserved for virtual sessions only.
     const isJointMeeting =
       rawEvent.slug === "csc-joint-online-meeting" ||
       rawEvent.id === "948bfc48-c627-4b06-a665-5c2cd8226505" ||
       rawEvent.title?.includes("Joint Online Meeting");
 
+    const eventFormat = (rawEvent.format || "in_person").toLowerCase();
+    const isOnlineOrHybrid = eventFormat === "online" || eventFormat === "hybrid" || isJointMeeting;
+
+    if (!isOnlineOrHybrid) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "in_person_only",
+          error: "This is an in-person event taking place at the venue. Check-in must be scanned at the entrance desk upon arrival. Google Meet check-in is only available for virtual sessions.",
+          eventTitle: rawEvent.title,
+          format: eventFormat,
+        },
+        { status: 400 }
+      );
+    }
+
     const liveStartsAt = isJointMeeting ? "2026-11-22T15:00:00+05:30" : rawEvent.starts_at;
     const startsAtMs = liveStartsAt ? new Date(liveStartsAt).getTime() : 0;
+    const liveEndsAt = isJointMeeting ? "2026-11-22T17:00:00+05:30" : rawEvent.ends_at;
+    const endsAtMs = liveEndsAt ? new Date(liveEndsAt).getTime() : 0;
     const nowMs = Date.now();
     const ONE_HOUR_MS = 60 * 60 * 1000;
     const windowOpensMs = startsAtMs - ONE_HOUR_MS;
     const isTestParam = req.nextUrl?.searchParams?.get("test") === "1" || body?.isTest === true;
+
+    // Concluded Event Guard: Lock check-in and prevent Google Meet access once the event has ended.
+    const isConcluded = endsAtMs > 0 && nowMs > endsAtMs;
+    if (isConcluded && !isTestParam) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: "concluded",
+          error: "This event has already concluded. The Google Meet check-in session is now closed.",
+          concludedAt: liveEndsAt ? new Date(endsAtMs).toISOString() : null,
+          eventTitle: rawEvent.title,
+        },
+        { status: 410 }
+      );
+    }
 
     if (startsAtMs > 0 && nowMs < windowOpensMs && !isTestParam) {
       return NextResponse.json(

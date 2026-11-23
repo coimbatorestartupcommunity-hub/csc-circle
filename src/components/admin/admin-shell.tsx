@@ -222,7 +222,7 @@ export function AdminShell({
               <p className="whitespace-nowrap text-xs text-brand-muted">{roleLabel}</p>
             </div>
             <AccountAvatar name={displayName} src={avatarUrl} className="hidden size-8 shrink-0 sm:block" />
-            <Link href="/member/profile" aria-current={pathname === "/member/profile" ? "page" : undefined} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-brand-border bg-brand-white px-2.5 text-xs font-semibold whitespace-nowrap text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3">
+            <Link href="/profile/account" aria-current={pathname === "/profile/account" ? "page" : undefined} className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-brand-border bg-brand-white px-2.5 text-xs font-semibold whitespace-nowrap text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:px-3">
               <UserRound className="size-4" aria-hidden="true" />
               <span className="hidden lg:inline">Profile</span>
               <span className="sr-only lg:hidden">Profile</span>

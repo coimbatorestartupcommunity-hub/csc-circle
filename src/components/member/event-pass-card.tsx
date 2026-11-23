@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { toBlob } from "html-to-image";
-import { Check, Copy, Download, Loader2, MapPin, CalendarDays, FileDown, IdCard, QrCode, Video, ExternalLink } from "lucide-react";
+import { Check, Copy, Download, Loader2, MapPin, CalendarDays, FileDown, IdCard, QrCode, Video, ExternalLink, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/member/status-badge";
@@ -29,8 +29,30 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
   const [qr, setQr] = React.useState<string | null>(null);
   const [downloading, setDownloading] = React.useState<"png" | "pdf" | null>(null);
   const [copied, setCopied] = React.useState(false);
-  const meta = registrationStatusMeta[pass.status];
+  const [isCheckedIn, setIsCheckedIn] = React.useState(pass.status === "checked_in");
+  const [showCheckInModal, setShowCheckInModal] = React.useState(false);
+  const meta = registrationStatusMeta[isCheckedIn ? "checked_in" : pass.status];
   const fields = eventPassViewModel(pass);
+
+  React.useEffect(() => {
+    if (isCheckedIn || isDemo) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/events/registration-live-check?id=${encodeURIComponent(pass.registrationId)}`);
+        const data = await res.json();
+        if (data.ok && data.checkedIn) {
+          setIsCheckedIn(true);
+          setShowCheckInModal(true);
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate([60, 40, 60]);
+          }
+          toast.success("You are checked in! Welcome to the event.");
+          clearInterval(interval);
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isCheckedIn, isDemo, pass.registrationId]);
 
   React.useEffect(() => {
     let active = true;
@@ -345,12 +367,58 @@ export function EventPassCard({ pass, isDemo }: { pass: EventPass; isDemo: boole
             size="sm"
             nativeButton={false}
             className="h-10 gap-1 rounded-xl text-xs font-medium"
-            render={<Link href="/member/id-card" />}
+            render={<Link href="/profile/id-card" />}
           >
             <IdCard className="size-3.5" /> Member ID
           </Button>
         </div>
       </div>
+
+      {/* Real-time Live Check-In Verification Pop-Up */}
+      {showCheckInModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md animate-fade-in">
+          <div className="relative flex w-full max-w-sm flex-col items-center rounded-3xl bg-white p-6 sm:p-7 shadow-2xl ring-1 ring-white/20 text-center">
+            <button
+              type="button"
+              onClick={() => setShowCheckInModal(false)}
+              className="absolute top-4 right-4 rounded-full p-2 text-neutral-500 hover:bg-neutral-100 hover:text-black cursor-pointer"
+              aria-label="Close check-in notification"
+            >
+              <X className="size-5" />
+            </button>
+            <div className="mb-3 flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-sm animate-bounce">
+              <CheckCircle2 className="size-10" />
+            </div>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200 mb-2">
+              <CheckCircle2 className="size-3.5 text-emerald-600" />
+              <span>Admission Verified</span>
+            </div>
+            <h3 className="text-xl font-bold tracking-tight text-neutral-900">
+              You're Checked In!
+            </h3>
+            <p className="mt-1 text-xs text-neutral-600 leading-relaxed">
+              Welcome, <strong className="text-neutral-900">{pass.memberName}</strong>! Your attendance at <strong>{pass.eventTitle}</strong> has been officially confirmed at the desk.
+            </p>
+            <div className="my-4 w-full rounded-2xl bg-neutral-50 p-3 text-left font-mono text-xs border border-neutral-200">
+              <div className="flex justify-between py-1 border-b border-neutral-200/60">
+                <span className="text-neutral-500 font-sans">Pass Reference</span>
+                <span className="font-bold text-neutral-900">{pass.reference}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-neutral-500 font-sans">Status</span>
+                <span className="font-bold text-emerald-700">Checked In ✓</span>
+              </div>
+            </div>
+            <Button
+              type="button"
+              onClick={() => setShowCheckInModal(false)}
+              className="h-10 w-full rounded-xl bg-neutral-900 text-white font-semibold hover:bg-black cursor-pointer"
+            >
+              Enjoy the Event!
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

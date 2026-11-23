@@ -177,7 +177,7 @@ export function OnboardingWizard({ isDemo }: { isDemo: boolean }) {
       const result = await memberRequest("onboarding", data);
       if (result.error) { toast.error(result.error); return; }
       notifySubmissionSuccess({ title: "Profile completed", message: "Welcome to CSC Circle. Your profile setup was saved." });
-      router.push("/member/profile#profile-portrait");
+      router.push("/profile/account#profile-portrait");
     } finally {
       setSaving(false);
     }

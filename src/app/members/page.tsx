@@ -35,7 +35,7 @@ export default async function MembersPage() {
 
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button
-          render={<Link href="/member/profile#community-sharing" />}
+          render={<Link href="/profile/account#community-sharing" />}
           className="min-h-11 w-full gap-2 rounded-xl px-4 text-xs font-semibold sm:w-auto sm:px-5 sm:text-sm"
         >
           <Share2 className="size-4 shrink-0" />

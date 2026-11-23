@@ -30,15 +30,15 @@ import { Button } from "@/components/ui/button";
 import { MemberNotificationMenu } from "@/components/member/member-notification-menu";
 
 const nav = [
-  { href: "/member", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/member/id-card", label: "Member ID", icon: IdCard },
-  { href: "/member/events", label: "Events Pass", icon: Ticket },
-  { href: "/member/profile", label: "Profile", icon: UserCircle },
-  { href: "/member/startups", label: "My Startups", icon: Rocket },
-  { href: "/member/opportunities", label: "Post Opportunities", icon: Briefcase },
+  { href: "/profile", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/profile/id-card", label: "Member ID", icon: IdCard },
+  { href: "/profile/events", label: "Events Pass", icon: Ticket },
+  { href: "/profile/account", label: "Account Profile", icon: UserCircle },
+  { href: "/profile/startups", label: "My Startups", icon: Rocket },
+  { href: "/profile/opportunities", label: "Post Opportunities", icon: Briefcase },
   { href: "/members", label: "View CSC Profiles", icon: UsersRound },
-  { href: "/member/consultations", label: "Consultations", icon: MessagesSquare },
-  { href: "/member/settings", label: "Settings", icon: Settings },
+  { href: "/profile/consultations", label: "Consultations", icon: MessagesSquare },
+  { href: "/profile/settings", label: "Settings", icon: Settings },
 ];
 
 export interface MemberShellProps {

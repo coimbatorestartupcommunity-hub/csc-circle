@@ -130,7 +130,6 @@ export function CollaborationProposalForm() {
             id="collab-org"
             value={orgName}
             onChange={(e) => setOrgName(e.target.value)}
-            placeholder="e.g. Coimbatore Innovation Hub"
             required
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
@@ -144,7 +143,6 @@ export function CollaborationProposalForm() {
             id="collab-rep"
             value={repName}
             onChange={(e) => setRepName(e.target.value)}
-            placeholder="e.g. Dr. Rajesh Kumar"
             required
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
@@ -160,7 +158,6 @@ export function CollaborationProposalForm() {
             id="collab-desig"
             value={designation}
             onChange={(e) => setDesignation(e.target.value)}
-            placeholder="e.g. Incubation Director"
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
@@ -174,7 +171,6 @@ export function CollaborationProposalForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="partner@institution.org"
             required
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
@@ -188,7 +184,6 @@ export function CollaborationProposalForm() {
             id="collab-phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="+91 98765 43210"
             required
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
@@ -222,7 +217,6 @@ export function CollaborationProposalForm() {
             id="collab-web"
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
-            placeholder="https://example.org"
             className="rounded-xl border-brand-border text-sm min-w-0 max-w-full w-full"
           />
         </div>
@@ -237,9 +231,8 @@ export function CollaborationProposalForm() {
           rows={4}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="e.g. Host joint hackathon or mentorship track for hardware startups"
           required
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
@@ -252,9 +245,8 @@ export function CollaborationProposalForm() {
           rows={4}
           value={benefits}
           onChange={(e) => setBenefits(e.target.value)}
-          placeholder="e.g. Grant funding, lab access, and direct industry mentor hours"
           required
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 
@@ -267,8 +259,7 @@ export function CollaborationProposalForm() {
           rows={3}
           value={supportRequested}
           onChange={(e) => setSupportRequested(e.target.value)}
-          placeholder="e.g. Ticketing, digital pass check-in, and community promotion"
-          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink placeholder:text-xs sm:placeholder:text-sm placeholder:text-brand-muted/70 focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
+          className="min-w-0 max-w-full w-full resize-y break-words rounded-2xl border border-brand-border p-3.5 sm:p-4 text-xs sm:text-sm text-brand-ink focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 focus:outline-none"
         />
       </div>
 

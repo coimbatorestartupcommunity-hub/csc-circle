@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DataTable, type Column, type Facet } from "@/components/admin/data-table";
 import { can, requireAdminPagePermission } from "@/lib/admin/gate";
@@ -58,6 +59,17 @@ export default async function AdminMembersPage() {
         title="Member management"
         description="Search, filter and manage CSC community members."
         isDemo={ctx.mode === "preview"}
+        action={
+          can(ctx, "members.read") ? (
+            <a
+              href="/api/admin/members/export"
+              download
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-brand-ink px-4 text-sm font-semibold text-white hover:bg-brand-secondary transition"
+            >
+              <Download className="size-4" /> Export CSV
+            </a>
+          ) : undefined
+        }
       />
       {can(ctx, "members.approve") ? <InviteMemberForm disabled={ctx.mode !== "live"} /> : null}
       <DataTable

@@ -4,6 +4,7 @@ import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "cn";
+import { smartFormatContent } from "@/lib/content/smart-format";
 
 /**
  * Renders publisher-authored resource copy. Raw HTML is never enabled, so
@@ -12,6 +13,8 @@ import { cn } from "cn";
  * hero already owns the single <h1>.
  */
 export function ResourceContentRenderer({ content, className }: { content: string; className?: string }) {
+  const formattedContent = React.useMemo(() => smartFormatContent(content), [content]);
+
   return (
     <div className={cn("flex min-w-0 max-w-full flex-col gap-4 text-[16px] leading-[1.8] text-brand-secondary break-words [overflow-wrap:anywhere] overflow-x-hidden", className)}>
       <ReactMarkdown
@@ -81,7 +84,7 @@ export function ResourceContentRenderer({ content, className }: { content: strin
           ),
         }}
       >
-        {content}
+        {formattedContent}
       </ReactMarkdown>
     </div>
   );

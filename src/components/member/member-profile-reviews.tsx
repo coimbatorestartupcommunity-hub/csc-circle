@@ -25,7 +25,7 @@ export function MemberProfileReviewsSection({
             Your event feedback, collaboration ratings, and CSC community reviews.
           </p>
         </div>
-        <Button variant="outline" render={<Link href="/member/reviews" />} className="w-fit gap-1.5 text-xs font-semibold">
+        <Button variant="outline" render={<Link href="/profile/reviews" />} className="w-fit gap-1.5 text-xs font-semibold">
           <Star className="size-3.5" /> Manage All Reviews <ArrowRight className="size-3.5" />
         </Button>
       </div>
@@ -125,7 +125,7 @@ export function MemberProfileReviewsSection({
           <p className="text-xs text-brand-muted max-w-sm">
             After attending a CSC gathering or collaboration, rate how it was conducted and share your experience.
           </p>
-          <Button variant="outline" render={<Link href="/member/reviews" />} className="mt-2 text-xs">
+          <Button variant="outline" render={<Link href="/profile/reviews" />} className="mt-2 text-xs">
             Write a community review
           </Button>
         </div>

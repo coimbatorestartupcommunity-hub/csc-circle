@@ -175,7 +175,7 @@ async function handleResend(request: Request, eventParam: string) {
     queuedCount,
     recipients: recipientsSummary,
     dispatchResult,
-    message: `Successfully queued and dispatched event passes with PDF attachments for ${queuedCount} attendees using updated addresses.`,
+    message: `Successfully queued and dispatched event pass notifications for ${queuedCount} attendees using updated addresses.`,
   });
 }
 

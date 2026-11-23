@@ -8,7 +8,7 @@ import { DemoBanner } from "@/components/member/demo-banner";
 import { membershipStatusMeta } from "@/lib/content/member-taxonomy";
 
 export const metadata: Metadata = {
-  title: { default: "Member", template: "%s · CSC Circle Member" },
+  title: { default: "Profile", template: "%s · CSC Circle Profile" },
   robots: { index: false, follow: false },
 };
 
@@ -49,8 +49,8 @@ export default async function MemberLayout({
         avatarUrl={profile?.portraitUrl ?? profile?.avatarUrl}
         statusLabel={meta.label}
         statusTone={meta.tone}
-        accountHref={isAdmin ? "/admin" : "/member"}
-        accountLabel={isAdmin ? "Admin Dashboard" : memberNumber ? `Member #${memberNumber}` : "Member"}
+        accountHref={isAdmin ? "/admin" : "/profile"}
+        accountLabel={isAdmin ? "Admin Dashboard" : memberNumber ? `Member #${memberNumber}` : "Profile"}
       >
         {children}
       </MemberShell>

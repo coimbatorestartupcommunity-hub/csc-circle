@@ -108,7 +108,7 @@ export function ReviewInvitation({ className }: { className?: string }) {
           </div>
           <p className="w-full break-words font-serif text-brand-ink">“{current.review}”</p>
           <p className="text-sm text-brand-muted">{current.moderation === "approved" ? "Your review has been approved for publication." : current.moderation === "rejected" ? "This review was not approved. Contact CSC support if you need help." : "Your review was submitted and is waiting for CSC administrator review."}</p>
-          <Link className="inline-flex h-10 items-center justify-center rounded-xl border border-brand-border bg-white px-4 text-sm font-medium text-brand-ink hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href="/member/reviews">View my review status</Link>
+          <Link className="inline-flex h-10 items-center justify-center rounded-xl border border-brand-border bg-white px-4 text-sm font-medium text-brand-ink hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" href="/profile/reviews">View my review status</Link>
         </div>
         : <form onSubmit={onSubmit} className="flex w-full flex-col items-center gap-5">
           <div className="flex w-full flex-col items-center gap-1.5">

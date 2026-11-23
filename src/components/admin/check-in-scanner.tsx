@@ -119,6 +119,9 @@ export function CheckInScanner({
       setResult(data.status as ResultState);
       setDetail(data.status === "valid" ? `${data.name ?? "Attendee"} · ${data.reference} · check-in recorded` : data.status === "already" ? `Previously checked in at ${data.checkedInAt}` : "Entry blocked by the server.");
       if (data.status === "valid" || data.status === "already") {
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          navigator.vibrate(50);
+        }
         void fetch(`/api/admin/check-in/pass?event=${encodeURIComponent(eventId)}&ref=${encodeURIComponent(payload.ref)}`)
           .then((r) => (r.ok ? r.json() : null))
           .then((card) => { if (card?.attendee) setVerifiedMember(card.attendee); })
@@ -132,7 +135,7 @@ export function CheckInScanner({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-      <div className="flex flex-col gap-4 rounded-2xl bg-brand-white p-5 ring-1 ring-brand-border">
+      <div className="flex flex-col gap-4 rounded-3xl bg-white/90 backdrop-blur-md p-5 sm:p-6 ring-1 ring-brand-border shadow-sm">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="scan-event" className="text-sm font-medium text-brand-ink">
             Event
@@ -141,7 +144,7 @@ export function CheckInScanner({
             id="scan-event"
             value={eventId}
             onChange={(e) => setEventId(e.target.value)}
-            className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="h-10 w-full rounded-xl border border-input bg-brand-cloud/40 px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 font-medium"
           >
             {events.map((e) => (
               <option key={e.id} value={e.id}>
@@ -151,7 +154,7 @@ export function CheckInScanner({
           </select>
         </div>
 
-        <div className="relative mx-auto flex aspect-square w-full max-w-sm items-center justify-center overflow-hidden rounded-xl bg-brand-ink/90">
+        <div className="relative mx-auto flex aspect-square w-full max-w-sm items-center justify-center overflow-hidden rounded-2xl bg-brand-ink/95 shadow-inner">
           <video ref={videoRef} className="size-full object-cover" muted playsInline />
           {cameraState === "off" ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-brand-white/80">

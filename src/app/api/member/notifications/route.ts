@@ -60,6 +60,8 @@ export async function GET() {
 const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("read"), id: z.string().uuid() }),
   z.object({ action: z.literal("read_all") }),
+  z.object({ action: z.literal("delete"), id: z.string().uuid() }),
+  z.object({ action: z.literal("clear_all") }),
 ]);
 
 export async function POST(request: Request) {
@@ -76,6 +78,29 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid notification action." }, { status: 422 });
 
   const sb = await createClient();
+
+  if (parsed.data.action === "delete") {
+    const { error } = await sb
+      .from("notifications")
+      .update({ status: "archived", read_at: new Date().toISOString() })
+      .eq("channel", "in_app")
+      .eq("recipient_user_id", ctx.user.id)
+      .eq("id", parsed.data.id);
+    if (error) return NextResponse.json({ error: "Could not delete notification." }, { status: 503 });
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "private, no-store" } });
+  }
+
+  if (parsed.data.action === "clear_all") {
+    const { error } = await sb
+      .from("notifications")
+      .update({ status: "archived", read_at: new Date().toISOString() })
+      .eq("channel", "in_app")
+      .eq("recipient_user_id", ctx.user.id)
+      .eq("status", "available");
+    if (error) return NextResponse.json({ error: "Could not clear notifications." }, { status: 503 });
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "private, no-store" } });
+  }
+
   let query = sb.from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("channel", "in_app")

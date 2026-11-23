@@ -24,13 +24,13 @@ import { isPassEligible } from "@/types/member";
 import { formatEventDate } from "@/lib/format";
 
 const quickActions = [
-  { href: "/member/id-card", label: "Member ID", icon: IdCard },
-  { href: "/member/events", label: "Events Pass", icon: Ticket },
-  { href: "/member/profile", label: "Complete Profile", icon: UserCircle },
-  { href: "/member/startups", label: "My Startups", icon: Rocket },
+  { href: "/profile/id-card", label: "Member ID", icon: IdCard },
+  { href: "/profile/events", label: "Events Pass", icon: Ticket },
+  { href: "/profile/account", label: "Account Profile", icon: UserCircle },
+  { href: "/profile/startups", label: "My Startups", icon: Rocket },
   { href: "/directory", label: "Founder Directory", icon: Compass },
-  { href: "/member/consultations", label: "Request Consultation", icon: MessagesSquare },
-  { href: "/member/reviews", label: "Write a Review", icon: Star },
+  { href: "/profile/consultations", label: "Request Consultation", icon: MessagesSquare },
+  { href: "/profile/reviews", label: "Write a Review", icon: Star },
 ];
 
 export default async function MemberDashboard() {
@@ -69,7 +69,7 @@ export default async function MemberDashboard() {
         action={
           profile && profile.profileCompletion < 100 ? (
             <Link
-              href="/member/profile"
+              href="/profile/account"
               prefetch={true}
               className="inline-flex items-center gap-2 rounded-xl bg-brand-purple px-3.5 py-2 text-sm font-medium text-brand-ink hover:bg-brand-lilac"
             >
@@ -78,7 +78,7 @@ export default async function MemberDashboard() {
             </Link>
           ) : profile ? (
             <Link
-              href="/member/profile"
+              href="/profile/account"
               prefetch={true}
               className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3.5 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200 transition hover:bg-emerald-100"
             >
@@ -157,14 +157,14 @@ export default async function MemberDashboard() {
                     <StatusBadge label={meta.label} tone={meta.tone} />
                     {isPassEligible(r.status) ? (
                       <Link
-                        href={`/member/events/${r.id}`}
+                        href={`/profile/events/${r.id}`}
                         className="inline-flex items-center gap-1 text-sm font-medium text-brand-accent hover:underline"
                       >
                         <CheckCircle2 className="size-4" /> View pass
                       </Link>
                     ) : (
                       <Link
-                        href={`/member/events/${r.id}`}
+                        href={`/profile/events/${r.id}`}
                         className="text-sm font-medium text-brand-secondary hover:underline"
                       >
                         Details
@@ -182,7 +182,7 @@ export default async function MemberDashboard() {
             description="Browse CSC events and register for the ones that fit your goals."
           >
             <Link
-              href="/member/events"
+              href="/profile/events"
               className="inline-flex items-center gap-2 rounded-lg bg-brand-ink px-4 py-2 text-sm font-medium text-brand-white hover:bg-brand-ink/90"
             >
               Explore CSC Events

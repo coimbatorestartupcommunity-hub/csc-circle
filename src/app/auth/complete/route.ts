@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     .limit(1);
   if (adminRoles && adminRoles.length > 0) {
     const requested = safeNext(url.searchParams.get("next"));
-    const adminTarget = requested === "/admin" || requested.startsWith("/admin/") ? requested : "/member/profile";
+    const adminTarget = requested === "/admin" || requested.startsWith("/admin/") ? requested : "/profile/account";
     // First verified login queues a welcome in an auth.users trigger. Drain
     // it after successful auth completion instead of waiting for daily cron.
     scheduleNotificationDelivery();
@@ -36,12 +36,12 @@ export async function GET(request: Request) {
   // If the user was signing in from an event page (e.g. /events/[slug]), respect that requested target
   // so they return to complete their event registration rather than being sent to membership claim.
   const rawNext = url.searchParams.get("next");
-  const requested = safeNext(rawNext, "/member/claim");
+  const requested = safeNext(rawNext, "/profile/claim");
   const isEventReturn = requested.startsWith("/events/") || requested === "/events";
 
   const next = isEventReturn
     ? requested
-    : (rawNext && rawNext !== "/member/profile" ? requested : "/member/claim");
+    : (rawNext && rawNext !== "/profile/account" ? requested : "/profile/claim");
   // Incomplete profiles are completed on the profile page itself; avoid
   // splitting first-time members into an unrelated empty onboarding screen.
   if (!profile) return NextResponse.redirect(new URL("/access-denied", url.origin));

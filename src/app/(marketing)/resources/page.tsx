@@ -21,6 +21,7 @@ import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { ResourceCard } from "@/components/cms/resource-card";
 import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
+import { ResourceSubmissionModal } from "@/components/resources/resource-submission-form";
 import { listPublishedResources } from "@/lib/services/cms-public";
 
 export const metadata: Metadata = {
@@ -194,11 +195,12 @@ async function ResourcesContent() {
 
             <div className="mt-6 flex flex-col items-center justify-center gap-3 w-full">
               <div className="flex flex-wrap items-center justify-center gap-3">
+                <ResourceSubmissionModal />
                 <a
                   href="mailto:coimbatorestartup.csc@gmail.com?subject=Resource%20Request%20or%20Suggestion"
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-brand-ink px-6 py-2.5 text-xs font-semibold text-brand-white shadow-xs transition hover:bg-brand-ink/90 focus-visible:outline-2 focus-visible:outline-brand-ink"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-brand-border bg-brand-white px-5 py-2.5 text-xs font-semibold text-brand-ink shadow-2xs transition hover:bg-brand-cloud"
                 >
-                  <FileText className="size-3.5" /> Suggest a Resource
+                  <FileText className="size-3.5 text-brand-secondary" /> Request a Document
                 </a>
               </div>
 

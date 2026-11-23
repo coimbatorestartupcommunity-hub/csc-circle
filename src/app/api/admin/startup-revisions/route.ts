@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   revalidateTag("directory", { expire: 0 });
   revalidatePath("/directory");
   revalidatePath("/admin/startups/revisions");
-  revalidatePath("/member/startups");
+  revalidatePath("/profile/startups");
   scheduleNotificationDelivery();
   return authResponse({ ok: true, result: data });
 }

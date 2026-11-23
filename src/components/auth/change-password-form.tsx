@@ -87,7 +87,7 @@ export function ChangePasswordForm({ isDedicatedPage = false }: { isDedicatedPag
 
     if (isDedicatedPage) {
       setTimeout(() => {
-        router.push("/member/settings");
+        router.push("/profile/settings");
       }, 1800);
     }
   }

@@ -101,7 +101,7 @@ export const routes = {
   events: "/events",
   collaborations: "/collaborations",
   /** Joining starts with the authenticated CSC membership claim. */
-  join: "/member/claim",
+  join: "/profile/claim",
   login: "/login",
 } as const;
 
@@ -121,9 +121,9 @@ export const footerNav: { heading: string; links: NavItem[] }[] = [
     heading: "Get involved",
     links: [
       { label: "Join the Community", href: routes.join },
-      { label: "Member Login", href: "/member/profile" },
+      { label: "Profile Login", href: "/profile/account" },
       { label: "Upcoming Events", href: routes.events },
-      { label: "Share Feedback", href: "/member/reviews" },
+      { label: "Share Feedback", href: "/profile/reviews" },
     ],
   },
 ];
