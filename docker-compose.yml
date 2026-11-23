@@ -70,8 +70,10 @@ services:
       - PORT=2785
       - BASE_PATH=/api
       - API_KEY=${OPENWA_API_KEY:-local-dev-api-key}
+      - WEBHOOK_SSRF_PROTECT=false
+      - SSRF_ALLOWED_HOSTS=host.docker.internal,127.0.0.1,localhost
     volumes:
-      - openwa_data:/app/.sessions
+      - openwa_data:/app/data
 
 volumes:
   redis_data:
