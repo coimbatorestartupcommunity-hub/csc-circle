@@ -74,17 +74,47 @@ export function MemberNotificationMenu() {
     const viewportTop = visualViewport?.offsetTop ?? 0;
     const viewportWidth = visualViewport?.width || document.documentElement.clientWidth || window.innerWidth;
     const viewportHeight = visualViewport?.height ?? window.innerHeight;
+    const isMobile = viewportWidth < 640;
     const width = Math.max(1, Math.min(384, viewportWidth - margin * 2));
     const maxPanelHeight = Math.max(180, Math.min(viewportHeight * 0.7, 448));
     const minLeft = viewportLeft + margin;
     const maxLeft = viewportLeft + viewportWidth - width - margin;
-    const left = Math.min(Math.max(minLeft, rect.right - width), maxLeft);
+    const left = isMobile
+      ? viewportLeft + Math.max(margin, Math.round((viewportWidth - width) / 2))
+      : Math.min(Math.max(minLeft, rect.right - width), maxLeft);
     const below = rect.bottom + 8;
     const top = below + maxPanelHeight > viewportTop + viewportHeight - margin
       ? Math.max(viewportTop + margin, rect.top - maxPanelHeight - 8)
       : below;
     setPanelPosition({ top, left, width, height: maxPanelHeight });
   }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      const panel = document.getElementById("member-notification-panel");
+      const trigger = triggerRef.current;
+      if (
+        panel &&
+        !panel.contains(event.target as Node) &&
+        trigger &&
+        !trigger.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [open]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -218,8 +248,8 @@ export function MemberNotificationMenu() {
             </div>
           </header>
 
-          {/* Curved Pill Filter Tabs — Zero Overflow */}
-          <div className="flex items-center gap-1.5 overflow-x-auto border-b border-brand-border/70 bg-brand-cloud/30 px-3 py-2 no-scrollbar">
+          {/* Centered Symmetrical 4-Pill Filter Tabs */}
+          <div className="grid grid-cols-4 gap-1.5 border-b border-brand-border/70 bg-brand-cloud/30 px-3 py-2">
             {(
               [
                 ["all", "All"],
@@ -235,7 +265,7 @@ export function MemberNotificationMenu() {
                   type="button"
                   onClick={() => setCategory(key)}
                   className={cn(
-                    "rounded-full px-3 py-1 text-xs font-semibold transition shrink-0 cursor-pointer",
+                    "inline-flex items-center justify-center rounded-full py-1 text-xs font-semibold transition cursor-pointer text-center",
                     active
                       ? "bg-brand-ink text-white shadow-xs"
                       : "bg-white text-brand-secondary ring-1 ring-brand-border hover:bg-brand-cloud hover:text-brand-ink"
