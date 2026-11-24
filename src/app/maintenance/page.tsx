@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/images/og/maintenance-banner.png",
+        url: "https://csc.logicintelligencetechnologies.in/images/og/maintenance-banner.png?v=20261124",
         width: 1200,
         height: 630,
         type: "image/png",
@@ -42,7 +43,7 @@ export const metadata: Metadata = {
     title: "Scheduled Platform Upgrade — Coimbatore Startup Community (CSC Circle)",
     description:
       "We are currently upgrading our core platform, payment reconciliation infrastructure, and founder directory to deliver a faster and more secure experience.",
-    images: ["/images/og/maintenance-banner.png"],
+    images: ["https://csc.logicintelligencetechnologies.in/images/og/maintenance-banner.png?v=20261124"],
   },
 };
 
@@ -65,6 +66,7 @@ export default async function MaintenancePage({
 }: {
   searchParams?: Promise<{ error?: string }>;
 }) {
+  await connection();
   const resolvedParams = searchParams ? await searchParams : {};
   const isAccessDenied = resolvedParams?.error === "admin_only";
   let maintenanceData = { ...DEFAULT_NOTICE };

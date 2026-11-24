@@ -12,9 +12,13 @@ import { safeNext } from "@/lib/auth/redirects";
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const pathname = request.nextUrl.pathname;
+  const userAgent = request.headers.get("user-agent") || "";
+  const isSocialCrawler = /facebookexternalhit|WhatsApp|Twitterbot|LinkedInBot|TelegramBot|Slackbot|Discordbot|Googlebot|bingbot|Applebot/i.test(userAgent);
+
   const isAuthPublic = [
     "/login", "/signup", "/forgot-password", "/reset-password",
     "/privacy", "/terms", "/security", "/help", "/contact", "/community-guidelines", "/membership",
+    "/maintenance",
     "/updates",
     "/events",
     "/survey/member-onboarding",
@@ -30,7 +34,8 @@ export async function proxy(request: NextRequest) {
     "/events/meet-access",
   ].some((path) => pathname === path || pathname.startsWith(`${path}/`))
     || pathname === "/"
-    || /^\/events\/[^/]+$/.test(pathname);
+    || /^\/events\/[^/]+$/.test(pathname)
+    || isSocialCrawler;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

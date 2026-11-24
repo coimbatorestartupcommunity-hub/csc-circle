@@ -39,7 +39,7 @@ it("keeps auth-public pages available without initializing Supabase Auth", async
   expect(mocks.createServerClient).not.toHaveBeenCalled();
 });
 
-it.each(["/", "/events", "/events/synthetic-event", "/events/google-meet/check-in", "/events/check-in", "/events/meet-access/token123", "/help", "/contact", "/community-guidelines", "/membership", "/updates", "/updates/synthetic-update", "/survey/member-onboarding"]) (
+it.each(["/", "/maintenance", "/events", "/events/synthetic-event", "/events/google-meet/check-in", "/events/check-in", "/events/meet-access/token123", "/help", "/contact", "/community-guidelines", "/membership", "/updates", "/updates/synthetic-update", "/survey/member-onboarding"]) (
   "keeps public marketing route %s available without a session",
   async (path) => {
     configureLocalAuth();
@@ -51,6 +51,16 @@ it.each(["/", "/events", "/events/synthetic-event", "/events/google-meet/check-i
     expect(mocks.createServerClient).not.toHaveBeenCalled();
   },
 );
+
+it("allows social media crawlers through for OpenGraph link unfurling", async () => {
+  configureLocalAuth();
+  const request = new NextRequest("http://localhost/maintenance");
+  request.headers.set("user-agent", "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)");
+  const response = await proxy(request);
+
+  expect(response.status).toBe(200);
+  expect(response.headers.get("location")).toBeNull();
+});
 
 it.each(["/about", "/directory", "/members", "/members/synthetic-profile", "/collaborations", "/resources", "/opportunities"]) (
   "requires login for protected community route %s",
