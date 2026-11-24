@@ -2,8 +2,20 @@ import { NextResponse } from "next/server";
 import { memberServices } from "@/lib/services/member/services";
 import { buildMembershipQrPayload } from "@/lib/member/qr";
 import { generateAppleMemberPass } from "@/lib/wallet/apple-pass";
+import { getSubsystemMaintenanceConfig } from "@/lib/services/system-settings";
 
 export async function GET(req: Request) {
+  const subsystems = await getSubsystemMaintenanceConfig();
+  if (subsystems.idCardGeneration.paused) {
+    return NextResponse.json(
+      {
+        error: subsystems.idCardGeneration.reason || "Digital ID Card pass generation is temporarily paused for scheduled batch updates.",
+        maintenance: true,
+      },
+      { status: 503 }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const cardRes = await memberServices.getCard();
   if (!cardRes.ok) {

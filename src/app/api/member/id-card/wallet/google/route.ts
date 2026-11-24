@@ -1,8 +1,20 @@
 import { NextResponse } from "next/server";
 import { memberServices } from "@/lib/services/member/services";
 import { buildMembershipQrPayload } from "@/lib/member/qr";
+import { getSubsystemMaintenanceConfig } from "@/lib/services/system-settings";
 
 export async function GET() {
+  const subsystems = await getSubsystemMaintenanceConfig();
+  if (subsystems.idCardGeneration.paused) {
+    return NextResponse.json(
+      {
+        error: subsystems.idCardGeneration.reason || "Digital ID Card pass generation is temporarily paused for scheduled batch updates.",
+        maintenance: true,
+      },
+      { status: 503 }
+    );
+  }
+
   const cardRes = await memberServices.getCard();
   if (!cardRes.ok) {
     return NextResponse.json({ error: cardRes.error.message }, { status: 403 });

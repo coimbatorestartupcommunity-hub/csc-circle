@@ -19,6 +19,26 @@ export const metadata: Metadata = {
   description:
     "We are currently upgrading our core platform, payment reconciliation infrastructure, and founder directory to deliver a faster and more secure experience. All member accounts, verified event passes, and data remain safe.",
   robots: { index: false, follow: false },
+  openGraph: {
+    title: "Scheduled Platform Upgrade — Coimbatore Startup Community (CSC Circle)",
+    description:
+      "We are currently upgrading our core platform, payment reconciliation infrastructure, and founder directory to deliver a faster and more secure experience. All member accounts, verified event passes, and data remain safe.",
+    images: [
+      {
+        url: "/images/og/maintenance-banner.png",
+        width: 1200,
+        height: 630,
+        alt: "CSC Circle Scheduled Maintenance Notice & Infrastructure Upgrade",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Scheduled Platform Upgrade — Coimbatore Startup Community (CSC Circle)",
+    description:
+      "We are currently upgrading our core platform, payment reconciliation infrastructure, and founder directory to deliver a faster and more secure experience.",
+    images: ["/images/og/maintenance-banner.png"],
+  },
 };
 
 export const instant = false;

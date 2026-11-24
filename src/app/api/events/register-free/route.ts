@@ -7,6 +7,7 @@ import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
 import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { paidRegistrationRoles, paidRegistrationReferrals, additionalAttendeeSchema } from "@/lib/validations/paid-registration";
+import { getSubsystemMaintenanceConfig } from "@/lib/services/system-settings";
 
 const freeRegistrationSchema = z.object({
   eventId: z.string().uuid("Invalid event reference."),
@@ -30,6 +31,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const subsystems = await getSubsystemMaintenanceConfig();
+    if (subsystems.eventRegistrations.paused) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: subsystems.eventRegistrations.reason || "Event registrations and RSVPs are temporarily paused while organizers update seat allocations.",
+          maintenance: true,
+        },
+        { status: 503 }
+      );
+    }
+
     const json = await request.json();
     const parsed = freeRegistrationSchema.safeParse(json);
     if (!parsed.success) {

@@ -107,23 +107,27 @@ export function renderLeadershipTeamStrip(base: string): string {
 
 /**
  * Official Technical Partner badge featuring Logic Intelligence Technologies circular logo.
+ * Precision 4-corner curved card with border-collapse: separate and overflow: hidden
+ * ensuring clean curved alignment across all mobile and desktop email clients.
  */
 export function renderTechnicalPartnerBadge(base: string): string {
   return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px auto 16px;max-width:440px;background:#242426;border:1px solid #38383A;border-radius:14px;box-sizing:border-box;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px auto 16px;max-width:440px;width:100%;border-collapse:separate;border-spacing:0;background-color:#18181B;border:1px solid #27272A;border-radius:16px;-webkit-border-radius:16px;-moz-border-radius:16px;overflow:hidden;box-sizing:border-box;">
       <tbody>
         <tr>
-          <td align="center" style="padding:14px 16px;">
-            <span style="font-family:'Courier New',ui-monospace,monospace;font-size:9px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#A0AEC0;display:block;margin-bottom:8px;">
-              ✦ OFFICIAL TECHNICAL PARTNER ✦
-            </span>
-            <div style="width:46px;height:46px;margin:0 auto 8px;border-radius:50%;overflow:hidden;background:#FFFFFF;box-shadow:0 2px 8px rgba(0,0,0,0.35);">
-              <img src="${base}/brand/technical-partner-lit.png" width="46" height="46" alt="Logic Intelligence Technologies" style="display:block;width:46px;height:46px;border-radius:50%;border:0;object-fit:cover;" />
+          <td align="center" style="padding:18px 20px;border-radius:16px;-webkit-border-radius:16px;-moz-border-radius:16px;background-color:#18181B;text-align:center;box-sizing:border-box;">
+            <div style="display:inline-block;padding:3px 12px;border-radius:9999px;background-color:#242427;border:1px solid #3F3F46;margin-bottom:12px;">
+              <span style="font-family:'Courier New',ui-monospace,monospace;font-size:9px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#A1A1AA;display:inline-block;line-height:1.2;">
+                ✦ OFFICIAL TECHNICAL PARTNER ✦
+              </span>
             </div>
-            <p style="margin:0 0 4px;font-size:12px;font-weight:800;color:#FFFFFF;letter-spacing:0.02em;text-align:center;">
+            <div style="width:52px;height:52px;margin:0 auto 10px;border-radius:50%;-webkit-border-radius:50%;overflow:hidden;background:#FFFFFF;border:2px solid #3F3F46;box-shadow:0 4px 12px rgba(0,0,0,0.45);">
+              <img src="${base}/brand/technical-partner-lit.png" width="52" height="52" alt="Logic Intelligence Technologies" style="display:block;width:52px;height:52px;border-radius:50%;border:0;object-fit:cover;" />
+            </div>
+            <p style="margin:0 0 5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;color:#F4F4F5;letter-spacing:0.04em;text-transform:uppercase;text-align:center;line-height:16px;">
               LOGIC INTELLIGENCE TECHNOLOGIES
             </p>
-            <p style="margin:0;font-family:'Courier New',ui-monospace,monospace;font-size:9px;line-height:14px;letter-spacing:0.04em;text-transform:uppercase;color:#A0AEC0;text-align:center;">
+            <p style="margin:0;font-family:'Courier New',ui-monospace,monospace;font-size:9px;line-height:15px;letter-spacing:0.04em;text-transform:uppercase;color:#A1A1AA;text-align:center;">
               Enterprise Architecture, Engineering &amp; Platform Security Partner for CSC Circle
             </p>
           </td>

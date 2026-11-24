@@ -54,6 +54,7 @@ export function redisRestConfig(): { url: string; token: string } | null {
   const url = readEnv("CSC_KV_REST_API_URL");
   const token = readEnv("CSC_KV_REST_API_TOKEN");
   if (!url || !token) return null;
+  if (!url.startsWith("https://")) return null;
   return { url, token };
 }
 

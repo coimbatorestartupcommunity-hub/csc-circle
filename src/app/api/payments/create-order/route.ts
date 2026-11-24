@@ -10,6 +10,7 @@ import {
   verifyGuestVerificationCookie,
 } from "@/lib/payments/orders";
 import { validateGuestEmailVerification } from "@/lib/payments/guest-email-verification";
+import { getSubsystemMaintenanceConfig } from "@/lib/services/system-settings";
 
 const createOrderSchema = z.object({
   eventId: z.string().uuid("Invalid event identifier."),
@@ -78,6 +79,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const subsystems = await getSubsystemMaintenanceConfig();
+    if (subsystems.payments.paused) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: subsystems.payments.reason || "Ticket purchases and payment processing are temporarily paused for scheduled maintenance.",
+          maintenance: true,
+        },
+        { status: 503 }
+      );
+    }
+
     const json = await request.json();
     const parsed = createOrderSchema.safeParse(json);
     if (!parsed.success) {

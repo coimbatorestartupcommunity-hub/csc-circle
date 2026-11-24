@@ -15,6 +15,14 @@ export function MaintenanceGlobalBanner() {
     unlockEpochMs?: number | null;
   }>({ active: false });
 
+  const [upcoming, setUpcoming] = React.useState<{
+    active: boolean;
+    startEpochMs?: number;
+    endEpochMs?: number;
+    title?: string;
+    message?: string;
+  }>({ active: false });
+
   // Do not show on the actual maintenance page or admin workspace
   const isMaintenancePage = pathname === "/maintenance";
   const isAdminPage = pathname.startsWith("/admin");
@@ -46,6 +54,18 @@ export function MaintenanceGlobalBanner() {
         } else if (mounted) {
           setMaintenance({ active: false });
         }
+
+        if (mounted && data.upcomingDowntime && !data.maintenance) {
+          setUpcoming({
+            active: true,
+            startEpochMs: data.upcomingDowntime.startEpochMs,
+            endEpochMs: data.upcomingDowntime.endEpochMs,
+            title: data.upcomingDowntime.title,
+            message: data.upcomingDowntime.message,
+          });
+        } else if (mounted) {
+          setUpcoming({ active: false });
+        }
       } catch {}
     };
 
@@ -57,7 +77,40 @@ export function MaintenanceGlobalBanner() {
     };
   }, [pathname, isAdminPage, router]);
 
-  if (!maintenance.active || isMaintenancePage) return null;
+  if (isMaintenancePage) return null;
+
+  // Render Advance Warning Banner if scheduled downtime is within 24h
+  if (upcoming.active && !maintenance.active) {
+    const formattedDate = upcoming.startEpochMs
+      ? new Date(upcoming.startEpochMs).toLocaleTimeString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }) + " IST"
+      : "Upcoming Window";
+
+    return (
+      <aside aria-label="Advance Maintenance Notice" className="bg-gradient-to-r from-purple-700 via-indigo-700 to-purple-800 text-white px-4 py-2 text-xs font-medium shadow-md z-40 sticky top-0 border-b border-purple-500/30">
+        <div className="flex items-center justify-between gap-3 max-w-7xl mx-auto w-full">
+          <div className="flex items-center gap-2 min-w-0">
+            <Clock className="size-3.5 shrink-0 text-purple-300" />
+            <span className="font-bold tracking-tight shrink-0">Advance Notice:</span>
+            <span className="truncate text-purple-100">
+              Scheduled platform enhancements on <strong className="text-white underline underline-offset-2">{formattedDate}</strong>. All tickets, badges, and accounts remain 100% secure.
+            </span>
+          </div>
+          <span className="hidden sm:inline-flex px-2 py-0.5 rounded-full bg-purple-900/60 text-[10px] font-mono uppercase tracking-wider text-purple-200 border border-purple-400/30 shrink-0">
+            24h Public Notice Active
+          </span>
+        </div>
+      </aside>
+    );
+  }
+
+  if (!maintenance.active) return null;
 
   return (
     <div className="bg-amber-600 text-white px-4 py-2 text-xs font-medium flex items-center justify-between shadow-md z-50 sticky top-0">

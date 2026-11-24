@@ -8,6 +8,7 @@ import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
 import { containsExactOrderReference, verifyOrderAccess } from "@/lib/payments/orders";
 import { reconcilePayments } from "@/lib/payments/reconciler";
 import { invalidatePublicContent } from "@/lib/redis/cache";
+import { getSubsystemMaintenanceConfig } from "@/lib/services/system-settings";
 
 const claimUtrSchema = z.object({
   utr: z.string().trim().regex(/^\d{12}$/, "UTR must be a 12-digit numeric reference"),
@@ -39,6 +40,18 @@ export async function POST(
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
+    const subsystems = await getSubsystemMaintenanceConfig();
+    if (subsystems.payments.paused) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: subsystems.payments.reason || "Payment & UTR verification gateway is temporarily paused for routine ledger reconciliation. Please check back shortly.",
+          maintenance: true,
+        },
+        { status: 503 }
+      );
+    }
+
     const { orderId } = await params;
     if (!z.string().uuid().safeParse(orderId).success) {
       return NextResponse.json({ ok: false, error: "Invalid order ID." }, { status: 404 });

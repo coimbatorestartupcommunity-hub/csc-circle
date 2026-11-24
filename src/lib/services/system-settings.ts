@@ -23,10 +23,57 @@ export interface WebsiteMaintenanceConfig {
   updatedBy?: string;
 }
 
+export type SubsystemKey = "payments" | "eventRegistrations" | "idCardGeneration" | "whatsappBot";
+
+export interface SubsystemStatus {
+  paused: boolean;
+  reason?: string;
+  updatedAt: string;
+  updatedBy?: string;
+}
+
+export interface SubsystemMaintenanceConfig {
+  payments: SubsystemStatus;
+  eventRegistrations: SubsystemStatus;
+  idCardGeneration: SubsystemStatus;
+  whatsappBot: SubsystemStatus;
+}
+
+export interface ScheduledDowntimeConfig {
+  scheduled: boolean;
+  startEpochMs: number | null;
+  endEpochMs: number | null;
+  showNotice24h: boolean;
+  title: string;
+  tamilTitle: string;
+  message: string;
+  tamilMessage: string;
+  updatedAt: string;
+  updatedBy?: string;
+}
+
+export interface MaintenanceAuditLogEntry {
+  id: string;
+  action: string;
+  subsystem?: string;
+  adminEmail?: string;
+  adminName: string;
+  ip?: string;
+  timestamp: string;
+  details: string;
+}
+
 const REDIS_KEY_WA_LOCK = "system:whatsapp:lock_config";
 const REDIS_KEY_MAINTENANCE = "system:platform:maintenance_config";
+const REDIS_KEY_SUBSYSTEMS = "system:subsystems:maintenance";
+const REDIS_KEY_DOWNTIME = "system:scheduled:downtime";
+const REDIS_KEY_AUDIT_LOGS = "system:maintenance:audit_logs";
+
 const CONTENT_KEY_WA_LOCK = "system.whatsapp_lock";
 const CONTENT_KEY_MAINTENANCE = "system.website_maintenance";
+const CONTENT_KEY_SUBSYSTEMS = "system.subsystems_maintenance";
+const CONTENT_KEY_DOWNTIME = "system.scheduled_downtime";
+const CONTENT_KEY_AUDIT_LOGS = "system.maintenance_audit_logs";
 
 // Default WhatsApp Lock settings: 24h maintenance cooldown
 const DEFAULT_WA_LOCK: WhatsAppLockConfig = {
@@ -51,11 +98,60 @@ const DEFAULT_MAINTENANCE: WebsiteMaintenanceConfig = {
   updatedAt: new Date().toISOString(),
 };
 
+// Default Subsystem Kill-Switches: all operational (paused: false)
+const DEFAULT_SUBSYSTEMS: SubsystemMaintenanceConfig = {
+  payments: {
+    paused: false,
+    reason: "Payment & UTR verification gateway paused for scheduled ledger audit.",
+    updatedAt: new Date().toISOString(),
+  },
+  eventRegistrations: {
+    paused: false,
+    reason: "Event registrations & RSVPs paused while organizers adjust venue seat quotas.",
+    updatedAt: new Date().toISOString(),
+  },
+  idCardGeneration: {
+    paused: false,
+    reason: "Digital ID Card wallet generation paused for batch credential renewal.",
+    updatedAt: new Date().toISOString(),
+  },
+  whatsappBot: {
+    paused: false,
+    reason: "Inbound AI Assistant paused during live event check-in peak.",
+    updatedAt: new Date().toISOString(),
+  },
+};
+
+// Default Scheduled Downtime Planner: inactive
+const DEFAULT_DOWNTIME: ScheduledDowntimeConfig = {
+  scheduled: false,
+  startEpochMs: null,
+  endEpochMs: null,
+  showNotice24h: true,
+  title: "Scheduled System Maintenance Window",
+  tamilTitle: "திட்டமிடப்பட்ட முறைமை பராமரிப்பு அறிவிப்பு",
+  message: "CSC Circle will undergo scheduled platform enhancements on Sunday from 02:00 AM to 04:00 AM IST. All member profiles, digital credentials, and tickets remain safe.",
+  tamilMessage: "ஞாயிறு அதிகாலை 2:00 மணி முதல் 4:00 மணி வரை பராமரிப்பு பணி நடைபெறும். உங்கள் உறுப்பினர் தரவுகள் அனைத்தும் பாதுகாப்பாக இருக்கும்.",
+  updatedAt: new Date().toISOString(),
+};
+
 /**
  * In-memory fallback cache in case both Redis & Supabase are unreachable
  */
 let memoryWaLock: WhatsAppLockConfig = { ...DEFAULT_WA_LOCK };
 let memoryMaintenance: WebsiteMaintenanceConfig = { ...DEFAULT_MAINTENANCE };
+let memorySubsystems: SubsystemMaintenanceConfig = { ...DEFAULT_SUBSYSTEMS };
+let memoryDowntime: ScheduledDowntimeConfig = { ...DEFAULT_DOWNTIME };
+let memoryAuditLogs: MaintenanceAuditLogEntry[] = [
+  {
+    id: "init-seed-1",
+    action: "System Initialization",
+    adminName: "Chief Technology Officer",
+    adminEmail: "vikash@logicintelligencetechnologies.in",
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    details: "High-impact maintenance operations suite engaged with zero-ban rate-limiting protocol.",
+  },
+];
 
 export async function getWhatsAppLockConfig(): Promise<WhatsAppLockConfig> {
   const redis = getRedisClient();
@@ -202,4 +298,230 @@ export async function setWebsiteMaintenanceConfig(
   }
 
   return updated;
+}
+
+/**
+ * Subsystems Granular Kill-Switches (Feature 1)
+ */
+export async function getSubsystemMaintenanceConfig(): Promise<SubsystemMaintenanceConfig> {
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      const cached = await withRedisTimeout(redis.get<SubsystemMaintenanceConfig>(REDIS_KEY_SUBSYSTEMS), 1000);
+      if (cached && typeof cached === "object" && "payments" in cached) {
+        memorySubsystems = cached;
+        return cached;
+      }
+    } catch {}
+  }
+
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("content_blocks")
+      .select("value")
+      .eq("key", CONTENT_KEY_SUBSYSTEMS)
+      .maybeSingle();
+
+    if (data?.value) {
+      const parsed = JSON.parse(data.value) as SubsystemMaintenanceConfig;
+      memorySubsystems = parsed;
+      if (redis) {
+        try {
+          await redis.set(REDIS_KEY_SUBSYSTEMS, parsed, { ex: 300 });
+        } catch {}
+      }
+      return parsed;
+    }
+  } catch {}
+
+  return memorySubsystems;
+}
+
+export async function setSubsystemMaintenanceConfig(
+  updates: Partial<{ [K in SubsystemKey]?: Partial<SubsystemStatus> }>,
+  adminUser?: { name: string; email?: string }
+): Promise<SubsystemMaintenanceConfig> {
+  const current = await getSubsystemMaintenanceConfig();
+  const now = new Date().toISOString();
+
+  const updated: SubsystemMaintenanceConfig = {
+    payments: {
+      ...current.payments,
+      ...(updates.payments || {}),
+      updatedAt: updates.payments ? now : current.payments.updatedAt,
+      updatedBy: updates.payments ? adminUser?.name : current.payments.updatedBy,
+    },
+    eventRegistrations: {
+      ...current.eventRegistrations,
+      ...(updates.eventRegistrations || {}),
+      updatedAt: updates.eventRegistrations ? now : current.eventRegistrations.updatedAt,
+      updatedBy: updates.eventRegistrations ? adminUser?.name : current.eventRegistrations.updatedBy,
+    },
+    idCardGeneration: {
+      ...current.idCardGeneration,
+      ...(updates.idCardGeneration || {}),
+      updatedAt: updates.idCardGeneration ? now : current.idCardGeneration.updatedAt,
+      updatedBy: updates.idCardGeneration ? adminUser?.name : current.idCardGeneration.updatedBy,
+    },
+    whatsappBot: {
+      ...current.whatsappBot,
+      ...(updates.whatsappBot || {}),
+      updatedAt: updates.whatsappBot ? now : current.whatsappBot.updatedAt,
+      updatedBy: updates.whatsappBot ? adminUser?.name : current.whatsappBot.updatedBy,
+    },
+  };
+
+  memorySubsystems = updated;
+
+  const admin = createAdminClient();
+  await admin.from("content_blocks").upsert(
+    {
+      key: CONTENT_KEY_SUBSYSTEMS,
+      label: "System: Subsystems Maintenance Kill-Switches",
+      value: JSON.stringify(updated),
+      status: "published",
+      updated_at: now,
+      updated_by: adminUser?.name || null,
+    },
+    { onConflict: "key" }
+  );
+
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      await withRedisTimeout(redis.set(REDIS_KEY_SUBSYSTEMS, updated, { ex: 86400 }), 1000);
+    } catch {}
+  }
+
+  return updated;
+}
+
+/**
+ * Scheduled Downtime Planner (Feature 3)
+ */
+export async function getScheduledDowntimeConfig(): Promise<ScheduledDowntimeConfig> {
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      const cached = await withRedisTimeout(redis.get<ScheduledDowntimeConfig>(REDIS_KEY_DOWNTIME), 1000);
+      if (cached && typeof cached === "object" && "scheduled" in cached) {
+        memoryDowntime = cached;
+        return cached;
+      }
+    } catch {}
+  }
+
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("content_blocks")
+      .select("value")
+      .eq("key", CONTENT_KEY_DOWNTIME)
+      .maybeSingle();
+
+    if (data?.value) {
+      const parsed = JSON.parse(data.value) as ScheduledDowntimeConfig;
+      memoryDowntime = parsed;
+      if (redis) {
+        try {
+          await redis.set(REDIS_KEY_DOWNTIME, parsed, { ex: 300 });
+        } catch {}
+      }
+      return parsed;
+    }
+  } catch {}
+
+  return memoryDowntime;
+}
+
+export async function setScheduledDowntimeConfig(
+  config: Partial<ScheduledDowntimeConfig> & { updatedBy?: string }
+): Promise<ScheduledDowntimeConfig> {
+  const current = await getScheduledDowntimeConfig();
+  const updated: ScheduledDowntimeConfig = {
+    ...current,
+    ...config,
+    updatedAt: new Date().toISOString(),
+  };
+
+  memoryDowntime = updated;
+
+  const admin = createAdminClient();
+  await admin.from("content_blocks").upsert(
+    {
+      key: CONTENT_KEY_DOWNTIME,
+      label: "System: Scheduled Platform Downtime Planner",
+      value: JSON.stringify(updated),
+      status: "published",
+      updated_at: new Date().toISOString(),
+      updated_by: config.updatedBy || null,
+    },
+    { onConflict: "key" }
+  );
+
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      await withRedisTimeout(redis.set(REDIS_KEY_DOWNTIME, updated, { ex: 86400 }), 1000);
+    } catch {}
+  }
+
+  return updated;
+}
+
+/**
+ * Maintenance Audit Trail & Incident Logs (Feature 5)
+ */
+export async function getMaintenanceAuditLogs(): Promise<MaintenanceAuditLogEntry[]> {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("content_blocks")
+      .select("value")
+      .eq("key", CONTENT_KEY_AUDIT_LOGS)
+      .maybeSingle();
+
+    if (data?.value) {
+      const parsed = JSON.parse(data.value) as MaintenanceAuditLogEntry[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryAuditLogs = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+
+  return memoryAuditLogs;
+}
+
+export async function recordMaintenanceAuditLog(
+  entry: Omit<MaintenanceAuditLogEntry, "id" | "timestamp">
+): Promise<MaintenanceAuditLogEntry> {
+  const current = await getMaintenanceAuditLogs();
+  const newEntry: MaintenanceAuditLogEntry = {
+    ...entry,
+    id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Keep last 100 entries
+  const updated = [newEntry, ...current].slice(0, 100);
+  memoryAuditLogs = updated;
+
+  try {
+    const admin = createAdminClient();
+    await admin.from("content_blocks").upsert(
+      {
+        key: CONTENT_KEY_AUDIT_LOGS,
+        label: "System: Platform Maintenance Audit Logs",
+        value: JSON.stringify(updated),
+        status: "published",
+        updated_at: new Date().toISOString(),
+        updated_by: entry.adminName || null,
+      },
+      { onConflict: "key" }
+    );
+  } catch {}
+
+  return newEntry;
 }

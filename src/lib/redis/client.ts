@@ -39,7 +39,11 @@ let testDouble: RedisCommands | null = null;
 function createClient(): TypedRedis | null {
   const config = redisRestConfig();
   if (!config) return null;
-  return new Redis({ url: config.url, token: config.token });
+  try {
+    return new Redis({ url: config.url, token: config.token });
+  } catch {
+    return null;
+  }
 }
 
 /** Lazy singleton. Returns `null` when credentials are not configured. */
