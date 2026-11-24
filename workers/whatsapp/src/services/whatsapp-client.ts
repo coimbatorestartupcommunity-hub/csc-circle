@@ -71,7 +71,7 @@ export class WhatsAppCloudClient implements WhatsAppMessenger {
 
       if (res.ok) {
         logger.info("WhatsApp Cloud session start/reconnect request succeeded", {
-          status: res.status,
+          status: String(res.status),
           response: data,
         });
         return { success: true, status: "STARTING" };
