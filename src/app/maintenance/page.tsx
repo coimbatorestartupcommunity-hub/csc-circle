@@ -23,11 +23,16 @@ export const metadata: Metadata = {
     title: "Scheduled Platform Upgrade — Coimbatore Startup Community (CSC Circle)",
     description:
       "We are currently upgrading our core platform, payment reconciliation infrastructure, and founder directory to deliver a faster and more secure experience. All member accounts, verified event passes, and data remain safe.",
+    url: "https://csc.logicintelligencetechnologies.in/maintenance",
+    siteName: "Coimbatore Startup Community",
+    locale: "en_IN",
+    type: "website",
     images: [
       {
         url: "/images/og/maintenance-banner.png",
         width: 1200,
         height: 630,
+        type: "image/png",
         alt: "CSC Circle Scheduled Maintenance Notice & Infrastructure Upgrade",
       },
     ],
