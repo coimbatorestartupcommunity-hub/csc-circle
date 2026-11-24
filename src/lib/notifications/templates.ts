@@ -122,7 +122,20 @@ function safeAction(base: string, path: string) {
 
 function htmlDetails(rows: Array<[string, string]>) {
   if (!rows.length) return "";
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 24px;border:1px solid #E2E8F0;border-radius:16px;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,0.03);overflow:hidden;box-sizing:border-box;"><tbody>${rows.map(([label, value], index) => `<tr><td style="padding:${index === 0 ? "14px 20px 8px" : index === rows.length - 1 ? "8px 20px 14px" : "8px 20px"};${index < rows.length - 1 ? "border-bottom:1px solid #E2E8F0;" : ""}"><p style="margin:0 0 3px;font-size:10px;line-height:16px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#64748B">${escapeHtml(label)}</p><p style="margin:0;font-size:13px;line-height:21px;font-weight:700;color:#1E293B;word-break:break-word;overflow-wrap:anywhere">${escapeHtml(value)}</p></td></tr>`).join("")}</tbody></table>`;
+  return `
+    <div style="margin:20px 0 24px;padding:18px 20px;background:#FAF9F6;border:1px solid #E2E8F0;border-radius:16px;text-align:left;box-sizing:border-box;">
+      <p style="margin:0 0 12px;font-family:'Courier New',ui-monospace,monospace;font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#64748B;">
+        ✦ APPLICATION &amp; RECORD DETAILS
+      </p>
+      ${rows.map(([label, value]) => `
+        <p style="margin:0 0 8px;font-size:13px;line-height:22px;color:#334155;">
+          <span style="color:#0F766E;font-weight:bold;margin-right:6px;">✦</span>
+          <strong style="color:#0F172A;font-weight:700;">${escapeHtml(label)}:</strong>
+          <span style="${label.toLowerCase().includes("uid") || label.toLowerCase().includes("verification") ? "font-family:'Courier New',ui-monospace,monospace;font-weight:700;color:#0F766E;" : "color:#334155;"}margin-left:4px;">${escapeHtml(value)}</span>
+        </p>
+      `).join("")}
+    </div>
+  `;
 }
 
 /**

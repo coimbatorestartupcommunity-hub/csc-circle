@@ -38,6 +38,38 @@ export function EmailPreviewViewer({
         headlineItalic: "Building Coimbatore's Leading Founder Cohort",
         greeting: "Hello Founder,",
         body: "Welcome to Coimbatore Startup Community. You are now part of our growing ecosystem of innovators, manufacturers, and technology creators building the future from Coimbatore.\n\nExplore upcoming events, connect with mentors, and share what you are building with our cohort.",
+        htmlDetailsContent: `
+          <div style="margin:20px 0 24px;padding:18px 20px;background:#FAF9F6;border:1px solid #E2E8F0;border-radius:16px;text-align:left;box-sizing:border-box;">
+            <p style="margin:0 0 12px;font-family:'Courier New',ui-monospace,monospace;font-size:10px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#64748B;">
+              ✦ OFFICIAL MEMBERSHIP RECORD
+            </p>
+            <p style="margin:0 0 8px;font-size:13px;line-height:22px;color:#334155;">
+              <span style="color:#0F766E;font-weight:bold;margin-right:6px;">✦</span>
+              <strong style="color:#0F172A;font-weight:700;">UID:</strong>
+              <span style="font-family:'Courier New',monospace;font-weight:700;color:#0F766E;margin-left:4px;">2026-CSC-84920</span>
+            </p>
+            <p style="margin:0 0 8px;font-size:13px;line-height:22px;color:#334155;">
+              <span style="color:#0F766E;font-weight:bold;margin-right:6px;">✦</span>
+              <strong style="color:#0F172A;font-weight:700;">Email ID:</strong>
+              <span style="color:#334155;margin-left:4px;">founder@example.com</span>
+            </p>
+            <p style="margin:0 0 8px;font-size:13px;line-height:22px;color:#334155;">
+              <span style="color:#0F766E;font-weight:bold;margin-right:6px;">✦</span>
+              <strong style="color:#0F172A;font-weight:700;">Status:</strong>
+              <span style="color:#0F766E;font-weight:700;margin-left:4px;">Active Member</span>
+            </p>
+            <p style="margin:0 0 8px;font-size:13px;line-height:22px;color:#334155;">
+              <span style="color:#0F766E;font-weight:bold;margin-right:6px;">✦</span>
+              <strong style="color:#0F172A;font-weight:700;">Professional Role:</strong>
+              <span style="color:#334155;margin-left:4px;">Founder &amp; CEO</span>
+            </p>
+            <p style="margin:0;font-size:13px;line-height:22px;color:#334155;">
+              <span style="color:#0F766E;font-weight:bold;margin-right:6px;">✦</span>
+              <strong style="color:#0F172A;font-weight:700;">Application Type:</strong>
+              <span style="color:#334155;margin-left:4px;">Tech Startup Founder</span>
+            </p>
+          </div>
+        `,
         buttonText: "Explore CSC Community Hub",
         buttonUrl: `${baseUrl}/events`,
         thumbtackNote: "Consistency matters more than frequency in early ventures.",

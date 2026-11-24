@@ -180,14 +180,24 @@ export function renderMerakiEditorialEmail(options: MerakiEmailOptions): string 
                   <!-- Polaroid Frame -->
                   <div class="polaroid-card" style="max-width:440px;margin:0 auto;background:#FFFFFF;border-radius:12px;padding:18px 18px 22px;box-shadow:0 12px 28px rgba(0,0,0,0.18);position:relative;text-align:center;box-sizing:border-box;">
                     
-                    <!-- Top Paper Tape Accent -->
-                    <div style="width:100px;height:22px;background:#E7DEBD;opacity:0.92;margin:-26px auto 12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);transform:rotate(-1.5deg);"></div>
+                    <!-- Top Paper Tape Accent (Centered Washi Tape Sticker) -->
+                    <div align="center" style="text-align:center;margin:-28px auto 14px auto;line-height:0;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;border-collapse:collapse;display:inline-table;">
+                        <tr>
+                          <td align="center" style="width:120px;height:22px;background-color:#E7DEBD;opacity:0.95;border-radius:2px;box-shadow:0 2px 5px rgba(0,0,0,0.15);-webkit-transform:rotate(-1.5deg);transform:rotate(-1.5deg);line-height:0;font-size:0;">
+                            &nbsp;
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
                     
                     <!-- Author/Badge Chip -->
-                    <div style="display:inline-block;padding:4px 12px;background:#F1EFEA;border-radius:4px;margin-bottom:12px;">
-                      <span class="mono-note" style="font-size:10px;font-weight:700;letter-spacing:0.04em;color:#4A5568;">
-                        ${escapeHtml(badgeText)}
-                      </span>
+                    <div align="center" style="text-align:center;margin-bottom:14px;">
+                      <div style="display:inline-block;padding:5px 14px;background:#F1EFEA;border:1px solid #E5E1D8;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+                        <span class="mono-note" style="font-family:'Courier New',Courier,ui-monospace,monospace;font-size:10px;font-weight:800;letter-spacing:0.06em;color:#4A5568;display:inline-block;line-height:1.2;">
+                          ${escapeHtml(badgeText)}
+                        </span>
+                      </div>
                     </div>
 
                     <!-- Main Headline -->
