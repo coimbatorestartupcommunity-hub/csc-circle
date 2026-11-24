@@ -1,39 +1,38 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { renderMerakiEditorialEmail } from "@/lib/notifications/template-meraki";
-import { renderNomuShowcaseEmail } from "@/lib/notifications/template-nomu";
-import { CSC_7_LEADERS } from "@/lib/notifications/email-components";
+import {
+  CSC_7_LEADERS,
+  CSC_TOP_3_LEADERS,
+  CSC_BOTTOM_4_LEADERS,
+} from "@/lib/notifications/email-components";
 
-describe("CSC Circle Master Email Templates (Meraki & Nomu)", () => {
+describe("CSC Circle Master MERAKI Editor Email System", () => {
   const base = "https://csc.example.test";
   const support = "coimbatorestartupcommunity@gmail.com";
 
-  it("verifies all 7 Core Leaders are registered with correct roles and portraits", () => {
+  it("verifies the 3 + 4 Executive Leadership Split with full official C-suite designations", () => {
+    expect(CSC_TOP_3_LEADERS).toHaveLength(3);
+    expect(CSC_BOTTOM_4_LEADERS).toHaveLength(4);
     expect(CSC_7_LEADERS).toHaveLength(7);
-    const names = CSC_7_LEADERS.map((l) => l.name);
-    expect(names).toEqual([
-      "K. N. Reyash",
-      "E. R. Sharan",
-      "Mirra Mahendran",
-      "Vikash Saravanan",
-      "Swathi",
-      "Kishore C",
-      "Jaibharath V",
+
+    // Top 3 Leaders
+    expect(CSC_TOP_3_LEADERS.map((l) => [l.name, l.role])).toEqual([
+      ["K. N. Reyash", "FOUNDER"],
+      ["E. R. Sharan", "CO-FOUNDER"],
+      ["Mirra Mahendran", "CHIEF EXECUTIVE OFFICER"],
     ]);
 
-    const roles = CSC_7_LEADERS.map((l) => l.role);
-    expect(roles).toEqual([
-      "Founder",
-      "Co-Founder",
-      "CEO",
-      "CTO",
-      "CCO",
-      "COO",
-      "CBO",
+    // Bottom 4 Leaders
+    expect(CSC_BOTTOM_4_LEADERS.map((l) => [l.name, l.role])).toEqual([
+      ["Vikash Saravanan", "CHIEF TECHNOLOGY OFFICER"],
+      ["Swathi", "CHIEF COMMUNITY OFFICER"],
+      ["Kishore C", "CHIEF OPERATING OFFICER"],
+      ["Jaibharath V", "CHIEF BRAND OFFICER"],
     ]);
   });
 
-  it("renders Template A (Meraki Editorial Journal) with candy stripes, polaroid, paper card, and all 7 leaders", () => {
+  it("renders Master Template A (MERAKI Editor) with 100% fluid mobile responsiveness, 7 leaders, partner badge, and 7 governance links", () => {
     const html = renderMerakiEditorialEmail({
       base,
       support,
@@ -45,20 +44,34 @@ describe("CSC Circle Master Email Templates (Meraki & Nomu)", () => {
       buttonUrl: `${base}/events`,
     });
 
-    // Structure checks
+    // Mobile responsiveness meta tag & styles
+    expect(html).toContain('name="viewport" content="width=device-width, initial-scale=1.0');
     expect(html).toContain("max-width:600px");
     expect(html).toContain("/brand/csc-icon.png");
     expect(html).toContain("COIMBATORE STARTUP COMMUNITY");
     expect(html).toContain("The Biggest Step");
     expect(html).toContain("Consistency matters more than frequency");
-    expect(html).toContain("repeating-linear-gradient(90deg, #8A9A5B 0px, #8A9A5B 24px, #FAF7F0 24px, #FAF7F0 48px)");
 
-    // All 7 leaders verified
+    // Leadership section headers
+    expect(html).toContain("Guided by Coimbatore Startup Community Core Leadership");
+    expect(html).toContain("All Seven Members");
+
+    // All 7 leaders verified in 3+4 split
     for (const leader of CSC_7_LEADERS) {
       expect(html).toContain(leader.name);
       expect(html).toContain(leader.role);
       expect(html).toContain(leader.portrait);
     }
+
+    // 3 Curated Ecosystem Story photos in footer
+    expect(html).toContain("csc-connect-edition-2-cover.webp");
+    expect(html).toContain("community-outlier-meetup.jpg");
+    expect(html).toContain("community-outlier-poster.jpg");
+
+    // Official Technical Partner badge (Logic Intelligence Technologies)
+    expect(html).toContain("technical-partner-lit.png");
+    expect(html).toContain("LOGIC INTELLIGENCE TECHNOLOGIES");
+    expect(html).toContain("OFFICIAL TECHNICAL PARTNER");
 
     // Circular social badges matching the website footer
     expect(html).toContain("whatsapp-circle.png");
@@ -66,45 +79,16 @@ describe("CSC Circle Master Email Templates (Meraki & Nomu)", () => {
     expect(html).toContain("linkedin-circle.png");
     expect(html).toContain("instagram-circle.png");
 
-    // Connect. Build. Grow.
-    expect(html).toContain("Connect. Build. Grow.");
-  });
+    // 7 Official website legal & governance links
+    expect(html).toContain(`${base}/help`);
+    expect(html).toContain(`${base}/contact`);
+    expect(html).toContain(`${base}/community-guidelines`);
+    expect(html).toContain(`${base}/membership`);
+    expect(html).toContain(`${base}/privacy`);
+    expect(html).toContain(`${base}/terms`);
+    expect(html).toContain(`${base}/security`);
 
-  it("renders Template B (Nomu High-Conversion Showcase) with dripping wavy SVG, pill CTA, and all 7 leaders", () => {
-    const html = renderNomuShowcaseEmail({
-      base,
-      support,
-      variant: "blue",
-      mainTitle: "Registration Confirmed",
-      subtitle: "CSC Connect Edition · Coimbatore Innovation Hub",
-      greeting: "Hello Member,",
-      body: "Your seat for the event is confirmed.",
-      primaryButtonText: "Claim Your Pass",
-      primaryButtonUrl: `${base}/profile/events`,
-    });
-
-    // Structure checks
-    expect(html).toContain("max-width:600px");
-    expect(html).toContain("csc circle.");
-    expect(html).toContain("COIMBATORE STARTUP COMMUNITY");
-    expect(html).toContain("<svg viewBox=\"0 0 600 50\""); // Dripping border SVG
-    expect(html).toContain("Registration Confirmed");
-    expect(html).toContain("Claim Your Pass");
-
-    // All 7 leaders verified
-    for (const leader of CSC_7_LEADERS) {
-      expect(html).toContain(leader.name);
-      expect(html).toContain(leader.role);
-      expect(html).toContain(leader.portrait);
-    }
-
-    // Circular social badges matching the website footer
-    expect(html).toContain("whatsapp-circle.png");
-    expect(html).toContain("whatsapp-agent-circle.png");
-    expect(html).toContain("linkedin-circle.png");
-    expect(html).toContain("instagram-circle.png");
-
-    // Connect. Build. Grow.
+    // Standard tagline
     expect(html).toContain("Connect. Build. Grow.");
   });
 });
