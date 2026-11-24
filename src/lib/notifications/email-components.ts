@@ -16,17 +16,17 @@ export interface LeadershipMember {
 
 /** Top Row (3 Leaders: Founder, Co-Founder, CEO) */
 export const CSC_TOP_3_LEADERS: LeadershipMember[] = [
-  { name: "K. N. Reyash", role: "FOUNDER", portrait: "/images/team/reyash.jpg" },
-  { name: "E. R. Sharan", role: "CO-FOUNDER", portrait: "/images/team/sharan.jpg" },
-  { name: "Mirra Mahendran", role: "CHIEF EXECUTIVE OFFICER", portrait: "/images/team/mirra.jpg" },
+  { name: "K. N. Reyash", role: "FOUNDER", portrait: "/images/team/circular/reyash.jpg" },
+  { name: "E. R. Sharan", role: "CO-FOUNDER", portrait: "/images/team/circular/sharan.jpg" },
+  { name: "Mirra Mahendran", role: "CHIEF EXECUTIVE OFFICER", portrait: "/images/team/circular/mirra.jpg" },
 ];
 
 /** Bottom Row (4 Leaders: CTO, CCO, COO, CBO) */
 export const CSC_BOTTOM_4_LEADERS: LeadershipMember[] = [
-  { name: "Vikash Saravanan", role: "CHIEF TECHNOLOGY OFFICER", portrait: "/images/team/vikash-new.jpg" },
-  { name: "Swathi", role: "CHIEF COMMUNITY OFFICER", portrait: "/images/team/swathi.jpg" },
-  { name: "Kishore C", role: "CHIEF OPERATING OFFICER", portrait: "/images/team/kishore.jpg" },
-  { name: "Jaibharath V", role: "CHIEF BRAND OFFICER", portrait: "/images/team/jaibharath.jpg" },
+  { name: "Vikash Saravanan", role: "CHIEF TECHNOLOGY OFFICER", portrait: "/images/team/circular/vikash.jpg" },
+  { name: "Swathi", role: "CHIEF COMMUNITY OFFICER", portrait: "/images/team/circular/swathi.jpg" },
+  { name: "Kishore C", role: "CHIEF OPERATING OFFICER", portrait: "/images/team/circular/kishore.jpg" },
+  { name: "Jaibharath V", role: "CHIEF BRAND OFFICER", portrait: "/images/team/circular/jaibharath.jpg" },
 ];
 
 /** All 7 Core Leaders combined */
@@ -120,10 +120,10 @@ export function renderTechnicalPartnerBadge(base: string): string {
             <div style="width:46px;height:46px;margin:0 auto 8px;border-radius:50%;overflow:hidden;background:#FFFFFF;box-shadow:0 2px 8px rgba(0,0,0,0.35);">
               <img src="${base}/brand/technical-partner-lit.png" width="46" height="46" alt="Logic Intelligence Technologies" style="display:block;width:46px;height:46px;border-radius:50%;border:0;object-fit:cover;" />
             </div>
-            <p style="margin:0 0 2px;font-size:12px;font-weight:800;color:#FFFFFF;letter-spacing:0.02em;text-align:center;">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:800;color:#FFFFFF;letter-spacing:0.02em;text-align:center;">
               LOGIC INTELLIGENCE TECHNOLOGIES
             </p>
-            <p style="margin:0;font-size:10px;line-height:14px;color:#A0AEC0;text-align:center;">
+            <p style="margin:0;font-family:'Courier New',ui-monospace,monospace;font-size:9px;line-height:14px;letter-spacing:0.04em;text-transform:uppercase;color:#A0AEC0;text-align:center;">
               Enterprise Architecture, Engineering &amp; Platform Security Partner for CSC Circle
             </p>
           </td>
@@ -166,7 +166,7 @@ export function renderCircularSocialIcons(base: string, support: string): string
     {
       label: "Email Community Desk",
       href: `mailto:${support}`,
-      icon: `${base}/email-assets/reference/social-email.png`,
+      icon: `${base}/brand/social/email-circle.png`,
       refIcon: `${base}/email-assets/reference/social-email.png`,
     },
   ];

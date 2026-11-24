@@ -24,9 +24,9 @@ export const leaders: Leader[] = [
     id: "reyash",
     name: "K. N. Reyash",
     role: "Founder, Coimbatore Startup Community",
-    additionalRole: "Founder, Belvoria",
+    additionalRole: "Independent Startup Developer",
     responsibility:
-      "K. N. Reyash is the Founder of CSC, providing overall community leadership, vision, and strategic direction. He builds entrepreneur and startup networks, approves ecosystem plans and initiatives, coordinates collaborations, and drives meetings and meetups — fostering entrepreneurial growth across Coimbatore.",
+      "K. N. Reyash is the Founder of CSC, providing overall community leadership, vision, and strategic direction. He builds entrepreneur networks, approves plans, and drives meetups — shaping the startup ecosystem and fostering entrepreneurial growth across Coimbatore.",
     portrait: "/images/team/reyash.jpg",
     org: { name: "Belvoria", logo: brandAssets.belvoriaLogo, url: "https://belvoria.vercel.app/" },
     order: 1,
@@ -37,7 +37,7 @@ export const leaders: Leader[] = [
     role: "Co-Founder, Coimbatore Startup Community",
     additionalRole: "Founder, CECIL Groups of Companies & Industries",
     responsibility:
-      "E. R. Sharan is Co-Founder of CSC and Founder of CECIL Groups of Companies & Industries. He provides strategic leadership, builds corporate and industrial partnerships, and facilitates high-level industry connections — bridging emerging startups with established commercial networks to drive sustainable expansion.",
+      "E. R. Sharan is Co-Founder of CSC and Founder of CECIL Groups of Companies & Industries. He provides strategic leadership, builds industry connections, and develops partnerships — bridging emerging startups with established networks to drive CSC's sustainable expansion.",
     portrait: "/images/team/sharan.jpg",
     order: 2,
   },
@@ -46,17 +46,17 @@ export const leaders: Leader[] = [
     name: "Mirra Mahendran",
     role: "Chief Executive Officer (CEO), Coimbatore Startup Community",
     responsibility:
-      "Mirra Mahendran leads day-to-day operations and structured execution at CSC. Pursuing a BA (Hons) in International Business at PSG Institute of Advanced Studies, she coordinates internal team communications, manages task follow-ups, and plans and executes approved community activities following Founder approval.",
+      "Mirra Mahendran leads day-to-day operations and execution at CSC. She coordinates team communication, follows up on tasks, and plans and executes community activities following Founder approval — driving the structured, strategic execution of CSC's goals.",
     portrait: "/images/team/mirra.jpg",
     order: 3,
   },
   {
     id: "vikash",
     name: "Vikash Saravanan",
-    role: "Chief Technology Officer (CTO) — Coimbatore Startup Community (CSC)",
-    additionalRole: "Founder & Chief Executive Officer, Logic Intelligence Technologies (LIT)",
+    role: "Chief Technology Officer (CTO), Coimbatore Startup Community",
+    additionalRole: "Founder & CEO, Logic Intelligence Technologies (LIT)",
     responsibility:
-      "As CSC's Chief Technology Officer, leads its technology strategy, digital platform architecture, software development, system integrations, infrastructure management, and technical security, delivered through Logic Intelligence Technologies. Also manages member verification, Digital ID card approvals, and technical onboarding.",
+      "Vikash Saravanan leads technical development on digital initiatives for the community. His responsibilities include supporting the community website and digital platforms, as well as providing technical assistance for various community activities and operational needs.",
     portrait: "/images/team/vikash-new.jpg",
     org: { name: "Logic Intelligence Technologies", logo: brandAssets.litLogo, url: siteConfig.technologyPartner.url },
     order: 4,
@@ -66,7 +66,7 @@ export const leaders: Leader[] = [
     name: "Swathi",
     role: "Chief Community Officer (CCO), Coimbatore Startup Community",
     responsibility:
-      "Swathi is a student and NEET aspirant who spearheads member coordination and community engagement at CSC. She leads event operations, fosters collaboration, serves as the core communicative bridge across the community, maintains responsive member support, and assists with health-related matters.",
+      "Swathi spearheads member coordination and community engagement at CSC. She leads event coordination, fosters collaboration, and serves as the core communicative link — keeping the community united, informed, and engaged while shaping a sustainable startup ecosystem.",
     portrait: "/images/team/swathi.jpg",
     order: 5,
   },
@@ -76,7 +76,7 @@ export const leaders: Leader[] = [
     role: "Chief Operating Officer (COO), Coimbatore Startup Community",
     additionalRole: "Founder, APARÈ Clothing",
     responsibility:
-      "Kishore C drives operational and logistical excellence at CSC as Chief Operating Officer. Founder of APARÈ Clothing, he owns end-to-end event planning, venue coordination, and on-ground execution — elevating attendee experiences across all CSC community events.",
+      "Kishore C drives operational and logistical excellence at CSC as Chief Operating Officer. Founder of APARÈ Clothing, he owns end-to-end event management — from planning and venue coordination to flawless on-ground execution, elevating every CSC community experience.",
     portrait: "/images/team/kishore.jpg",
     order: 6,
   },
@@ -86,7 +86,7 @@ export const leaders: Leader[] = [
     role: "Chief Brand Officer (CBO), Coimbatore Startup Community",
     additionalRole: "Founder, Flickkora Agency",
     responsibility:
-      "Jaibharath V leads brand strategy and visual storytelling for CSC as Chief Brand Officer. Founder of Flickkora Agency and currently pursuing his bachelor's degree, he produces high-impact promotional videos, reels, and event coverage — elevating CSC's brand identity and digital presence.",
+      "Jaibharath V leads brand strategy and visual storytelling for CSC as Chief Brand Officer. Founder of Flickkora, he produces high-impact videos, reels, and event coverage — elevating CSC's brand identity and expanding its digital presence and influence.",
     portrait: "/images/team/jaibharath.jpg",
     order: 7,
   },

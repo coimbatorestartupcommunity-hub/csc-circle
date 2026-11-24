@@ -1,27 +1,42 @@
 import type { Metadata } from "next";
-import { Container } from "@/components/common/container";
-import { Eyebrow } from "@/components/common/section";
-import { Wrench, Clock, Mail, ShieldAlert, Sparkles, ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import {
+  Clock,
+  Mail,
+  ShieldCheck,
+  Lock,
+  ArrowRight,
+  ExternalLink,
+  MessageSquare,
+  Sparkles,
+  CheckCircle2,
+} from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {
-  title: "Under Scheduled Maintenance — Coimbatore Startup Community",
-  description: "Coimbatore Startup Community platform is undergoing scheduled enhancements.",
+  title: "Scheduled Platform Upgrade — Coimbatore Startup Community (CSC Circle)",
+  description:
+    "We are currently upgrading our core platform, payment reconciliation infrastructure, and founder directory to deliver a faster and more secure experience. All member accounts, verified event passes, and data remain safe.",
   robots: { index: false, follow: false },
 };
 
 export const instant = false;
 
+// Default locked official presets per platform governance
+const DEFAULT_NOTICE = {
+  title: "Scheduled Platform Upgrade in Progress",
+  tamilTitle: "திட்டமிடப்பட்ட தள மேம்பாட்டுப் பணி நடைபெறுகிறது",
+  message:
+    "We are currently upgrading our core platform, payment reconciliation infrastructure, and founder directory to deliver a faster and more secure experience. All member accounts, verified event passes, and data remain safe. Service will be restored shortly.",
+  tamilMessage:
+    "எங்கள் கட்டமைப்பு, கட்டண தீர்வு முறைமை மற்றும் நிறுவனர்களின் அடைவு சேவைகளை மேலும் வேகமாகவும் பாதுகாப்பாகவும் மேம்படுத்தும் பணி நடைபெற்று வருகிறது. உங்கள் உறுப்பினர் கணக்குகள் மற்றும் நிகழ்வு அனுமதிச் சீட்டுகள் முற்றிலும் பாதுகாப்பாக உள்ளன. விரைவில் தளம் இயல்பு நிலைக்குத் திரும்பும்.",
+  contactEmail: "coimbatorestartupcommunity@gmail.com",
+  unlockEpochMs: null as number | null,
+};
+
 export default async function MaintenancePage() {
-  let maintenanceData = {
-    title: "We will be right back!",
-    tamilTitle: "விரைவில் மீண்டும் வருகிறோம்!",
-    message: "Coimbatore Startup Community platform is undergoing scheduled enhancements to serve our founder network better. We will be back online shortly.",
-    tamilMessage: "எங்கள் நிறுவனர் தளத்தை மேலும் மேம்படுத்த தளம் தற்போது பராமரிப்பில் உள்ளது. விரைவில் மீண்டும் இயங்கும்.",
-    contactEmail: "coimbatorestartupcommunity@gmail.com",
-    unlockEpochMs: null as number | null,
-  };
+  let maintenanceData = { ...DEFAULT_NOTICE };
 
   try {
     const admin = createAdminClient();
@@ -47,78 +62,243 @@ export default async function MaintenancePage() {
       }) + " IST"
     : null;
 
-  return (
-    <main className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-6 sm:p-12 relative overflow-hidden font-sans">
-      {/* Background Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-b from-indigo-600/20 via-purple-600/10 to-transparent blur-3xl pointer-events-none" />
+  const socialChannels = [
+    {
+      name: "Official WhatsApp Community",
+      sub: "Founder announcements & event alerts",
+      href: "https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2",
+      icon: "/brand/social/whatsapp-circle.png",
+      status: "Active",
+    },
+    {
+      name: "24/7 AI WhatsApp Concierge",
+      sub: "Instant answers for community & event passes",
+      href: "https://wa.me/917550067712?text=Hi",
+      icon: "/brand/social/whatsapp-agent-circle.png",
+      status: "Online",
+    },
+    {
+      name: "Official LinkedIn Network",
+      sub: "Startup ecosystem spotlights & updates",
+      href: "https://www.linkedin.com/in/csc-coimbatore-startup-community-b27b0b44b?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+      icon: "/brand/social/linkedin-circle.png",
+      status: "Connected",
+    },
+    {
+      name: "Official Instagram Stories",
+      sub: "Community reels & meetup highlights",
+      href: "https://www.instagram.com/coimbatorestartupcommunity/",
+      icon: "/brand/social/instagram-circle.png",
+      status: "Updated",
+    },
+    {
+      name: "Priority Support Desk",
+      sub: maintenanceData.contactEmail,
+      href: `mailto:${maintenanceData.contactEmail}`,
+      icon: "/brand/social/email-circle.png",
+      status: "24/7 Monitored",
+    },
+  ];
 
-      {/* Header Logo */}
-      <header className="relative z-10 flex items-center justify-between max-w-4xl mx-auto w-full">
+  return (
+    <main className="min-h-screen lg:h-screen lg:max-h-screen lg:overflow-hidden bg-[#0A0D14] text-white flex flex-col justify-between p-4 sm:p-6 lg:p-8 relative font-sans selection:bg-indigo-500 selection:text-white">
+      {/* Background Ambient Glows */}
+      <div className="absolute top-0 left-1/3 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-indigo-600/20 via-emerald-600/10 to-transparent blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[600px] h-[300px] bg-gradient-to-t from-purple-600/15 to-transparent blur-3xl pointer-events-none" />
+
+      {/* Top Header Bar */}
+      <header className="relative z-10 flex items-center justify-between max-w-7xl mx-auto w-full pb-4 border-b border-white/5 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="size-9 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center font-bold tracking-tight text-white text-sm">
-            CSC
+          <div className="relative size-10 rounded-xl overflow-hidden bg-white/5 ring-1 ring-white/15 p-1 flex items-center justify-center shrink-0 shadow-md">
+            <Image
+              src="/brand/csc-icon.png"
+              alt="CSC Circle Logo"
+              width={36}
+              height={36}
+              className="object-contain"
+              priority
+            />
           </div>
           <div>
-            <span className="text-sm font-bold tracking-tight block">Coimbatore Startup Community</span>
-            <span className="text-[10px] text-slate-400 font-mono">Platform Maintenance Gateway</span>
+            <span className="text-sm font-extrabold tracking-tight text-white block">
+              Coimbatore Startup Community
+            </span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold flex items-center gap-1">
+              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              CSC Circle · System Maintenance Gateway
+            </span>
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
-          <span className="size-2 rounded-full bg-amber-400 animate-pulse" />
-          Scheduled Maintenance
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold tracking-wide">
+            <span className="size-2 rounded-full bg-amber-400 animate-ping" />
+            HTTP 503 · Scheduled Upgrade Window
+          </span>
+        </div>
       </header>
 
-      {/* Main Content Box */}
-      <div className="relative z-10 max-w-2xl mx-auto w-full my-auto py-12 text-center space-y-6">
-        <div className="inline-flex items-center justify-center size-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 text-indigo-400 mb-2 shadow-inner">
-          <Wrench className="size-8 text-indigo-300 animate-bounce duration-1000" />
-        </div>
+      {/* Main Two-Column Container */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full my-auto py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center">
+        {/* Left Column: Official Notice & Leadership Assurance */}
+        <div className="lg:col-span-7 space-y-5 text-left">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 text-xs font-bold">
+            <Sparkles className="size-3.5 text-indigo-400" />
+            <span>Platform Enhancement in Progress</span>
+          </div>
 
-        <div className="space-y-3">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-            {maintenanceData.title}
-          </h1>
-          <p className="text-base sm:text-lg font-medium text-indigo-300">
-            {maintenanceData.tamilTitle}
-          </p>
-        </div>
+          {/* Bilingual Headlines */}
+          <div className="space-y-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
+              {maintenanceData.title}
+            </h1>
+            <p className="text-sm sm:text-base font-semibold text-emerald-400/90 font-sans">
+              {maintenanceData.tamilTitle}
+            </p>
+          </div>
 
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-6 backdrop-blur-md text-left space-y-4 shadow-xl">
-          <p className="text-sm text-slate-300 leading-relaxed">
-            {maintenanceData.message}
-          </p>
+          {/* Official Bilingual Notice Card */}
+          <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 sm:p-6 backdrop-blur-xl shadow-2xl space-y-4">
+            <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+              {maintenanceData.message}
+            </p>
+            <p className="text-xs text-slate-400 leading-relaxed border-t border-white/10 pt-3">
+              {maintenanceData.tamilMessage}
+            </p>
 
-          <p className="text-xs text-slate-400 leading-relaxed border-t border-white/5 pt-3">
-            {maintenanceData.tamilMessage}
-          </p>
+            {formattedUnlock && (
+              <div className="mt-3 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-indigo-950/60 border border-indigo-500/30 text-xs font-semibold text-indigo-200">
+                <Clock className="size-4 text-indigo-400 shrink-0" />
+                <span>
+                  Target Return Time: <strong className="text-white">{formattedUnlock}</strong>
+                </span>
+              </div>
+            )}
+          </div>
 
-          {formattedUnlock && (
-            <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-950/50 border border-indigo-500/20 text-xs font-medium text-indigo-200">
-              <Clock className="size-4 text-indigo-400 shrink-0" />
-              <span>Expected return time: <strong>{formattedUnlock}</strong></span>
+          {/* Zero Data Loss & Security Assurance */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+              <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+              <span className="text-xs text-slate-300 font-medium">
+                Passes &amp; Accounts 100% Safe
+              </span>
             </div>
-          )}
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+              <ShieldCheck className="size-4 text-indigo-400 shrink-0" />
+              <span className="text-xs text-slate-300 font-medium">
+                Encrypted Transaction Ledgers
+              </span>
+            </div>
+          </div>
+
+          {/* Organizer / Admin Sign In */}
+          <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+            <Link
+              href="/login?redirect=/admin"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-950 text-xs font-black transition-all shadow-md shrink-0"
+            >
+              <Lock className="size-3.5" />
+              <span>Organizer &amp; Admin Sign In</span>
+              <ArrowRight className="size-3.5" />
+            </Link>
+            <span className="text-[11px] text-slate-400 leading-snug">
+              Authorized administrators &amp; committee leads bypass maintenance mode automatically.
+            </span>
+          </div>
         </div>
 
-        {/* Contact Support */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <Mail className="size-3.5 text-slate-400" />
-            Urgent inquiries: <a href={`mailto:${maintenanceData.contactEmail}`} className="text-indigo-400 hover:underline">{maintenanceData.contactEmail}</a>
-          </span>
-          <span className="hidden sm:inline">•</span>
-          <Link href="/login" className="text-slate-500 hover:text-slate-300 transition underline underline-offset-4">
-            Organizer Sign In
-          </Link>
+        {/* Right Column: 4:5 Aspect Ratio Official Communication Card */}
+        <div className="lg:col-span-5 flex justify-center lg:justify-end">
+          <div className="aspect-[4/5] w-full max-w-[340px] sm:max-w-[360px] p-5 rounded-3xl bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-950/90 border border-white/10 shadow-2xl backdrop-blur-2xl flex flex-col justify-between relative overflow-hidden">
+            {/* Top Accent Pill */}
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+                  <MessageSquare className="size-3.5 text-emerald-400" />
+                  Official Circles
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                  <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  100% Operational
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2 leading-tight">
+                Our social network, WhatsApp AI assistant, and help desk remain live during this upgrade.
+              </p>
+            </div>
+
+            {/* 5 Channels Stack */}
+            <div className="space-y-2 py-2">
+              {socialChannels.map((channel) => (
+                <a
+                  key={channel.name}
+                  href={channel.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 transition-all group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-7 rounded-full overflow-hidden shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">
+                      <Image
+                        src={channel.icon}
+                        alt={channel.name}
+                        width={28}
+                        height={28}
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white group-hover:text-emerald-400 transition truncate">
+                        {channel.name}
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">
+                        {channel.sub}
+                      </p>
+                    </div>
+                  </div>
+                  <ExternalLink className="size-3 text-slate-500 group-hover:text-white transition shrink-0 ml-1.5" />
+                </a>
+              ))}
+            </div>
+
+            {/* Bottom LIT Security Badge */}
+            <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="size-3.5 text-indigo-400" />
+                256-Bit SSL Protection
+              </span>
+              <span className="font-mono text-[10px] text-emerald-400 font-semibold">
+                SLA: 99.98%
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="relative z-10 text-center text-xs text-slate-500 border-t border-white/5 pt-6 max-w-4xl mx-auto w-full flex flex-col sm:flex-row justify-between items-center gap-2">
-        <span>© {new Date().getFullYear()} Coimbatore Startup Community (CSC Circle). All rights reserved.</span>
-        <span>Secured by Logic Intelligence Technologies</span>
+      <footer className="relative z-10 pt-4 border-t border-white/5 max-w-7xl mx-auto w-full flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-400 shrink-0">
+        <span>
+          &copy; {new Date().getFullYear()} Coimbatore Startup Community (CSC Circle). All rights reserved.
+        </span>
+
+        {/* Official Technical Partner Badge with Circular LIT Emblem */}
+        <div className="flex items-center gap-2">
+          <span>Secured &amp; Architected by</span>
+          <div className="size-5 rounded-full overflow-hidden bg-white shrink-0 shadow-xs border border-white/30 flex items-center justify-center">
+            <Image
+              src="/brand/technical-partner-lit.png"
+              alt="Logic Intelligence Technologies"
+              width={20}
+              height={20}
+              className="object-cover"
+            />
+          </div>
+          <span className="font-bold text-slate-200">
+            Logic Intelligence Technologies
+          </span>
+        </div>
       </footer>
     </main>
   );
