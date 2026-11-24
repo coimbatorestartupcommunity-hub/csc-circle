@@ -1,10 +1,9 @@
 export type PulseLanguage = "en" | "ta" | "tanglish";
 
 export const CSC_WHATSAPP_FOOTER = [
-  "────────────────────",
   "🚀 *Connect • Build • Grow*",
   "🌐 *Coimbatore Startup Community (CSC Circle)*",
-  "⚡ *Powered by Logic Intelligence Technologies*",
+  "🤍 ⚙️ *Powered by Logic Intelligence Technologies*",
 ].join("\n");
 
 /**

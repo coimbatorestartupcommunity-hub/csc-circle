@@ -12,10 +12,9 @@ vi.mock("server-only", () => ({}));
 
 vi.mock("@/lib/notifications/whatsapp-outbox", () => ({
   CSC_WHATSAPP_FOOTER: [
-    "────────────────────",
     "🚀 *Connect • Build • Grow*",
     "🌐 *Coimbatore Startup Community (CSC Circle)*",
-    "⚡ *Powered by Logic Intelligence Technologies*",
+    "🤍 ⚙️ *Powered by Logic Intelligence Technologies*",
   ].join("\n"),
   enqueueWhatsAppNotification: vi.fn().mockResolvedValue({
     success: true,
@@ -80,7 +79,7 @@ describe("Core Leadership Team WhatsApp Group Automated Alerts", () => {
       expect(formatted).toContain("🔗 *Review in Admin:* https://csc.logicintelligencetechnologies.in/admin/members");
       expect(formatted).toContain(CSC_WHATSAPP_FOOTER);
       expect(formatted).toContain("🚀 *Connect • Build • Grow*");
-      expect(formatted).toContain("⚡ *Powered by Logic Intelligence Technologies*");
+      expect(formatted).toContain("🤍 ⚙️ *Powered by Logic Intelligence Technologies*");
     });
 
     it("formats event RSVP alerts with pass reference and ticket counts", () => {

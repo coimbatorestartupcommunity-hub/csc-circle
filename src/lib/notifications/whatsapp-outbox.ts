@@ -4,10 +4,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const SYSTEM_NOTIFICATION_CONTACT_ID = "00000000-0000-0000-0000-000000000000";
 
 export const CSC_WHATSAPP_FOOTER = [
-  "────────────────────",
   "🚀 *Connect • Build • Grow*",
   "🌐 *Coimbatore Startup Community (CSC Circle)*",
-  "⚡ *Powered by Logic Intelligence Technologies*",
+  "🤍 ⚙️ *Powered by Logic Intelligence Technologies*",
 ].join("\n");
 
 export interface WhatsAppNotificationPayload {

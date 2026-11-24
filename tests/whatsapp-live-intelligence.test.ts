@@ -25,7 +25,7 @@ describe("CSC Circle WhatsApp Live Intelligence & Groq AI Agent", () => {
       expect(formatted).toContain(CSC_WHATSAPP_FOOTER);
       expect(formatted).toContain("🚀 *Connect • Build • Grow*");
       expect(formatted).toContain("*Coimbatore Startup Community (CSC Circle)*");
-      expect(formatted).toContain("⚡ *Powered by Logic Intelligence Technologies*");
+      expect(formatted).toContain("🤍 ⚙️ *Powered by Logic Intelligence Technologies*");
     });
 
     it("omits the footer for brief conversational messages to prevent bloat", () => {
