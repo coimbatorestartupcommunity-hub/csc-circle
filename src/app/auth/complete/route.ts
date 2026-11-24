@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/redirects";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
+import { getWebsiteMaintenanceConfig } from "@/lib/services/system-settings";
 
 /** Re-check the authoritative identity and account state after either sign-in method. */
 export async function GET(request: Request) {
@@ -18,9 +19,20 @@ export async function GET(request: Request) {
     .select("role")
     .eq("user_id", user.id)
     .limit(1);
-  if (adminRoles && adminRoles.length > 0) {
+
+  const isAdmin = Boolean(adminRoles && adminRoles.length > 0);
+
+  // During scheduled maintenance mode, ONLY verified administrators can sign in.
+  // Non-admin sessions are immediately terminated and routed to /maintenance.
+  const maintenance = await getWebsiteMaintenanceConfig();
+  if (maintenance.enabled && !isAdmin) {
+    await sb.auth.signOut();
+    return NextResponse.redirect(new URL("/maintenance?error=admin_only", url.origin));
+  }
+
+  if (isAdmin) {
     const requested = safeNext(url.searchParams.get("next"));
-    const adminTarget = requested === "/admin" || requested.startsWith("/admin/") ? requested : "/profile/account";
+    const adminTarget = requested === "/admin" || requested.startsWith("/admin/") ? requested : (maintenance.enabled ? "/admin" : "/profile/account");
     // First verified login queues a welcome in an auth.users trigger. Drain
     // it after successful auth completion instead of waiting for daily cron.
     scheduleNotificationDelivery();

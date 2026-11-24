@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { getWebsiteMaintenanceConfig } from "@/lib/services/system-settings";
 import {
   verifyPhoneOtpCode,
   resolveOrCreatePhoneUser,
@@ -40,6 +42,24 @@ export async function POST(request: Request) {
 
     // 2. Resolve existing user or provision phone account
     const user = await resolveOrCreatePhoneUser(phone);
+
+    // During scheduled maintenance mode, ONLY verified administrators can sign in.
+    const maintenance = await getWebsiteMaintenanceConfig();
+    if (maintenance.enabled) {
+      const adminSb = createAdminClient();
+      const { data: adminRoles } = await adminSb
+        .from("admin_roles")
+        .select("role")
+        .eq("user_id", user.userId)
+        .limit(1);
+      const isAdmin = Boolean(adminRoles && adminRoles.length > 0);
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: "Platform is currently under scheduled maintenance. Only verified administrators can sign in." },
+          { status: 403 }
+        );
+      }
+    }
 
     // 3. Generate token hash and set SSR cookies
     const tokenHash = await createPhoneSessionToken(user.email);

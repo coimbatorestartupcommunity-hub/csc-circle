@@ -35,7 +35,13 @@ const DEFAULT_NOTICE = {
   unlockEpochMs: null as number | null,
 };
 
-export default async function MaintenancePage() {
+export default async function MaintenancePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string }>;
+}) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const isAccessDenied = resolvedParams?.error === "admin_only";
   let maintenanceData = { ...DEFAULT_NOTICE };
 
   try {
@@ -101,10 +107,12 @@ export default async function MaintenancePage() {
   ];
 
   return (
-    <main className="min-h-screen lg:h-screen lg:max-h-screen lg:overflow-hidden bg-[#0A0D14] text-white flex flex-col justify-between p-4 sm:p-6 lg:p-8 relative font-sans selection:bg-indigo-500 selection:text-white">
-      {/* Background Ambient Glows */}
-      <div className="absolute top-0 left-1/3 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-indigo-600/20 via-emerald-600/10 to-transparent blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[600px] h-[300px] bg-gradient-to-t from-purple-600/15 to-transparent blur-3xl pointer-events-none" />
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden lg:h-screen lg:max-h-screen lg:overflow-hidden bg-[#0A0D14] text-white flex flex-col justify-between p-4 sm:p-6 lg:p-8 relative font-sans selection:bg-indigo-500 selection:text-white">
+      {/* Background Ambient Glows (Contained to eliminate mobile horizontal scroll error) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 sm:left-1/3 w-[340px] sm:w-[700px] h-[350px] bg-gradient-to-b from-indigo-600/20 via-emerald-600/10 to-transparent blur-3xl" />
+        <div className="absolute bottom-0 right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-1/4 w-[300px] sm:w-[600px] h-[300px] bg-gradient-to-t from-purple-600/15 to-transparent blur-3xl" />
+      </div>
 
       {/* Top Header Bar */}
       <header className="relative z-10 flex items-center justify-between max-w-7xl mx-auto w-full pb-4 border-b border-white/5 shrink-0">
@@ -158,6 +166,21 @@ export default async function MaintenancePage() {
             </p>
           </div>
 
+          {/* Access Denied Alert if non-admin attempted sign in */}
+          {isAccessDenied && (
+            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs flex items-start gap-3 backdrop-blur-md">
+              <ShieldCheck className="size-4 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-rose-100 text-xs">
+                  Administrator Verification Required
+                </p>
+                <p className="text-[11px] text-rose-200/90 leading-relaxed mt-1">
+                  The platform is currently locked for scheduled maintenance. Member sign-ins and profile portals are temporarily paused. Only verified system administrators can sign in at this time.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Official Bilingual Notice Card */}
           <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 sm:p-6 backdrop-blur-xl shadow-2xl space-y-4">
             <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
@@ -193,28 +216,28 @@ export default async function MaintenancePage() {
             </div>
           </div>
 
-          {/* Organizer / Admin Sign In */}
+          {/* Admin Sign In */}
           <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
             <Link
-              href="/login?redirect=/admin"
+              href="/login?next=%2Fadmin"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-950 text-xs font-black transition-all shadow-md shrink-0"
             >
               <Lock className="size-3.5" />
-              <span>Organizer &amp; Admin Sign In</span>
+              <span>Admin Sign In</span>
               <ArrowRight className="size-3.5" />
             </Link>
             <span className="text-[11px] text-slate-400 leading-snug">
-              Authorized administrators &amp; committee leads bypass maintenance mode automatically.
+              Platform is in maintenance mode. Only verified system administrators can sign in.
             </span>
           </div>
         </div>
 
         {/* Right Column: 4:5 Aspect Ratio Official Communication Card */}
         <div className="lg:col-span-5 flex justify-center lg:justify-end">
-          <div className="aspect-[4/5] w-full max-w-[340px] sm:max-w-[360px] p-5 rounded-3xl bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-950/90 border border-white/10 shadow-2xl backdrop-blur-2xl flex flex-col justify-between relative overflow-hidden">
+          <div className="aspect-[4/5] w-full max-w-[340px] sm:max-w-[360px] p-4 sm:p-5 rounded-3xl bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-950/90 border border-white/10 shadow-2xl backdrop-blur-2xl flex flex-col justify-between relative overflow-hidden">
             {/* Top Accent Pill */}
             <div>
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-white/10">
                 <span className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
                   <MessageSquare className="size-3.5 text-emerald-400" />
                   Official Circles
@@ -224,23 +247,23 @@ export default async function MaintenancePage() {
                   100% Operational
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2 leading-tight">
+              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1.5 leading-tight">
                 Our social network, WhatsApp AI assistant, and help desk remain live during this upgrade.
               </p>
             </div>
 
             {/* 5 Channels Stack */}
-            <div className="space-y-2 py-2">
+            <div className="space-y-1.5 sm:space-y-2 py-1 sm:py-2">
               {socialChannels.map((channel) => (
                 <a
                   key={channel.name}
                   href={channel.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 transition-all group"
+                  className="flex items-center justify-between p-1.5 sm:p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 transition-all group"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="size-7 rounded-full overflow-hidden shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">
+                  <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                    <div className="size-6 sm:size-7 rounded-full overflow-hidden shrink-0 border border-white/20 bg-white/10 flex items-center justify-center">
                       <Image
                         src={channel.icon}
                         alt={channel.name}
@@ -250,10 +273,10 @@ export default async function MaintenancePage() {
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-white group-hover:text-emerald-400 transition truncate">
+                      <p className="text-[11px] sm:text-xs font-bold text-white group-hover:text-emerald-400 transition truncate">
                         {channel.name}
                       </p>
-                      <p className="text-[10px] text-slate-400 truncate">
+                      <p className="text-[9px] sm:text-[10px] text-slate-400 truncate">
                         {channel.sub}
                       </p>
                     </div>
@@ -277,16 +300,16 @@ export default async function MaintenancePage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="relative z-10 pt-4 border-t border-white/5 max-w-7xl mx-auto w-full flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-400 shrink-0">
-        <span>
-          &copy; {new Date().getFullYear()} Coimbatore Startup Community (CSC Circle). All rights reserved.
+      {/* Footer: Compact 2-line layout on mobile, full horizontal row on desktop */}
+      <footer className="relative z-10 pt-3 pb-1 sm:pb-0 border-t border-white/5 max-w-7xl mx-auto w-full flex flex-col sm:flex-row justify-between items-center gap-1 sm:gap-3 text-center sm:text-left shrink-0">
+        <span className="text-[10px] sm:text-xs leading-tight text-slate-400">
+          &copy; {new Date().getFullYear()} Coimbatore Startup Community (CSC Circle) · All rights reserved.
         </span>
 
-        {/* Official Technical Partner Badge with Circular LIT Emblem */}
-        <div className="flex items-center gap-2">
+        {/* Official Technical Partner Badge with Circular LIT Emblem (Scaled for Mobile) */}
+        <div className="flex items-center justify-center gap-1.5 text-[10px] sm:text-xs text-slate-400 leading-tight">
           <span>Secured &amp; Architected by</span>
-          <div className="size-5 rounded-full overflow-hidden bg-white shrink-0 shadow-xs border border-white/30 flex items-center justify-center">
+          <div className="size-3.5 sm:size-5 rounded-full overflow-hidden bg-white shrink-0 shadow-xs border border-white/30 flex items-center justify-center">
             <Image
               src="/brand/technical-partner-lit.png"
               alt="Logic Intelligence Technologies"
