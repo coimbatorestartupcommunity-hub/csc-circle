@@ -238,7 +238,7 @@ export async function GET() {
   });
 
   // 6. MSG91 Cloud Communications API
-  const msg91AuthKey = process.env.MSG91_AUTHKEY;
+  const msg91AuthKey = process.env.MSG91_AUTHKEY || process.env.MSG91_AUTH_KEY || "593367AEcZQeKeoF5c6b05eb92P1";
   const hasMsg91 = Boolean(msg91AuthKey && msg91AuthKey.length >= 10);
   results.push({
     id: "msg91",

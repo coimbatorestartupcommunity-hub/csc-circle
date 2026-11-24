@@ -4,6 +4,7 @@ import { requireAdminPagePermission } from "@/lib/admin/gate";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LiveVerificationTool } from "@/components/admin/whatsapp/live-verification-tool";
 import { WhatsAppLockControl } from "@/components/admin/whatsapp/whatsapp-lock-control";
+import { WhatsAppOutboxActivities } from "@/components/admin/whatsapp-outbox-activities";
 import { getWhatsAppLockConfig } from "@/lib/services/system-settings";
 import {
   Activity,
@@ -39,7 +40,7 @@ export default async function WhatsAppAgentDashboardPage() {
       .from("whatsapp_message_outbox")
       .select("id, recipient_phone, message_type, status, openwa_message_id, created_at, sent_at, last_error_message")
       .order("created_at", { ascending: false })
-      .limit(10),
+      .limit(100),
     admin
       .from("csc_agent_knowledge_documents")
       .select("id", { count: "exact", head: true })
@@ -180,78 +181,8 @@ export default async function WhatsAppAgentDashboardPage() {
       {/* Two Column: Recent Outbox Messages & Escalated Tickets */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Outbox Activity Log (2 cols) */}
-        <div className="lg:col-span-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
-          <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
-            <div>
-              <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                Recent WhatsApp Outbox Activity
-              </h3>
-              <p className="text-xs text-zinc-500 mt-0.5">
-                Real-time transactional messages dispatched to members and leads.
-              </p>
-            </div>
-            <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
-              Live Feed
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-zinc-600 dark:text-zinc-300">
-              <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                <tr>
-                  <th className="px-5 py-3">Recipient</th>
-                  <th className="px-5 py-3">Type</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Dispatched</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
-                {recentOutbox.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-5 py-8 text-center text-zinc-400">
-                      No outbox messages dispatched yet. Use the Live Verification Tool above to test.
-                    </td>
-                  </tr>
-                ) : (
-                  recentOutbox.map((msg) => (
-                    <tr key={msg.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40">
-                      <td className="px-5 py-3.5 font-mono text-zinc-900 dark:text-zinc-100">
-                        +91 {msg.recipient_phone.replace(/\D/g, "").slice(-10)}
-                      </td>
-                      <td className="px-5 py-3.5 capitalize font-medium text-zinc-700 dark:text-zinc-300">
-                        {msg.message_type?.replace(/_/g, " ") || "Notification"}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold capitalize ${
-                            msg.status === "sent"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                              : msg.status === "pending" || msg.status === "processing"
-                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                                : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
-                          }`}
-                        >
-                          {msg.status === "sent" ? (
-                            <CheckCircle2 className="size-3" />
-                          ) : msg.status === "pending" ? (
-                            <Clock className="size-3" />
-                          ) : (
-                            <AlertTriangle className="size-3" />
-                          )}
-                          {msg.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-zinc-400">
-                        {msg.sent_at
-                          ? new Date(msg.sent_at).toLocaleTimeString("en-IN")
-                          : new Date(msg.created_at).toLocaleTimeString("en-IN")}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="lg:col-span-2">
+          <WhatsAppOutboxActivities initialOutbox={recentOutbox as any} />
         </div>
 
         {/* Support Tickets & Quick Links (1 col) */}
