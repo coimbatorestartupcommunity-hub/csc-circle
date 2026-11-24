@@ -53,10 +53,10 @@ export const leaders: Leader[] = [
   {
     id: "vikash",
     name: "Vikash Saravanan",
-    role: "Chief Technology Officer (CTO), Coimbatore Startup Community",
-    additionalRole: "Founder & CEO, Logic Intelligence Technologies (LIT)",
+    role: "Chief Technology Officer (CTO) — Coimbatore Startup Community (CSC)",
+    additionalRole: "Founder & Chief Executive Officer, Logic Intelligence Technologies (LIT)",
     responsibility:
-      "Vikash Saravanan leads technical development on digital initiatives for the community. His responsibilities include supporting the community website and digital platforms, as well as providing technical assistance for various community activities and operational needs.",
+      "As CSC's Chief Technology Officer, leads its technology strategy, digital platform architecture, software development, system integrations, infrastructure management, and technical security, delivered through Logic Intelligence Technologies. Also manages member verification, Digital ID card approvals, and technical onboarding.",
     portrait: "/images/team/vikash-new.jpg",
     org: { name: "Logic Intelligence Technologies", logo: brandAssets.litLogo, url: siteConfig.technologyPartner.url },
     order: 4,
