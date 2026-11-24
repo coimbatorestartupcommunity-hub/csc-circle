@@ -10,6 +10,7 @@ import { buildEventPassQrPayload } from "@/lib/member/qr";
 import { formatEventRange } from "@/lib/format";
 import { chooseNotificationRecipient } from "@/lib/notifications/recipients";
 import { enqueueWhatsAppNotification } from "@/lib/notifications/whatsapp-outbox";
+import { triggerViaSocketFlow } from "@/lib/services/viasocket";
 import type { Database } from "@/lib/supabase/database.types";
 type Job = Database["public"]["Tables"]["notifications"]["Row"];
 type Service = NonNullable<ReturnType<typeof createSubmissionClient>>;
@@ -241,6 +242,18 @@ export async function dispatchNotifications(batch = 15) {
                 messageType: job.template_key || "universal_notification",
                 idempotencyKey: `wa-${job.id}-${digest.slice(0, 8)}`,
               });
+
+              // Mirror simultaneously to viaSocket Flow automation pipeline
+              triggerViaSocketFlow("email_notification_mirrored" as any, {
+                recipientEmail: recipient,
+                recipientPhone,
+                subject: message.subject,
+                templateKey: job.template_key,
+                reference: payload.reference,
+                name: payload.name,
+                eventTitle: payload.eventTitle,
+                messageText: cleanText,
+              }).catch((vsErr) => console.warn("[dispatcher] viaSocket flow mirror warning:", vsErr));
             } catch (waErr) {
               console.warn("[dispatcher] WhatsApp notification enqueue error:", waErr);
             }
