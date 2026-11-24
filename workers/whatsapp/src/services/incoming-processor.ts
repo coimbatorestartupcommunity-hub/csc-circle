@@ -25,6 +25,11 @@ import { handleIncomingRating } from "./feedback-pipeline.js";
 import { formatCommunityHubInvitation } from "./community-hub.js";
 import { getFortnightlyFounderSpotlight } from "./founder-spotlight.js";
 import { checkWhatsAppLockStatus } from "./lock-service.js";
+import { formatQuickMenu } from "./quick-menu.js";
+import { getAttendeeEventPass, verifyAttendeeGateEntry } from "./event-checkin-helper.js";
+import { searchFounderMatchmaking } from "./founder-matchmaking.js";
+import { recordCommunityIdea } from "./idea-collector.js";
+import { formatBiWeeklyCommunityPulse } from "./community-pulse.js";
 
 export interface InboundMessageEvent {
   from: string; // e.g. "919876543210@c.us" or "+919876543210"
@@ -129,8 +134,141 @@ export async function processInboundWhatsAppMessage(
     await redis.set(dedupKey, "1", "EX", 60);
   }
 
-  // 5. Human Escalation (HUMAN / SUPPORT) with Instant Real-Time Admin Alert
-  if (upperText.startsWith("HUMAN") || upperText.startsWith("SUPPORT") || upperText.startsWith("HELP")) {
+  // Detect query language (English, Tamil, Tanglish)
+  let lang: "en" | "ta" | "tanglish" = "en";
+  if (/[\u0B80-\u0BFF]/.test(text)) {
+    lang = "ta";
+  } else if (/\b(eppo|eppadi|vaanga|pannunga|kudunga|iruku|romba|bro|vanakkam)\b/i.test(text)) {
+    lang = "tanglish";
+  }
+
+  // 5. Interactive Navigation Menu (MENU / OPTIONS / LIST / COMMANDS / HELP / 0)
+  if (
+    upperText === "MENU" ||
+    upperText === "OPTIONS" ||
+    upperText === "LIST" ||
+    upperText === "COMMANDS" ||
+    upperText === "HELP" ||
+    upperText === "0"
+  ) {
+    const menuReply = formatQuickMenu(lang);
+    await messenger.sendTextMessage(chatId, menuReply);
+    return menuReply;
+  }
+
+  // 6. Option 1 / EVENTS / MEETUPS / UPCOMING shortcut
+  if (
+    upperText === "1" ||
+    upperText === "EVENTS" ||
+    upperText === "MEETUPS" ||
+    upperText === "MEETUP" ||
+    upperText === "UPCOMING"
+  ) {
+    const events = await getUpcomingPublishedEvents();
+    let reply = "";
+    if (events.length === 0) {
+      reply =
+        `📅 *Upcoming CSC Meetups & Workshops*\n\n` +
+        `Our next offline founder meetup is currently being scheduled! Stay tuned or browse past sessions:\n` +
+        `🔗 https://csc.logicintelligencetechnologies.in/events\n\n` +
+        `💡 Want to suggest a topic for the next meetup? Reply *IDEA <your topic>*!\n\n` +
+        CSC_WHATSAPP_FOOTER;
+    } else {
+      reply =
+        `📅 *Upcoming CSC Meetups & Workshops*\n\n` +
+        events
+          .map((e, idx) => {
+            const dateStr = new Date(e.startsAt).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "Asia/Kolkata",
+            });
+            return (
+              `${idx + 1}. *${e.title}*\n` +
+              `   📅 *Date:* ${dateStr} IST\n` +
+              `   📍 *Venue:* ${e.venueName}\n` +
+              `   🎟️ *Admission:* ${e.admission.toUpperCase()}\n` +
+              `   🔗 *RSVP / Pass:* ${e.url}`
+            );
+          })
+          .join("\n\n") +
+        `\n\n👉 Reply *PASS* to retrieve your entry pass & QR ticket!\n\n` +
+        CSC_WHATSAPP_FOOTER;
+    }
+    await messenger.sendTextMessage(chatId, reply);
+    return reply;
+  }
+
+  // 7. Option 2 / PASS / TICKET / MY PASS / CARD / MY CARD / ENTRY PASS shortcut
+  if (
+    upperText === "2" ||
+    upperText === "PASS" ||
+    upperText === "MY PASS" ||
+    upperText === "TICKET" ||
+    upperText === "CARD" ||
+    upperText === "MY CARD" ||
+    upperText === "ENTRY PASS"
+  ) {
+    const passReply = await getAttendeeEventPass(senderPhone);
+    await messenger.sendTextMessage(chatId, passReply);
+    return passReply;
+  }
+
+  // 8. Venue Gate Check-In & Verification for Organizers (CHECKIN <ref> or VERIFY <ref>)
+  if (upperText.startsWith("CHECKIN") || upperText.startsWith("VERIFY") || upperText.startsWith("CHECK-IN")) {
+    const passArg = text.replace(/^(CHECKIN|VERIFY|CHECK-IN)\s*[:\-]?\s*/i, "").trim();
+    const checkinReply = await verifyAttendeeGateEntry(senderPhone, passArg);
+    await messenger.sendTextMessage(chatId, checkinReply);
+    return checkinReply;
+  }
+
+  // 9. Option 3 / Founder Matchmaking (MATCH / COFOUNDER / INVESTOR / MATCH <query>)
+  if (
+    upperText === "3" ||
+    upperText === "MATCH" ||
+    upperText === "COFOUNDER" ||
+    upperText === "INVESTOR" ||
+    upperText.startsWith("MATCH ") ||
+    upperText.startsWith("COFOUNDER ")
+  ) {
+    const matchReply = await searchFounderMatchmaking(text);
+    await messenger.sendTextMessage(chatId, matchReply);
+    return matchReply;
+  }
+
+  // 10. Option 4 / Community Event Idea & Topic Suggestion (IDEA <text> / SUGGEST <text> / FEEDBACK <text>)
+  if (
+    upperText === "4" ||
+    upperText.startsWith("IDEA") ||
+    upperText.startsWith("SUGGEST") ||
+    upperText.startsWith("FEEDBACK")
+  ) {
+    const ideaReply = await recordCommunityIdea(senderPhone, text);
+    await messenger.sendTextMessage(chatId, ideaReply);
+    return ideaReply;
+  }
+
+  // 11. Option 5 / Community Hub & WhatsApp Group Invitation (5 / COMMUNITY / GROUP / JOIN / CONNECT)
+  if (
+    upperText === "5" ||
+    upperText === "COMMUNITY" ||
+    upperText === "GROUP" ||
+    upperText === "JOIN" ||
+    upperText === "CONNECT" ||
+    upperText === "CALENDAR" ||
+    upperText === "SCHEDULE" ||
+    upperText === "WHATSAPP"
+  ) {
+    const hubReply = formatCommunityHubInvitation(lang);
+    await messenger.sendTextMessage(chatId, hubReply);
+    return hubReply;
+  }
+
+  // 12. Human Escalation (HUMAN / SUPPORT / 6) with Instant Real-Time Admin Alert
+  if (upperText === "6" || upperText.startsWith("HUMAN") || upperText.startsWith("SUPPORT")) {
     const sb = getSupabase();
     let ticketNum = "TICKET-PENDING";
     try {
@@ -143,7 +281,7 @@ export async function processInboundWhatsAppMessage(
       });
       if (data) ticketNum = String(data);
 
-      // Trigger instant real-time admin alert dispatch
+      // Trigger instant real-time admin alert dispatch to leadership group
       await dispatchRealTimeAdminAlert({
         ticketNumber: ticketNum,
         senderPhone,
@@ -158,43 +296,28 @@ export async function processInboundWhatsAppMessage(
     return humanReply;
   }
 
-  // 6. Post-Event NPS & Feedback Collector Reply
+  // 13. Bi-Weekly Sunday 10 AM Community Pulse & Founder Check-in (PULSE / SURVEY)
+  if (upperText === "PULSE" || upperText === "SURVEY" || upperText === "CHECKIN-PULSE") {
+    const pulseReply = formatBiWeeklyCommunityPulse(lang);
+    await messenger.sendTextMessage(chatId, pulseReply);
+    return pulseReply;
+  }
+
+  // 14. Post-Event NPS & Feedback Collector Reply
   const feedbackReply = await handleIncomingRating(senderPhone, text);
   if (feedbackReply) {
     await messenger.sendTextMessage(chatId, feedbackReply);
     return feedbackReply;
   }
 
-  // 7. Official Community Hub & WhatsApp Group Invitation Shortcut
-  if (
-    upperText === "COMMUNITY" ||
-    upperText === "GROUP" ||
-    upperText === "JOIN" ||
-    upperText === "CONNECT" ||
-    upperText === "MEETUP" ||
-    upperText === "CALENDAR" ||
-    upperText === "SCHEDULE" ||
-    upperText === "WHATSAPP"
-  ) {
-    let lang: "en" | "ta" | "tanglish" = "en";
-    if (/[\u0B80-\u0BFF]/.test(text)) {
-      lang = "ta";
-    } else if (/\b(eppo|eppadi|vaanga|pannunga|kudunga|iruku|romba|bro|vanakkam)\b/i.test(text)) {
-      lang = "tanglish";
-    }
-    const hubReply = formatCommunityHubInvitation(lang);
-    await messenger.sendTextMessage(chatId, hubReply);
-    return hubReply;
-  }
-
-  // 8. Founder Spotlight Shortcut
+  // 15. Founder Spotlight Shortcut
   if (upperText === "SPOTLIGHT" || upperText === "FEATURED" || upperText === "STARTUP") {
     const spotlightReply = await getFortnightlyFounderSpotlight();
     await messenger.sendTextMessage(chatId, spotlightReply);
     return spotlightReply;
   }
 
-  // 9. 6-Digit Verification Code check
+  // 16. 6-Digit Verification Code check
   if (/^\d{6}$/.test(text)) {
     const verification = await verifyOtpCode(senderPhone, text);
     if (verification.verified && verification.member) {
@@ -223,7 +346,7 @@ export async function processInboundWhatsAppMessage(
     }
   }
 
-  // 10. Check if user is asking for their private membership status
+  // 17. Check if user is asking for their private membership status
   const isAskingMembership =
     /\b(membership|member number|my card|claim status|approved yet|my pass|membership id)\b/i.test(text);
 
@@ -239,7 +362,7 @@ export async function processInboundWhatsAppMessage(
     }
   }
 
-  // 11. Assemble Live Context, Conversation History & Knowledge
+  // 18. Assemble Live Context, Conversation History & Knowledge
   let conversationHistory: Array<{ role: "user" | "assistant"; content: string }> = [];
   if (redis) {
     try {
@@ -266,10 +389,10 @@ export async function processInboundWhatsAppMessage(
     conversationHistory,
   });
 
-  // 12. Invoke Multi-Tier AI Model (Groq -> Modal failover -> Contextual fallback)
+  // 19. Invoke Multi-Tier AI Model (Groq -> Modal failover -> Contextual fallback)
   const rawReply = await callAIModel(messages);
 
-  // 13. Format response: Clean conversational answers without bloated repetitive footers
+  // 20. Format response: Clean conversational answers without bloated repetitive footers
   const finalReply = verifyAndFormatResponse(rawReply, false);
 
   // Save updated conversation history to Redis with 24 hours TTL
@@ -288,7 +411,7 @@ export async function processInboundWhatsAppMessage(
     }
   }
 
-  // 14. Dispatch to WhatsApp
+  // 21. Dispatch to WhatsApp
   const sendRes = await messenger.sendTextMessage(chatId, finalReply);
   logger.info("Dispatched response to WhatsApp", {
     chatId,
