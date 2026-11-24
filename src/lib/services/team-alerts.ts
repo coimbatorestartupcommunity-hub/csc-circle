@@ -28,7 +28,9 @@ export type TeamAlertType =
   | "collaboration_proposed"
   | "support_escalated"
   | "system_maintenance"
-  | "test_broadcast";
+  | "test_broadcast"
+  | "feedback_submitted"
+  | "idea_submitted";
 
 export interface TeamAlertParams {
   type: TeamAlertType;

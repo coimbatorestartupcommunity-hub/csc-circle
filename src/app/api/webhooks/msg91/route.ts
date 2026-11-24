@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { triggerViaSocketFlow } from "@/lib/services/viasocket";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { routeInboundWhatsAppMessage } from "@/lib/services/whatsapp-inbound-router";
 
 /**
  * Inbound & Outbound Webhook for MSG91 & WhatsApp Business API
@@ -70,6 +71,17 @@ export async function POST(request: Request) {
         // Non-blocking database insertion
         console.warn("[msg91-webhook] Database record note:", dbErr);
       }
+
+      // Automatically generate and dispatch the WhatsApp reply via MSG91
+      const isAudio = body.type === "ptt" || body.type === "audio" || body.mimetype?.includes("audio");
+      void routeInboundWhatsAppMessage({
+        phone: customerNumber,
+        text,
+        messageId,
+        isAudio,
+      }).catch((routeErr) => {
+        console.error("[msg91-webhook] Inbound router dispatch error:", routeErr);
+      });
 
       return NextResponse.json({ status: "success", type: "inbound_processed" });
     }
