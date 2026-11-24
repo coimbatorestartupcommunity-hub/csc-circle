@@ -32,12 +32,12 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: OPENWA_BASE_URL
+      - key: MSG91_AUTHKEY
         sync: false
-      - key: OPENWA_SESSION_ID
-        value: csc-circle
-      - key: OPENWA_API_KEY
-        sync: false
+      - key: MSG91_WHATSAPP_INTEGRATED_NUMBER
+        value: "+917550067712"
+      - key: VIASOCKET_FLOW_URL
+        value: "https://flow.sokt.io/func/scriN3Z4WU6u"
       - key: COMPANY_NAME
         value: "Coimbatore Startup Community"
       - key: MESSAGE_DELAY_MIN_MS

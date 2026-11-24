@@ -1,5 +1,6 @@
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { checkOrScheduleAutoApproval, autoApproveDueMembershipClaims } from "@/lib/services/member/auto-approve";
+import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -46,6 +47,19 @@ export async function POST(request: Request, context: { params: Promise<{ action
       if (!error) {
         scheduleNotificationDelivery();
         checkOrScheduleAutoApproval(user.id).catch(() => {});
+        void dispatchTeamWhatsAppAlert({
+          type: "member_id_claimed",
+          title: "New Member ID Card Application",
+          fields: {
+            "Applicant": v.fullName,
+            "Email": user.email,
+            "WhatsApp": v.whatsapp,
+            "Designation": v.designation === "other" ? (v.designationOther?.trim() || "Other") : v.designation,
+            "Startup": v.startupAffiliation || "N/A",
+            "Category": v.applicantType,
+          },
+          actionUrl: "https://csc.logicintelligencetechnologies.in/admin/members",
+        }).catch((err) => console.warn("[team-alert] member claim error:", err));
       }
       return error ? authResponse({ error: "Claim was not saved. You may already have a pending claim." }, 409) : authResponse({ ok: true, id: data.id });
     }

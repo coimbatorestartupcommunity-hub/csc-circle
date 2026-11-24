@@ -9,6 +9,7 @@ import { containsExactOrderReference, verifyOrderAccess } from "@/lib/payments/o
 import { reconcilePayments } from "@/lib/payments/reconciler";
 import { invalidatePublicContent } from "@/lib/redis/cache";
 import { getSubsystemMaintenanceConfig } from "@/lib/services/system-settings";
+import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const claimUtrSchema = z.object({
   utr: z.string().trim().regex(/^\d{12}$/, "UTR must be a 12-digit numeric reference"),
@@ -224,6 +225,23 @@ export async function POST(
             : "guest_capability_holder",
       },
     });
+
+    // Dispatch real-time alert to Leadership Team WhatsApp Group (7 members)
+    void dispatchTeamWhatsAppAlert({
+      type: "payment_utr_claimed",
+      title: "Bank UTR Claim Submitted",
+      fields: {
+        "Order Reference": order.order_reference,
+        "Claimed UTR": utr,
+        "Claim Source": isAdmin
+          ? "Admin Override"
+          : sessionUserId
+            ? "Authenticated Member"
+            : "Guest Capability Holder",
+        "Reconciliation": "Processing Bank Ledger Match",
+      },
+      actionUrl: "https://csc.logicintelligencetechnologies.in/admin/payments",
+    }).catch((err) => console.warn("[team-alert] payment utr claim error:", err));
 
     // 10. Trigger live background reconciliation on claim in runtime (avoiding mock lease RPC in isolated unit tests)
     if (process.env.NODE_ENV !== "test") {

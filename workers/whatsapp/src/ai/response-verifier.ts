@@ -14,7 +14,7 @@ export function verifyAndFormatResponse(
   // Remove duplicate trailing footer blocks if model hallucinated it at the bottom
   cleaned = cleaned.replace(/\n+\s*🚀\s*\*?Connect\. Build\. Grow\.\*?[\s\S]*$/i, "");
 
-  // Scrub any accidental token or secret leakage (JWT tokens, OpenWA keys, Groq/xAI keys)
+  // Scrub any accidental token or secret leakage (JWT tokens, gateway API keys, Groq/xAI keys)
   cleaned = cleaned.replace(/ey[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g, "[REDACTED_TOKEN]");
   cleaned = cleaned.replace(/owa_k1_[a-f0-9]{64}/g, "[REDACTED_API_KEY]");
   cleaned = cleaned.replace(/gsk_[a-zA-Z0-9]{32,}/g, "[REDACTED_KEY]");

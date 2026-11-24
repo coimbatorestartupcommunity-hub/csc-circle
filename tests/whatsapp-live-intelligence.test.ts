@@ -4,7 +4,16 @@ import { constructMessages, buildSystemPrompt } from "../workers/whatsapp/src/ai
 import { CSC_WHATSAPP_FOOTER } from "../workers/whatsapp/src/utils/message-template";
 import { callAIModel } from "../workers/whatsapp/src/ai/grok-client";
 import { processInboundWhatsAppMessage } from "../workers/whatsapp/src/services/incoming-processor";
-import { OpenWaClient } from "../workers/whatsapp/src/services/openwa";
+import type { WhatsAppMessenger } from "../workers/whatsapp/src/services/whatsapp-client";
+
+vi.mock("../workers/whatsapp/src/services/lock-service", () => ({
+  checkWhatsAppLockStatus: vi.fn().mockResolvedValue({
+    isLocked: false,
+    unlockEpochMs: 0,
+    reason: undefined,
+    tamilReason: undefined,
+  }),
+}));
 
 describe("CSC Circle WhatsApp Live Intelligence & Groq AI Agent", () => {
   describe("Message Footer & Sanitization Policy", () => {
@@ -14,9 +23,9 @@ describe("CSC Circle WhatsApp Live Intelligence & Groq AI Agent", () => {
 
       expect(formatted).toContain(rawText);
       expect(formatted).toContain(CSC_WHATSAPP_FOOTER);
-      expect(formatted).toContain("🚀 *Connect. Build. Grow.*");
+      expect(formatted).toContain("🚀 *Connect • Build • Grow*");
       expect(formatted).toContain("*Coimbatore Startup Community (CSC Circle)*");
-      expect(formatted).toContain("*Technical Partner: Logic Intelligence Technologies* 🤍");
+      expect(formatted).toContain("⚡ *Powered by Logic Intelligence Technologies*");
     });
 
     it("omits the footer for brief conversational messages to prevent bloat", () => {
@@ -24,7 +33,7 @@ describe("CSC Circle WhatsApp Live Intelligence & Groq AI Agent", () => {
       const formatted = verifyAndFormatResponse(shortText, false);
 
       expect(formatted).toBe(shortText);
-      expect(formatted).not.toContain("🚀 *Connect. Build. Grow.*");
+      expect(formatted).not.toContain("🚀 *Connect • Build • Grow*");
     });
 
     it("scrubs any leaked tokens or API keys before sending to WhatsApp", () => {
@@ -112,59 +121,78 @@ describe("CSC Circle WhatsApp Live Intelligence & Groq AI Agent", () => {
   });
 
   describe("Inbound Message Commands, Anti-Abuse & Voice Note Handling", () => {
-    const mockOpenWaClient = {
+    const mockWhatsAppClient: WhatsAppMessenger = {
       sendTextMessage: vi.fn().mockResolvedValue({ success: true, messageId: "msg-123" }),
-    } as unknown as OpenWaClient;
+    };
 
     beforeEach(() => {
       vi.clearAllMocks();
     });
 
+    it("returns maintenance notice when WhatsApp lock is active", async () => {
+      const { checkWhatsAppLockStatus } = await import("../workers/whatsapp/src/services/lock-service");
+      vi.mocked(checkWhatsAppLockStatus).mockResolvedValueOnce({
+        isLocked: true,
+        unlockEpochMs: Date.now() + 3600000,
+        reason: "Scheduled WhatsApp cooldown window active",
+        tamilReason: "சேவை பராமரிப்பில் உள்ளது",
+      });
+
+      const reply = await processInboundWhatsAppMessage(
+        { from: "917550067712@c.us", body: "Hello" },
+        mockWhatsAppClient
+      );
+
+      expect(reply).toContain("Scheduled WhatsApp cooldown window active");
+      expect(reply).toContain("சேவை பராமரிப்பில் உள்ளது");
+      expect(mockWhatsAppClient.sendTextMessage).toHaveBeenCalledTimes(1);
+    });
+
     it("politely informs sender when a voice note is received and asks for text", async () => {
       const reply = await processInboundWhatsAppMessage(
         { from: "917550067712@c.us", type: "ptt", mimetype: "audio/ogg" },
-        mockOpenWaClient
+        mockWhatsAppClient
       );
 
       expect(reply).toContain("Voice Note Received");
       expect(reply).toContain("text-based messages only");
       expect(reply).toContain("குரல் பதிவு வந்துள்ளது");
-      expect(mockOpenWaClient.sendTextMessage).toHaveBeenCalledTimes(1);
+      expect(mockWhatsAppClient.sendTextMessage).toHaveBeenCalledTimes(1);
     });
 
     it("handles STOP opt-out command", async () => {
       const reply = await processInboundWhatsAppMessage(
         { from: "917550067712@c.us", body: "STOP" },
-        mockOpenWaClient
+        mockWhatsAppClient
       );
 
       expect(reply).toContain("unsubscribed");
       expect(reply).toContain("START");
       expect(reply).toContain(CSC_WHATSAPP_FOOTER);
-      expect(mockOpenWaClient.sendTextMessage).toHaveBeenCalledTimes(1);
+      expect(mockWhatsAppClient.sendTextMessage).toHaveBeenCalledTimes(1);
     });
 
     it("handles START opt-in command", async () => {
       const reply = await processInboundWhatsAppMessage(
         { from: "917550067712@c.us", body: "START" },
-        mockOpenWaClient
+        mockWhatsAppClient
       );
 
       expect(reply).toContain("Welcome back");
       expect(reply).toContain(CSC_WHATSAPP_FOOTER);
-      expect(mockOpenWaClient.sendTextMessage).toHaveBeenCalledTimes(1);
+      expect(mockWhatsAppClient.sendTextMessage).toHaveBeenCalledTimes(1);
     });
 
     it("escalates to human support ticket on HUMAN command", async () => {
       const reply = await processInboundWhatsAppMessage(
         { from: "917550067712@c.us", body: "HUMAN need assistance with registration" },
-        mockOpenWaClient
+        mockWhatsAppClient
       );
 
       expect(reply).toContain("Support Request Logged");
       expect(reply).toContain("Reference:");
       expect(reply).toContain(CSC_WHATSAPP_FOOTER);
-      expect(mockOpenWaClient.sendTextMessage).toHaveBeenCalledTimes(1);
+      expect(mockWhatsAppClient.sendTextMessage).toHaveBeenCalledTimes(1);
     });
   });
 });

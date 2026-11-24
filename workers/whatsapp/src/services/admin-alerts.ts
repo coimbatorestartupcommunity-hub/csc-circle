@@ -38,7 +38,22 @@ export async function dispatchRealTimeAdminAlert(params: {
       status: "pending",
     });
 
-    // 2. Also register in admin notifications table
+    // 2. Also dispatch to the 7-member leadership WhatsApp group
+    const teamGroupChatId = process.env.CSC_TEAM_WHATSAPP_GROUP_CHAT_ID || "H3Nbi9oKWBcEmPQop0B5X3@g.us";
+    await sb.from("whatsapp_message_outbox").insert({
+      recipient_phone: "917550067712",
+      recipient_chat_id: teamGroupChatId,
+      message_type: "team_alert_support_escalated",
+      message_payload: {
+        text: alertMessage,
+        ticketNumber: params.ticketNumber,
+        senderPhone: params.senderPhone,
+      },
+      idempotency_key: `team-group-alert-${params.ticketNumber}`,
+      status: "pending",
+    });
+
+    // 3. Also register in admin notifications table
     await sb.from("notifications").insert({
       type: "in_app",
       title: `WhatsApp Escalation: ${params.ticketNumber}`,

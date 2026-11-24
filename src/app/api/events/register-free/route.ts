@@ -8,6 +8,7 @@ import { ensureEventPassEmail } from "@/lib/admin/event-pass-email";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { paidRegistrationRoles, paidRegistrationReferrals, additionalAttendeeSchema } from "@/lib/validations/paid-registration";
 import { getSubsystemMaintenanceConfig } from "@/lib/services/system-settings";
+import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const freeRegistrationSchema = z.object({
   eventId: z.string().uuid("Invalid event reference."),
@@ -308,6 +309,23 @@ export async function POST(request: NextRequest) {
 
     // 7. Flush notifications
     scheduleNotificationDelivery();
+
+    // 8. Dispatch real-time alert to Leadership Team WhatsApp Group (7 members)
+    void dispatchTeamWhatsAppAlert({
+      type: "event_rsvp",
+      title: "New Event Pass Booked",
+      fields: {
+        "Event": event.title,
+        "Attendee": data.fullName.trim(),
+        "Email": lowerEmail,
+        "WhatsApp": data.whatsapp.trim(),
+        "Organization": data.organization.trim(),
+        "Role": data.role,
+        "Tickets Booked": data.attendeeCount,
+        "Pass Reference": primaryPass.reference,
+      },
+      actionUrl: "https://csc.logicintelligencetechnologies.in/admin/events",
+    }).catch((err) => console.warn("[team-alert] free event rsvp error:", err));
 
     return NextResponse.json({
       ok: true,

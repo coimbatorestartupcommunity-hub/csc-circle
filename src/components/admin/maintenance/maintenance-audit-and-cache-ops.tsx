@@ -14,6 +14,7 @@ import {
   Sparkles,
   Server,
   Layers,
+  Radio,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -29,6 +30,26 @@ export function MaintenanceAuditAndCacheOps({ initialLogs }: MaintenanceAuditAnd
   const [flushingLimits, setFlushingLimits] = React.useState(false);
   const [exportingCsv, setExportingCsv] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [pingingTeam, setPingingTeam] = React.useState(false);
+
+  async function handleTestTeamAlert() {
+    setPingingTeam(true);
+    try {
+      const res = await fetch("/api/admin/maintenance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "test_team_alert" }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Failed to dispatch test alert");
+      toast.success("Broadcast dispatched to Core Leadership WhatsApp Group (7 members) & viaSocket flow!");
+      void refreshLogs();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Test broadcast failed");
+    } finally {
+      setPingingTeam(false);
+    }
+  }
 
   async function handlePurgeCache() {
     setPurgingCache(true);
@@ -127,7 +148,7 @@ export function MaintenanceAuditAndCacheOps({ initialLogs }: MaintenanceAuditAnd
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Action Card 1: Purge ISR Cache */}
           <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 flex flex-col justify-between space-y-3">
             <div>
@@ -168,6 +189,28 @@ export function MaintenanceAuditAndCacheOps({ initialLogs }: MaintenanceAuditAnd
             >
               {flushingLimits ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
               <span>Flush Active Rate Limits</span>
+            </Button>
+          </div>
+
+          {/* Action Card 3: Ping Leadership WhatsApp Group */}
+          <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 flex flex-col justify-between space-y-3">
+            <div>
+              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block mb-1">
+                Ping Leadership WhatsApp Group (7 Members)
+              </span>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                Dispatches a live telemetry test broadcast to the 7-member leadership group and viaSocket webhook pipeline.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleTestTeamAlert}
+              disabled={pingingTeam}
+              className="h-8 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 gap-1.5 rounded-lg w-full justify-center"
+            >
+              {pingingTeam ? <Loader2 className="size-3.5 animate-spin" /> : <Radio className="size-3.5" />}
+              <span>Send Test Team Ping</span>
             </Button>
           </div>
         </div>

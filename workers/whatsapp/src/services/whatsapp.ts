@@ -1,4 +1,4 @@
-import { OpenWaClient, type OpenWaSendTextResult } from "./openwa.js";
+import { WhatsAppCloudClient, type WhatsAppSendTextResult } from "./whatsapp-client.js";
 
 export interface SendMessageParams {
   chatId: string;
@@ -20,11 +20,11 @@ export interface WhatsAppProvider {
   send(params: SendMessageParams): Promise<SendMessageResult>;
 }
 
-export class OpenWaProvider implements WhatsAppProvider {
-  public readonly name = "openwa";
-  private client: OpenWaClient;
+export class WhatsAppCloudProvider implements WhatsAppProvider {
+  public readonly name = "whatsapp_cloud";
+  private client: WhatsAppCloudClient;
 
-  constructor(client: OpenWaClient) {
+  constructor(client: WhatsAppCloudClient) {
     this.client = client;
   }
 
@@ -33,7 +33,7 @@ export class OpenWaProvider implements WhatsAppProvider {
   }
 
   async send(params: SendMessageParams): Promise<SendMessageResult> {
-    const res: OpenWaSendTextResult = await this.client.sendTextMessage(params.chatId, params.text);
+    const res: WhatsAppSendTextResult = await this.client.sendTextMessage(params.chatId, params.text);
     return {
       success: res.success,
       messageId: res.messageId,

@@ -23,7 +23,7 @@ export interface WebsiteMaintenanceConfig {
   updatedBy?: string;
 }
 
-export type SubsystemKey = "payments" | "eventRegistrations" | "idCardGeneration" | "whatsappBot";
+export type SubsystemKey = "payments" | "eventRegistrations" | "idCardGeneration" | "whatsappBot" | "messagingAutomations";
 
 export interface SubsystemStatus {
   paused: boolean;
@@ -37,6 +37,7 @@ export interface SubsystemMaintenanceConfig {
   eventRegistrations: SubsystemStatus;
   idCardGeneration: SubsystemStatus;
   whatsappBot: SubsystemStatus;
+  messagingAutomations: SubsystemStatus;
 }
 
 export interface ScheduledDowntimeConfig {
@@ -118,6 +119,11 @@ const DEFAULT_SUBSYSTEMS: SubsystemMaintenanceConfig = {
   whatsappBot: {
     paused: false,
     reason: "Inbound AI Assistant paused during live event check-in peak.",
+    updatedAt: new Date().toISOString(),
+  },
+  messagingAutomations: {
+    paused: false,
+    reason: "Automated WhatsApp notifications & Team Group alerts temporarily paused.",
     updatedAt: new Date().toISOString(),
   },
 };
@@ -369,6 +375,12 @@ export async function setSubsystemMaintenanceConfig(
       ...(updates.whatsappBot || {}),
       updatedAt: updates.whatsappBot ? now : current.whatsappBot.updatedAt,
       updatedBy: updates.whatsappBot ? adminUser?.name : current.whatsappBot.updatedBy,
+    },
+    messagingAutomations: {
+      ...current.messagingAutomations,
+      ...(updates.messagingAutomations || {}),
+      updatedAt: updates.messagingAutomations ? now : current.messagingAutomations?.updatedAt || now,
+      updatedBy: updates.messagingAutomations ? adminUser?.name : current.messagingAutomations?.updatedBy,
     },
   };
 

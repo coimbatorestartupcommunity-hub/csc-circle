@@ -77,6 +77,20 @@ export async function POST(request: Request) {
           : "Emergency override engaged: WhatsApp Gateway unlocked for outbound messages.",
       });
 
+      // Notify Leadership Team WhatsApp Group
+      const { dispatchTeamWhatsAppAlert } = await import("@/lib/services/team-alerts");
+      void dispatchTeamWhatsAppAlert({
+        type: "system_maintenance",
+        title: locked ? "WhatsApp Service Locked (Maintenance)" : "WhatsApp Service Unlocked",
+        fields: {
+          "Status": locked ? "LOCKED (Anti-Ban Guard Active)" : "UNLOCKED (Live Delivery Resumed)",
+          "Reason": reason || (locked ? "Anti-Ban Safety Cooldown" : "Manual Admin Override"),
+          "Updated By": adminName,
+          "Target Auto-Resume": new Date(updated.unlockEpochMs).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" }),
+        },
+        actionUrl: "https://csc.logicintelligencetechnologies.in/admin/maintenance",
+      }).catch((err) => console.warn("[maintenance-alert] team alert error:", err));
+
       return NextResponse.json({ ok: true, whatsappLock: updated });
     }
 
@@ -231,6 +245,38 @@ export async function POST(request: Request) {
           "Content-Type": "text/csv; charset=utf-8",
           "Content-Disposition": `attachment; filename="csc-maintenance-audit-trail-${Date.now()}.csv"`,
         },
+      });
+    }
+
+    // Action 8: Live Test Broadcast to Leadership Team WhatsApp Group
+    if (action === "test_team_alert") {
+      const { dispatchTeamWhatsAppAlert } = await import("@/lib/services/team-alerts");
+      const alertRes = await dispatchTeamWhatsAppAlert({
+        type: "test_broadcast",
+        title: "Admin Maintenance Telemetry Ping",
+        fields: {
+          "Dispatched By": adminName,
+          "Admin Email": adminEmail,
+          "Client IP": ip,
+          "Subsystems Status": "All Core Services Healthy & Monitoring Active",
+          "Timestamp": new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+        },
+        actionUrl: "https://csc.logicintelligencetechnologies.in/admin/maintenance",
+      });
+
+      await recordMaintenanceAuditLog({
+        action: "Broadcast Team Group Alert",
+        subsystem: "Leadership WhatsApp Group",
+        adminName,
+        adminEmail,
+        ip,
+        details: `Dispatched live test alert to Leadership WhatsApp Group (7 members). Result: ${alertRes.success ? "Success" : alertRes.error || "Failed"}`,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        message: "Test alert dispatched to Core Leadership Team WhatsApp Group and viaSocket flow.",
+        alertRes,
       });
     }
 

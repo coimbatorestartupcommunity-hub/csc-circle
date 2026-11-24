@@ -94,10 +94,10 @@ export default async function WhatsAppAgentDashboardPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-emerald-500" />
-              <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">OpenWA Gateway</p>
+              <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">MSG91 & viaSocket Gateway</p>
             </div>
-            <p className="text-[11px] font-mono text-zinc-500 mt-0.5">Port 2785 (Docker)</p>
-            <span className="text-[10px] text-zinc-500">HTTP REST Ready</span>
+            <p className="text-[11px] font-mono text-zinc-500 mt-0.5">Cloud API (REST)</p>
+            <span className="text-[10px] text-zinc-500">24/7 High-Availability</span>
           </div>
         </div>
 

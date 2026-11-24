@@ -16,7 +16,7 @@ const DEFAULT_COUNTRY: CountryCode = "IN";
 /**
  * Normalizes and validates incoming phone numbers using libphonenumber-js.
  * Handles local numbers, international numbers with/without +, leading zeroes,
- * and formats the final OpenWA chat identifier (`{digits}@c.us`).
+ * and formats the final WhatsApp chat identifier (`{digits}@c.us`).
  */
 export function normalizePhoneNumber(
   rawPhone: string | null | undefined,

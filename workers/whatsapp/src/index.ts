@@ -5,8 +5,8 @@ import { createRedisConnection } from "./queue/redis.js";
 import { createWhatsAppQueue } from "./queue/queue.js";
 import { OutboxDispatcher } from "./queue/dispatcher.js";
 import { WhatsAppWorkerService } from "./queue/worker.js";
-import { OpenWaClient } from "./services/openwa.js";
-import { OpenWaProvider } from "./services/whatsapp.js";
+import { WhatsAppCloudClient } from "./services/whatsapp-client.js";
+import { WhatsAppCloudProvider } from "./services/whatsapp.js";
 import { logger } from "./utils/logger.js";
 import { processInboundWhatsAppMessage } from "./services/incoming-processor.js";
 import { syncEntityToKnowledgeStore } from "./services/live-queries.js";
@@ -26,14 +26,14 @@ async function main() {
   // 2. Redis Connection for BullMQ
   const redis = createRedisConnection(env.REDIS_URL);
 
-  // 3. OpenWA Client & Provider
-  const openwaClient = new OpenWaClient({
-    baseUrl: env.OPENWA_BASE_URL,
-    sessionId: env.OPENWA_SESSION_ID,
-    apiKey: env.OPENWA_API_KEY,
-    timeoutMs: env.OPENWA_REQUEST_TIMEOUT_MS,
+  // 3. WhatsApp Cloud Client & Provider
+  const whatsappClient = new WhatsAppCloudClient({
+    baseUrl: env.WHATSAPP_BASE_URL,
+    sessionId: env.WHATSAPP_SESSION_ID,
+    apiKey: env.WHATSAPP_API_KEY,
+    timeoutMs: env.WHATSAPP_REQUEST_TIMEOUT_MS,
   });
-  const whatsappProvider = new OpenWaProvider(openwaClient);
+  const whatsappProvider = new WhatsAppCloudProvider(whatsappClient);
 
   // 4. Queue
   const queue = createWhatsAppQueue(redis);
@@ -122,38 +122,38 @@ async function main() {
     }
   }, 15 * 60 * 1000);
 
-  // 10. OpenWA Keep-Alive & Auto-Reconnect (every 30 seconds)
+  // 10. WhatsApp Cloud Gateway Keep-Alive & Auto-Reconnect (every 30 seconds)
   let reconnectInProgress = false;
-  const openwaKeepaliveInterval = setInterval(async () => {
+  const whatsappKeepaliveInterval = setInterval(async () => {
     if (reconnectInProgress) return;
     try {
-      const { ready, status } = await openwaClient.checkSessionReadiness();
+      const { ready, status } = await whatsappClient.checkSessionReadiness();
       if (!ready) {
         reconnectInProgress = true;
-        logger.warn(`OpenWA session not ready (status: ${status}). Attempting auto-reconnect...`);
-        const result = await openwaClient.startSession();
+        logger.warn(`WhatsApp session not ready (status: ${status}). Attempting auto-reconnect...`);
+        const result = await whatsappClient.startSession();
         if (result.success) {
-          logger.info("OpenWA auto-reconnect initiated. Waiting for session to become ready...");
+          logger.info("WhatsApp auto-reconnect initiated. Waiting for session to become ready...");
           // Wait 15s then verify
           await new Promise((r) => setTimeout(r, 15000));
-          const recheckRes = await openwaClient.checkSessionReadiness();
+          const recheckRes = await whatsappClient.checkSessionReadiness();
           if (recheckRes.ready) {
-            logger.info("OpenWA session reconnected and ready ✓");
+            logger.info("WhatsApp session reconnected and ready ✓");
           } else {
-            logger.warn(`OpenWA session still not ready after reconnect: ${recheckRes.status || recheckRes.error}`);
+            logger.warn(`WhatsApp session still not ready after reconnect: ${recheckRes.status || recheckRes.error}`);
           }
         } else {
-          logger.error("OpenWA auto-reconnect request failed", { error: result.error });
+          logger.error("WhatsApp auto-reconnect request failed", { error: result.error });
         }
         reconnectInProgress = false;
       }
     } catch (err) {
       reconnectInProgress = false;
-      logger.error("Exception in OpenWA keep-alive loop", { error: err });
+      logger.error("Exception in WhatsApp keep-alive loop", { error: err });
     }
   }, 30000);
 
-  // 10. Lightweight Inbound Webhook HTTP Server for OpenWA messages
+  // 10. Lightweight Inbound Webhook HTTP Server for WhatsApp messages
   const server = http.createServer(async (req, res) => {
     const url = req.url || "/";
 
@@ -172,7 +172,7 @@ async function main() {
       req.on("end", async () => {
         try {
           const payload = JSON.parse(bodyStr);
-          // OpenWA event format: { event: "onMessage", data: { from: "...", body: "...", id: "..." } }
+          // Inbound event format: { event: "onMessage", data: { from: "...", body: "...", id: "..." } }
           const msgData = payload.data || payload;
 
           // Ignore self-sent messages and revoked messages
@@ -204,7 +204,7 @@ async function main() {
                 type: msgData.type,
                 mimetype: msgData.mimetype,
               },
-              openwaClient,
+              whatsappClient,
               redis
             ).catch((e) => logger.error("Error processing inbound message", { error: e }));
           }
@@ -228,20 +228,20 @@ async function main() {
     logger.info(`Inbound WhatsApp Webhook HTTP Server listening on port ${env.WEBHOOK_PORT}`);
   });
 
-  // Non-blocking OpenWA readiness check
-  openwaClient
+  // Non-blocking WhatsApp Cloud readiness check
+  whatsappClient
     .checkSessionReadiness()
     .then((res) => {
       if (res.ready) {
-        logger.info(`OpenWA session '${env.OPENWA_SESSION_ID}' is connected and ready`);
+        logger.info(`WhatsApp Cloud session '${env.WHATSAPP_SESSION_ID}' is connected and ready`);
       } else {
         logger.warn(
-          `OpenWA session '${env.OPENWA_SESSION_ID}' status: ${res.error || res.status}. Waiting for connection.`
+          `WhatsApp Cloud session '${env.WHATSAPP_SESSION_ID}' status: ${res.error || res.status}. Waiting for connection.`
         );
       }
     })
     .catch(() => {
-      logger.warn(`Could not reach OpenWA at ${env.OPENWA_BASE_URL}. Ensure container is active.`);
+      logger.warn(`Could not reach WhatsApp gateway at ${env.WHATSAPP_BASE_URL}. Ensure container is active.`);
     });
 
   // 10. Graceful Shutdown Handlers
@@ -254,7 +254,7 @@ async function main() {
     clearInterval(approvalInterval);
     clearInterval(changeOutboxInterval);
     clearInterval(eventAutomationInterval);
-    clearInterval(openwaKeepaliveInterval);
+    clearInterval(whatsappKeepaliveInterval);
 
     try {
       server.close();

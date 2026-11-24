@@ -60,28 +60,6 @@ services:
       timeout: 3s
       retries: 3
 
-  openwa:
-    image: rmyndharis/openwa:latest
-    container_name: csc-circle-openwa
-    restart: always
-    ports:
-      - "2785:2785"
-    environment:
-      - PORT=2785
-      - BASE_PATH=/api
-      - API_KEY=${OPENWA_API_KEY:-local-dev-api-key}
-      - WEBHOOK_SSRF_PROTECT=false
-      - SSRF_ALLOWED_HOSTS=host.docker.internal,127.0.0.1,localhost
-    volumes:
-      - openwa_data:/app/data
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:2785/api/sessions"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
 volumes:
   redis_data:
   postgres_data:
-  openwa_data:

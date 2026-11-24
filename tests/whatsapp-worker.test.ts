@@ -1,10 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { OpenWaClient } from "../workers/whatsapp/src/services/openwa";
+import { WhatsAppCloudClient } from "../workers/whatsapp/src/services/whatsapp-client";
 import { buildContactAcknowledgementMessage } from "../workers/whatsapp/src/utils/message-template";
 import { getRandomDelay } from "../workers/whatsapp/src/utils/delay";
 
-describe("OpenWA REST Client & Message Formatting", () => {
+describe("WhatsApp Cloud Client & Message Formatting", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -43,7 +43,7 @@ describe("OpenWA REST Client & Message Formatting", () => {
     }
   });
 
-  it("parses successful OpenWA 200 response with messageId", async () => {
+  it("parses successful WhatsApp Cloud 200 response with messageId", async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -54,7 +54,7 @@ describe("OpenWA REST Client & Message Formatting", () => {
     });
     vi.stubGlobal("fetch", mockFetch);
 
-    const client = new OpenWaClient({
+    const client = new WhatsAppCloudClient({
       baseUrl: "http://localhost:2785",
       sessionId: "test-session",
       apiKey: "secret-key",
@@ -68,7 +68,7 @@ describe("OpenWA REST Client & Message Formatting", () => {
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
-          "X-API-Key": "secret-key",
+          "x-api-key": "secret-key",
           "Content-Type": "application/json",
         }),
       })
@@ -86,7 +86,7 @@ describe("OpenWA REST Client & Message Formatting", () => {
     });
     vi.stubGlobal("fetch", mockFetch);
 
-    const client = new OpenWaClient({
+    const client = new WhatsAppCloudClient({
       baseUrl: "http://localhost:2785",
       sessionId: "test-session",
       apiKey: "wrong-key",
@@ -95,7 +95,7 @@ describe("OpenWA REST Client & Message Formatting", () => {
     const res = await client.sendTextMessage("919876543210@c.us", "Hello");
     expect(res.success).toBe(false);
     expect(res.errorCategory).toBe("permanent");
-    expect(res.errorCode).toBe("OPENWA_401");
+    expect(res.errorCode).toBe("WHATSAPP_401");
     expect(res.errorMessage).toContain("Invalid API key");
   });
 
@@ -110,7 +110,7 @@ describe("OpenWA REST Client & Message Formatting", () => {
     });
     vi.stubGlobal("fetch", mockFetch);
 
-    const client = new OpenWaClient({
+    const client = new WhatsAppCloudClient({
       baseUrl: "http://localhost:2785",
       sessionId: "test-session",
     });
@@ -118,7 +118,7 @@ describe("OpenWA REST Client & Message Formatting", () => {
     const res = await client.sendTextMessage("919876543210@c.us", "Hello");
     expect(res.success).toBe(false);
     expect(res.errorCategory).toBe("transient");
-    expect(res.errorCode).toBe("OPENWA_503");
+    expect(res.errorCode).toBe("WHATSAPP_503");
   });
 
   it("handles network timeout error gracefully as a transient failure", async () => {
@@ -129,7 +129,7 @@ describe("OpenWA REST Client & Message Formatting", () => {
     });
     vi.stubGlobal("fetch", mockFetch);
 
-    const client = new OpenWaClient({
+    const client = new WhatsAppCloudClient({
       baseUrl: "http://localhost:2785",
       sessionId: "test-session",
       timeoutMs: 100,

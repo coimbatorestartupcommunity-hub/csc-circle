@@ -1,5 +1,5 @@
 import type { Redis } from "ioredis";
-import { OpenWaClient } from "./openwa.js";
+import type { WhatsAppMessenger } from "./whatsapp-client.js";
 import { getWorkerEnv } from "../config/env.js";
 import { logger } from "../utils/logger.js";
 import {
@@ -40,7 +40,7 @@ export interface InboundMessageEvent {
  */
 export async function processInboundWhatsAppMessage(
   event: InboundMessageEvent,
-  openwaClient: OpenWaClient,
+  messenger: WhatsAppMessenger,
   redis: Redis | null = null
 ): Promise<string | null> {
   const chatId = event.from.includes("@")
@@ -63,7 +63,7 @@ export async function processInboundWhatsAppMessage(
       `For urgent queries, please reach out via our website or email at: coimbatorestartupcommunity@gmail.com\n\n` +
       `${customTamil}`;
 
-    await openwaClient.sendTextMessage(chatId, maintenanceNotice);
+    await messenger.sendTextMessage(chatId, maintenanceNotice);
     return maintenanceNotice;
   }
 
@@ -80,7 +80,7 @@ export async function processInboundWhatsAppMessage(
       `Our automated assistant currently processes text-based messages only and cannot listen to voice notes. Kindly type your inquiry or question as a text message, and I will be delighted to assist you promptly! 🤝\n\n` +
       `வணக்கம்! எங்களது AI உதவியாளரால் குரல் பதிவுகளைக் கேட்க இயலாது. தயவுசெய்து உங்கள் கேள்வியை எழுத்து வடிவில் (Text message) அனுப்புங்கள், உடனடியாக உங்களுக்கு உதவ மகிழ்ச்சியடைகிறோம்!`;
 
-    await openwaClient.sendTextMessage(chatId, voiceRefusalReply);
+    await messenger.sendTextMessage(chatId, voiceRefusalReply);
     return voiceRefusalReply;
   }
 
@@ -91,14 +91,14 @@ export async function processInboundWhatsAppMessage(
   if (!rateLimit.allowed) {
     const mins = Math.ceil((rateLimit.remainingJailSeconds || 900) / 60);
     const jailReply = `⚠️ *Notice:* High message frequency detected. For security, your chat is in a brief ${mins}-minute cooldown. Please try again shortly.`;
-    await openwaClient.sendTextMessage(chatId, jailReply);
+    await messenger.sendTextMessage(chatId, jailReply);
     return jailReply;
   }
 
   // 3. Anti-Scraping Defense & Honeypot Analysis
   const scraping = await detectScrapingAttempt(redis, senderPhone, text);
   if (scraping.isMalicious && scraping.securityNotice) {
-    await openwaClient.sendTextMessage(chatId, scraping.securityNotice);
+    await messenger.sendTextMessage(chatId, scraping.securityNotice);
     return scraping.securityNotice;
   }
 
@@ -107,13 +107,13 @@ export async function processInboundWhatsAppMessage(
   // 4. Opt-out (STOP / UNSUBSCRIBE) - Formal notice with footer
   if (upperText === "STOP" || upperText === "UNSUBSCRIBE") {
     const optOutReply = `You have unsubscribed from Coimbatore Startup Community WhatsApp notifications. To opt back in at any time, simply send *START*.\n\n${CSC_WHATSAPP_FOOTER}`;
-    await openwaClient.sendTextMessage(chatId, optOutReply);
+    await messenger.sendTextMessage(chatId, optOutReply);
     return optOutReply;
   }
 
   if (upperText === "START") {
     const optInReply = `Welcome back! You are now subscribed to Coimbatore Startup Community WhatsApp updates and AI assistance.\n\n${CSC_WHATSAPP_FOOTER}`;
-    await openwaClient.sendTextMessage(chatId, optInReply);
+    await messenger.sendTextMessage(chatId, optInReply);
     return optInReply;
   }
 
@@ -154,14 +154,14 @@ export async function processInboundWhatsAppMessage(
     }
 
     const humanReply = `🤝 *Support Request Logged*\n\nYour inquiry has been escalated to our Community Team.\n🎫 *Reference:* \`${ticketNum}\`\n\nAn organizer has been notified and will connect with you directly.\n\n${CSC_WHATSAPP_FOOTER}`;
-    await openwaClient.sendTextMessage(chatId, humanReply);
+    await messenger.sendTextMessage(chatId, humanReply);
     return humanReply;
   }
 
   // 6. Post-Event NPS & Feedback Collector Reply
   const feedbackReply = await handleIncomingRating(senderPhone, text);
   if (feedbackReply) {
-    await openwaClient.sendTextMessage(chatId, feedbackReply);
+    await messenger.sendTextMessage(chatId, feedbackReply);
     return feedbackReply;
   }
 
@@ -183,14 +183,14 @@ export async function processInboundWhatsAppMessage(
       lang = "tanglish";
     }
     const hubReply = formatCommunityHubInvitation(lang);
-    await openwaClient.sendTextMessage(chatId, hubReply);
+    await messenger.sendTextMessage(chatId, hubReply);
     return hubReply;
   }
 
   // 8. Founder Spotlight Shortcut
   if (upperText === "SPOTLIGHT" || upperText === "FEATURED" || upperText === "STARTUP") {
     const spotlightReply = await getFortnightlyFounderSpotlight();
-    await openwaClient.sendTextMessage(chatId, spotlightReply);
+    await messenger.sendTextMessage(chatId, spotlightReply);
     return spotlightReply;
   }
 
@@ -211,14 +211,14 @@ export async function processInboundWhatsAppMessage(
         reply += `\nYour membership ID will be automatically issued once the 5-minute verification window completes.`;
       }
       const formatted = verifyAndFormatResponse(reply, true);
-      await openwaClient.sendTextMessage(chatId, formatted);
+      await messenger.sendTextMessage(chatId, formatted);
       return formatted;
     } else {
       const formatted = verifyAndFormatResponse(
         verification.error || "Verification failed. Please double check the 6-digit code sent to your email.",
         false
       );
-      await openwaClient.sendTextMessage(chatId, formatted);
+      await messenger.sendTextMessage(chatId, formatted);
       return formatted;
     }
   }
@@ -234,7 +234,7 @@ export async function processInboundWhatsAppMessage(
     if (challenge.success) {
       const otpMsg = `🔒 *CSC Membership Security Verification*\n\nTo protect your personal member data, we've dispatched a 6-digit verification code to your registered email (*${challenge.maskedEmail}*).\n\n👉 Please reply with the *6-digit code* to view your membership ID and live claim status.`;
       const formatted = verifyAndFormatResponse(otpMsg, false);
-      await openwaClient.sendTextMessage(chatId, formatted);
+      await messenger.sendTextMessage(chatId, formatted);
       return formatted;
     }
   }
@@ -289,7 +289,7 @@ export async function processInboundWhatsAppMessage(
   }
 
   // 14. Dispatch to WhatsApp
-  const sendRes = await openwaClient.sendTextMessage(chatId, finalReply);
+  const sendRes = await messenger.sendTextMessage(chatId, finalReply);
   logger.info("Dispatched response to WhatsApp", {
     chatId,
     success: sendRes.success,

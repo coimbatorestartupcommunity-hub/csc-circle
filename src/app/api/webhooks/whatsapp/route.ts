@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
     const expectedSecret =
-      process.env.OPENWA_WEBHOOK_SECRET || process.env.OPENWA_API_KEY || "";
+      process.env.WHATSAPP_WEBHOOK_SECRET || process.env.MSG91_WEBHOOK_SECRET || "";
 
     if (expectedSecret && authHeader !== expectedSecret) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
     }
 
-    // OpenWA webhook format can be either raw event { event: 'onMessage', data: {...} } or direct message payload
+    // Standard webhook format: raw event or direct message payload
     const data = payload.data || payload;
     const from = data.from || data.chatId;
     const body = data.body || data.text;

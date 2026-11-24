@@ -103,8 +103,9 @@ describe("CSC Circle WhatsApp Strategic Upgrades (v2.0.0)", () => {
     it("appends footer when includeFooter is true for formal notifications", () => {
       const text = "Your CSC Circle membership credentials have been issued.";
       const verified = verifyAndFormatResponse(text, true);
-      expect(verified).toContain("Connect. Build. Grow.");
+      expect(verified).toContain("Connect • Build • Grow");
       expect(verified).toContain("Coimbatore Startup Community (CSC Circle)");
+      expect(verified).toContain("Powered by Logic Intelligence Technologies");
     });
   });
 

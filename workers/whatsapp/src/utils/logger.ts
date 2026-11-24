@@ -14,6 +14,7 @@ export interface LogContext {
   phone?: string;
   chatId?: string;
   status?: string;
+  gatewayMessageId?: string;
   openwaMessageId?: string;
   errorCode?: string;
   error?: string | unknown;

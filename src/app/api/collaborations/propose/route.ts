@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
+import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const proposalSchema = z.object({
   organizationName: z.string().min(2).max(120),
@@ -82,6 +83,22 @@ export async function POST(request: Request) {
 
     if (error) {
       console.warn("Notice inserting collaboration proposal:", error.message);
+    } else {
+      void dispatchTeamWhatsAppAlert({
+        type: "collaboration_proposed",
+        title: "New Partnership & Collaboration Proposal",
+        fields: {
+          "Organization": data.organizationName,
+          "Representative": `${data.representativeName} (${data.designation || "Representative"})`,
+          "Category": data.category,
+          "Email": data.email,
+          "Phone": data.phone,
+          "Website": data.website || "N/A",
+          "Reference Code": refCode,
+          "Benefits": data.benefits.slice(0, 150) + (data.benefits.length > 150 ? "..." : ""),
+        },
+        actionUrl: "https://csc.logicintelligencetechnologies.in/admin/collaborations",
+      }).catch((err) => console.warn("[team-alert] collaboration proposal error:", err));
     }
 
     return NextResponse.json(

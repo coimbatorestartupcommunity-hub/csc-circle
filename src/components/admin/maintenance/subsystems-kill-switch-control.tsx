@@ -14,6 +14,7 @@ import {
   Shield,
   Layers,
   HelpCircle,
+  BellRing,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +67,14 @@ const SUBSYSTEMS_META: SubsystemMeta[] = [
     description: "Controls the automated 24/7 WhatsApp AI agent, knowledge queries, and inbound message responses.",
     icon: Bot,
     defaultPauseReason: "Inbound AI agent temporarily sleeping during live event check-in peak to prioritize pass delivery.",
+  },
+  {
+    key: "messagingAutomations",
+    name: "Automated WhatsApp & Team Group Dispatch",
+    category: "Messaging Infrastructure",
+    description: "Controls automated email-to-WhatsApp dual dispatch, viaSocket workflow triggers, and Core Leadership Team WhatsApp Group alerts.",
+    icon: BellRing,
+    defaultPauseReason: "Automated WhatsApp notifications & Team Group alerts temporarily paused during maintenance.",
   },
 ];
 

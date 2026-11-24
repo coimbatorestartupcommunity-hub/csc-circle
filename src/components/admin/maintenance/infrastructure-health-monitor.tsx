@@ -131,7 +131,7 @@ export function InfrastructureHealthMonitor() {
                 : "Operational Warnings Detected on Monitored Services"}
             </span>
             <span className="text-[11px] opacity-80">
-              5 of 5 core services audited · Last live ping at {lastCheck || "just now"} IST
+              {metrics.length > 0 ? `${metrics.length} services audited` : "Auditing dependencies..."} · Last live ping at {lastCheck || "just now"} IST
             </span>
           </div>
         </div>

@@ -171,7 +171,7 @@ export class WhatsAppWorkerService {
     logger.info(`Applying dispatch pacing delay of ${pacingDelay}ms`, { outboxId, pacingDelay });
     await sleep(pacingDelay);
 
-    // 4. Send Message via WhatsApp Provider (OpenWA)
+    // 4. Send Message via WhatsApp Provider (WhatsApp Cloud Gateway)
     const result = await this.provider.send({
       chatId: recipientChatId,
       phone: recipientPhone,

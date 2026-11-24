@@ -3,6 +3,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const SYSTEM_NOTIFICATION_CONTACT_ID = "00000000-0000-0000-0000-000000000000";
 
+export const CSC_WHATSAPP_FOOTER = [
+  "────────────────────",
+  "🚀 *Connect • Build • Grow*",
+  "🌐 *Coimbatore Startup Community (CSC Circle)*",
+  "⚡ *Powered by Logic Intelligence Technologies*",
+].join("\n");
+
 export interface WhatsAppNotificationPayload {
   recipientPhone: string;
   recipientChatId?: string;
@@ -47,7 +54,7 @@ export function normalizePhoneForWhatsApp(input: string): { e164: string; chatId
 
 /**
  * Enqueues an outgoing notification directly to the Supabase transactional outbox.
- * The background worker claims and dispatches it via OpenWA within seconds.
+ * The background worker claims and dispatches it via WhatsApp Cloud Gateway within seconds.
  */
 export async function enqueueWhatsAppNotification(
   payload: WhatsAppNotificationPayload

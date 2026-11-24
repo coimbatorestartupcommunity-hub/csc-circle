@@ -234,26 +234,32 @@ export async function dispatchNotifications(batch = 15) {
           const recipientPhone = (typeof payload.phone === "string" && payload.phone) || (typeof payload.whatsapp === "string" && payload.whatsapp) || "";
           if (recipientPhone && recipientPhone.replace(/\D/g, "").length >= 10 && job.audience !== "admin") {
             try {
-              const cleanText = message.text.replace(/\r?\n\s*\r?\n/g, "\n\n").trim().slice(0, 900);
-              const whatsappMsg = `📢 *CSC Circle Notification: ${message.subject}*\n\n${cleanText}\n\n🌐 View in your account: https://csc.logicintelligencetechnologies.in/profile`;
-              await enqueueWhatsAppNotification({
-                recipientPhone,
-                text: whatsappMsg,
-                messageType: job.template_key || "universal_notification",
-                idempotencyKey: `wa-${job.id}-${digest.slice(0, 8)}`,
-              });
+              const { getSubsystemMaintenanceConfig } = await import("@/lib/services/system-settings");
+              const subsystems = await getSubsystemMaintenanceConfig();
+              if (subsystems.messagingAutomations?.paused) {
+                console.log("[dispatcher] WhatsApp mirror skipped: messagingAutomations subsystem is paused.");
+              } else {
+                const cleanText = message.text.replace(/\r?\n\s*\r?\n/g, "\n\n").trim().slice(0, 900);
+                const whatsappMsg = `📢 *CSC Circle Notification: ${message.subject}*\n\n${cleanText}\n\n🌐 View in your account: https://csc.logicintelligencetechnologies.in/profile`;
+                await enqueueWhatsAppNotification({
+                  recipientPhone,
+                  text: whatsappMsg,
+                  messageType: job.template_key || "universal_notification",
+                  idempotencyKey: `wa-${job.id}-${digest.slice(0, 8)}`,
+                });
 
-              // Mirror simultaneously to viaSocket Flow automation pipeline
-              triggerViaSocketFlow("email_notification_mirrored" as any, {
-                recipientEmail: recipient,
-                recipientPhone,
-                subject: message.subject,
-                templateKey: job.template_key,
-                reference: payload.reference,
-                name: payload.name,
-                eventTitle: payload.eventTitle,
-                messageText: cleanText,
-              }).catch((vsErr) => console.warn("[dispatcher] viaSocket flow mirror warning:", vsErr));
+                // Mirror simultaneously to viaSocket Flow automation pipeline
+                triggerViaSocketFlow("email_notification_mirrored" as any, {
+                  recipientEmail: recipient,
+                  recipientPhone,
+                  subject: message.subject,
+                  templateKey: job.template_key,
+                  reference: payload.reference,
+                  name: payload.name,
+                  eventTitle: payload.eventTitle,
+                  messageText: cleanText,
+                }).catch((vsErr) => console.warn("[dispatcher] viaSocket flow mirror warning:", vsErr));
+              }
             } catch (waErr) {
               console.warn("[dispatcher] WhatsApp notification enqueue error:", waErr);
             }
