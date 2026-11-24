@@ -74,14 +74,16 @@ export async function POST(request: Request) {
 
       // Automatically generate and dispatch the WhatsApp reply via MSG91
       const isAudio = body.type === "ptt" || body.type === "audio" || body.mimetype?.includes("audio");
-      void routeInboundWhatsAppMessage({
-        phone: customerNumber,
-        text,
-        messageId,
-        isAudio,
-      }).catch((routeErr) => {
+      try {
+        await routeInboundWhatsAppMessage({
+          phone: customerNumber,
+          text,
+          messageId,
+          isAudio,
+        });
+      } catch (routeErr) {
         console.error("[msg91-webhook] Inbound router dispatch error:", routeErr);
-      });
+      }
 
       return NextResponse.json({ status: "success", type: "inbound_processed" });
     }

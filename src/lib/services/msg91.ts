@@ -370,14 +370,14 @@ export async function sendMsg91WhatsAppTextMessage({
   const formattedRecipient = formatPhoneForMsg91(recipientPhone);
   const formattedSender = formatPhoneForMsg91(activeNumber);
 
-  const queryParams = new URLSearchParams({
+  const payload = {
     integrated_number: formattedSender,
     recipient_number: formattedRecipient,
     content_type: "text",
     text,
-  });
+  };
 
-  const url = `${MSG91_BASE_URL}/whatsapp/whatsapp-outbound-message/?${queryParams.toString()}`;
+  const url = `${MSG91_BASE_URL}/whatsapp/whatsapp-outbound-message/`;
 
   try {
     const res = await fetch(url, {
@@ -387,6 +387,7 @@ export async function sendMsg91WhatsAppTextMessage({
         accept: "application/json",
         "content-type": "application/json",
       },
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json().catch(() => ({}));
