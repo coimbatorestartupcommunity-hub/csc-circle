@@ -1,4 +1,6 @@
 import { emailConfiguration } from "@/lib/notifications/config";
+import { renderMerakiEditorialEmail } from "@/lib/notifications/template-meraki";
+import { renderNomuShowcaseEmail, type NomuThemeVariant } from "@/lib/notifications/template-nomu";
 
 /** CSC versions of the reference collection's transactional and lifecycle families. */
 export const definitions = {
@@ -48,9 +50,8 @@ export function isTemplateKey(value: string): value is TemplateKey {
   return Object.hasOwn(definitions, value);
 }
 
-export function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
-}
+import { escapeHtml } from "./email-components";
+export { escapeHtml };
 
 function textValue(payload: Record<string, unknown>, key: string, max = 500) {
   const value = payload[key];
@@ -107,14 +108,6 @@ const detailFields: Array<[string, string, number]> = [
   ["description", "Description", 600], ["reviewNote", "Review note", 500],
 ];
 
-const asset = (base: string, file: string) => `${base}/email-assets/reference/${file}`;
-const colors = {
-  canvas: "#F8F6F3", cream: "#FBF8F3", white: "#FFFFFF", ink: "#333333",
-  body: "#505050", muted: "#737373", divider: "#E7E3DE", orange: "#F57820",
-  orangeHero: "#FF710B", blue: "#0755ED", sky: "#7ABAE9", purple: "#5734A5",
-  navy: "#17153D", charcoal: "#4B5160",
-} as const;
-
 function safeAction(base: string, path: string) {
   const url = new URL(path, base);
   const origin = new URL(base);
@@ -130,31 +123,49 @@ function safeAction(base: string, path: string) {
 
 function htmlDetails(rows: Array<[string, string]>) {
   if (!rows.length) return "";
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 24px;border:1px solid ${colors.divider};border-radius:16px;background:${colors.white};box-shadow:0 1px 3px rgba(0,0,0,0.03);overflow:hidden"><tbody>${rows.map(([label, value], index) => `<tr><td style="padding:${index === 0 ? "14px 20px 8px" : index === rows.length - 1 ? "8px 20px 14px" : "8px 20px"};${index < rows.length - 1 ? `border-bottom:1px solid ${colors.divider};` : ""}"><p style="margin:0 0 3px;font-size:10px;line-height:16px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${colors.muted}">${escapeHtml(label)}</p><p style="margin:0;font-size:13px;line-height:21px;font-weight:700;color:${colors.ink};word-break:break-word;overflow-wrap:anywhere">${escapeHtml(value)}</p></td></tr>`).join("")}</tbody></table>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 24px;border:1px solid #E2E8F0;border-radius:16px;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,0.03);overflow:hidden"><tbody>${rows.map(([label, value], index) => `<tr><td style="padding:${index === 0 ? "14px 20px 8px" : index === rows.length - 1 ? "8px 20px 14px" : "8px 20px"};${index < rows.length - 1 ? "border-bottom:1px solid #E2E8F0;" : ""}"><p style="margin:0 0 3px;font-size:10px;line-height:16px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#64748B">${escapeHtml(label)}</p><p style="margin:0;font-size:13px;line-height:21px;font-weight:700;color:#1E293B;word-break:break-word;overflow-wrap:anywhere">${escapeHtml(value)}</p></td></tr>`).join("")}</tbody></table>`;
 }
 
-function htmlFooter(base: string, support: string, dark: boolean) {
-  const ink = dark ? "#F4F0FC" : colors.body;
-  const muted = dark ? "#CBC4DC" : colors.muted;
-  const social = [
-    ["Instagram", `${base}/email-assets/reference/social-instagram.png`, "https://www.instagram.com/coimbatorestartupcommunity/"],
-    ["WhatsApp group", `${base}/email-assets/reference/social-whatsapp.png`, "https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2"],
-    ["Email CSC", `${base}/email-assets/reference/social-email.png`, `mailto:${support}`],
-    ["CSC website", `${base}/email-assets/reference/social-website.png`, base],
-  ];
-  return `<tr><td align="center" style="padding:42px 36px 30px;background:${dark ? colors.navy : colors.white}"><p style="margin:0 auto 25px;max-width:420px;font-size:12px;line-height:20px;color:${ink}">Questions? We’re here to help. Visit <a href="${base}" style="color:${dark ? "#FFD865" : "#C2500A"};font-weight:800;text-decoration:none">CSC Circle</a> or email <a href="mailto:${escapeHtml(support)}" style="color:${dark ? "#FFD865" : "#C2500A"};font-weight:800;text-decoration:none;overflow-wrap:anywhere">${escapeHtml(support)}</a>.</p><hr style="width:160px;margin:0 auto 20px;border:0;border-top:1px solid ${dark ? "#51476D" : colors.divider}"><table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:0 auto 22px"><tbody><tr>${social.map(([label, icon, href]) => `<td style="padding:0 10px"><a href="${href}" aria-label="${label}" style="text-decoration:none"><img src="${icon}" width="20" height="20" alt="${label}" style="display:block;border:0"></a></td>`).join("")}</tr></tbody></table><p style="margin:0 0 23px;font-size:11px;line-height:22px;color:${muted}"><a href="${base}" style="color:${ink};text-decoration:none">Website</a> &nbsp;·&nbsp; <a href="${safeAction(base, "/profile/settings")}" style="color:${ink};text-decoration:none">Email preferences</a> &nbsp;·&nbsp; <a href="${safeAction(base, "/terms")}" style="color:${ink};text-decoration:none">Terms</a> &nbsp;·&nbsp; <a href="${safeAction(base, "/privacy")}" style="color:${ink};text-decoration:none">Privacy</a></p><p style="margin:0 0 4px;font-size:10px;line-height:17px;color:${muted}">CSC Circle<br>Coimbatore Startup Community · Coimbatore, Tamil Nadu · Estd 2026</p><p style="margin:10px 0 0;font-size:10px;line-height:17px;color:${muted}">Connect. Build. Grow.<br>© ${new Date().getFullYear()} CSC Circle. All rights reserved.</p></td></tr>`;
-}
+/** Set of keys explicitly rendered via Template A (Meraki Editorial Journal) */
+const MERAKI_KEYS: Set<TemplateKey> = new Set([
+  "FirstLoginWelcome",
+  "MembershipApplicationReceived",
+  "MembershipAdminAlert",
+  "MembershipApproved",
+  "MembershipRejected",
+  "MembershipMoreInformation",
+  "MembershipStatusChanged",
+  "StartupSubmissionReceived",
+  "StartupAdminAlert",
+  "StartupApproved",
+  "StartupStatusChanged",
+  "CommunityReviewReceived",
+  "ReviewAdminAlert",
+  "ReviewModerationResult",
+  "EventReviewRequest",
+  "ConsultationReceived",
+  "ConsultationAdminAlert",
+  "ConsultationApproved",
+  "ConsultationMoreInformation",
+  "ConsultationScheduled",
+  "ConsultationCancelled",
+]);
 
-/** Table-based, inline-styled HTML follows the 600px reference frame for email-client compatibility. */
+/**
+ * Renders every CSC notification using the exact user-uploaded templates:
+ * - Template A: Meraki Editorial Journal (Stripes, Polaroid, Sage grid, 7 leaders grid)
+ * - Template B: Nomu High-Conversion Showcase (Curved typography, Organic drip divider, 7 leaders strip)
+ */
 export function renderNotification(key: TemplateKey, payload: Record<string, unknown>) {
   const c = emailConfiguration();
-  const [heading, body, path, artwork, tone] = definitions[key];
+  const [heading, body, path] = definitions[key];
   const effectiveHeading =
     key === "EventConfirmed" && (payload.totalAmountPaid !== undefined || payload.amountPaise !== undefined || payload.priceMinor !== undefined)
       ? "Payment Successful & Event Registration Confirmed"
       : key === "EventRSVPAdminAlert" && (payload.totalAmountPaid !== undefined || payload.amountPaise !== undefined || payload.priceMinor !== undefined)
       ? "New Verified Paid Event Registration"
       : heading;
+
   if (key === "EventConfirmed") {
     const venue = textValue(payload, "venue", 160);
     const address = textValue(payload, "location", 300);
@@ -167,6 +178,7 @@ export function renderNotification(key: TemplateKey, payload: Record<string, unk
       venue: "",
     };
   }
+
   const greetingName = textValue(payload, "name", 100);
   const greeting = greetingName ? `Hello ${greetingName},` : "Hello,";
   const rows: Array<[string, string]> = [];
@@ -187,13 +199,16 @@ export function renderNotification(key: TemplateKey, payload: Record<string, unk
         ? (slug ? `/directory/${encodeURIComponent(slug)}` : "/directory")
         : path;
   const link = safeAction(c.base, targetPath);
+
   const eventPassQrCid = textValue(payload, "eventPassQrCid", 100);
   const eventPassQrMarkup = key === "EventConfirmed" && /^[a-z0-9@._-]+$/i.test(eventPassQrCid)
-    ? `<div style="margin:24px auto;padding:22px;max-width:440px;border:1px solid ${colors.divider};border-radius:20px;background:#f8fafc;text-align:center"><div style="display:inline-block;padding:4px 12px;background:#ccfbf1;color:#0f766e;font-size:11px;font-weight:800;border-radius:999px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Official Digital Event Pass</div><h3 style="margin:0 0 8px;color:${colors.ink};font-size:17px;font-weight:800">Your individual event pass QR</h3><p style="margin:0 0 16px;color:${colors.muted};font-size:12px;line-height:18px">Your verified digital event pass is ready. You can view, save, and download it directly from your Profile on the website.</p><div style="padding:12px;background:#ffffff;border:1px solid ${colors.divider};border-radius:16px;display:inline-block;margin:0 auto 18px;box-shadow:0 4px 12px rgba(0,0,0,0.05)"><img src="cid:${escapeHtml(eventPassQrCid)}" width="220" height="220" alt="Unique individual QR pass for your confirmed CSC event registration" style="display:block;width:220px;height:220px;margin:0 auto;border:0"></div><div style="text-align:left;background:#ffffff;border:1px solid ${colors.divider};border-radius:14px;padding:16px 18px;margin-bottom:18px"><p style="margin:0 0 10px;color:${colors.ink};font-size:13px;font-weight:800">How to Access (Step-by-Step):</p><ol style="margin:0;padding-left:18px;color:${colors.body};font-size:12px;line-height:22px"><li><strong>View &amp; Save Pass:</strong> Visit your Profile &rarr; Events Pass on the website to view and download your full digital pass.</li><li><strong>Online Sessions (Google Meet):</strong> On the event day, visit the check-in portal (opens 1 hour prior to start). Upload or scan your QR to access the meeting room directly.</li><li><strong>In-Person Sessions:</strong> Present your QR code on your phone at the entrance registration desk.</li></ol></div><div style="margin:12px auto 4px"><a href="${c.base}/profile/events" style="display:inline-block;padding:13px 26px;border-radius:999px;background:#0d9488;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;box-shadow:0 2px 8px rgba(13,148,136,0.3)">View Pass on Your Profile</a></div><p style="margin:10px 0 0;color:${colors.muted};font-size:11px">Portal: ${c.base}/profile/events</p></div>`
+    ? `<div style="margin:24px auto;padding:22px;max-width:460px;border:1px solid #E2E8F0;border-radius:20px;background:#F8FAFC;text-align:center"><div style="display:inline-block;padding:4px 12px;background:#CCFBF1;color:#0F766E;font-size:11px;font-weight:800;border-radius:999px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Official Digital Event Pass</div><h3 style="margin:0 0 8px;color:#1E293B;font-size:17px;font-weight:800">Your individual event pass QR</h3><p style="margin:0 0 16px;color:#64748B;font-size:12px;line-height:18px">Your verified digital event pass is ready. You can view, save, and download it directly from your Profile on the website.</p><div style="padding:14px;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:16px;display:inline-block;margin:0 auto 18px;box-shadow:0 4px 12px rgba(0,0,0,0.05)"><img src="cid:${escapeHtml(eventPassQrCid)}" width="220" height="220" alt="Unique individual QR pass for your confirmed CSC event registration" style="display:block;width:220px;height:220px;margin:0 auto;border:0"></div><div style="text-align:left;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;padding:16px 18px;margin-bottom:18px"><p style="margin:0 0 10px;color:#1E293B;font-size:13px;font-weight:800">How to Access (Step-by-Step):</p><ol style="margin:0;padding-left:18px;color:#475569;font-size:12px;line-height:22px"><li><strong>View &amp; Save Pass:</strong> Visit your Profile &rarr; Events Pass on the website to view and download your full digital pass.</li><li><strong>Online Sessions (Google Meet):</strong> On the event day, visit the check-in portal (opens 1 hour prior to start). Upload or scan your QR to access the meeting room directly.</li><li><strong>In-Person Sessions:</strong> Present your QR code on your phone at the entrance registration desk.</li></ol></div><div style="margin:14px auto 4px"><a href="${c.base}/profile/events" style="display:inline-block;padding:13px 28px;border-radius:999px;background:#0D9488;color:#FFFFFF;font-size:14px;font-weight:800;text-decoration:none;box-shadow:0 2px 8px rgba(13,148,136,0.3)">View Pass on Your Profile &rarr;</a></div><p style="margin:10px 0 0;color:#64748B;font-size:11px">Portal: ${c.base}/profile/events</p></div>`
     : "";
+
   const guestVerificationMarkup = key === "GuestEmailVerification" && verificationUrl
-    ? `<div style="margin:20px auto 14px;padding:20px 22px;border:1px solid #14b8a6;border-radius:18px;background:#f0fdfa;text-align:center"><div style="display:inline-block;padding:4px 12px;background:#ccfbf1;color:#0f766e;font-size:11px;font-weight:800;border-radius:999px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">1-Click Instant Verification</div><h3 style="margin:0 0 6px;color:#0f766e;font-size:17px;font-weight:800">Verify Email &amp; Proceed to Payment</h3><p style="margin:0 0 16px;color:#134e4a;font-size:13px;line-height:20px">Click the button below to verify your email automatically. You will be redirected right back to the event checkout to complete your UPI payment.</p><div style="margin:14px auto 6px"><a href="${link}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:#0d9488;color:#ffffff;font-size:15px;font-weight:800;text-decoration:none;box-shadow:0 3px 10px rgba(13,148,136,0.3)">Verify Email &amp; Complete Checkout &rarr;</a></div><p style="margin:12px 0 0;color:#0f766e;font-size:11px">Link expires in 10 minutes. If you prefer manual entry, use the 6-digit code shown above.</p></div>`
+    ? `<div style="margin:22px auto 16px;padding:22px;border:1px solid #14B8A6;border-radius:18px;background:#F0FDFA;text-align:center"><div style="display:inline-block;padding:4px 12px;background:#CCFBF1;color:#0F766E;font-size:11px;font-weight:800;border-radius:999px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">1-Click Instant Verification</div><h3 style="margin:0 0 6px;color:#0F766E;font-size:17px;font-weight:800">Verify Email &amp; Proceed to Payment</h3><p style="margin:0 0 16px;color:#134E4A;font-size:13px;line-height:20px">Click the button below to verify your email automatically. You will be redirected right back to the event checkout to complete your UPI payment.</p><div style="margin:14px auto 6px"><a href="${link}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:#0D9488;color:#FFFFFF;font-size:15px;font-weight:800;text-decoration:none;box-shadow:0 3px 10px rgba(13,148,136,0.3)">Verify Email &amp; Complete Checkout &rarr;</a></div><p style="margin:12px 0 0;color:#0F766E;font-size:11px">Link expires in 10 minutes. If you prefer manual entry, use the 6-digit code shown above.</p></div>`
     : "";
+
   const buttonText = key === "GuestEmailVerification"
     ? "Verify Email & Complete Checkout"
     : key === "EventPublishedBroadcast"
@@ -207,30 +222,63 @@ export function renderNotification(key: TemplateKey, payload: Record<string, unk
             : key === "FirstLoginWelcome"
               ? "Explore my CSC profile"
               : "View in CSC Circle";
+
   const passText = key === "EventConfirmed"
-    ? eventPassQrMarkup
-      ? "\n\n--- INDIVIDUAL EVENT PASS & ENTRY INSTRUCTIONS ---\n" +
-        "1. View & Download Your Pass: You can view, save, and download your verified pass on your CSC Profile page at: " + c.base + "/profile/events\n" +
-        "2. Online Sessions: Visit the check-in portal on the event day (opens 1 hour prior to session start) to scan your QR and access Google Meet.\n" +
-        "3. In-Person Sessions: Present your QR code at the entrance desk for instant check-in."
-      : ""
+    ? "\n\n--- INDIVIDUAL EVENT PASS & ENTRY INSTRUCTIONS ---\n" +
+      "1. View & Download Your Pass: You can view, save, and download your verified pass on your CSC Profile page at: " + c.base + "/profile/events\n" +
+      "2. Online Sessions: Visit the check-in portal on the event day (opens 1 hour prior to session start) to scan your QR and access Google Meet.\n" +
+      "3. In-Person Sessions: Present your QR code at the entrance desk for instant check-in."
     : "";
+
   const text = `${effectiveHeading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${passText}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
-  const isOrange = tone === "orange";
-  const isSky = tone === "sky";
-  const brandBg = isOrange ? colors.orangeHero : colors.white;
-  const heroBg = isOrange ? colors.orangeHero : isSky ? colors.sky : colors.white;
-  const inverse = isOrange || isSky;
-  const artAfter = isOrange || isSky;
-  const imageMarkup = `<img src="${asset(c.base, `${artwork}.png`)}" width="${artAfter ? 600 : 280}" alt="" style="display:block;width:${artAfter ? "100%" : "70%"};max-width:${artAfter ? 600 : 280}px;height:auto;margin:${artAfter ? "20px auto 0" : "4px auto 26px"};border:0">`;
-  const preview = escapeHtml(`${effectiveHeading}. ${body}`.slice(0, 160));
-  let html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>@font-face{font-family:'Nunito Sans';src:url('${asset(c.base, "nunito-sans-latin.woff2")}') format('woff2');font-weight:400 800}body,table,td,a,p,h1{font-family:'Nunito Sans',Arial,Helvetica,sans-serif}a{color:inherit}@media only screen and (max-width:620px){.ref-canvas{padding:0!important}.ref-brand{padding:30px 18px 24px!important}.ref-section{padding-left:24px!important;padding-right:24px!important}.ref-hero{padding-left:22px!important;padding-right:22px!important}.ref-heading{font-size:32px!important;line-height:37px!important}.ref-copy{font-size:15px!important;line-height:25px!important}.ref-footer{padding:42px 22px 32px!important}.ref-detail-value{overflow-wrap:anywhere!important}}</style></head><body style="margin:0;padding:0;background:${colors.canvas};color:${colors.ink}"><div style="display:none!important;max-height:0;max-width:0;overflow:hidden;opacity:0">${preview}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${colors.canvas}"><tbody><tr><td class="ref-canvas" align="center" style="padding:32px 12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${colors.white};border-collapse:separate;border-spacing:0"><tbody><tr><td class="ref-brand" align="center" style="padding:36px 24px 28px;background:${brandBg}"><img src="${c.base}/brand/csc-icon.png" width="78" height="78" alt="CSC Circle logo" style="display:block;width:78px;height:78px;margin:0 auto 14px;border:0;border-radius:50%"><p style="margin:0;color:${inverse ? "#FFFFFF" : colors.ink};font-size:14px;line-height:20px;font-weight:800;letter-spacing:.045em;text-align:center;white-space:nowrap">COIMBATORE STARTUP COMMUNITY</p></td></tr><tr><td align="center" style="padding:0 0 4px;background:${heroBg}">${!artAfter ? imageMarkup : ""}<h1 class="ref-heading" style="margin:0 auto 16px;padding:12px 38px 0;max-width:480px;color:${inverse ? "#FFFFFF" : colors.ink};font-size:40px;line-height:45px;font-weight:800;letter-spacing:-.035em;text-align:center">${escapeHtml(effectiveHeading)}</h1>${artAfter ? imageMarkup : ""}</td></tr><tr><td class="ref-section" style="padding:20px 46px 8px;background:${colors.white}"><p class="ref-copy" style="margin:0 0 19px;color:${colors.body};font-size:16px;line-height:28px;text-align:center">${escapeHtml(greeting)}</p><p class="ref-copy" style="margin:0 0 19px;color:${colors.body};font-size:16px;line-height:28px;text-align:center;white-space:pre-line">${escapeHtml(body)}</p>${htmlDetails(rows)}<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:28px auto 30px"><tbody><tr><td align="center" style="border-radius:999px;background:${colors.orange};mso-padding-alt:14px 30px"><a href="${link}" style="display:inline-block;padding:14px 30px;border-radius:999px;background:${colors.orange};color:#fff;font-size:15px;line-height:22px;font-weight:800;text-align:center;text-decoration:none">${escapeHtml(buttonText)}</a></td></tr></tbody></table><p style="margin:0 0 18px;color:${colors.muted};font-size:12px;line-height:20px;text-align:center">This message relates to your CSC account or a request you submitted. Sensitive account and membership information remains in the signed-in portal.</p></td></tr>${htmlFooter(c.base, c.support, false)}</tbody></table></td></tr></tbody></table></body></html>`;
-  if (eventPassQrMarkup) html = html.replace('<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:28px auto 30px">', `${eventPassQrMarkup}<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:28px auto 30px">`);
-  if (guestVerificationMarkup) html = html.replace('<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:28px auto 30px">', guestVerificationMarkup);
+
+  const detailsHtml = htmlDetails(rows);
+
+  let html: string;
+
+  if (MERAKI_KEYS.has(key)) {
+    // Route to Template A: Meraki Editorial Journal
+    html = renderMerakiEditorialEmail({
+      base: c.base,
+      support: c.support,
+      headline: effectiveHeading,
+      greeting,
+      body,
+      buttonText,
+      buttonUrl: link,
+      htmlDetailsContent: detailsHtml,
+      customMarkup: guestVerificationMarkup || eventPassQrMarkup,
+    });
+  } else {
+    // Route to Template B: Nomu High-Conversion Showcase
+    let variant: NomuThemeVariant = "blue";
+    if (["EventConfirmed", "PaidEventRegistrationConfirmed", "PaymentVerified"].includes(key)) {
+      variant = "green";
+    } else if (["EventPublishedBroadcast", "PaidEventRegistrationReceived", "PaymentPendingVerification"].includes(key)) {
+      variant = "sand";
+    }
+
+    html = renderNomuShowcaseEmail({
+      base: c.base,
+      support: c.support,
+      variant,
+      curvedHeading: "COIMBATORE STARTUP COMMUNITY",
+      mainTitle: effectiveHeading,
+      subtitle: "Founder Network · Community Event Passes · Digital Ecosystem",
+      greeting,
+      body,
+      primaryButtonText: buttonText,
+      primaryButtonUrl: link,
+      htmlDetailsContent: detailsHtml,
+      qrCodeMarkup: eventPassQrMarkup,
+      customMarkup: guestVerificationMarkup,
+    });
+  }
+
   return { subject: key === "FirstLoginWelcome" ? heading : `CSC Circle — ${effectiveHeading}`, text, html };
 }
 
-/** Admin role invitation email on the shared reference frame, so it matches every other CSC email. */
+/** Admin role invitation email formatted using Template A (Meraki style). */
 export function renderAdminInvitationEmail(input: {
   greeting: string;
   roleName: string;
@@ -243,16 +291,60 @@ export function renderAdminInvitationEmail(input: {
   const c = emailConfiguration();
   const heading = "Administrator Invitation";
   const link = safeAction(c.base, input.invitationUrl);
-  const imageMarkup = `<img src="${asset(c.base, "workspace.png")}" width="280" alt="" style="display:block;width:70%;max-width:280px;height:auto;margin:4px auto 26px;border:0">`;
-  const preview = escapeHtml(`${heading}. You have been invited to join the CSC administration team as ${input.roleName}.`.slice(0, 160));
+
   const messageBox = input.message?.trim()
-    ? `<p class="ref-copy" style="margin:0 0 20px;padding:14px 18px;border-radius:12px;background:${colors.cream};color:${colors.body};font-size:15px;line-height:24px;text-align:left;white-space:pre-line">${escapeHtml(input.message.trim())}</p>`
+    ? `<div style="margin:0 0 20px;padding:16px 20px;border-radius:12px;background:#FAF8F5;border-left:4px solid #7D8B53;color:#2D3748;font-size:14px;line-height:24px;text-align:left;white-space:pre-line">${escapeHtml(input.message.trim())}</div>`
     : "";
-  const permissionItems = input.permissions.map((permission) => `<li style="margin:0 0 9px;color:${colors.ink};font-size:14px;line-height:21px">${escapeHtml(permission)}</li>`).join("");
-  const permissionsBox = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:14px 0 22px;background:${colors.cream};border-radius:12px"><tbody><tr><td style="padding:16px 20px"><p style="margin:0 0 10px;color:${colors.muted};font-size:12px;line-height:20px;font-weight:800;letter-spacing:.03em;text-transform:uppercase">Your assigned permissions</p><ul style="margin:0;padding-left:20px">${permissionItems}</ul></td></tr></tbody></table>`;
+
+  const permissionItems = input.permissions.map((p) => `
+    <td valign="top" style="padding:4px 6px;width:50%;">
+      <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:700;color:#334155;">
+        ✦ ${escapeHtml(p)}
+      </div>
+    </td>
+  `).join("");
+
+  const permissionsBox = `
+    <div style="margin:20px 0 24px;padding:18px 20px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;text-align:left;">
+      <p style="margin:0 0 12px;font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#475569;">
+        Your Assigned Administrative Permissions (${input.permissions.length})
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          ${permissionItems}
+        </tr>
+      </table>
+    </div>
+  `;
+
   const superNote = input.superAdminAllCount
-    ? `<p style="margin:0 0 18px;padding:12px 16px;border:1px solid #F2CC76;border-radius:12px;background:#FFF8E7;color:#755315;font-size:13px;line-height:20px;text-align:left"><strong>High privilege:</strong> Super Admin includes all ${input.superAdminAllCount} administrator permissions.</p>`
+    ? `<div style="margin:0 0 20px;padding:12px 18px;border:1px solid #F2CC76;border-radius:12px;background:#FFF8E7;color:#755315;font-size:13px;line-height:20px;text-align:left"><strong>High Privilege:</strong> Super Admin includes all ${input.superAdminAllCount} system administrator permissions.</div>`
     : "";
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><style>@font-face{font-family:'Nunito Sans';src:url('${asset(c.base, "nunito-sans-latin.woff2")}') format('woff2');font-weight:400 800}body,table,td,a,p,h1{font-family:'Nunito Sans',Arial,Helvetica,sans-serif}a{color:inherit}@media only screen and (max-width:620px){.ref-canvas{padding:0!important}.ref-brand{padding:30px 18px 24px!important}.ref-section{padding-left:24px!important;padding-right:24px!important}.ref-heading{font-size:32px!important;line-height:37px!important}.ref-copy{font-size:15px!important;line-height:25px!important}}</style></head><body style="margin:0;padding:0;background:${colors.canvas};color:${colors.ink}"><div style="display:none!important;max-height:0;max-width:0;overflow:hidden;opacity:0">${preview}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${colors.canvas}"><tbody><tr><td class="ref-canvas" align="center" style="padding:32px 12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:${colors.white};border-collapse:separate;border-spacing:0"><tbody><tr><td class="ref-brand" align="center" style="padding:36px 24px 28px;background:${colors.white}"><img src="${c.base}/brand/csc-icon.png" width="78" height="78" alt="CSC Circle logo" style="display:block;width:78px;height:78px;margin:0 auto 14px;border:0;border-radius:50%"><p style="margin:0;color:${colors.ink};font-size:14px;line-height:20px;font-weight:800;letter-spacing:.045em;text-align:center;white-space:nowrap">COIMBATORE STARTUP COMMUNITY</p></td></tr><tr><td align="center" style="padding:0 0 4px;background:${colors.white}">${imageMarkup}<h1 class="ref-heading" style="margin:0 auto 16px;padding:12px 38px 0;max-width:480px;color:${colors.ink};font-size:40px;line-height:45px;font-weight:800;letter-spacing:-.035em;text-align:center">${escapeHtml(heading)}</h1></td></tr><tr><td class="ref-section" style="padding:20px 46px 8px;background:${colors.white}"><p class="ref-copy" style="margin:0 0 19px;color:${colors.body};font-size:16px;line-height:28px;text-align:center">${escapeHtml(input.greeting)}</p><p class="ref-copy" style="margin:0 0 19px;color:${colors.body};font-size:16px;line-height:28px;text-align:center">You have been invited to join the Coimbatore Startup Community administration team as <strong style="color:${colors.ink}">${escapeHtml(input.roleName)}</strong>.</p>${messageBox}${permissionsBox}${superNote}<p style="margin:0 0 4px;color:${colors.muted};font-size:13px;line-height:21px;text-align:center">Invitation expires <strong style="color:${colors.ink}">${escapeHtml(input.expiration)}</strong>.</p><table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:26px auto 28px"><tbody><tr><td align="center" style="border-radius:999px;background:${colors.orange};mso-padding-alt:14px 30px"><a href="${link}" style="display:inline-block;padding:14px 30px;border-radius:999px;background:${colors.orange};color:#fff;font-size:15px;line-height:22px;font-weight:800;text-align:center;text-decoration:none">Accept Invitation</a></td></tr></tbody></table><p style="margin:0 0 18px;color:${colors.muted};font-size:12px;line-height:20px;text-align:center">Security notice: accept only if you recognize and trust the inviter. This single-use invitation is bound to the intended verified account.</p></td></tr>${htmlFooter(c.base, c.support, false)}</tbody></table></td></tr></tbody></table></body></html>`;
+
+  const customMarkup = `
+    ${messageBox}
+    ${permissionsBox}
+    ${superNote}
+    <p style="margin:16px 0;font-size:13px;color:#64748B;text-align:center;">
+      Invitation expires: <strong style="color:#1E293B;">${escapeHtml(input.expiration)}</strong>
+    </p>
+    <p style="margin:12px 0 0;font-size:12px;color:#94A3B8;text-align:center;">
+      Security Notice: Accept only if you recognize and trust the CSC inviter. This single-use invitation is bound to your authorized email.
+    </p>
+  `;
+
+  const html = renderMerakiEditorialEmail({
+    base: c.base,
+    support: c.support,
+    badgeText: "CSC ADMINISTRATIVE INVITATION",
+    headline: heading,
+    headlineItalic: input.roleName,
+    greeting: input.greeting,
+    body: `You have been officially invited to join the Coimbatore Startup Community administration team as ${input.roleName}.`,
+    buttonText: "Accept Invitation",
+    buttonUrl: link,
+    customMarkup,
+  });
+
   return { html };
 }

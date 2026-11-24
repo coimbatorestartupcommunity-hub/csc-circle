@@ -31,6 +31,7 @@ import {
   Newspaper,
   Bot,
   ShieldAlert,
+  Mail,
 } from "lucide-react";
 import { cn } from "cn";
 import {
@@ -95,6 +96,7 @@ const navGroups: { heading: string; items: NavItem[] }[] = [
       { href: "/admin/resources", label: "Resources", icon: BookOpen, perm: "content.manage" },
       { href: "/admin/opportunities", label: "Opportunities", icon: Target, perm: "content.manage" },
       { href: "/admin/notifications", label: "Notifications", icon: Bell, anyPerm: ["roles.manage", "events.publish"] },
+      { href: "/admin/email-preview", label: "Email Studio", icon: Mail, perm: "settings.manage" },
       { href: "/admin/maintenance", label: "Maintenance Controls", icon: ShieldAlert, perm: "settings.manage" },
       { href: "/admin/audit-logs", label: "Audit logs", icon: ScrollText, perm: "audit.read" },
       { href: "/admin/settings", label: "Settings", icon: Settings, perm: "settings.manage" },

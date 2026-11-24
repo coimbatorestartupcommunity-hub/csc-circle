@@ -1,6 +1,8 @@
 import "server-only";
 import crypto from "node:crypto";
 import { sendCommunityEmail } from "@/lib/notifications/email";
+import { emailConfiguration } from "@/lib/notifications/config";
+import { renderNomuShowcaseEmail } from "@/lib/notifications/template-nomu";
 import { getRedisClient, withRedisTimeout } from "@/lib/redis/client";
 import { isRedisEnabled } from "@/lib/redis/config";
 
@@ -124,50 +126,36 @@ export async function sendSecurityCodeEmail({
   code: string;
   name?: string | null;
 }): Promise<void> {
+  const config = emailConfiguration();
   const recipientName = name?.trim() || "CSC Circle Member";
   const subject = `Your Security Verification Code: ${code} — CSC Circle`;
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Your Security Code</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #0f172a;">
-  <div style="max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 36px 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-    <div style="margin-bottom: 24px;">
-      <span style="font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">CSC Circle</span>
-      <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px; margin-top: 2px;">Account Security</span>
-    </div>
-
-    <h1 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 12px 0;">Password Change Security Verification</h1>
-    <p style="font-size: 14px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-      Hello ${recipientName},<br>
-      You requested to update your account password on CSC Circle. Use the 6-digit security verification code below to authorize this change:
-    </p>
-
-    <div style="background-color: #f1f5f9; border-radius: 14px; border: 1.5px dashed #cbd5e1; padding: 20px; text-align: center; margin-bottom: 24px;">
-      <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #0f172a; display: block;">
+  const codeBoxMarkup = `
+    <div style="background-color: #F1F5F9; border-radius: 16px; border: 2px dashed #94A3B8; padding: 22px; text-align: center; margin: 24px 0;">
+      <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 36px; font-weight: 900; letter-spacing: 10px; color: #0F172A; display: block;">
         ${code}
       </span>
-      <span style="display: block; font-size: 12px; color: #64748b; margin-top: 6px; font-weight: 500;">
-        Valid for 10 minutes · Single-use only
+      <span style="display: block; font-size: 12px; color: #64748B; margin-top: 8px; font-weight: 600;">
+        Valid for 10 minutes · Single-use authorization code
       </span>
     </div>
-
-    <p style="font-size: 13px; line-height: 1.5; color: #64748b; margin: 0 0 24px 0;">
+    <p style="font-size: 13px; line-height: 1.6; color: #64748B; margin: 0 0 16px 0; text-align: center;">
       If you did not request to change your password, please sign in to your CSC Circle account immediately, check your recent activity, or contact support.
     </p>
+  `;
 
-    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-    <p style="font-size: 11px; color: #94a3b8; text-align: center; margin: 0;">
-      Coimbatore Startup Community · Secure Account Verification
-    </p>
-  </div>
-</body>
-</html>
-  `.trim();
+  const html = renderNomuShowcaseEmail({
+    base: config.base,
+    support: config.support,
+    variant: "blue",
+    mainTitle: "Security Verification",
+    subtitle: "Password Update Authorization · CSC Account Security",
+    greeting: `Hello ${recipientName},`,
+    body: "You requested to update your account password on CSC Circle. Use the 6-digit security verification code below to authorize this change:",
+    customMarkup: codeBoxMarkup,
+    primaryButtonText: "Sign In to CSC Circle",
+    primaryButtonUrl: `${config.base}/login`,
+  });
 
   const text = `
 CSC Circle — Account Security Verification
@@ -205,47 +193,30 @@ export async function sendPasswordRecoveryEmail({
   actionLink: string;
   name?: string | null;
 }): Promise<void> {
+  const config = emailConfiguration();
   const recipientName = name?.trim() || "CSC Circle Member";
   const subject = "Reset your CSC Circle password";
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Reset your password</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #0f172a;">
-  <div style="max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; padding: 36px 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-    <div style="margin-bottom: 24px;">
-      <span style="font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">CSC Circle</span>
-      <span style="display: block; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; letter-spacing: 0.5px; margin-top: 2px;">Password Recovery</span>
+  const recoveryMarkup = `
+    <div style="background-color: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0; padding: 20px; text-align: center; margin: 20px 0;">
+      <p style="font-size: 12px; line-height: 1.6; color: #64748B; margin: 0;">
+        This password reset link is valid for 1 hour. If you didn't request a password reset, you can safely ignore this email.
+      </p>
     </div>
+  `;
 
-    <h1 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 12px 0;">Reset Your Password</h1>
-    <p style="font-size: 14px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-      Hello ${recipientName},<br>
-      We received a request to reset your password for your CSC Circle account. Click the button below to choose a new password:
-    </p>
-
-    <div style="text-align: center; margin: 28px 0;">
-      <a href="${actionLink}" style="background-color: #0f172a; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 28px; border-radius: 12px; display: inline-block;">
-        Reset My Password
-      </a>
-    </div>
-
-    <p style="font-size: 12px; line-height: 1.5; color: #64748b; margin: 0 0 16px 0;">
-      If the button above doesn't work, copy and paste this link into your browser:<br>
-      <a href="${actionLink}" style="color: #4f46e5; word-break: break-all;">${actionLink}</a>
-    </p>
-
-    <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-      This link is valid for 1 hour. If you didn't request a password reset, you can safely ignore this email.
-    </p>
-  </div>
-</body>
-</html>
-  `.trim();
+  const html = renderNomuShowcaseEmail({
+    base: config.base,
+    support: config.support,
+    variant: "blue",
+    mainTitle: "Password Recovery",
+    subtitle: "Authorized Password Reset · CSC Account Security",
+    greeting: `Hello ${recipientName},`,
+    body: "We received a request to reset your password for your CSC Circle account. Click the button below to choose a new password:",
+    customMarkup: recoveryMarkup,
+    primaryButtonText: "Reset My Password",
+    primaryButtonUrl: actionLink,
+  });
 
   const text = `
 CSC Circle — Password Recovery
