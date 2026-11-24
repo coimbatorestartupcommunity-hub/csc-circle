@@ -163,9 +163,9 @@ export function WhatsAppLockControl({ initialConfig }: WhatsAppLockControlProps)
   }
 
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
-        <div className="flex items-center gap-3">
+    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-6 shadow-sm space-y-6 w-full max-w-full overflow-hidden min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-zinc-800 min-w-0">
+        <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
           <div
             className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${
               isCurrentlyLocked
@@ -175,17 +175,17 @@ export function WhatsAppLockControl({ initialConfig }: WhatsAppLockControlProps)
           >
             {isCurrentlyLocked ? <Lock className="size-5" /> : <Unlock className="size-5" />}
           </div>
-          <div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 break-words">
               WhatsApp Gateway Operational Lock
             </h3>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-500 break-words mt-0.5">
               Pause all inbound responses, automated OTPs, and outbound queue dispatches.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <span
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
               isCurrentlyLocked
@@ -205,23 +205,23 @@ export function WhatsAppLockControl({ initialConfig }: WhatsAppLockControlProps)
 
       {/* Live Status Countdown & Notice */}
       <div
-        className={`rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+        className={`rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full min-w-0 overflow-hidden ${
           isCurrentlyLocked
             ? "bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900"
             : "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900"
         }`}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <Clock
-            className={`size-4.5 ${
+            className={`size-4.5 shrink-0 ${
               isCurrentlyLocked ? "text-amber-600" : "text-emerald-600"
             }`}
           />
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
               {isCurrentlyLocked ? "Active Cooldown Window" : "Gateway Ready"}
             </p>
-            <p className="text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400">
+            <p className="text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 break-words">
               {timeLeft}
             </p>
           </div>
@@ -234,7 +234,7 @@ export function WhatsAppLockControl({ initialConfig }: WhatsAppLockControlProps)
             size="sm"
             onClick={handleUnlock}
             disabled={loading}
-            className="text-xs font-semibold gap-1.5 shrink-0"
+            className="w-full sm:w-auto text-xs font-semibold gap-1.5 shrink-0"
           >
             {loading ? <Loader2 className="size-3.5 animate-spin" /> : <Unlock className="size-3.5" />}
             Unlock WhatsApp Now
@@ -243,17 +243,17 @@ export function WhatsAppLockControl({ initialConfig }: WhatsAppLockControlProps)
       </div>
 
       {/* Quick Actions Grid */}
-      <div className="space-y-3">
-        <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+      <div className="space-y-3 w-full min-w-0">
+        <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block">
           One-Click Lock Presets
         </Label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
           <Button
             type="button"
             variant="outline"
             disabled={loading}
             onClick={() => handleLock(1)}
-            className="text-xs font-semibold hover:border-amber-500 hover:text-amber-600"
+            className="w-full h-auto py-2.5 px-2 text-center text-[11px] sm:text-xs font-semibold hover:border-amber-500 hover:text-amber-600 whitespace-normal leading-tight"
           >
             Lock 1 Hour
           </Button>
@@ -262,7 +262,7 @@ export function WhatsAppLockControl({ initialConfig }: WhatsAppLockControlProps)
             variant="outline"
             disabled={loading}
             onClick={() => handleLock(6)}
-            className="text-xs font-semibold hover:border-amber-500 hover:text-amber-600"
+            className="w-full h-auto py-2.5 px-2 text-center text-[11px] sm:text-xs font-semibold hover:border-amber-500 hover:text-amber-600 whitespace-normal leading-tight"
           >
             Lock 6 Hours
           </Button>
@@ -271,7 +271,7 @@ export function WhatsAppLockControl({ initialConfig }: WhatsAppLockControlProps)
             variant="outline"
             disabled={loading}
             onClick={() => handleLock(12)}
-            className="text-xs font-semibold hover:border-amber-500 hover:text-amber-600"
+            className="w-full h-auto py-2.5 px-2 text-center text-[11px] sm:text-xs font-semibold hover:border-amber-500 hover:text-amber-600 whitespace-normal leading-tight"
           >
             Lock 12 Hours
           </Button>
@@ -279,32 +279,32 @@ export function WhatsAppLockControl({ initialConfig }: WhatsAppLockControlProps)
             type="button"
             disabled={loading}
             onClick={() => handleLock(24)}
-            className="text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs"
+            className="w-full h-auto py-2.5 px-2 text-center text-[11px] sm:text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs whitespace-normal leading-tight"
           >
-            Lock 24 Hours (Standard)
+            Lock 24 Hours
           </Button>
         </div>
       </div>
 
       {/* Custom Date & Time Picker */}
-      <form onSubmit={handleCustomLock} className="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-        <Label htmlFor="custom-lock-time" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
-          Or Lock Until Exact Date & Time
+      <form onSubmit={handleCustomLock} className="space-y-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 w-full min-w-0">
+        <Label htmlFor="custom-lock-time" className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block">
+          Or Lock Until Exact Date &amp; Time
         </Label>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full">
           <Input
             id="custom-lock-time"
             type="datetime-local"
             value={customDateTime}
             onChange={(e) => setCustomDateTime(e.target.value)}
-            className="h-10 text-xs sm:max-w-xs"
+            className="h-10 text-xs w-full sm:max-w-xs min-w-0 flex-1"
             disabled={loading}
           />
           <Button
             type="submit"
             disabled={loading || !customDateTime}
             variant="secondary"
-            className="h-10 text-xs font-semibold gap-1.5"
+            className="h-10 text-xs font-semibold gap-1.5 w-full sm:w-auto shrink-0"
           >
             {loading ? <Loader2 className="size-3.5 animate-spin" /> : <Calendar className="size-3.5" />}
             Set Custom Lock Time

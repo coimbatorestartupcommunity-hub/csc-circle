@@ -168,37 +168,37 @@ export function EmailPreviewViewer({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-hidden min-w-0">
       {/* Top Controller Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <Mail className="w-5 h-5 text-emerald-600" />
-              Master MERAKI Editor Studio
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 w-full max-w-full overflow-hidden min-w-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 break-words">
+              <Mail className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span>Master MERAKI Editor Studio</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5 break-words">
               100% Platform Standard · 3+4 Executive Leadership Split · Logic Intelligence Technologies Partner Badge
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-full text-xs font-bold border border-emerald-200 dark:border-emerald-800">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              MERAKI Master Standard Active
+              <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>MERAKI Master Standard Active</span>
             </span>
           </div>
         </div>
 
         {/* Filters and Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Scenario:</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 w-full min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 mr-1">Scenario:</span>
             <Button
               variant={scenario === "welcome" ? "default" : "outline"}
               size="sm"
               onClick={() => setScenario("welcome")}
-              className="text-xs h-7 px-3 font-semibold"
+              className="text-xs h-7 px-2.5 sm:px-3 font-semibold"
             >
               Welcome / Member
             </Button>
@@ -206,7 +206,7 @@ export function EmailPreviewViewer({
               variant={scenario === "pass" ? "default" : "outline"}
               size="sm"
               onClick={() => setScenario("pass")}
-              className="text-xs h-7 px-3 font-semibold"
+              className="text-xs h-7 px-2.5 sm:px-3 font-semibold"
             >
               Event Pass QR
             </Button>
@@ -214,7 +214,7 @@ export function EmailPreviewViewer({
               variant={scenario === "idcard" ? "default" : "outline"}
               size="sm"
               onClick={() => setScenario("idcard")}
-              className="text-xs h-7 px-3 font-semibold"
+              className="text-xs h-7 px-2.5 sm:px-3 font-semibold"
             >
               Digital ID Card
             </Button>
@@ -222,7 +222,7 @@ export function EmailPreviewViewer({
               variant={scenario === "admin" ? "default" : "outline"}
               size="sm"
               onClick={() => setScenario("admin")}
-              className="text-xs h-7 px-3 font-semibold"
+              className="text-xs h-7 px-2.5 sm:px-3 font-semibold"
             >
               Admin Invite
             </Button>
@@ -230,13 +230,13 @@ export function EmailPreviewViewer({
               variant={scenario === "security" ? "default" : "outline"}
               size="sm"
               onClick={() => setScenario("security")}
-              className="text-xs h-7 px-3 font-semibold"
+              className="text-xs h-7 px-2.5 sm:px-3 font-semibold"
             >
               Security OTP
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Viewport Switcher */}
             <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 bg-slate-50 dark:bg-slate-800">
               <button
@@ -247,10 +247,10 @@ export function EmailPreviewViewer({
                     ? "bg-white dark:bg-slate-700 shadow-xs text-emerald-700 dark:text-emerald-400"
                     : "text-slate-500"
                 }`}
-                title="Desktop View (640px)"
+                title="Desktop View (620px)"
               >
                 <Monitor className="w-4 h-4" />
-                <span>Desktop</span>
+                <span className="hidden sm:inline">Desktop</span>
               </button>
               <button
                 type="button"
@@ -263,7 +263,7 @@ export function EmailPreviewViewer({
                 title="Mobile View (375px)"
               >
                 <Smartphone className="w-4 h-4" />
-                <span>Mobile (Zero Overflow)</span>
+                <span className="hidden sm:inline">Mobile (Zero Overflow)</span>
               </button>
             </div>
 
@@ -272,10 +272,10 @@ export function EmailPreviewViewer({
               variant="outline"
               onClick={handleSendTestEmail}
               disabled={sending}
-              className="text-xs font-bold gap-1.5 border-emerald-300 hover:border-emerald-400 text-emerald-800 dark:text-emerald-300"
+              className="text-xs font-bold gap-1.5 border-emerald-300 hover:border-emerald-400 text-emerald-800 dark:text-emerald-300 h-8"
             >
               <Send className="w-3.5 h-3.5" />
-              {sending ? "Sending..." : "Send Test to Me"}
+              <span>{sending ? "Sending..." : "Send Test to Me"}</span>
             </Button>
           </div>
         </div>
@@ -288,22 +288,22 @@ export function EmailPreviewViewer({
                 : "bg-rose-50 text-rose-800 border border-rose-200"
             }`}
           >
-            {sendResult.ok ? <CheckCircle2 className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-            {sendResult.message}
+            {sendResult.ok ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <ShieldCheck className="w-4 h-4 shrink-0" />}
+            <span className="break-words">{sendResult.message}</span>
           </div>
         )}
       </div>
 
       {/* 3 + 4 Leadership Layout Visual Audit */}
-      <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-emerald-600" />
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+      <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 w-full max-w-full overflow-hidden min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Users className="w-4 h-4 text-emerald-600 shrink-0" />
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 break-words">
               Guided by Coimbatore Startup Community Core Leadership (All 7 Members)
             </h4>
           </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
+          <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full shrink-0 self-start sm:self-auto">
             3 Top + 4 Bottom
           </span>
         </div>
@@ -312,17 +312,17 @@ export function EmailPreviewViewer({
         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
           Top Row (Founder, Co-Founder, CEO)
         </p>
-        <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
           {CSC_7_LEADERS.slice(0, 3).map((leader) => (
             <div
               key={leader.name}
-              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center shadow-xs"
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center shadow-xs min-w-0"
             >
-              <div className="w-10 h-10 mx-auto mb-1 rounded-full overflow-hidden border-2 border-emerald-600 bg-slate-100">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-1 rounded-full overflow-hidden border-2 border-emerald-600 bg-slate-100 shrink-0">
                 <img src={leader.portrait} alt={leader.name} className="w-full h-full object-cover" />
               </div>
-              <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">{leader.name}</p>
-              <p className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase truncate">{leader.role}</p>
+              <p className="text-[10px] sm:text-[11px] font-bold text-slate-900 dark:text-white truncate">{leader.name}</p>
+              <p className="text-[8px] sm:text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase truncate">{leader.role}</p>
             </div>
           ))}
         </div>
@@ -331,42 +331,43 @@ export function EmailPreviewViewer({
         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
           Bottom Row (CTO, CCO, COO, CBO)
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           {CSC_7_LEADERS.slice(3, 7).map((leader) => (
             <div
               key={leader.name}
-              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center shadow-xs"
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center shadow-xs min-w-0"
             >
-              <div className="w-10 h-10 mx-auto mb-1 rounded-full overflow-hidden border-2 border-emerald-600 bg-slate-100">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-1 rounded-full overflow-hidden border-2 border-emerald-600 bg-slate-100 shrink-0">
                 <img src={leader.portrait} alt={leader.name} className="w-full h-full object-cover" />
               </div>
-              <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">{leader.name}</p>
-              <p className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase truncate">{leader.role}</p>
+              <p className="text-[10px] sm:text-[11px] font-bold text-slate-900 dark:text-white truncate">{leader.name}</p>
+              <p className="text-[8px] sm:text-[9px] font-bold text-emerald-700 dark:text-emerald-400 uppercase truncate">{leader.role}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Live Responsive Iframe Container */}
-      <div className="bg-slate-200 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 flex justify-center items-start min-h-[750px] overflow-x-auto">
+      <div className="bg-slate-200 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl p-2 sm:p-6 flex justify-center items-start min-h-[750px] overflow-x-hidden w-full max-w-full min-w-0">
         <div
           style={{
-            width: viewMode === "desktop" ? "620px" : "375px",
-            transition: "width 0.25s ease-in-out",
+            width: "100%",
+            maxWidth: viewMode === "desktop" ? "620px" : "375px",
+            transition: "max-width 0.25s ease-in-out",
           }}
-          className="bg-white rounded-2xl shadow-2xl border border-slate-300 overflow-hidden"
+          className="bg-white rounded-2xl shadow-2xl border border-slate-300 overflow-hidden w-full mx-auto min-w-0"
         >
           {/* Iframe Top Bar */}
-          <div className="bg-slate-800 px-4 py-2.5 flex items-center justify-between text-xs text-slate-300">
-            <div className="flex items-center gap-1.5">
+          <div className="bg-slate-800 px-3 sm:px-4 py-2.5 flex items-center justify-between text-xs text-slate-300 min-w-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             </div>
-            <span className="font-mono text-[11px] text-slate-400">
+            <span className="font-mono text-[10px] sm:text-[11px] text-slate-400 truncate px-2">
               template-meraki-master.html
             </span>
-            <span className="text-[10px] uppercase font-bold text-slate-400">
+            <span className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 shrink-0">
               {viewMode === "desktop" ? "Desktop (620px)" : "Mobile (375px)"}
             </span>
           </div>
