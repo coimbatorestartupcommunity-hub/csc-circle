@@ -108,12 +108,15 @@ export function renderMerakiEditorialEmail(options: MerakiEmailOptions): string 
     }
     @media only screen and (max-width: 600px) {
       .outer-td {
-        padding: 12px 6px !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
       .master-container {
         width: 100% !important;
         max-width: 100% !important;
-        border-radius: 16px !important;
+        border-radius: 20px !important;
+        -webkit-border-radius: 20px !important;
+        -moz-border-radius: 20px !important;
       }
       .stripe-section {
         padding: 20px 12px 24px !important;
@@ -146,15 +149,15 @@ export function renderMerakiEditorialEmail(options: MerakiEmailOptions): string 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background-color:#EFECE6;margin:0;padding:0;">
     <tbody>
       <tr>
-        <td class="outer-td" align="center" style="padding:28px 12px;">
+        <td class="outer-td" align="center" style="padding:0;margin:0;width:100%;">
           
-          <!-- Master Email Box (600px max, 100% fluid on mobile) -->
-          <table role="presentation" class="master-container" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background-color:#FFFFFF;border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);margin:0 auto;">
+          <!-- Master Email Box (600px max, 100% fluid on mobile, 4-corner curved layout) -->
+          <table role="presentation" class="master-container" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;border-collapse:separate;border-spacing:0;background-color:#FFFFFF;border-radius:24px;-webkit-border-radius:24px;-moz-border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.08);margin:0 auto;">
             <tbody>
 
               <!-- TOP BAR: Brand Emblem -->
               <tr>
-                <td align="center" style="padding:16px 20px 14px;background-color:#FAF9F6;border-bottom:1px solid #EAE6DF;">
+                <td align="center" style="padding:16px 20px 14px;background-color:#FAF9F6;border-bottom:1px solid #EAE6DF;border-top-left-radius:24px;border-top-right-radius:24px;-webkit-border-top-left-radius:24px;-webkit-border-top-right-radius:24px;">
                   <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
                     <tr>
                       <td style="padding-right:10px;vertical-align:middle;">
@@ -278,7 +281,7 @@ export function renderMerakiEditorialEmail(options: MerakiEmailOptions): string 
 
               <!-- SECTION 3: Deep Charcoal Bottom Section with Community Highlights & Social Bar -->
               <tr>
-                <td class="charcoal-section" style="padding:32px 24px 28px;background-color:#1A1A1A;color:#E2E8F0;text-align:center;">
+                <td class="charcoal-section" style="padding:32px 24px 28px;background-color:#1A1A1A;color:#E2E8F0;text-align:center;border-bottom-left-radius:24px;border-bottom-right-radius:24px;-webkit-border-bottom-left-radius:24px;-webkit-border-bottom-right-radius:24px;">
                   
                   <p class="mono-note" style="margin:0 0 16px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#A0AEC0;">
                     Coimbatore Startup Community · Ecosystem Highlights

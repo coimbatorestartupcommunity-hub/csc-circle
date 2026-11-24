@@ -38,37 +38,37 @@ export default async function AdminMaintenancePage() {
       />
 
       <Tabs defaultValue="subsystems" className="w-full space-y-6 min-w-0">
-        {/* Responsive Tabs Navigation Bar */}
-        <div className="w-full overflow-x-auto pb-1">
-          <TabsList className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1 min-w-[560px] sm:min-w-0">
-            <TabsTrigger value="subsystems" className="gap-1.5 text-xs font-semibold px-2.5 py-2.5 w-full justify-center">
-              <Layers className="size-3.5 shrink-0" />
-              <span>Kill-Switches</span>
+        {/* Precision 3 + 3 Operational Action Grid (Zero Horizontal Scroll Across All Devices) */}
+        <div className="w-full">
+          <TabsList className="bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded-xl w-full grid grid-cols-3 gap-1.5 sm:gap-2 h-auto border border-zinc-200 dark:border-zinc-800/80">
+            <TabsTrigger value="subsystems" className="gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold py-2.5 px-1 sm:px-2 w-full justify-center text-center">
+              <Layers className="size-3.5 shrink-0 hidden xs:inline" />
+              <span className="truncate">Kill-Switches</span>
             </TabsTrigger>
 
-            <TabsTrigger value="website" className="gap-1.5 text-xs font-semibold px-2.5 py-2.5 w-full justify-center">
-              <Globe className="size-3.5 shrink-0" />
-              <span>Global Screen</span>
+            <TabsTrigger value="website" className="gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold py-2.5 px-1 sm:px-2 w-full justify-center text-center">
+              <Globe className="size-3.5 shrink-0 hidden xs:inline" />
+              <span className="truncate">Global Screen</span>
             </TabsTrigger>
 
-            <TabsTrigger value="health" className="gap-1.5 text-xs font-semibold px-2.5 py-2.5 w-full justify-center">
-              <Activity className="size-3.5 shrink-0" />
-              <span>Service Health</span>
+            <TabsTrigger value="health" className="gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold py-2.5 px-1 sm:px-2 w-full justify-center text-center">
+              <Activity className="size-3.5 shrink-0 hidden xs:inline" />
+              <span className="truncate">Service Health</span>
             </TabsTrigger>
 
-            <TabsTrigger value="planner" className="gap-1.5 text-xs font-semibold px-2.5 py-2.5 w-full justify-center">
-              <CalendarCheck className="size-3.5 shrink-0" />
-              <span>Downtime Plan</span>
+            <TabsTrigger value="planner" className="gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold py-2.5 px-1 sm:px-2 w-full justify-center text-center">
+              <CalendarCheck className="size-3.5 shrink-0 hidden xs:inline" />
+              <span className="truncate">Downtime Plan</span>
             </TabsTrigger>
 
-            <TabsTrigger value="whatsapp" className="gap-1.5 text-xs font-semibold px-2.5 py-2.5 w-full justify-center">
-              <Radio className="size-3.5 shrink-0" />
-              <span>WhatsApp Lock</span>
+            <TabsTrigger value="whatsapp" className="gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold py-2.5 px-1 sm:px-2 w-full justify-center text-center">
+              <Radio className="size-3.5 shrink-0 hidden xs:inline" />
+              <span className="truncate">WhatsApp Lock</span>
             </TabsTrigger>
 
-            <TabsTrigger value="audit" className="gap-1.5 text-xs font-semibold px-2.5 py-2.5 w-full justify-center">
-              <FileText className="size-3.5 shrink-0" />
-              <span>Audit &amp; Ops</span>
+            <TabsTrigger value="audit" className="gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-semibold py-2.5 px-1 sm:px-2 w-full justify-center text-center">
+              <FileText className="size-3.5 shrink-0 hidden xs:inline" />
+              <span className="truncate">Audit &amp; Ops</span>
             </TabsTrigger>
           </TabsList>
         </div>
