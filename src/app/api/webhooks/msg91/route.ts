@@ -33,6 +33,22 @@ export async function POST(request: Request) {
         receivedAt: new Date().toISOString(),
       }).catch((err) => console.warn("[msg91-webhook] viaSocket trigger error:", err));
 
+      // Forward to background AI worker endpoint if running
+      try {
+        const cleanDigits = customerNumber.replace(/\D/g, "");
+        fetch("http://127.0.0.1:3030/webhook/whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: `${cleanDigits}@c.us`,
+            body: text,
+            id: messageId,
+          }),
+        }).catch(() => {});
+      } catch {
+        // Non-blocking forward
+      }
+
       // Log inbound interaction into database if available
       try {
         const admin = createAdminClient();

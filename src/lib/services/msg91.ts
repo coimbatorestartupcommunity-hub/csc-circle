@@ -345,3 +345,71 @@ export async function sendMsg91WhatsAppTemplate({
     };
   }
 }
+
+export interface SendWhatsAppTextMessageOptions {
+  recipientPhone: string;
+  text: string;
+  integratedNumber?: string;
+}
+
+/**
+ * Send a direct WhatsApp text message (during an active 24-hr session) via MSG91 WhatsApp Outbound API
+ */
+export async function sendMsg91WhatsAppTextMessage({
+  recipientPhone,
+  text,
+  integratedNumber,
+}: SendWhatsAppTextMessageOptions): Promise<Msg91ApiResponse> {
+  const { authKey, integratedWhatsAppNumber } = getMsg91Config();
+  const activeNumber = integratedNumber || integratedWhatsAppNumber || "917550067712";
+
+  if (!authKey) {
+    return { success: false, message: "MSG91_AUTH_KEY is not configured" };
+  }
+
+  const formattedRecipient = formatPhoneForMsg91(recipientPhone);
+  const formattedSender = formatPhoneForMsg91(activeNumber);
+
+  const queryParams = new URLSearchParams({
+    integrated_number: formattedSender,
+    recipient_number: formattedRecipient,
+    content_type: "text",
+    text,
+  });
+
+  const url = `${MSG91_BASE_URL}/whatsapp/whatsapp-outbound-message/?${queryParams.toString()}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        authkey: authKey,
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok || data.status === "fail" || data.type === "error" || data.hasError) {
+      return {
+        success: false,
+        message: data.message || data.errors || "WhatsApp text message failed to dispatch",
+        code: data.code || res.status,
+        raw: data,
+      };
+    }
+
+    return {
+      success: true,
+      message: "WhatsApp text message dispatched successfully",
+      raw: data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "WhatsApp text dispatch error",
+    };
+  }
+}
+
