@@ -3,26 +3,35 @@ import { authResponse, readAuthBody } from "@/lib/auth/http";
 import { sendPhoneOtp } from "@/lib/auth/phone-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { WHATSAPP_MAINTENANCE_LOCK } from "@/lib/whatsapp/maintenance-config";
+import { getWhatsAppLockConfig } from "@/lib/services/system-settings";
 
 export async function POST(request: Request) {
   try {
-    if (WHATSAPP_MAINTENANCE_LOCK.isLocked()) {
+    const waConfig = await getWhatsAppLockConfig();
+    const isLocked = waConfig.locked && Date.now() < waConfig.unlockEpochMs;
+
+    if (isLocked || WHATSAPP_MAINTENANCE_LOCK.isLocked()) {
       return authResponse(
         {
-          error: "WhatsApp OTP verification is temporarily paused for 24-hour scheduled maintenance. Please try again after maintenance completes.",
+          error: waConfig.reason || "WhatsApp OTP verification is temporarily paused for scheduled maintenance.",
           locked: true,
-          maintenanceNotice: WHATSAPP_MAINTENANCE_LOCK.getNotice(),
+          maintenanceNotice: WHATSAPP_MAINTENANCE_LOCK.getNotice(waConfig.reason, waConfig.tamilReason),
         },
         503
       );
     }
+
     const ctx = await getMemberContext();
     if (ctx.mode !== "live" || !ctx.user) {
       return authResponse({ error: "Sign in to continue." }, 401);
     }
 
-    if (!rateLimit(`member:phone-otp:${ctx.user.id}`, 4, 300_000).allowed) {
-      return authResponse({ error: "Too many verification attempts. Please wait a few minutes." }, 429);
+    // 5-Minute Rate Limit Restriction per member/user requested by user (1 request per 300,000ms = 5 minutes)
+    if (!rateLimit(`member:phone-otp:${ctx.user.id}`, 1, 300_000).allowed) {
+      return authResponse(
+        { error: "A verification code was already dispatched. For security, please wait 5 minutes before requesting a new OTP." },
+        429
+      );
     }
 
     const body = await readAuthBody(request);

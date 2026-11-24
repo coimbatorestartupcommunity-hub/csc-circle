@@ -6,6 +6,7 @@ import type { WhatsAppProvider } from "../services/whatsapp.js";
 import { buildContactAcknowledgementMessage, formatForWhatsApp } from "../utils/message-template.js";
 import { getRandomDelay, sleep } from "../utils/delay.js";
 import { logger } from "../utils/logger.js";
+import { checkWhatsAppLockStatus } from "../services/lock-service.js";
 
 export interface WhatsAppWorkerOptions {
   connection: Redis;
@@ -122,10 +123,13 @@ export class WhatsAppWorkerService {
       return;
     }
 
-    // 24-Hour Outbound Maintenance Cooldown Lock (Auto-unlocks after 24 hours)
-    const FIXED_UNLOCK_EPOCH_MS = 1795562700000;
-    if (Date.now() < FIXED_UNLOCK_EPOCH_MS) {
-      logger.info("Outbox dispatch paused due to 24-hour maintenance cooldown lock", { outboxId });
+    // Dynamic Outbound Maintenance Cooldown Lock (Auto-unlocks after cooldown expires)
+    const lockStatus = await checkWhatsAppLockStatus();
+    if (lockStatus.isLocked) {
+      logger.info("Outbox dispatch paused due to active WhatsApp maintenance lock", {
+        outboxId,
+        unlockEpochMs: lockStatus.unlockEpochMs,
+      });
       // Keep in pending or pause dispatch
       return;
     }

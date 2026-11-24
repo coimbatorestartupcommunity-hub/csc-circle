@@ -3,6 +3,8 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { requireAdminPagePermission } from "@/lib/admin/gate";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { LiveVerificationTool } from "@/components/admin/whatsapp/live-verification-tool";
+import { WhatsAppLockControl } from "@/components/admin/whatsapp/whatsapp-lock-control";
+import { getWhatsAppLockConfig } from "@/lib/services/system-settings";
 import {
   Activity,
   Radio,
@@ -30,6 +32,7 @@ export default async function WhatsAppAgentDashboardPage() {
     recentOutboxRes,
     knowledgeCountRes,
     ticketsRes,
+    whatsappLockConfig,
   ] = await Promise.all([
     admin.from("whatsapp_message_outbox").select("status"),
     admin
@@ -46,6 +49,7 @@ export default async function WhatsAppAgentDashboardPage() {
       .select("id, ticket_number, sender_phone, subject, status, priority, created_at")
       .order("created_at", { ascending: false })
       .limit(5),
+    getWhatsAppLockConfig(),
   ]);
 
   const allOutbox = outboxRes.data || [];
@@ -125,6 +129,9 @@ export default async function WhatsAppAgentDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Operational Maintenance Lock Control */}
+      <WhatsAppLockControl initialConfig={whatsappLockConfig} />
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">

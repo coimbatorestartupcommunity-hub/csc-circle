@@ -1,0 +1,61 @@
+# CodeRabbit AI Configuration for Coimbatore Startup Community (CSC Circle)
+# Automated Code Review, Security Audits, Abuse & Rate-Limiting Protection
+
+version: "2"
+
+language: "en-US"
+
+tone_instructions: "Be concise, rigorous, constructive, and security-focused. Prioritize OWASP security, rate-limiting vulnerabilities, data leaks, and Next.js 16 best practices."
+
+reviews:
+  # Enable deep context-aware reviews for all Pull Requests
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  # Auto-review triggers
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+      - "staging"
+      - "develop"
+
+  # Path Filters: Focus scrutiny on sensitive business logic and security boundaries
+  path_filters:
+    - "!node_modules/**"
+    - "!package-lock.json"
+    - "!workers/whatsapp/node_modules/**"
+    - "!workers/whatsapp/package-lock.json"
+    - "!.next/**"
+    - "!test-results/**"
+    - "!public/posters/**"
+    - "!public/brand/**"
+    - "!public/events/**"
+
+  # Custom Prompts & Specialized Security Rules
+  path_instructions:
+    - path: "src/app/api/**"
+      instructions: |
+        - Verify all API endpoints enforce rate-limiting via Redis or clientIp.
+        - Verify authentication & authorization checks (requireAdminPermission or getMemberContext).
+        - Ensure sensitive credentials (passwords, hashes, OTPs, tokens) are never leaked in error responses.
+        - Prevent SQL/NoSQL injection and validate request body schemas with Zod.
+
+    - path: "workers/whatsapp/**"
+      instructions: |
+        - Scrutinize WhatsApp dispatch paths for anti-abuse and anti-ban safeguards.
+        - Ensure outbound message pacing includes human typing jitter and rate limiting.
+        - Prevent contact data harvesting and unverified mass broadcasting.
+        - Check that maintenance cooldown locks and circuit breakers are respected.
+
+    - path: "src/lib/services/system-settings.ts"
+      instructions: |
+        - Verify that setting updates are strictly authenticated with Super Admin permissions.
+        - Ensure Redis cache invalidation and fallback mechanisms work reliably.
+
+chat:
+  auto_reply: true

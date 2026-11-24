@@ -6,6 +6,7 @@ import "./globals.css";
 import { Providers } from "@/app/providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
+import { MaintenanceGlobalBanner } from "@/components/layout/maintenance-global-banner";
 import { siteConfig } from "@/lib/content/site";
 
 const poppins = localFont({
@@ -131,6 +132,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Skip to content
           </a>
           <Suspense fallback={<div aria-hidden="true" className="h-16 shrink-0 lg:h-[4.5rem]" />}>
+            <MaintenanceGlobalBanner />
             <SiteHeader />
           </Suspense>
           <div id="main-content" className="flex flex-1 flex-col">

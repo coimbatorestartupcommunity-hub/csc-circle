@@ -59,8 +59,8 @@ export function PhoneVerificationCard({
       }
 
       setOtpSent(true);
-      setCountdown(60);
-      toast.success("Verification code dispatched via WhatsApp!");
+      setCountdown(300); // 5-minute security cooldown
+      toast.success("Verification code dispatched via WhatsApp! (5-minute security timer)");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to dispatch code.");
       toast.error(err instanceof Error ? err.message : "Dispatch error");

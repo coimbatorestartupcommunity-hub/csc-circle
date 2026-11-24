@@ -2,18 +2,24 @@ import { NextResponse } from "next/server";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { sendPhoneOtp } from "@/lib/auth/phone-auth";
 import { WHATSAPP_MAINTENANCE_LOCK } from "@/lib/whatsapp/maintenance-config";
+import { getWhatsAppLockConfig } from "@/lib/services/system-settings";
 
 export async function POST(request: Request) {
-  if (WHATSAPP_MAINTENANCE_LOCK.isLocked()) {
+  // Check dynamic WhatsApp lock from database/redis
+  const waConfig = await getWhatsAppLockConfig();
+  const isLocked = waConfig.locked && Date.now() < waConfig.unlockEpochMs;
+
+  if (isLocked || WHATSAPP_MAINTENANCE_LOCK.isLocked()) {
     return NextResponse.json(
       {
-        error: "WhatsApp OTP verification is temporarily paused for 24-hour scheduled maintenance.",
+        error: waConfig.reason || "WhatsApp OTP verification is temporarily paused for scheduled maintenance.",
         locked: true,
-        maintenanceNotice: WHATSAPP_MAINTENANCE_LOCK.getNotice(),
+        maintenanceNotice: WHATSAPP_MAINTENANCE_LOCK.getNotice(waConfig.reason, waConfig.tamilReason),
       },
       { status: 503 }
     );
   }
+
   const ip = clientIp(request);
   const ipLimit = rateLimit(`auth:phone:send:${ip}`, 10, 120_000);
   if (!ipLimit.allowed) {
@@ -35,10 +41,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const phoneLimit = rateLimit(`auth:phone:throttle:${phone.replace(/\D/g, "").slice(-10)}`, 5, 300_000);
+    const cleanNumber = phone.replace(/\D/g, "").slice(-10);
+
+    // 5-Minute Rate Limit Restriction per phone number requested by user
+    const phoneLimit = rateLimit(`auth:phone:throttle:${cleanNumber}`, 1, 300_000);
     if (!phoneLimit.allowed) {
       return NextResponse.json(
-        { error: "Too many requests for this mobile number. Please wait a few minutes." },
+        { error: "A verification code was recently sent. For security, please wait 5 minutes before requesting another OTP." },
         { status: 429 }
       );
     }
@@ -54,7 +63,7 @@ export async function POST(request: Request) {
       channel,
       message: channel === "email" ? "Verification code sent to email." : "Verification code sent to WhatsApp.",
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Authentication service is temporarily unavailable." },
       { status: 503 }

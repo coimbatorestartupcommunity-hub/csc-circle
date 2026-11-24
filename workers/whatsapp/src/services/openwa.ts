@@ -64,15 +64,27 @@ export class OpenWaClient {
         signal: controller.signal,
       });
 
-      const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+      const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
       if (res.ok) {
-        logger.info("OpenWA session start/reconnect request succeeded", { status: String(body?.status ?? "") });
-        return { success: true, status: (body?.status != null ? String(body.status) : "starting") as string };
+        logger.info("OpenWA session start/reconnect request succeeded", {
+          status: String(body?.status ?? ""),
+        });
+        return {
+          success: true,
+          status: (body?.status != null ? String(body.status) : "starting") as string,
+        };
       }
       return { success: false, error: `HTTP ${res.status}` };
     } catch (err) {
       const isTimeout = err instanceof Error && err.name === "AbortError";
-      return { success: false, error: isTimeout ? "Reconnect request timed out" : (err instanceof Error ? err.message : String(err)) };
+      return {
+        success: false,
+        error: isTimeout
+          ? "Reconnect request timed out"
+          : err instanceof Error
+            ? err.message
+            : String(err),
+      };
     } finally {
       clearTimeout(timer);
     }
@@ -106,13 +118,18 @@ export class OpenWaClient {
 
       const body = (await res.json()) as { status?: string; state?: string };
       const status = body?.status || body?.state || "unknown";
-      const ready = status.toLowerCase() === "connected" || status.toLowerCase() === "ready";
+      const ready =
+        status.toLowerCase() === "connected" || status.toLowerCase() === "ready";
       return { ready, status };
     } catch (err) {
       const isTimeout = err instanceof Error && err.name === "AbortError";
       return {
         ready: false,
-        error: isTimeout ? `Session readiness check timed out after ${this.timeoutMs}ms` : (err instanceof Error ? err.message : String(err)),
+        error: isTimeout
+          ? `Session readiness check timed out after ${this.timeoutMs}ms`
+          : err instanceof Error
+            ? err.message
+            : String(err),
       };
     } finally {
       clearTimeout(timer);
@@ -120,8 +137,44 @@ export class OpenWaClient {
   }
 
   /**
-   * Dispatches a text message to a specific WhatsApp chatId via the OpenWA REST API.
-   * Endpoint: POST {baseUrl}/api/sessions/{sessionId}/messages/send-text
+   * Simulates human typing state in WhatsApp before delivering messages.
+   * Helps avoid bot detection and anti-spam heuristic bans.
+   */
+  async simulateTyping(chatId: string, durationMs = 2000): Promise<void> {
+    const url = `${this.baseUrl}/api/sessions/${this.sessionId}/chat/simulate-typing`;
+    try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+      if (this.apiKey) {
+        headers["X-API-Key"] = this.apiKey;
+      }
+
+      await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ chatId, on: true }),
+        signal: AbortSignal.timeout(3000),
+      }).catch(() => {});
+
+      // Wait for typing duration to emulate human pacing
+      await new Promise((r) => setTimeout(r, Math.min(durationMs, 4000)));
+
+      // Turn typing off
+      await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ chatId, on: false }),
+        signal: AbortSignal.timeout(2000),
+      }).catch(() => {});
+    } catch {
+      // Non-critical simulation; proceed anyway
+    }
+  }
+
+  /**
+   * Sends a plain text WhatsApp message to a specific phone number/chatId with anti-ban safeguards.
    */
   async sendTextMessage(chatId: string, text: string): Promise<OpenWaSendTextResult> {
     const url = `${this.baseUrl}/api/sessions/${this.sessionId}/messages/send-text`;
@@ -137,6 +190,11 @@ export class OpenWaClient {
     }
 
     try {
+      // 1. Human typing simulation jitter (randomized 1200ms - 2500ms)
+      const jitterMs = 1200 + Math.floor(Math.random() * 1300);
+      await this.simulateTyping(chatId, jitterMs);
+
+      // 2. Dispatch message
       const res = await fetch(url, {
         method: "POST",
         headers,
@@ -175,7 +233,13 @@ export class OpenWaClient {
         res.statusText ||
         `HTTP ${statusCode}`;
 
-      if (statusCode === 400 || statusCode === 401 || statusCode === 403 || statusCode === 404 || statusCode === 422) {
+      if (
+        statusCode === 400 ||
+        statusCode === 401 ||
+        statusCode === 403 ||
+        statusCode === 404 ||
+        statusCode === 422
+      ) {
         // Permanent failure: invalid params, unauthenticated, unauthorized, or session doesn't exist
         return {
           success: false,
@@ -200,7 +264,11 @@ export class OpenWaClient {
         success: false,
         errorCategory: "transient",
         errorCode: isTimeout ? "GATEWAY_TIMEOUT" : "NETWORK_ERROR",
-        errorMessage: isTimeout ? `Request timed out after ${this.timeoutMs}ms` : (err instanceof Error ? err.message : String(err)),
+        errorMessage: isTimeout
+          ? `Request timed out after ${this.timeoutMs}ms`
+          : err instanceof Error
+            ? err.message
+            : String(err),
       };
     } finally {
       clearTimeout(timer);

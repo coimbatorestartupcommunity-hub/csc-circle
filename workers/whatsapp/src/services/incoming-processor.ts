@@ -24,6 +24,7 @@ import { dispatchRealTimeAdminAlert } from "./admin-alerts.js";
 import { handleIncomingRating } from "./feedback-pipeline.js";
 import { formatCommunityHubInvitation } from "./community-hub.js";
 import { getFortnightlyFounderSpotlight } from "./founder-spotlight.js";
+import { checkWhatsAppLockStatus } from "./lock-service.js";
 
 export interface InboundMessageEvent {
   from: string; // e.g. "919876543210@c.us" or "+919876543210"
@@ -49,15 +50,18 @@ export async function processInboundWhatsAppMessage(
   const senderPhone = event.from.endsWith("@lid") ? rawSender : normalizePhoneForMatching(rawSender);
   const text = (event.body || "").trim();
 
-  // 0. 24-Hour Maintenance Lock Check (Auto-unlocks after 24 hours)
-  const FIXED_UNLOCK_EPOCH_MS = 1795562700000; // Nov 25, 2026, 04:55 AM IST
-  if (Date.now() < FIXED_UNLOCK_EPOCH_MS) {
+  // 0. Dynamic Operational Maintenance Lock Check (Configurable via Admin UI)
+  const lockStatus = await checkWhatsAppLockStatus(redis);
+  if (lockStatus.isLocked) {
+    const customReason = lockStatus.reason || "Our automated WhatsApp assistant, member verification, and inbound queries are currently paused for a scheduled maintenance window.";
+    const customTamil = lockStatus.tamilReason || "வணக்கம்! எங்களது WhatsApp AI உதவியாளர் சேவை பராமரிப்பில் உள்ளது. பராமரிப்பு முடிந்த பின் தானாகவே மீண்டும் தொடங்கும். நன்றி! ✨";
+
     const maintenanceNotice =
-      `🛠️ *CSC Circle — WhatsApp Service Maintenance (24 Hours Cooldown)*\n\n` +
-      `Hello! Our automated WhatsApp assistant, member verification, and inbound queries are currently paused for a scheduled 24-hour maintenance window.\n\n` +
-      `Services will automatically resume within 24 hours.\n` +
+      `🛠️ *CSC Circle — WhatsApp Service Maintenance*\n\n` +
+      `${customReason}\n\n` +
+      `Services will automatically resume once the maintenance cooldown window expires.\n` +
       `For urgent queries, please reach out via our website or email at: coimbatorestartupcommunity@gmail.com\n\n` +
-      `வணக்கம்! எங்களது WhatsApp AI உதவியாளர் சேவை 24 மணி நேரத்திற்கு பராமரிப்பில் உள்ளது. 24 மணி நேரத்திற்குப் பின் தானாகவே மீண்டும் தொடங்கும். நன்றி! ✨`;
+      `${customTamil}`;
 
     await openwaClient.sendTextMessage(chatId, maintenanceNotice);
     return maintenanceNotice;

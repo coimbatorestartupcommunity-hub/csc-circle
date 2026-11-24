@@ -8,8 +8,9 @@ export default async function WhatsAppAgentKnowledgePage() {
   const ctx = await requireAdminPagePermission("members.read");
   const admin = createAdminClient();
 
-  // Fetch metrics in parallel
+  // Fetch metrics in parallel, including the true exact count of published knowledge docs
   const [
+    docsCountRes,
     docsRes,
     outboxRes,
     deploymentsRes,
@@ -18,9 +19,12 @@ export default async function WhatsAppAgentKnowledgePage() {
   ] = await Promise.all([
     admin
       .from("csc_agent_knowledge_documents")
+      .select("id", { count: "exact", head: true }),
+    admin
+      .from("csc_agent_knowledge_documents")
       .select("id, source, category, title, tier, is_published, updated_at")
       .order("updated_at", { ascending: false })
-      .limit(15),
+      .limit(100),
     admin
       .from("csc_agent_change_outbox")
       .select("status, count")
@@ -43,6 +47,7 @@ export default async function WhatsAppAgentKnowledgePage() {
       .limit(10),
   ]);
 
+  const totalDocsCount = docsCountRes.count ?? (docsRes.data?.length || 0);
   const knowledgeDocs = docsRes.data || [];
   const deployments = deploymentsRes.data || [];
   const tickets = ticketsRes.data || [];
@@ -59,12 +64,12 @@ export default async function WhatsAppAgentKnowledgePage() {
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm">
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Published Knowledge Docs</p>
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Total Indexed Knowledge Docs</p>
           <p className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            {knowledgeDocs.length}
+            {totalDocsCount}
           </p>
           <span className="mt-1 inline-flex items-center text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            ● Level 1 Public & Level 2 Member
+            ● Level 1 Public & Level 2 Member ({knowledgeDocs.length} shown below)
           </span>
         </div>
 
@@ -104,20 +109,21 @@ export default async function WhatsAppAgentKnowledgePage() {
         <div className="p-5 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
           <div>
             <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-              Live Knowledge Store Documents
+              Live Indexed Knowledge Documents ({totalDocsCount})
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
-              Synchronized authoritative facts queried in real time by Groq AI.
+              Synchronized automatically across events, verified founders, core policies, legal SLAs, and system architecture.
             </p>
           </div>
-          <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-            Active
+          <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            Live Vector Store Active
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-zinc-600 dark:text-zinc-300">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-xs font-medium text-zinc-500 uppercase tracking-wider">
+        <div className="overflow-x-auto max-h-[500px]">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-zinc-50 dark:bg-zinc-800/50 text-xs font-medium text-zinc-500 uppercase tracking-wider sticky top-0 backdrop-blur-xs">
               <tr>
                 <th className="px-5 py-3">Category</th>
                 <th className="px-5 py-3">Document Title</th>
