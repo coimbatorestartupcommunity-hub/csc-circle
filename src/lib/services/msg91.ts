@@ -295,22 +295,17 @@ export async function sendMsg91WhatsAppTemplate({
     integrated_number: formattedSender,
     content_type: "template",
     payload: {
-      messaging_product: "whatsapp",
+      to: formattedRecipient,
       type: "template",
       template: {
         name: templateName,
         language: { code: languageCode },
         components,
       },
-      to_and_components: [
-        {
-          phone_number: formattedRecipient,
-        },
-      ],
     },
   };
 
-  const url = `${MSG91_BASE_URL}/whatsapp/whatsapp-outbound-message/bulk`;
+  const url = `${MSG91_BASE_URL}/whatsapp/whatsapp-outbound-message/`;
 
   try {
     const res = await fetch(url, {
@@ -324,7 +319,11 @@ export async function sendMsg91WhatsAppTemplate({
 
     const data = await res.json().catch(() => ({}));
 
-    if (!res.ok || data.status === "fail" || data.type === "error") {
+    if (!res.ok || data.status === "fail" || data.type === "error" || data.hasError) {
+      console.error("[sendMsg91WhatsAppTemplate] Gateway error:", {
+        status: res.status,
+        data,
+      });
       return {
         success: false,
         message: data.message || data.errors || "WhatsApp message failed to dispatch",

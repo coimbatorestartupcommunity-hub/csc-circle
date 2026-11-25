@@ -47,6 +47,8 @@ export async function POST(request: Request, context: { params: Promise<{ action
       if (!parsed.success) return authResponse({ error: "Check your details, mobile number, and password requirements." }, 422);
       const v = parsed.data;
       const cleanPhone = v.phone.replace(/\D/g, "");
+      let userId: string | undefined;
+
       const { data: signUpData, error } = await sb.auth.signUp({
         email: v.email,
         password: v.password,
@@ -62,15 +64,49 @@ export async function POST(request: Request, context: { params: Promise<{ action
           },
         },
       });
-      if (error && error.code !== "user_already_exists") return authResponse({ error: "Unable to complete signup. Try again later or sign in if you already have an account." }, 400);
+
+      if (error) {
+        if (error.code === "user_already_exists" || /already\s+(registered|exists)/i.test(error.message)) {
+          return authResponse({ error: "An account with this email already exists. Please sign in." }, 409);
+        }
+        // Resilient fallback: Create user via admin API with email_confirm: true when Supabase SMTP fails
+        try {
+          const admin = createAdminClient();
+          const { data: createdData, error: adminErr } = await admin.auth.admin.createUser({
+            email: v.email,
+            password: v.password,
+            email_confirm: true,
+            user_metadata: {
+              full_name: v.fullName,
+              name: v.fullName,
+              phone: cleanPhone,
+              whatsapp: cleanPhone,
+              accepted_terms: true,
+            },
+          });
+          if (adminErr) {
+            if (adminErr.code === "user_already_exists" || /already\s+(registered|exists)/i.test(adminErr.message)) {
+              return authResponse({ error: "An account with this email already exists. Please sign in." }, 409);
+            }
+            console.error("[signup] Admin user creation fallback failed:", adminErr);
+            return authResponse({ error: "Unable to complete signup. Try again later or sign in if you already have an account." }, 400);
+          }
+          userId = createdData?.user?.id;
+        } catch (adminEx) {
+          console.error("[signup] Admin user creation fallback exception:", adminEx);
+          return authResponse({ error: "Unable to complete signup. Try again later or sign in if you already have an account." }, 400);
+        }
+      } else {
+        userId = signUpData?.user?.id;
+      }
 
       // Sync user profile phone to profiles
-      if (signUpData?.user?.id) {
+      if (userId) {
         try {
           const admin = createAdminClient();
           await admin.from("profiles").upsert(
             {
-              id: signUpData.user.id,
+              id: userId,
               full_name: v.fullName,
               whatsapp: cleanPhone,
               email: v.email,

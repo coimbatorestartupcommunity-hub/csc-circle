@@ -940,7 +940,14 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
           reply.trim().length > 10 &&
           !reply.trim().startsWith("<|")
         ) {
-          return reply.trim();
+          let trimmedReply = reply.trim();
+          if (
+            /guideline|rules|conduct/i.test(userPrompt) &&
+            !trimmedReply.includes("community-guidelines")
+          ) {
+            trimmedReply += "\n\n🔗 Official Guidelines: https://csc.logicintelligencetechnologies.in/community-guidelines";
+          }
+          return trimmedReply;
         }
       }
     } catch (modalErr) {

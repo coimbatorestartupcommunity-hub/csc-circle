@@ -10,6 +10,7 @@ export interface PhoneVerificationNotificationInput {
   phone: string;
   email?: string | null;
   name?: string | null;
+  force?: boolean;
 }
 
 const BASE_URL = process.env.APP_BASE_URL || "https://csc.logicintelligencetechnologies.in";
@@ -30,6 +31,19 @@ export async function notifyPhoneVerifiedSuccess(input: PhoneVerificationNotific
     inApp: false,
     errors: [] as string[],
   };
+
+  // Exclude bot/system sender number and logicintelligencetechnologies@gmail.com per user directive
+  if (
+    email?.toLowerCase() === "logicintelligencetechnologies@gmail.com" ||
+    e164.endsWith("7550067712")
+  ) {
+    return {
+      whatsapp: false,
+      email: false,
+      inApp: false,
+      errors: ["Skipped: system bot / excluded account"],
+    };
+  }
 
   // 1. WhatsApp Confirmation Message
   if (e164 && e164.length >= 10) {
@@ -54,6 +68,10 @@ export async function notifyPhoneVerifiedSuccess(input: PhoneVerificationNotific
         "🤍 ⚙️ *Powered by Logic Intelligence Technologies*",
       ].join("\n");
 
+      const finalKey = input.force
+        ? `phone-verify-success-${userId}-${Date.now()}`
+        : `phone-verify-success-${userId}`;
+
       const waRes = await enqueueWhatsAppNotification({
         recipientPhone: e164,
         text: waText,
@@ -61,7 +79,7 @@ export async function notifyPhoneVerifiedSuccess(input: PhoneVerificationNotific
         templateName: "phone_verification_success",
         templateVariables: [displayName, e164, `${BASE_URL}/profile`],
         name: displayName,
-        idempotencyKey: `phone-verify-success-${userId}`,
+        idempotencyKey: finalKey,
       });
 
       results.whatsapp = waRes.success;
@@ -254,11 +272,19 @@ export async function backfillPhoneVerificationNotifications() {
 
   // 1. Dispatch confirmations to verified members
   for (const member of verifiedMembers) {
+    if (
+      member.email.toLowerCase() === "logicintelligencetechnologies@gmail.com" ||
+      member.phone.replace(/\D/g, "").endsWith("7550067712")
+    ) {
+      continue;
+    }
+
     const res = await notifyPhoneVerifiedSuccess({
       userId: member.id,
       phone: member.phone,
       email: member.email,
       name: member.name,
+      force: true,
     });
     summary.verifiedDispatches.push({
       id: member.id,
