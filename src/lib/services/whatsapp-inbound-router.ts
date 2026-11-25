@@ -138,6 +138,9 @@ export async function routeInboundWhatsAppMessage(
             "6️⃣ *நிர்வாகிகள் உதவி* (பதில்: *6* அல்லது */support*)",
             "   ஒருங்கிணைப்பாளர்களுடன் நேரடியாகப் பேச.",
             "",
+            "7️⃣ *கம்யூனிட்டி & குழு வழிகாட்டுதல்கள்* (பதில்: *7* அல்லது */rules*)",
+            "   அதிகாரப்பூர்வ வாட்ஸ்அப் குழு விதிகள் & நடத்தை நெறிமுறைகள்.",
+            "",
             "ℹ️ *கட்டளைகள் வழிகாட்டி:* */help* என அனுப்பவும்.",
             "",
             CSC_WHATSAPP_FOOTER,
@@ -167,6 +170,9 @@ export async function routeInboundWhatsAppMessage(
             "6️⃣ *Talk to Human Support* (Reply: *6* or */support*)",
             "   Organizers kooda direct-a connect panna.",
             "",
+            "7️⃣ *Community & Group Guidelines* (Reply: *7* or */rules*)",
+            "   Official WhatsApp group rules & moderation policy.",
+            "",
             "ℹ️ *Slash Commands Guide:* Type */help* anytime.",
             "",
             CSC_WHATSAPP_FOOTER,
@@ -194,6 +200,9 @@ export async function routeInboundWhatsAppMessage(
             "",
             "6️⃣ *Talk to Human Support* (Reply: *6* or */support*)",
             "   Escalate directly to our organizing team.",
+            "",
+            "7️⃣ *Community & Group Guidelines* (Reply: *7* or */rules*)",
+            "   Review official WhatsApp group rules & code of conduct.",
             "",
             "ℹ️ *Slash Commands Guide:* Type */help* anytime.",
             "",
@@ -223,6 +232,7 @@ export async function routeInboundWhatsAppMessage(
             "• *4* அல்லது */idea <யோசனை>* — தலைப்புகள் அல்லது பேச்சாளர் பரிந்துரை",
             "• *5* அல்லது */community* — அதிகாரப்பூர்வ வாட்ஸ்அப் குழு",
             "• *6* அல்லது */support* — நிர்வாகிகள் உதவி",
+            "• *7* அல்லது */rules* — கம்யூனிட்டி & வாட்ஸ்அப் குழு வழிகாட்டுதல்கள்",
             "• */menu* — முதன்மை விரைவு வழிகாட்டி",
             "• */pulse* — இருவார கம்யூனிட்டி செக்-இன்",
             "• */help* — கட்டளைகள் வழிகாட்டி",
@@ -243,6 +253,7 @@ export async function routeInboundWhatsAppMessage(
             "• *4* or */idea <topic>* — Submit Meetup Topic / Speaker Idea",
             "• *5* or */community* — Official Leadership WhatsApp Group",
             "• *6* or */support* — Connect with Community Organizers",
+            "• *7* or */rules* — Community & WhatsApp Group Guidelines",
             "• */menu* — Main Navigation Menu",
             "• */pulse* — Fortnightly Ecosystem Pulse",
             "• */help* — Indha Guide-ah paaka",
@@ -262,6 +273,7 @@ export async function routeInboundWhatsAppMessage(
             "• *4* or */idea <topic>* — Submit a Topic or Speaker Suggestion",
             "• *5* or */community* — Join Official Leadership WhatsApp Group",
             "• *6* or */support* — Connect with Community Organizers",
+            "• *7* or */rules* — Community & WhatsApp Group Guidelines",
             "• */menu* — Main Navigation Menu",
             "• */pulse* — Fortnightly Ecosystem Pulse",
             "• */help* — Show this Commands Guide",
@@ -648,7 +660,99 @@ export async function routeInboundWhatsAppMessage(
     return { handled: true, replyText, command: "SUPPORT" };
   }
 
-  // 11. Deep Community AI Knowledge Hub (Groq AI + Modal + xAI Grok / Musk API)
+  // 11. Official Community & WhatsApp Group Guidelines
+  if (/^(guidelines|rules|code of conduct|group rules|community guidelines|7)$/i.test(cmd)) {
+    const guidelinesUrl = "https://csc.logicintelligencetechnologies.in/community-guidelines";
+    const replyText =
+      lang === "ta"
+        ? [
+            "📜 *CSC Circle — அதிகாரப்பூர்வ வாட்ஸ்அப் குழு & கம்யூனிட்டி வழிகாட்டுதல்கள்*",
+            "✨ *Connect • Build • Grow — உயர்தர பயனுள்ள தகவல் பரிமாற்றம்*",
+            "",
+            "கோவை பவுண்டர்கள், டெவலப்பர்கள் மற்றும் முதலீட்டாளர்களுக்கான நம்பகமான தளமாக இதைத் தக்கவைக்க, அனைத்து உறுப்பினர்களும் இந்த நெறிமுறைகளைப் பின்பற்ற வேண்டும்:",
+            "",
+            "✅ *அனுமதிக்கப்பட்டவை & வரவேற்கப்படுபவை:*",
+            "• *உறுப்பினர் அறிமுகம்:* குழுவில் இணைந்தவுடன் உங்கள் பெயர், ஸ்டார்ட்அப்/யோசனை மற்றும் நீங்கள் தீர்க்கும் பிரச்சனை பற்றி பகிரவும்.",
+            "• *தயாரிப்பு முன்னேற்றம்:* உங்கள் தயாரிப்பு வெளியீடுகள், UI/UX மற்றும் தொழில்நுட்ப முன்னேற்றங்களை பகிர்ந்து சக நிறுவனர்களின் கருத்தைப் பெறவும்.",
+            "• *நிகழ்வுகள் & வாய்ப்புகள்:* உண்மையான ஸ்டார்ட்அப் மீட்டிங், ஹேக்கத்தான் மற்றும் அரசு மானியங்கள் (TANSEED, SISFS).",
+            "• *ஆலோசனை & கலந்துரையாடல்:* தயாரிப்பு சந்தை பொருத்தம் (PMF), நிதி திரட்டல் மற்றும் குழு அமைப்பது குறித்த விவாதங்கள்.",
+            "",
+            "❌ *கண்டிப்பாக தடைசெய்யப்பட்டவை:*",
+            "• 🚫 *நேரடி விற்பனை விளம்பரங்கள்:* வணிகரீதியான விளம்பரங்கள், தள்ளுபடி சலுகைகள் மற்றும் விற்பனை முயற்சிகள்.",
+            "• 🚫 *தொடர்பற்ற குழு இணைப்புகள்:* அனுமதி பெறாத வாட்ஸ்அப்/டெலிகிராம் குழு இணைப்புகள் அல்லது அரசியல்/மத விவாதங்கள்.",
+            "• 🚫 *அனுமதியின்றி தனிப்பட்ட மெசேஜ் (Cold DMs):* குழுவில் அனுமதி பெறாமல் சக உறுப்பினர்களுக்கு தனிப்பட்ட மெசேஜ் அனுப்புவது முற்றிலும் தடைசெய்யப்பட்டுள்ளது.",
+            "• 🚫 *MLM / Crypto ஸ்பேம்:* கிரிப்டோ அல்லது உடனடி பணத் திட்டங்கள்.",
+            "",
+            "⚖️ *3-நிலை ஒழுங்குமுறை நடவடிக்கை:*",
+            "1️⃣ *நிலை 1:* எழுத்துப்பூர்வ எச்சரிக்கை & மெசேஜ் நீக்கம்.",
+            "2️⃣ *நிலை 2:* 30 நாட்கள் இடைநீக்கம் & நிகழ்வு பாஸ் ரத்து.",
+            "3️⃣ *நிலை 3:* டிஜிட்டல் அடையாள அட்டை ரத்து & கம்யூனிட்டியிலிருந்து நிரந்தர நீக்கம்.",
+            "",
+            `🔗 முழு வழிகாட்டுதல்களையும் படிக்க: ${guidelinesUrl}`,
+            "",
+            CSC_WHATSAPP_FOOTER,
+          ].join("\n")
+        : lang === "tanglish"
+        ? [
+            "📜 *CSC Circle — Official Community & WhatsApp Group Guidelines*",
+            "✨ *Connect • Build • Grow — High Signal, Zero Noise*",
+            "",
+            "Kovai founders, builders & investors-ku oru high-trust ecosystem maintain panna, members indha rules strictly follow pannanum:",
+            "",
+            "✅ *ALLOWED & ENCOURAGED:*",
+            "• *New Member Intro:* Join pannadhume unga name, startup/idea, solve panra problem & collaboration requirements share pannunga.",
+            "• *Startup Showcases:* Product launches, traction updates & peer UI/UX feedback requests.",
+            "• *Genuine Opportunities:* Verified startup meetups, pitch fests, hackathons & seed grants (TANSEED, SISFS).",
+            "• *Tactical Discussions:* PMF, hiring, regulatory compliance & fundraising discussions.",
+            "",
+            "❌ *STRICTLY PROHIBITED:*",
+            "• 🚫 *No Direct Sales Pitches:* No commercial flyers, discount coupons, or treating the group as a sales funnel.",
+            "• 🚫 *No Unrelated Group Links:* Third-party WhatsApp/Telegram links, promotional invites, politics or religion strictly banned.",
+            "• 🚫 *No Unsolicited Private DMs:* Group-la prior consent illama members-ku cold DMs pitch pannakudathu.",
+            "• 🚫 *No MLM, Crypto, or Scams:* Zero tolerance for get-rich-quick schemes or crypto speculation.",
+            "",
+            "⚖️ *3-Stage Moderation Protocol:*",
+            "1️⃣ *Stage 1:* Written warning & removal of offending post.",
+            "2️⃣ *Stage 2:* 30-day suspension & temporary event pass revocation.",
+            "3️⃣ *Stage 3:* Permanent Digital ID cancellation & ecosystem ban.",
+            "",
+            `🔗 Read Complete Guidelines: ${guidelinesUrl}`,
+            "",
+            CSC_WHATSAPP_FOOTER,
+          ].join("\n")
+        : [
+            "📜 *CSC Circle — Official Community & WhatsApp Group Guidelines*",
+            "✨ *Connect • Build • Grow — High Signal, Zero Noise*",
+            "",
+            "To preserve an authentic, trusted, high-value ecosystem for Coimbatore founders, builders, and investors, all members adhere to our official code of conduct:",
+            "",
+            "✅ *ALLOWED & ENCOURAGED:*",
+            "• *Member Introductions:* Share your name, current venture or concept stage, problem being solved, and collaboration needs.",
+            "• *Startup Showcases:* Share progress, request authentic founder feedback, UI/UX audits, and beta testers.",
+            "• *Ecosystem Opportunities:* Share verified startup meetups, pitch arenas, incubator calls, and government grant schemes (TANSEED, SISFS).",
+            "• *Founder Discourse:* Tactical discussions on PMF, unit economics, fundraising, and regional policies.",
+            "",
+            "❌ *STRICTLY PROHIBITED:*",
+            "• 🚫 *No Direct Advertising or Sales Pitches:* No commercial sales flyers, generic discounts, or using the group as a marketing funnel.",
+            "• 🚫 *No Unrelated Group Links:* Third-party WhatsApp or Telegram links, speculative promotions, political/religious debates are deleted on sight.",
+            "• 🚫 *No Unsolicited Private DMs:* Cold pitching or messaging members privately without prior public permission in the group is strictly forbidden.",
+            "• 🚫 *No Multi-Level Marketing or Crypto Speculation:* Zero tolerance for fraudulent or speculative schemes.",
+            "",
+            "⚖️ *3-Stage Moderation Protocol:*",
+            "1️⃣ *Stage 1:* Formal warning from moderators and deletion of offending material.",
+            "2️⃣ *Stage 2:* 30-day suspension of member portal access and event pass revocation.",
+            "3️⃣ *Stage 3:* Permanent cancellation of CSC Digital ID Card and irreversible ecosystem ban.",
+            "",
+            `🔗 Read Complete Community Guidelines: ${guidelinesUrl}`,
+            "",
+            CSC_WHATSAPP_FOOTER,
+          ].join("\n");
+
+    await sendReplySafely(cleanPhone, replyText);
+    return { handled: true, replyText, command: "GUIDELINES" };
+  }
+
+  // 12. Deep Community AI Knowledge Hub (Groq AI + Modal + xAI Grok / Musk API)
   const aiReply = await answerWithCommunityAI(trimmed);
   const finalReply = `${aiReply}\n\n${CSC_WHATSAPP_FOOTER}`;
   await sendReplySafely(cleanPhone, finalReply);
@@ -688,46 +792,63 @@ async function sendReplySafely(phone: string, text: string): Promise<void> {
 const CSC_KNOWLEDGE_BASE_SYSTEM_PROMPT = `You are the official 24/7 AI WhatsApp assistant for Coimbatore Startup Community (CSC Circle), powered by Logic Intelligence Technologies (LIT).
 
 ### Community Overview & Ethos:
-- Coimbatore Startup Community (CSC Circle) is Coimbatore's premier startup ecosystem, connecting founders, developers, designers, operators, and angel investors across the Kongu region.
-- Motto: Connect • Build • Grow.
-- Website: https://csc.logicintelligencetechnologies.in
+- Coimbatore Startup Community (CSC Circle), established 2026, is Coimbatore and Western Tamil Nadu's premier founder-centric startup ecosystem.
+- Tagline & Motto: Connect. Build. Grow.
+- Official Website: https://csc.logicintelligencetechnologies.in
+- Audience: Founders, Co-founders, Builders, Developers, Idea-stage Innovators, Investors, Angel Syndicates, and Mentors across Coimbatore and Western Tamil Nadu.
 
-### Core Leadership Team:
-- K. N. Reyash: Founder, Coimbatore Startup Community (Belvoria)
-- E. R. Sharan: Co-Founder, Coimbatore Startup Community (Founder, CECIL Groups of Companies & Industries)
-- Mirra Mahendran: Chief Executive Officer (CEO), Coimbatore Startup Community
-- Vikash Saravanan: Chief Technology Officer (CTO) & Head of Tech — Founder & CEO, Logic Intelligence Technologies (LIT)
-- Swathi: Chief Community Officer (CCO), Coimbatore Startup Community
-- Kishore C: Chief Operating Officer (COO), Coimbatore Startup Community (Founder, APARÈ Clothing)
-- Jaibharath V: Chief Brand Officer (CBO), Coimbatore Startup Community (Founder, Flickkora Agency)
-- Technical Architecture & Infrastructure Partner: Logic Intelligence Technologies (LIT)
+### 5 Official WhatsApp Ecosystem Groups (Bios & Scopes):
+1. Group 1: CSC Announcements (Official Broadcast Channel)
+   - Scope: Verified ecosystem updates, zero noise, high-signal, admin-only. Flagship summits, Startup TN / Startup India partnerships, regulatory alerts, pass rollouts.
+2. Group 2: CSC Circle (Main Community Hub)
+   - Scope: Peer networking, collaborative founder discussions, product showcases, UI/UX audits, problem-solving, founder matchmaking.
+3. Group 3: CSC Mindsprint (Innovation, Challenges & Growth)
+   - Scope: Daily algorithmic sprints (Monday Logic), product teardowns (Tuesday), Build-in-Public LinkedIn sprints (Wednesday), tech stack challenges (Thursday), weekend hackathons & student builder fellowships.
+4. Group 4: CSC Business Network (Enterprise, Capital & Alliances)
+   - Scope: Commercial B2B matchmaking, corporate pilots, connecting legacy industrial manufacturers (pumps, foundries, textiles, automotive components) with modern tech startups, angel syndicates.
+5. Group 5: CSC Opportunities (Grants, Funding & Ecosystem Calls)
+   - Scope: Capital intelligence, non-dilutive seed grants: TANSEED (Startup TN up to ₹15 Lakhs equity-free), SISFS (Startup India Seed Fund Scheme up to ₹50 Lakhs), BIRAC, NIDHI-PRAYAS, tier-1 accelerator cohorts (Forge, PSG-STEP, T-Hub, YC).
 
-### Core Offerings & Direct Links:
-1. Lifelong Free Membership:
-   - 100% Free with automated 5-minute approval.
-   - Join: https://csc.logicintelligencetechnologies.in/membership
-2. Offline Events & Masterclasses:
-   - Regular offline founder mixers, pitch battles, workshops, and networking dinners in Coimbatore.
-   - RSVP & Passes: https://csc.logicintelligencetechnologies.in/events
-3. Digital Membership Pass:
-   - Apple Wallet & Google Wallet compatible pass with dynamic QR door entry code.
-   - Pass Link: https://csc.logicintelligencetechnologies.in/profile/id-card
-4. Founder Directory & Matchmaking:
-   - Search Coimbatore startups & co-founders in AI, SaaS, Agritech, EV, Fintech.
-   - Directory: https://csc.logicintelligencetechnologies.in/directory
-5. Community Feedback & Ideas:
-   - Suggest topics, speakers, or pitch opportunities: /idea <your idea>
-6. Official Community WhatsApp Network:
-   - Direct Group: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3
-7. Human Support & Helpdesk:
-   - Email: csc@logicintelligencetechnologies.in
-   - Helpline: +91 75500 67712
+### Core Leadership Team (7 Members):
+- K. N. Reyash: Founder, Coimbatore Startup Community (Founder, Belvoria) — Overall community leadership, long-term vision, ecosystem approvals.
+- E. R. Sharan: Co-Founder, Coimbatore Startup Community (Founder, CECIL Groups of Companies & Industries) — Organizational strategy, corporate and industrial alliances.
+- Mirra Mahendran: Chief Executive Officer (CEO), Coimbatore Startup Community (PSG Institute of Advanced Studies) — Day-to-day operations and structured execution.
+- Vikash Saravanan: Chief Technology Officer (CTO), Coimbatore Startup Community (Founder & CEO, Logic Intelligence Technologies - LIT) — Technology strategy, digital platform architecture, member verification, Digital ID card approvals.
+- Swathi: Chief Community Officer (CCO), Coimbatore Startup Community — Member coordination, community engagement, and healthcare support.
+- Kishore C: Chief Operating Officer (COO), Coimbatore Startup Community (Founder, APARÈ Clothing) — Logistics, venue coordination, and event execution.
+- Jaibharath V: Chief Brand Officer (CBO), Coimbatore Startup Community (Founder, Flickkora Agency) — Brand strategy, visual storytelling, and creative media.
+- Technical Architecture & Infrastructure Partner: Logic Intelligence Technologies (LIT) (https://www.logicintelligencetechnologies.in)
+
+### Community Code of Conduct & WhatsApp Group Guidelines:
+- Allowed & Encouraged: Introductions (name, startup, problem being solved), genuine startup showcases, requesting peer feedback/critique, verified funding news, sharing ecosystem events and grants (TANSEED, SISFS).
+- Strictly Prohibited: Direct sales pitches, marketing flyers, commercial discounts, unrelated group links (WhatsApp/Telegram), MLM or crypto speculation, unsolicited cold private DMs to members without prior public group consent, political/religious debates, and forwarded noise.
+- 3-Stage Moderation Protocol:
+  1. Stage 1: Formal warning and deletion of offending material.
+  2. Stage 2: 30-day suspension and event pass revocation.
+  3. Stage 3: Permanent cancellation of CSC Digital ID Card and irreversible ecosystem ban.
+- Privacy & Safety: Leadership will never ask for account passwords, OTPs, or financial payment details.
+
+### Card & Membership Terminology (MANDATORY):
+- NEVER refer to the membership card as "pump set" or "pumpset". Always call it "Coimbatore Startup Community Membership ID Card" or "CSC Digital ID Card".
+- Membership is 100% Free with automated 5-minute approval: https://csc.logicintelligencetechnologies.in/membership
+- Digital ID Card & Event QR Pass: https://csc.logicintelligencetechnologies.in/profile/id-card
+- Verified Leadership WhatsApp Group Link: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3?s=cl&p=i&iam=2
+
+### Core Portal Links:
+- Events & Meetups: https://csc.logicintelligencetechnologies.in/events
+- Startup Directory: https://csc.logicintelligencetechnologies.in/directory
+- Opportunities: https://csc.logicintelligencetechnologies.in/opportunities
+- Resources: https://csc.logicintelligencetechnologies.in/resources
+- Collaborations: https://csc.logicintelligencetechnologies.in/collaborations
+- Community Guidelines: https://csc.logicintelligencetechnologies.in/community-guidelines
+- Official Email: coimbatorestartupcommunity@gmail.com
+- Technical Support Email: hello@logicintelligencetechnologies.in / helpline: +91 75500 67712
 
 ### Language Policy (Strict Multi-lingual Routing):
-- If the user writes in Tamil script, reply strictly in clean Tamil.
-- If the user writes in Tanglish (Tamil words written in English letters, e.g. "vanakkam bro, events epdi check panradhu?"), reply in natural, friendly, conversational Tanglish!
+- If the user writes in Tamil script, reply strictly in clean, polite Tamil.
+- If the user writes in Tanglish (Tamil words written in English letters, e.g. "vanakkam bro, events epdi check panradhu?"), reply in natural, relatable, friendly Tanglish!
 - If the user writes in English, reply strictly in crisp, professional English.
-- Always provide concise replies (2-4 sentences suitable for WhatsApp messaging) and cite relevant official links.`;
+- Always provide structured, concise replies with bullet points and bold text, ready for WhatsApp formatting.`;
 
 async function answerWithCommunityAI(userPrompt: string): Promise<string> {
   const groqKey = process.env.GROQ_API_KEY;
@@ -749,7 +870,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
             { role: "user", content: userPrompt },
           ],
           temperature: 0.3,
-          max_tokens: 350,
+          max_tokens: 1000,
         }),
       });
 
@@ -797,9 +918,9 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
             { role: "user", content: userPrompt },
           ],
           temperature: 0.3,
-          max_tokens: 350,
+          max_tokens: 1200,
         }),
-        signal: AbortSignal.timeout(3500),
+        signal: AbortSignal.timeout(9500),
       });
 
       if (res.ok) {
@@ -839,7 +960,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
             { role: "user", content: userPrompt },
           ],
           temperature: 0.3,
-          max_tokens: 350,
+          max_tokens: 1000,
         }),
       });
 
@@ -853,11 +974,219 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
     }
   }
 
-  // 4. Graceful Contextual Knowledge Engine Fallback (No External API Required)
+  // 4. Authoritative Deterministic Knowledge Engine Fallback (100% Uptime Grounded in Bios & Guidelines)
   const lower = userPrompt.toLowerCase();
   const trimmed = userPrompt.trim();
   const lang = detectLanguage(userPrompt);
 
+  const hasGuidelineIntent = /(guideline|rule|conduct|etiquette|allowed|prohibited|spam|dm|ban|strike|விதிகள்|வழிகாட்டுதல்)/i.test(lower);
+  const hasCommunityIntent = /(about (the |our |your )?community|what is (csc|circle)|tell me about (csc|the community|circle)|know about (your |the )?community|ecosystem|mission|tagline|purpose|கம்யூனிட்டி பற்றி|சமூகம்)/i.test(lower);
+
+  // Intent A: Combined Request (Community Overview AND WhatsApp Group Guidelines)
+  if (hasGuidelineIntent && hasCommunityIntent) {
+    if (lang === "ta") {
+      return [
+        "👋 *வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டி (CSC Circle)* ✨",
+        "",
+        "🌟 *எங்கள் கம்யூனிட்டி பற்றி:*",
+        "CSC Circle என்பது கோவை மற்றும் மேற்கு தமிழ்நாட்டின் முன்னணி தொழில்முனைவோர், பவுண்டர்கள், டெவலப்பர்கள் மற்றும் முதலீட்டாளர்களை இணைக்கும் அதிகாரப்பூர்வ அமைப்பாகும் (Powered by *Logic Intelligence Technologies*).",
+        "• *குறிக்கோள் (Tagline):* _Connect • Build • Grow_",
+        "• *இலவசம்:* 5 நிமிட தானியங்கி ஒப்புதலுடன் வாழ்நாள் இலவச உறுப்பினர் சேர்க்கை.",
+        "",
+        "📜 *வாட்ஸ்அப் குழு வழிகாட்டுதல்கள் (Code of Conduct):*",
+        "1. *அனுமதிக்கப்பட்டவை:* புதிய பவுண்டர் அறிமுகம், தயாரிப்பு வெளியீடுகள் (Showcases), உண்மையான நிகழ்வுகள் & அரசு மானியங்கள் (TANSEED, SISFS) பற்றிய விவாதங்கள்.",
+        "2. *கண்டிப்பாக தடைசெய்யப்பட்டவை:* வணிக விற்பனை விளம்பரங்கள், தொடர்பற்ற குழு இணைப்புகள், அனுமதியின்றி தனிப்பட்ட மெசேஜ் (No Cold DMs), மற்றும் MLM/Crypto ஸ்பேம்.",
+        "3. *3-நிலை ஒழுங்குமுறை:* மீறல்களுக்கு எச்சரிக்கை ➡️ 30 நாள் இடைநீக்கம் ➡️ டிஜிட்டல் உறுப்பினர் அட்டை ரத்து & நிரந்தர நீக்கம்.",
+        "",
+        "🌐 *முக்கிய இணைப்புகள்:*",
+        "• வலைத்தளம்: https://csc.logicintelligencetechnologies.in",
+        "• அதிகாரப்பூர்வ வாட்ஸ்அப் குழு: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+        "• வழிகாட்டுதல்கள்: https://csc.logicintelligencetechnologies.in/community-guidelines",
+      ].join("\n");
+    }
+
+    if (lang === "tanglish") {
+      return [
+        "👋 *Welcome to Coimbatore Startup Community (CSC Circle)!* ✨",
+        "",
+        "🌟 *About CSC Circle:*",
+        "Coimbatore Startup Community (CSC Circle) is Coimbatore's premier founder-first startup ecosystem powered by *Logic Intelligence Technologies (LIT)*. Namma mission founders, builders, developers, and investors-ah connect panni startup execution-ah accelerate panradhu.",
+        "• *Tagline:* _Connect • Build • Grow_",
+        "• *Membership:* 100% Free with 5-minute automated approval.",
+        "",
+        "📜 *WhatsApp Group Guidelines (Strictly Enforced):*",
+        "1. *Allowed & Encouraged:* Member intros, startup showcases, peer feedback, tech discussions & verified grants (TANSEED, SISFS).",
+        "2. *Strictly Prohibited:* Direct commercial sales flyers, unrelated group links, MLM/crypto schemes & cold DMs without prior public consent.",
+        "3. *3-Stage Moderation:* Warning & post deletion ➡️ 30-day suspension ➡️ Permanent Digital ID revocation & ecosystem ban.",
+        "",
+        "🌐 *Official Links:*",
+        "• Website: https://csc.logicintelligencetechnologies.in",
+        "• Join Official WhatsApp Group: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+        "• Complete Guidelines: https://csc.logicintelligencetechnologies.in/community-guidelines",
+      ].join("\n");
+    }
+
+    return [
+      "👋 *Welcome to Coimbatore Startup Community (CSC Circle)!* ✨",
+      "",
+      "🌟 *About Our Community:*",
+      "Coimbatore Startup Community (CSC Circle) is Coimbatore and Western Tamil Nadu's premier founder-centric startup ecosystem, powered by *Logic Intelligence Technologies (LIT)*. We connect early-stage builders, technical operators, and seasoned mentors with institutional capital and grant programs.",
+      "• *Motto:* _Connect • Build • Grow_",
+      "• *Membership:* 100% Free with automated 5-minute approval.",
+      "",
+      "📜 *Official WhatsApp Group Guidelines:*",
+      "1. *Allowed & Encouraged:* Member introductions, startup problem showcases, peer UI/UX feedback, and verified ecosystem opportunities & grants (TANSEED, SISFS).",
+      "2. *Strictly Prohibited:* Direct sales pitches, promotional flyers, unrelated WhatsApp/Telegram links, speculative schemes, and unsolicited private cold DMs.",
+      "3. *3-Stage Moderation Protocol:* Warning & deletion ➡️ 30-day suspension & pass revocation ➡️ Permanent Digital ID cancellation & ecosystem ban.",
+      "",
+      "🌐 *Official Links:*",
+      "• Portal: https://csc.logicintelligencetechnologies.in",
+      "• Official WhatsApp Community: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+      "• Detailed Guidelines: https://csc.logicintelligencetechnologies.in/community-guidelines",
+    ].join("\n");
+  }
+
+  // Intent B: Community Guidelines / Group Rules Alone
+  if (hasGuidelineIntent) {
+    if (lang === "ta") {
+      return [
+        "📜 *CSC Circle — அதிகாரப்பூர்வ வாட்ஸ்அப் குழு & கம்யூனிட்டி வழிகாட்டுதல்கள்*",
+        "✨ *Connect • Build • Grow — உயர்தர பயனுள்ள தகவல் பரிமாற்றம்*",
+        "",
+        "கோவை பவுண்டர்கள் மற்றும் முதலீட்டாளர்களுக்கான நம்பகமான தளமாக இதைத் தக்கவைக்க, அனைத்து உறுப்பினர்களும் இந்த நெறிமுறைகளைப் பின்பற்ற வேண்டும்:",
+        "",
+        "✅ *அனுமதிக்கப்பட்டவை & வரவேற்கப்படுபவை:*",
+        "• *அறிமுகம்:* குழுவில் இணைந்தவுடன் உங்கள் பெயர், ஸ்டார்ட்அப் மற்றும் நீங்கள் தீர்க்கும் பிரச்சனை பற்றி பகிரவும்.",
+        "• *தயாரிப்பு முன்னேற்றம்:* உங்கள் தயாரிப்பு வெளியீடுகள், UI/UX மற்றும் தொழில்நுட்ப முன்னேற்றங்களை பகிரவும்.",
+        "• *நிகழ்வுகள் & வாய்ப்புகள்:* உண்மையான ஸ்டார்ட்அப் மீட்டிங் மற்றும் அரசு மானியங்கள் (TANSEED, SISFS).",
+        "",
+        "❌ *கண்டிப்பாக தடைசெய்யப்பட்டவை:*",
+        "• 🚫 நேரடி விற்பனை விளம்பரங்கள் மற்றும் தள்ளுபடி சலுகைகள்.",
+        "• 🚫 தொடர்பற்ற குழு அல்லது டெலிகிராம் இணைப்புகள்.",
+        "• 🚫 குழுவின் முன் அனுமதியின்றி சக உறுப்பினர்களுக்கு தனிப்பட்ட மெசேஜ் (Cold DMs) அனுப்புவது.",
+        "• 🚫 MLM அல்லது கிரிப்டோ விளம்பரங்கள்.",
+        "",
+        "⚖️ *3-நிலை ஒழுங்குமுறை நடவடிக்கை:*",
+        "1️⃣ நிலை 1: எச்சரிக்கை & மெசேஜ் நீக்கம்.",
+        "2️⃣ நிலை 2: 30 நாட்கள் இடைநீக்கம் & பாஸ் ரத்து.",
+        "3️⃣ நிலை 3: நிரந்தர நீக்கம் & டிஜிட்டல் உறுப்பினர் அட்டை ரத்து.",
+        "",
+        "🔗 முழு வழிகாட்டுதல்கள்: https://csc.logicintelligencetechnologies.in/community-guidelines",
+      ].join("\n");
+    }
+
+    if (lang === "tanglish") {
+      return [
+        "📜 *CSC Circle — Official WhatsApp Group Guidelines*",
+        "✨ *High Signal • Zero Noise*",
+        "",
+        "✅ *Allowed & Encouraged:*",
+        "• Member introductions (Name, Startup, Problem Statement).",
+        "• Product showcases & asking for UI/UX or architecture feedback.",
+        "• Genuine ecosystem events, hackathons & grant updates (TANSEED, SISFS).",
+        "",
+        "❌ *Strictly Prohibited:*",
+        "• 🚫 Direct commercial advertising, retail sales, discount flyers.",
+        "• 🚫 Third-party WhatsApp/Telegram links or speculative crypto promos.",
+        "• 🚫 Unsolicited private DMs to members without prior group consent.",
+        "• 🚫 Forwarded spam, political, or religious debates.",
+        "",
+        "⚖️ *Moderation:* Strike 1 (Warning) ➡️ Strike 2 (30-day suspension) ➡️ Strike 3 (Permanent Ban & ID cancellation).",
+        "",
+        "🔗 Detailed Guidelines: https://csc.logicintelligencetechnologies.in/community-guidelines",
+      ].join("\n");
+    }
+
+    return [
+      "📜 *CSC Circle — Official WhatsApp Group Guidelines*",
+      "✨ *High Signal • Zero Noise*",
+      "",
+      "✅ *Allowed & Encouraged:*",
+      "• *Introductions:* Name, startup stage, problem statement, and collaboration needs.",
+      "• *Showcases:* Product updates, traction, and peer feedback requests.",
+      "• *Opportunities:* Verified events, hackathons, and grant announcements (TANSEED, SISFS).",
+      "",
+      "❌ *Strictly Prohibited:*",
+      "• 🚫 Direct sales pitches, promotional flyers, or commercial advertising.",
+      "• 🚫 Unrelated third-party group links (WhatsApp/Telegram).",
+      "• 🚫 Unsolicited cold private DMs to group members without consent.",
+      "• 🚫 Multi-level marketing (MLM), crypto speculation, or forwarded noise.",
+      "",
+      "⚖️ *3-Stage Moderation:* Formal Warning ➡️ 30-Day Suspension ➡️ Permanent Digital ID Revocation & Ban.",
+      "",
+      "🔗 Complete Guidelines: https://csc.logicintelligencetechnologies.in/community-guidelines",
+    ].join("\n");
+  }
+
+  // Intent C: Community Overview Alone
+  if (hasCommunityIntent) {
+    if (lang === "ta") {
+      return [
+        "🌟 *கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டி (CSC Circle)* ✨",
+        "",
+        "📌 *எங்கள் குறிக்கோள் (Tagline):*",
+        "*“Connect • Build • Grow”*",
+        "",
+        "🎯 *எங்கள் நோக்கம்:*",
+        "கோவை மற்றும் மேற்கு தமிழ்நாட்டில் உள்ள ஸ்டார்ட்அப் பவுண்டர்கள், டெவலப்பர்கள், முதலீட்டாளர்கள் மற்றும் மாணவர்களை இணைத்து, புதிய கண்டுபிடிப்புகளை வணிக ரீதியாக உயர்த்த உதவும் அதிகாரப்பூர்வ தளம்.",
+        "",
+        "🚀 *முக்கிய சேவைகள்:*",
+        "• *ஆஃப்லைன் நிகழ்வுகள்:* https://csc.logicintelligencetechnologies.in/events",
+        "• *ஸ்டார்ட்அப் பட்டியல்:* https://csc.logicintelligencetechnologies.in/directory",
+        "• *இலவச உறுப்பினர் சேர்க்கை:* https://csc.logicintelligencetechnologies.in/membership (5 நிமிடங்களில் அனுமதி)",
+        "• *அதிகாரப்பூர்வ வாட்ஸ்அப் குழு:* https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+      ].join("\n");
+    }
+
+    if (lang === "tanglish") {
+      return [
+        "🌟 *Coimbatore Startup Community (CSC Circle)* ✨",
+        "",
+        "📌 *Tagline:* *“Connect • Build • Grow”*",
+        "",
+        "🎯 *What We Do:*",
+        "CSC Circle is Coimbatore's premier startup network powered by *Logic Intelligence Technologies*. We connect local founders, developers, innovators, and angel investors to eliminate founder isolation and build resilient businesses.",
+        "",
+        "🚀 *Platform Highlights:*",
+        "• Offline Meetups: https://csc.logicintelligencetechnologies.in/events",
+        "• Founder Directory: https://csc.logicintelligencetechnologies.in/directory",
+        "• Free Membership: https://csc.logicintelligencetechnologies.in/membership (5 mins approval)",
+        "• Official WhatsApp Community: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+      ].join("\n");
+    }
+
+    return [
+      "🌟 *Coimbatore Startup Community (CSC Circle)* ✨",
+      "",
+      "📌 *Motto:* *“Connect • Build • Grow”*",
+      "",
+      "🎯 *About Us:*",
+      "Coimbatore Startup Community (CSC Circle) is an independent, founder-centric platform dedicated to catalyzing high-impact entrepreneurship across Coimbatore and Western Tamil Nadu, powered by *Logic Intelligence Technologies*.",
+      "",
+      "🚀 *Platform Capabilities:*",
+      "• *Offline Events & Pitch Arenas:* https://csc.logicintelligencetechnologies.in/events",
+      "• *Verified Founder Directory:* https://csc.logicintelligencetechnologies.in/directory",
+      "• *Digital Membership Pass:* https://csc.logicintelligencetechnologies.in/membership (Auto-approved within 5 minutes)",
+      "• *Official WhatsApp Community:* https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+    ].join("\n");
+  }
+
+  // Intent D: 5 Official WhatsApp Ecosystem Groups & Bios
+  if (/(5 groups|five groups|whatsapp groups|ecosystem bios|group bios|mindsprint|announcements|business network|opportunities channel)/i.test(lower)) {
+    return [
+      "📢 *CSC 5 Official WhatsApp Ecosystem Groups*",
+      "",
+      "1️⃣ *CSC Announcements* — Official broadcast channel, zero-noise, admin-only. Major summits, partnerships (Startup TN/Startup India), and policy alerts.",
+      "2️⃣ *CSC Circle* — Main community hub for peer founder discussions, product showcases, UI/UX critiques, and collaboration.",
+      "3️⃣ *CSC Mindsprint* — Daily engineering sprints (Monday Logic), product teardowns, Build-in-Public sprints, and hackathons.",
+      "4️⃣ *CSC Business Network* — B2B procurement, corporate pilots, connecting legacy industrial manufacturing with startups & angel syndicates.",
+      "5️⃣ *CSC Opportunities* — Non-dilutive capital radar: TANSEED (up to ₹15L), SISFS (up to ₹50L), BIRAC, and top accelerator cohorts.",
+      "",
+      "👉 *Join Official Leadership & Community Hub:* https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+    ].join("\n");
+  }
+
+  // Intent E: Leadership Team Queries
   const isFounderQuery =
     /^(who is the founder|who are the founders|who started csc|who started|who founded|founder\?|co-founder\?)/i.test(trimmed) ||
     /^(founder|co-founder|founders|co-founders|leadership)$/i.test(trimmed) ||
@@ -866,23 +1195,23 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
 
   if (/(who (is|are) (the )?)?(cto|head of tech|tech lead)\b|vikash/i.test(lower)) {
     return lang === "ta"
-      ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை தொழில்நுட்ப அதிகாரி (CTO) மற்றும் தொழில்நுட்பத் தலைவர் *விகாஷ் சரவணன்* (Vikash Saravanan). தொழில்நுட்ப கூட்டாண்மை: Logic Intelligence Technologies (LIT)."
+      ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை தொழில்நுட்ப அதிகாரி (CTO) மற்றும் தொழில்நுட்பத் தலைவர் *விகாஷ் சரவணன்* (Vikash Saravanan). இவர் Logic Intelligence Technologies (LIT) நிறுவனத்தின் நிறுவனர் & CEO ஆவார்."
       : lang === "tanglish"
-      ? "CSC Circle-yoda CTO & Head of Tech *Vikash Saravanan* (Founder & CEO, Logic Intelligence Technologies - LIT)."
-      : "*Vikash Saravanan* is the Chief Technology Officer (CTO) & Head of Tech for Coimbatore Startup Community (CSC Circle) and Founder & CEO of Logic Intelligence Technologies (LIT).";
+      ? "CSC Circle-yoda CTO & Head of Tech *Vikash Saravanan* (Founder & CEO, Logic Intelligence Technologies - LIT). Digital platform architecture and member verification இவரால் நிர்வகிக்கப்படுகிறது."
+      : "*Vikash Saravanan* is the Chief Technology Officer (CTO) & Head of Tech for Coimbatore Startup Community (CSC Circle) and Founder & CEO of Logic Intelligence Technologies (LIT). He oversees digital platform architecture, software development, and member ID approvals.";
   }
 
   if (/(who (is|are) (the )?)?(ceo|chief executive)\b|mirra/i.test(lower)) {
     return lang === "ta"
-      ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை நிர்வாக அதிகாரி (CEO) *மிர்ரா மகேந்திரன்* (Mirra Mahendran) ஆவார்."
+      ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை நிர்வாக அதிகாரி (CEO) *மிர்ரா மகேந்திரன்* (Mirra Mahendran) ஆவார். இவர் PSG Institute of Advanced Studies-ல் சர்வதேச வணிகம் படித்து வருகிறார்."
       : lang === "tanglish"
-      ? "CSC Circle-yoda CEO *Mirra Mahendran* aavarga."
-      : "*Mirra Mahendran* is the Chief Executive Officer (CEO) of Coimbatore Startup Community (CSC Circle).";
+      ? "CSC Circle-yoda CEO *Mirra Mahendran* aavarga (PSG Institute of Advanced Studies). Day-to-day operations and structured execution இவரால் வழிநடத்தப்படுகிறது."
+      : "*Mirra Mahendran* is the Chief Executive Officer (CEO) of Coimbatore Startup Community (CSC Circle). Pursuing International Business at PSG IAS, she drives day-to-day operations and execution.";
   }
 
   if (isFounderQuery) {
     return lang === "ta"
-      ? "CSC Circle அமைப்பின் நிறுவனர் *K. N. ரேயாஷ்* (K. N. Reyash) மற்றும் இணை நிறுவனர் *E. R. சரண்* (E. R. Sharan) ஆவர். தொழில்நுட்ப கூட்டாண்மை: Logic Intelligence Technologies (LIT)."
+      ? "CSC Circle அமைப்பின் நிறுவனர் *K. N. ரேயாஷ்* (K. N. Reyash - Founder, Belvoria) மற்றும் இணை நிறுவனர் *E. R. சரண்* (E. R. Sharan - Founder, CECIL Groups) ஆவர். தொழில்நுட்ப கூட்டாண்மை: Logic Intelligence Technologies (LIT)."
       : lang === "tanglish"
       ? "Coimbatore Startup Community-ah start pannadhu *K. N. Reyash* (Founder, Belvoria) and *E. R. Sharan* (Co-Founder, Founder of CECIL Groups). Technical Partner: Logic Intelligence Technologies (LIT)."
       : "Coimbatore Startup Community was founded by *K. N. Reyash* (Founder, Belvoria) and *E. R. Sharan* (Co-Founder, Founder of CECIL Groups). Technical Partner: Logic Intelligence Technologies (LIT).";
@@ -892,26 +1221,43 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
     return lang === "ta"
       ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை சமூக அதிகாரி (Chief Community Officer - CCO) *சுவாதி* (Swathi) ஆவார்."
       : lang === "tanglish"
-      ? "CSC Circle-yoda Chief Community Officer (CCO) *Swathi* aavarga."
-      : "*Swathi* is the Chief Community Officer (CCO) of Coimbatore Startup Community (CSC Circle).";
+      ? "CSC Circle-yoda Chief Community Officer (CCO) *Swathi* aavarga. Member coordination and community engagement-ஐ நிர்வகிக்கிறார்."
+      : "*Swathi* is the Chief Community Officer (CCO) of Coimbatore Startup Community (CSC Circle), spearheading member coordination and community engagement.";
   }
 
   if (/(who (is|are) (the )?)?(coo|operating officer|operations lead)\b|kishore/i.test(lower)) {
     return lang === "ta"
       ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை செயல்பாட்டு அதிகாரி (Chief Operating Officer - COO) *கிஷோர் சி* (Kishore C) ஆவார். இவர் APARÈ Clothing நிறுவனத்தின் நிறுவனர்."
       : lang === "tanglish"
-      ? "CSC Circle-yoda Chief Operating Officer (COO) *Kishore C* (Founder, APARÈ Clothing)."
-      : "*Kishore C* is the Chief Operating Officer (COO) of Coimbatore Startup Community (CSC Circle) and Founder of APARÈ Clothing.";
+      ? "CSC Circle-yoda Chief Operating Officer (COO) *Kishore C* (Founder, APARÈ Clothing). Event planning and on-ground logistics இவரால் வழிநடத்தப்படுகிறது."
+      : "*Kishore C* is the Chief Operating Officer (COO) of Coimbatore Startup Community (CSC Circle) and Founder of APARÈ Clothing, leading on-ground logistics and event planning.";
   }
 
   if (/(who (is|are) (the )?)?(cbo|brand officer|brand lead|branding)\b|jaibharath|jai bharath/i.test(lower)) {
     return lang === "ta"
       ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை பிராண்ட் அதிகாரி (Chief Brand Officer - CBO) *ஜெய்பரத் வி* (Jaibharath V) ஆவார். இவர் Flickkora Agency நிறுவனத்தின் நிறுவனர்."
       : lang === "tanglish"
-      ? "CSC Circle-yoda Chief Brand Officer (CBO) *Jaibharath V* (Founder, Flickkora Agency)."
-      : "*Jaibharath V* is the Chief Brand Officer (CBO) of Coimbatore Startup Community (CSC Circle) and Founder of Flickkora Agency.";
+      ? "CSC Circle-yoda Chief Brand Officer (CBO) *Jaibharath V* (Founder, Flickkora Agency). Brand strategy and media production-ஐ நிர்வகிக்கிறார்."
+      : "*Jaibharath V* is the Chief Brand Officer (CBO) of Coimbatore Startup Community (CSC Circle) and Founder of Flickkora Agency, leading brand strategy and creative media.";
   }
 
+  if (/(leadership team|core team|organizers|who runs csc|board members)/i.test(lower)) {
+    return [
+      "👑 *CSC Circle Core Leadership Desk*",
+      "",
+      "• *Founder:* K. N. Reyash (Founder, Belvoria)",
+      "• *Co-Founder:* E. R. Sharan (Founder, CECIL Groups)",
+      "• *CEO:* Mirra Mahendran (PSG IAS)",
+      "• *CTO:* Vikash Saravanan (Founder & CEO, Logic Intelligence Technologies)",
+      "• *CCO:* Swathi (Community Engagement & Member Support)",
+      "• *COO:* Kishore C. (Founder, APARÈ Clothing)",
+      "• *CBO:* Jaibharath V. (Founder, Flickkora Agency)",
+      "",
+      "Technical Infrastructure Partner: *Logic Intelligence Technologies (LIT)*",
+    ].join("\n");
+  }
+
+  // Intent F: Membership Inquiries
   if (/membership|free|join|cost|fees|fee/i.test(lower)) {
     return lang === "ta"
       ? "CSC Circle உறுப்பினர் சேர்க்கை 100% முற்றிலும் இலவசம்! 5 நிமிடங்களில் தானியங்கி ஒப்புதல் பெற இணையுங்கள்: https://csc.logicintelligencetechnologies.in/membership"
@@ -920,6 +1266,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
       : "Membership in CSC Circle is 100% free with automated 5-minute approval! Join here: https://csc.logicintelligencetechnologies.in/membership";
   }
 
+  // Intent G: Event Inquiries
   if (/event|meetup|masterclass|pitch/i.test(lower)) {
     return lang === "ta"
       ? "கோவையின் அடுத்த ஆஃப்லைன் பவுண்டர் மீட்டிங் & மாஸ்டர்கிளாஸ் விவரங்களை அறிய: https://csc.logicintelligencetechnologies.in/events அல்லது */events* என அனுப்பவும்."
@@ -928,14 +1275,29 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
       : "Explore upcoming offline founder meetups and masterclasses in Coimbatore at: https://csc.logicintelligencetechnologies.in/events or reply */events*.";
   }
 
-  if (/pass|ticket|card|qr/i.test(lower)) {
+  // Intent H: Digital ID Card / Passes (Strictly NO "pump set")
+  if (/pass|ticket|card|digital id|membership card|qr/i.test(lower)) {
     return lang === "ta"
-      ? "உங்கள் டிஜிட்டல் உறுப்பினர் அட்டை மற்றும் நிகழ்வு நுழைவு QR கோட் பெற: https://csc.logicintelligencetechnologies.in/profile/id-card அல்லது */pass* என அனுப்பவும்."
+      ? "உங்கள் கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டி டிஜிட்டல் உறுப்பினர் அட்டை (CSC Digital ID Card) மற்றும் நிகழ்வு நுழைவு QR பாஸை பெற: https://csc.logicintelligencetechnologies.in/profile/id-card அல்லது */pass* என அனுப்பவும்."
       : lang === "tanglish"
-      ? "Unga digital membership card & event QR gate pass eduka: https://csc.logicintelligencetechnologies.in/profile/id-card illa */pass* send pannunga."
-      : "Access your digital membership card & event QR gate pass at: https://csc.logicintelligencetechnologies.in/profile/id-card or reply */pass*.";
+      ? "Unga Coimbatore Startup Community Digital ID Card & event QR gate pass eduka: https://csc.logicintelligencetechnologies.in/profile/id-card illa */pass* send pannunga."
+      : "Access your official Coimbatore Startup Community Membership ID Card & dynamic event QR gate pass at: https://csc.logicintelligencetechnologies.in/profile/id-card or reply */pass*.";
   }
 
+  // Intent I: Opportunities & Grants (TANSEED, SISFS)
+  if (/opportunity|opportunities|grant|funding|tanseed|sisfs|investor/i.test(lower)) {
+    return [
+      "💰 *CSC Funding & Opportunities Radar*",
+      "",
+      "Explore non-dilutive government seed grants, investor pitch calls, and startup accelerators:",
+      "• *TANSEED (Startup TN):* Up to ₹15 Lakhs equity-free grant.",
+      "• *SISFS (Startup India):* Up to ₹50 Lakhs seed funding via incubators.",
+      "• *Live Opportunities Feed:* https://csc.logicintelligencetechnologies.in/opportunities",
+      "• *Founder Pitch & Grant Templates:* https://csc.logicintelligencetechnologies.in/resources",
+    ].join("\n");
+  }
+
+  // Fallback Greeting
   if (lang === "ta") {
     return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டிக்கு வரவேற்கிறோம். உடனடி வழிகாட்டுதலுக்கு */menu* அல்லது கட்டளைகளுக்கு */help* என அனுப்பவும்.";
   }

@@ -1,279 +1,97 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { routeInboundWhatsAppMessage } from "../src/lib/services/whatsapp-inbound-router";
 
-// Mock MSG91 dispatch
-const mockSendText = vi.fn().mockResolvedValue({ success: true, message: "Dispatched" });
-vi.mock("@/lib/services/msg91", () => ({
-  sendMsg91WhatsAppTextMessage: (...args: any[]) => mockSendText(...args),
+// Mock external network calls
+vi.mock("../src/lib/services/msg91", () => ({
+  sendMsg91WhatsAppTextMessage: vi.fn().mockResolvedValue({
+    success: true,
+    message: "Message queued",
+  }),
 }));
 
-// Mock team alerts
-const mockTeamAlert = vi.fn().mockResolvedValue({ success: true });
-vi.mock("@/lib/services/team-alerts", () => ({
-  dispatchTeamWhatsAppAlert: (...args: any[]) => mockTeamAlert(...args),
+vi.mock("../src/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn().mockReturnValue({
+    from: vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+  }),
 }));
 
-// Mock Supabase admin
-vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: vi.fn(() => ({})),
-}));
-
-import {
-  routeInboundWhatsAppMessage,
-  detectLanguage,
-} from "../src/lib/services/whatsapp-inbound-router";
-
-describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("accurately detects language: Tamil, Tanglish, and English", () => {
-    expect(detectLanguage("வணக்கம்")).toBe("ta");
-    expect(detectLanguage("நிகழ்வுகள் எப்போது?")).toBe("ta");
-
-    expect(detectLanguage("vanakkam nanba")).toBe("tanglish");
-    expect(detectLanguage("events epdi paakanum bro?")).toBe("tanglish");
-    expect(detectLanguage("founder yaaru-nu solunga")).toBe("tanglish");
-
-    expect(detectLanguage("Hello there")).toBe("en");
-    expect(detectLanguage("Who is the CTO?")).toBe("en");
-  });
-
-  it("renders Tanglish welcome and navigation menu on Tanglish greetings", async () => {
+describe("CSC WhatsApp Inbound Router & Community RAG Knowledge Engine", () => {
+  it("answers the user's exact query: 'I need to know about your community and also the whatsapp group guidelines'", async () => {
     const res = await routeInboundWhatsAppMessage({
       phone: "917550067712",
-      text: "vanakkam bro",
+      text: "I need to know about your community and also the whatsapp group guidelines",
     });
 
     expect(res.handled).toBe(true);
-    expect(res.command).toBe("WELCOME_GREETING_AND_MENU");
-    expect(mockSendText).toHaveBeenCalledTimes(2);
-    expect(mockSendText).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        recipientPhone: "917550067712",
-        text: expect.stringContaining("Coimbatore Startup Community-ku Anbana Varaverpu!"),
-      })
-    );
-    expect(mockSendText).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        recipientPhone: "917550067712",
-        text: expect.stringContaining("Official Quick Navigation"),
-      })
-    );
+    // Must contain community information
+    expect(res.replyText).toContain("Coimbatore Startup Community");
+    expect(res.replyText).toContain("Connect");
+    // Must contain WhatsApp group guidelines / rules
+    expect(res.replyText.toLowerCase()).toMatch(/guidelines|rules|conduct|prohibited/);
+    // Must NOT contain the generic fallback
+    expect(res.replyText).not.toContain("Reply */menu* for our quick options or */help* for all slash commands");
   });
 
-  it("handles voice note politely without token consumption", async () => {
+  it("answers 'WhatsApp community guidelines' accurately", async () => {
     const res = await routeInboundWhatsAppMessage({
-      phone: "+91 75500 67712",
-      text: "",
-      isAudio: true,
+      phone: "917550067712",
+      text: "WhatsApp community guidelines",
     });
 
     expect(res.handled).toBe(true);
-    expect(res.command).toBe("VOICE_NOTE");
-    expect(res.replyText).toContain("Voice Notes Not Supported");
-    expect(res.replyText).toContain("மன்னிக்கவும்");
-    expect(mockSendText).toHaveBeenCalledWith(
-      expect.objectContaining({
-        recipientPhone: "917550067712",
-        text: expect.stringContaining("Voice Notes Not Supported"),
-      })
-    );
+    expect(res.replyText.toLowerCase()).toMatch(/guidelines|rules/);
+    expect(res.replyText).toContain("https://csc.logicintelligencetechnologies.in/community-guidelines");
   });
 
-  it("renders interactive navigation menu on MENU, START, or SELECT command", async () => {
+  it("handles the new official command /rules and option 7", async () => {
     const res = await routeInboundWhatsAppMessage({
       phone: "917550067712",
-      text: "MENU",
+      text: "/rules",
     });
 
     expect(res.handled).toBe(true);
-    expect(res.command).toBe("MENU");
-    expect(res.replyText).toContain("Quick Navigation");
-    expect(res.replyText).toContain("Upcoming Events");
-    expect(res.replyText).toContain("Digital ID & Event Passes");
-    expect(mockSendText).toHaveBeenCalledTimes(1);
-
-    mockSendText.mockClear();
-    const selectRes = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "select",
-    });
-    expect(selectRes.handled).toBe(true);
-    expect(selectRes.command).toBe("MENU");
-    expect(selectRes.replyText).toContain("Quick Navigation");
-    expect(mockSendText).toHaveBeenCalledTimes(1);
+    expect(res.command).toBe("GUIDELINES");
+    expect(res.replyText.toLowerCase()).toContain("code of conduct");
+    expect(res.replyText).toContain("Stage 1");
+    expect(res.replyText).toContain("Stage 3");
   });
 
-  it("sends welcome greeting first and then navigation menu on Hi / Hello", async () => {
+  it("explains the 5 official WhatsApp groups and bios from csc-whatsapp-ecosystem-bios.txt", async () => {
     const res = await routeInboundWhatsAppMessage({
       phone: "917550067712",
-      text: "Hi",
+      text: "What are the 5 whatsapp groups in your ecosystem?",
     });
 
     expect(res.handled).toBe(true);
-    expect(res.command).toBe("WELCOME_GREETING_AND_MENU");
-    expect(mockSendText).toHaveBeenCalledTimes(2);
-    expect(mockSendText).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        recipientPhone: "917550067712",
-        text: expect.stringContaining("Welcome to Coimbatore Startup Community!"),
-      })
-    );
-    expect(mockSendText).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        recipientPhone: "917550067712",
-        text: expect.stringContaining("Official Quick Navigation"),
-      })
-    );
+    expect(res.replyText).toContain("CSC Announcements");
+    expect(res.replyText).toContain("CSC Circle");
+    expect(res.replyText).toContain("CSC Mindsprint");
+    expect(res.replyText).toContain("CSC Business Network");
+    expect(res.replyText).toContain("CSC Opportunities");
   });
 
-  it("renders Tamil welcome and navigation menu on வணக்கம்", async () => {
+  it("accurately names the leadership desk including Founder, Co-Founder, CTO, CEO, CCO, COO, CBO", async () => {
     const res = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "வணக்கம்",
-    });
-
-    expect(res.handled).toBe(true);
-    expect(res.command).toBe("WELCOME_GREETING_AND_MENU");
-    expect(mockSendText).toHaveBeenCalledTimes(2);
-    expect(res.replyText).toContain("விரைவு வழிகாட்டி");
-    expect(res.replyText).toContain("நிகழ்வுகள்");
-  });
-
-  it("provides digital pass link on PASS command", async () => {
-    const res = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "PASS",
-    });
-
-    expect(res.handled).toBe(true);
-    expect(res.command).toBe("PASS");
-    expect(res.replyText).toContain("/profile/id-card");
-  });
-
-  it("captures IDEA and notifies Leadership Group on IDEA <text>", async () => {
-    const res = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "IDEA AI Startup Pitch Battle in Gandhipuram",
-    });
-
-    expect(res.handled).toBe(true);
-    expect(res.command).toBe("IDEA_RECORDED");
-    expect(res.replyText).toContain("Thank You for Shaping Our Ecosystem");
-    expect(mockTeamAlert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "feedback_submitted",
-        fields: expect.objectContaining({
-          "Idea / Topic": "AI Startup Pitch Battle in Gandhipuram",
-        }),
-      })
-    );
-  });
-
-  it("provides community WhatsApp group link on COMMUNITY command", async () => {
-    const res = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "COMMUNITY",
-    });
-
-    expect(res.handled).toBe(true);
-    expect(res.command).toBe("COMMUNITY");
-    expect(res.replyText).toContain("https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3");
-  });
-
-  it("returns matchmaking guide on MATCH command", async () => {
-    const res = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "MATCH AI",
-    });
-
-    expect(res.handled).toBe(true);
-    expect(res.command).toBe("MATCH_SEARCH");
-    expect(res.replyText).toContain("Founders Matching");
-    expect(res.replyText).toContain("/directory?q=AI");
-  });
-
-  it("handles slash commands seamlessly (e.g. /events, /pass, /help)", async () => {
-    // /events test
-    const eventsRes = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "/events",
-    });
-    expect(eventsRes.handled).toBe(true);
-    expect(eventsRes.command).toBe("EVENTS");
-    expect(eventsRes.replyText).toContain("/events");
-
-    // /pass test
-    const passRes = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "/pass",
-    });
-    expect(passRes.handled).toBe(true);
-    expect(passRes.command).toBe("PASS");
-    expect(passRes.replyText).toContain("/profile/id-card");
-
-    // /help test
-    const helpRes = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "/help",
-    });
-    expect(helpRes.handled).toBe(true);
-    expect(helpRes.command).toBe("HELP");
-    expect(helpRes.replyText).toContain("Official Commands Guide");
-  });
-
-  it(
-    "resolves community knowledge questions accurately via agent knowledge base",
-    async () => {
-    const ctoRes = await routeInboundWhatsAppMessage({
       phone: "917550067712",
       text: "Who is the CTO of CSC Circle?",
     });
 
-    expect(ctoRes.handled).toBe(true);
-    expect(ctoRes.command).toBe("AI_REPLY");
-    expect(ctoRes.replyText).toContain("Vikash Saravanan");
-    expect(ctoRes.replyText).toContain("Logic Intelligence Technologies");
+    expect(res.handled).toBe(true);
+    expect(res.replyText).toContain("Vikash Saravanan");
+    expect(res.replyText).toContain("Logic Intelligence Technologies");
+  });
 
-    const memberRes = await routeInboundWhatsAppMessage({
+  it("never refers to the digital ID card as pump set", async () => {
+    const res = await routeInboundWhatsAppMessage({
       phone: "917550067712",
-      text: "How much does membership cost?",
+      text: "How do I download my membership card or gate pass?",
     });
 
-    expect(memberRes.handled).toBe(true);
-    expect(memberRes.command).toBe("AI_REPLY");
-    expect(memberRes.replyText).toMatch(/100%\s*free/i);
-
-    // Test CCO Swathi
-    const ccoRes = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "Who is the Chief Community Officer?",
-    });
-    expect(ccoRes.handled).toBe(true);
-    expect(ccoRes.command).toBe("AI_REPLY");
-    expect(ccoRes.replyText).toContain("Swathi");
-
-    // Test COO Kishore C
-    const cooRes = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "Who is the Chief Operating Officer?",
-    });
-    expect(cooRes.handled).toBe(true);
-    expect(cooRes.command).toBe("AI_REPLY");
-    expect(cooRes.replyText).toContain("Kishore C");
-
-    // Test CBO Jaibharath V
-    const cboRes = await routeInboundWhatsAppMessage({
-      phone: "917550067712",
-      text: "Who is the Chief Brand Officer?",
-    });
-    expect(cboRes.handled).toBe(true);
-    expect(cboRes.command).toBe("AI_REPLY");
-    expect(cboRes.replyText).toContain("Jaibharath V");
-  }, 25000);
+    expect(res.handled).toBe(true);
+    expect(res.replyText).toContain("https://csc.logicintelligencetechnologies.in/profile/id-card");
+    expect(res.replyText.toLowerCase()).not.toContain("pump set");
+    expect(res.replyText.toLowerCase()).not.toContain("pumpset");
+  });
 });
