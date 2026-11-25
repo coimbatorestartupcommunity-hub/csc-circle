@@ -1,5 +1,6 @@
 import "server-only";
 import crypto from "node:crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sendCommunityEmail } from "@/lib/notifications/email";
 import { emailConfiguration } from "@/lib/notifications/config";
 import { renderMerakiEditorialEmail } from "@/lib/notifications/template-meraki";
@@ -34,7 +35,27 @@ export async function generateSecurityCode(userId: string): Promise<string> {
     attempts: 0,
   });
 
-  // 2. Store in Redis if available
+  // 2. Store in Supabase Postgres (Persistent across all Vercel Serverless Function instances)
+  try {
+    const admin = createAdminClient();
+    await admin.from("whatsapp_message_outbox").insert({
+      contact_id: userId.includes("-") ? userId : "00000000-0000-0000-0000-000000000000",
+      recipient_phone: "system",
+      recipient_chat_id: `user:${userId}`,
+      message_type: "auth_security_code",
+      message_payload: {
+        code,
+        userId,
+        expires_at: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
+      },
+      status: "delivered",
+      idempotency_key: `sec-${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    });
+  } catch (dbErr) {
+    console.warn("[security-code] Supabase persistence note:", dbErr);
+  }
+
+  // 3. Store in Redis if available
   if (isRedisEnabled()) {
     try {
       const client = getRedisClient();
@@ -87,6 +108,44 @@ export async function verifySecurityCode(userId: string, inputCode: string): Pro
         return false;
       }
       storedCode = mem.code;
+    }
+  }
+
+  // 3. Try Supabase Postgres (Persistent source of truth across all Vercel Serverless Function instances)
+  if (!storedCode) {
+    try {
+      const admin = createAdminClient();
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: records } = await admin
+        .from("whatsapp_message_outbox")
+        .select("id, message_payload, status, created_at")
+        .eq("recipient_chat_id", `user:${userId}`)
+        .eq("message_type", "auth_security_code")
+        .gte("created_at", tenMinutesAgo)
+        .neq("status", "verified")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (records && records.length > 0) {
+        const matchingRecord = records.find((r) => {
+          const payload = r.message_payload as Record<string, any> | null;
+          const payloadCode = payload?.code;
+          return payloadCode && payloadCode.toString().trim() === cleanInput;
+        });
+
+        if (matchingRecord) {
+          storedCode = cleanInput;
+          void admin
+            .from("whatsapp_message_outbox")
+            .update({
+              status: "verified",
+              last_error_message: `Verified at ${new Date().toISOString()}`,
+            })
+            .eq("id", matchingRecord.id);
+        }
+      }
+    } catch (dbErr) {
+      console.warn("[verifySecurityCode] Supabase lookup note:", dbErr);
     }
   }
 

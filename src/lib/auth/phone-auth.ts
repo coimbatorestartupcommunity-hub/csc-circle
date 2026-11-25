@@ -46,7 +46,27 @@ export async function sendPhoneOtp({
     attempts: 0,
   });
 
-  // 2. Store in Redis if enabled
+  // 2. Store in Supabase Postgres (Persistent across all Vercel Serverless Function instances)
+  try {
+    const admin = createAdminClient();
+    await admin.from("whatsapp_message_outbox").insert({
+      contact_id: "00000000-0000-0000-0000-000000000000",
+      recipient_phone: e164,
+      recipient_chat_id: `${e164}@c.us`,
+      message_type: "phone_login_otp",
+      message_payload: {
+        code,
+        expires_at: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
+        sentAt: new Date().toISOString(),
+      },
+      status: "delivered",
+      idempotency_key: `otp-${e164}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    });
+  } catch (dbErr) {
+    console.warn("[phone-auth] Supabase OTP persistence note:", dbErr);
+  }
+
+  // 3. Store in Redis if enabled
   if (isRedisEnabled()) {
     try {
       const client = getRedisClient();
@@ -164,6 +184,49 @@ export async function verifyPhoneOtpCode(phone: string, inputCode: string): Prom
         return false;
       }
       storedCode = mem.code;
+    }
+  }
+
+  // 3. Try Supabase Postgres (Persistent source of truth across all Vercel Serverless Function instances)
+  if (!storedCode) {
+    try {
+      const admin = createAdminClient();
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: records } = await admin
+        .from("whatsapp_message_outbox")
+        .select("id, message_payload, status, created_at")
+        .eq("recipient_phone", e164)
+        .eq("message_type", "phone_login_otp")
+        .gte("created_at", tenMinutesAgo)
+        .neq("status", "verified")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (records && records.length > 0) {
+        // Find if cleanInput matches any active, unverified code for this phone
+        const matchingRecord = records.find((r) => {
+          const payload = r.message_payload as Record<string, any> | null;
+          const payloadCode =
+            payload?.code ||
+            payload?.otp ||
+            payload?.text?.match(/\b(\d{6})\b/)?.[1];
+          return payloadCode && payloadCode.toString().trim() === cleanInput;
+        });
+
+        if (matchingRecord) {
+          storedCode = cleanInput;
+          // Invalidate single-use code immediately
+          void admin
+            .from("whatsapp_message_outbox")
+            .update({
+              status: "verified",
+              last_error_message: `Verified at ${new Date().toISOString()}`,
+            })
+            .eq("id", matchingRecord.id);
+        }
+      }
+    } catch (dbErr) {
+      console.warn("[verifyPhoneOtpCode] Supabase OTP lookup note:", dbErr);
     }
   }
 
