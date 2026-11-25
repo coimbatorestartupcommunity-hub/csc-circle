@@ -372,13 +372,13 @@ const CSC_KNOWLEDGE_BASE_SYSTEM_PROMPT = `You are the official 24/7 AI WhatsApp 
 - Website: https://csc.logicintelligencetechnologies.in
 
 ### Core Leadership Team:
-- K. N. Reyash: Founder
-- E. R. Sharan: Co-Founder
-- Mirra Mahendran: Chief Executive Officer (CEO)
-- Vikash Saravanan: Chief Technology Officer (CTO) & Head of Tech at Logic Intelligence Technologies (Technical Partner)
-- Yuvraj: Design Lead
-- Jeya Krishna: Operations Lead
-- Ashif: Community Manager
+- K. N. Reyash: Founder, Coimbatore Startup Community (Belvoria)
+- E. R. Sharan: Co-Founder, Coimbatore Startup Community (Founder, CECIL Groups of Companies & Industries)
+- Mirra Mahendran: Chief Executive Officer (CEO), Coimbatore Startup Community
+- Vikash Saravanan: Chief Technology Officer (CTO) & Head of Tech — Founder & CEO, Logic Intelligence Technologies (LIT)
+- Swathi: Chief Community Officer (CCO), Coimbatore Startup Community
+- Kishore C: Chief Operating Officer (COO), Coimbatore Startup Community (Founder, APARÈ Clothing)
+- Jaibharath V: Chief Brand Officer (CBO), Coimbatore Startup Community (Founder, Flickkora Agency)
 - Technical Architecture & Infrastructure Partner: Logic Intelligence Technologies (LIT)
 
 ### Core Offerings & Direct Links:
@@ -446,7 +446,54 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
     }
   }
 
-  // 2. Try xAI Grok (Musk API: grok-2-latest)
+  // 2. Try Modal AI Direct Endpoint ($100 Inference Server provided by Founder)
+  const modalBaseUrl = (
+    process.env.MODAL_AI_ENDPOINT ||
+    "https://createwithvikash--ep-muse-spark-open-816b-a42b-server.us-west.modal.direct"
+  ).trim().replace(/\/+$/, "");
+  const modalToken = process.env.MODAL_PROXY_TOKEN || "";
+
+  if (modalBaseUrl) {
+    try {
+      const modalUrl = `${modalBaseUrl}/v1/chat/completions`;
+      const modalHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (modalToken) {
+        modalHeaders["Authorization"] = `Bearer ${modalToken}`;
+      }
+
+      const res = await fetch(modalUrl, {
+        method: "POST",
+        headers: modalHeaders,
+        body: JSON.stringify({
+          model: "default",
+          messages: [
+            { role: "system", content: CSC_KNOWLEDGE_BASE_SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 350,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const reply =
+          data?.choices?.[0]?.message?.content ||
+          data?.text ||
+          data?.output ||
+          data?.response;
+        if (reply && typeof reply === "string" && reply.trim()) {
+          return reply.trim();
+        }
+      }
+    } catch (modalErr) {
+      console.warn("[answerWithCommunityAI] Modal direct endpoint warning:", modalErr);
+    }
+  }
+
+  // 3. Try xAI Grok (Musk API: grok-2-latest)
   if (grokKey) {
     try {
       const res = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -476,14 +523,14 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
     }
   }
 
-  // 3. Graceful Contextual Knowledge Engine Fallback (No External API Required)
+  // 4. Graceful Contextual Knowledge Engine Fallback (No External API Required)
   const lower = userPrompt.toLowerCase();
   const isTa = /[\u0B80-\u0BFF]/.test(userPrompt);
 
   if (/cto|head of tech|tech lead|vikash/i.test(lower)) {
     return isTa
       ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை தொழில்நுட்ப அதிகாரி (CTO) மற்றும் தொழில்நுட்பத் தலைவர் *விகாஷ் சரவணன்* (Vikash Saravanan). தொழில்நுட்ப கூட்டாண்மை: Logic Intelligence Technologies (LIT)."
-      : "*Vikash Saravanan* is the Chief Technology Officer (CTO) & Head of Tech for Coimbatore Startup Community (CSC Circle) and Logic Intelligence Technologies (LIT).";
+      : "*Vikash Saravanan* is the Chief Technology Officer (CTO) & Head of Tech for Coimbatore Startup Community (CSC Circle) and Founder & CEO of Logic Intelligence Technologies (LIT).";
   }
 
   if (/ceo|chief executive/i.test(lower)) {
@@ -495,7 +542,25 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
   if (/founder|co-founder|reyash|sharan|who started/i.test(lower)) {
     return isTa
       ? "CSC Circle அமைப்பின் நிறுவனர் *K. N. ரேயாஷ்* (K. N. Reyash) மற்றும் இணை நிறுவனர் *E. R. சரண்* (E. R. Sharan) ஆவர்."
-      : "Coimbatore Startup Community was founded by *K. N. Reyash* (Founder) and *E. R. Sharan* (Co-Founder).";
+      : "Coimbatore Startup Community was founded by *K. N. Reyash* (Founder, Belvoria) and *E. R. Sharan* (Co-Founder, Founder of CECIL Groups).";
+  }
+
+  if (/cco|community officer|community lead|swathi/i.test(lower)) {
+    return isTa
+      ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை சமூக அதிகாரி (Chief Community Officer - CCO) *சுவாதி* (Swathi) ஆவார்."
+      : "*Swathi* is the Chief Community Officer (CCO) of Coimbatore Startup Community (CSC Circle).";
+  }
+
+  if (/coo|operating officer|operations lead|kishore/i.test(lower)) {
+    return isTa
+      ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை செயல்பாட்டு அதிகாரி (Chief Operating Officer - COO) *கிஷோர் சி* (Kishore C) ஆவார். இவர் APARÈ Clothing நிறுவனத்தின் நிறுவனர்."
+      : "*Kishore C* is the Chief Operating Officer (COO) of Coimbatore Startup Community (CSC Circle) and Founder of APARÈ Clothing.";
+  }
+
+  if (/cbo|brand officer|brand lead|branding|jaibharath|jai bharath/i.test(lower)) {
+    return isTa
+      ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை பிராண்ட் அதிகாரி (Chief Brand Officer - CBO) *ஜெய்பரத் வி* (Jaibharath V) ஆவார். இவர் Flickkora Agency நிறுவனத்தின் நிறுவனர்."
+      : "*Jaibharath V* is the Chief Brand Officer (CBO) of Coimbatore Startup Community (CSC Circle) and Founder of Flickkora Agency.";
   }
 
   if (/membership|free|join|cost|fees|fee/i.test(lower)) {

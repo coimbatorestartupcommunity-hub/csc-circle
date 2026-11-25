@@ -196,5 +196,32 @@ describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
     expect(memberRes.handled).toBe(true);
     expect(memberRes.command).toBe("AI_REPLY");
     expect(memberRes.replyText).toContain("100% free");
+
+    // Test CCO Swathi
+    const ccoRes = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "Who is the Chief Community Officer?",
+    });
+    expect(ccoRes.handled).toBe(true);
+    expect(ccoRes.command).toBe("AI_REPLY");
+    expect(ccoRes.replyText).toContain("Swathi");
+
+    // Test COO Kishore C
+    const cooRes = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "Who is the Chief Operating Officer?",
+    });
+    expect(cooRes.handled).toBe(true);
+    expect(cooRes.command).toBe("AI_REPLY");
+    expect(cooRes.replyText).toContain("Kishore C");
+
+    // Test CBO Jaibharath V
+    const cboRes = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "Who is the Chief Brand Officer?",
+    });
+    expect(cboRes.handled).toBe(true);
+    expect(cboRes.command).toBe("AI_REPLY");
+    expect(cboRes.replyText).toContain("Jaibharath V");
   });
 });
