@@ -47,7 +47,22 @@ export function isOutboundWebhookPayload(body: Record<string, any>): boolean {
   const direction = (body.direction || "").toString().toLowerCase();
   const rawStatus = (body.status || "").toString().toLowerCase();
 
-  // 0. Explicit inbound exclusion (Never treat inbound as outbound)
+  // 0. Sender check: If sender/from is our business number (+91 7550067712), this is an outbound event (echo of our send)
+  const senderCandidate = (
+    body.sender ||
+    body.from ||
+    body.senderId ||
+    body.data?.from ||
+    body.data?.sender ||
+    body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from ||
+    ""
+  ).toString().replace(/\D/g, "");
+
+  if (CSC_BUSINESS_NUMBERS.has(senderCandidate)) {
+    return true;
+  }
+
+  // 1. Explicit inbound exclusion (Never treat inbound as outbound)
   if (
     eventName.includes("inbound") ||
     direction === "inbound" ||
@@ -57,24 +72,41 @@ export function isOutboundWebhookPayload(body: Record<string, any>): boolean {
     return false;
   }
 
-  // 1. Explicit outbound identifiers
+  // 2. Check for customer text content:
+  // If the payload contains user-authored text content from an external sender (not our bot),
+  // it is 100% an INBOUND user message!
+  const hasIncomingText = Boolean(
+    body.content ||
+    body.text ||
+    body.body ||
+    body.message ||
+    body.msg ||
+    body.caption ||
+    body.button_reply?.title ||
+    body.list_reply?.title ||
+    body.interactive?.button_reply?.title ||
+    body.interactive?.list_reply?.title ||
+    body.data?.content ||
+    body.data?.text ||
+    body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body
+  );
+
+  if (hasIncomingText && !eventName.includes("outbound") && direction !== "outbound") {
+    return false;
+  }
+
+  // 3. Explicit outbound identifiers
   if (
     eventName.includes("outbound") ||
     direction === "outbound" ||
-    body.type === "outbound"
-  ) {
-    return true;
-  }
-
-  // 2. Specific MSG91 outbound event labels
-  if (
+    body.type === "outbound" ||
     eventName.includes("on outbound request received") ||
     eventName.includes("on outbound message received")
   ) {
     return true;
   }
 
-  // 3. Standard delivery receipts (Delivered, Read, Failed, Undelivered, Sent)
+  // 4. Standard delivery receipts (Delivered, Read, Failed, Undelivered, Sent) ONLY when there is no incoming text
   const deliveryStatuses = [
     "delivered",
     "read",
@@ -85,23 +117,9 @@ export function isOutboundWebhookPayload(body: Record<string, any>): boolean {
     "rejected",
   ];
   if (
-    deliveryStatuses.includes(eventName) ||
-    deliveryStatuses.includes(rawStatus)
+    (deliveryStatuses.includes(eventName) || deliveryStatuses.includes(rawStatus)) &&
+    !hasIncomingText
   ) {
-    return true;
-  }
-
-  // 4. Sender check: If sender/from is our business number, this is an outbound event
-  const senderCandidate = (
-    body.sender ||
-    body.from ||
-    body.senderId ||
-    body.data?.from ||
-    body.data?.sender ||
-    ""
-  ).toString().replace(/\D/g, "");
-
-  if (CSC_BUSINESS_NUMBERS.has(senderCandidate)) {
     return true;
   }
 
