@@ -94,4 +94,17 @@ describe("CSC WhatsApp Inbound Router & Community RAG Knowledge Engine", () => {
     expect(res.replyText.toLowerCase()).not.toContain("pump set");
     expect(res.replyText.toLowerCase()).not.toContain("pumpset");
   }, 15000);
+
+  it("strictly ensures bold formatting uses single asterisks (*word*) and NEVER double asterisks (**word**)", async () => {
+    const res = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "Who is the CTO of Coimbatore Startup Community?",
+    });
+
+    expect(res.handled).toBe(true);
+    // Must NOT contain double asterisks anywhere in outbound text
+    expect(res.replyText).not.toContain("**");
+    // Must contain native single asterisk bolding
+    expect(res.replyText).toMatch(/\*Vikash/);
+  }, 15000);
 });

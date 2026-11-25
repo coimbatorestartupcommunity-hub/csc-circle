@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBiWeeklyCommunityPulse, CSC_WHATSAPP_FOOTER } from "@/lib/services/community-pulse";
 import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 import { sendMsg91WhatsAppTextMessage } from "@/lib/services/msg91";
+import { formatForWhatsApp } from "@/lib/notifications/whatsapp-outbox";
 
 export type SupportedLanguage = "en" | "ta" | "tanglish";
 
@@ -754,17 +755,19 @@ export async function routeInboundWhatsAppMessage(
 
   // 12. Deep Community AI Knowledge Hub (Groq AI + Modal + xAI Grok / Musk API)
   const aiReply = await answerWithCommunityAI(trimmed);
-  const finalReply = `${aiReply}\n\n${CSC_WHATSAPP_FOOTER}`;
+  const formattedAiReply = formatForWhatsApp(aiReply);
+  const finalReply = formatForWhatsApp(`${formattedAiReply}\n\n${CSC_WHATSAPP_FOOTER}`);
   await sendReplySafely(cleanPhone, finalReply);
   return { handled: true, replyText: finalReply, command: "AI_REPLY" };
 }
 
 async function sendReplySafely(phone: string, text: string): Promise<void> {
   const cleanPhone = phone.replace(/\D/g, "");
+  const formattedText = formatForWhatsApp(text);
   try {
     const res = await sendMsg91WhatsAppTextMessage({
       recipientPhone: cleanPhone,
-      text,
+      text: formattedText,
     });
     try {
       const admin = createAdminClient();
@@ -774,7 +777,7 @@ async function sendReplySafely(phone: string, text: string): Promise<void> {
         recipient_chat_id: `${cleanPhone}@c.us`,
         message_type: "inbound_ai_reply",
         message_payload: {
-          text,
+          text: formattedText,
           sentAt: new Date().toISOString(),
           gatewaySuccess: res.success,
           message: res.message,

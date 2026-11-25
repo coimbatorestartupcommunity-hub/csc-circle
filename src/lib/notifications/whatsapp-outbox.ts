@@ -26,20 +26,27 @@ export interface WhatsAppNotificationPayload {
 
 /**
  * Normalizes CommonMark / LLM Markdown into standard WhatsApp formatting.
- * - Converts markdown double asterisks **bold** to WhatsApp *bold*.
+ * - Converts markdown double or multiple asterisks (**bold** / ****bold****) to single asterisks (*bold*).
  * - Converts ***bold-italic*** to _*bold-italic*_.
  * - Converts markdown headings (# Heading) to *Heading*.
  * - Converts bullet points (* or +) to • to avoid unclosed asterisk formatting bleed.
- * - Cleans stray double-stars that cause literal *word* to show up.
+ * - Cleans stray double-stars and internal whitespace to guarantee native WhatsApp bolding.
  */
 export function formatForWhatsApp(text: string): string {
   if (!text) return "";
   let out = text;
-  out = out.replace(/\*\*\*(.*?)\*\*\*/g, "_*$1*_");
-  out = out.replace(/\*\*(.*?)\*\*/g, "*$1*");
+  // Convert markdown bullet points (* or + at start of line) to •
+  out = out.replace(/^([ \t]*)[\*\+]\s+/gm, "$1• ");
+  // Triple asterisks (bold italic) ***text*** -> _*text*_
+  out = out.replace(/\*{3,}([^\*\n]+?)\*{3,}/g, "_*$1*_");
+  // Double or multiple asterisks (markdown bold) **text** -> *text*
+  out = out.replace(/\*{2,}([^\*\n]+?)\*{2,}/g, "*$1*");
+  // Markdown headings (# Heading) -> *Heading*
   out = out.replace(/^#{1,6}\s+(.*)$/gm, "*$1*");
-  out = out.replace(/^[\*\+]\s+/gm, "• ");
-  out = out.replace(/\*\*/g, "*");
+  // Clean up any remaining multiple asterisks (** or *** -> *)
+  out = out.replace(/\*{2,}/g, "*");
+  // Clean spaces right inside bold asterisks e.g. * Vikash * -> *Vikash*
+  out = out.replace(/\*\s+([^\*\n]+?)\s+\*/g, "*$1*");
   return out;
 }
 

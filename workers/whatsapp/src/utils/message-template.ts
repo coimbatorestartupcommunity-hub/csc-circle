@@ -21,16 +21,18 @@ export const CSC_WHATSAPP_FOOTER = [
 export function formatForWhatsApp(text: string): string {
   if (!text) return "";
   let out = text;
+  // Convert markdown bullet points (* or + at start of line) to •
+  out = out.replace(/^([ \t]*)[\*\+]\s+/gm, "$1• ");
   // Triple asterisks (bold italic) ***text*** -> _*text*_
-  out = out.replace(/\*\*\*(.*?)\*\*\*/g, "_*$1*_");
-  // Double asterisks (markdown bold) **text** -> *text*
-  out = out.replace(/\*\*(.*?)\*\*/g, "*$1*");
+  out = out.replace(/\*{3,}([^\*\n]+?)\*{3,}/g, "_*$1*_");
+  // Double or multiple asterisks (markdown bold) **text** -> *text*
+  out = out.replace(/\*{2,}([^\*\n]+?)\*{2,}/g, "*$1*");
   // Markdown headings (# Heading) -> *Heading*
   out = out.replace(/^#{1,6}\s+(.*)$/gm, "*$1*");
-  // Markdown bullet lists starting with * or + -> • to avoid dangling asterisks
-  out = out.replace(/^[\*\+]\s+/gm, "• ");
-  // Clean up any remaining double asterisks
-  out = out.replace(/\*\*/g, "*");
+  // Clean up any remaining multiple asterisks (** or *** -> *)
+  out = out.replace(/\*{2,}/g, "*");
+  // Clean spaces right inside bold asterisks e.g. * Vikash * -> *Vikash*
+  out = out.replace(/\*\s+([^\*\n]+?)\s+\*/g, "*$1*");
   return out;
 }
 
