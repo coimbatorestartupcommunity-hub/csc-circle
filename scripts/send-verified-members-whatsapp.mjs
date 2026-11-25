@@ -117,7 +117,7 @@ async function main() {
       "🎉 *Unga mobile number verify aayiruchu!*",
       "Now your founder profile is fully unlocked with:",
       "• 🎫 Instant WhatsApp Event Passes & RSVPs",
-      "• 🪪 Coimbatore \"Pumpset\" Signature Digital ID Card (பம்பு செட் கார்டு)",
+      "• 🪪 Coimbatore Startup Community Membership ID Card",
       "• ⚡ Priority Community Networking & Founder Hub Alerts",
       "• 🤖 24/7 Multi-Lingual WhatsApp Concierge (+91 75500 67712)",
       "",
