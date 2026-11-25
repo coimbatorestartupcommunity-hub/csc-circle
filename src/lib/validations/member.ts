@@ -5,7 +5,24 @@
  */
 
 import { z } from "zod";
-const designationSchema = z.enum(["startup_founder", "co_founder", "team_member", "developer", "student_entrepreneur", "designer", "marketing", "investor", "mentor", "aspiring_entrepreneur", "other"]);
+const designationSchema = z.enum([
+  "startup_founder",
+  "founder",
+  "co_founder",
+  "aspiring_entrepreneur",
+  "early_entrepreneur",
+  "entrepreneur",
+  "business_person",
+  "investor",
+  "innovator",
+  "mentor",
+  "team_member",
+  "developer",
+  "student_entrepreneur",
+  "designer",
+  "marketing",
+  "other",
+]);
 const designationOtherSchema = z.string().trim().max(30, "Use 30 characters or fewer.").optional();
 const goalSchema = z.enum(["networking", "technical_collaboration", "finding_co_founder", "mentorship", "product_development", "marketing", "funding_connections", "hiring", "startup_learning", "community_participation"]);
 

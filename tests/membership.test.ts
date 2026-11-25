@@ -67,3 +67,33 @@ describe("service result helpers", () => {
     if (!u.ok) expect(u.error.code).toBe("unavailable");
   });
 });
+
+describe("claimSchema designation validation", () => {
+  it("validates all active founder personas including business_person, founder, innovator", async () => {
+    const { claimSchema } = await import("@/lib/validations/member");
+    const designations = [
+      "startup_founder",
+      "founder",
+      "co_founder",
+      "aspiring_entrepreneur",
+      "early_entrepreneur",
+      "entrepreneur",
+      "business_person",
+      "investor",
+      "innovator",
+      "mentor",
+    ];
+
+    for (const d of designations) {
+      const res = claimSchema.safeParse({
+        fullName: "Test Founder",
+        linkedAccountEmail: "test@example.com",
+        applicantType: "new_applicant",
+        whatsapp: "9876543210",
+        designation: d,
+        declarationAccurate: true,
+      });
+      expect(res.success, `Failed for designation: ${d}`).toBe(true);
+    }
+  });
+});

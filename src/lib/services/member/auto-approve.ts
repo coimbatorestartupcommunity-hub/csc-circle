@@ -77,6 +77,50 @@ export async function autoApproveDueMembershipClaims(): Promise<number> {
         })
         .eq("user_id", claim.user_id);
 
+      // 3. Direct WhatsApp Card Activation Notification
+      try {
+        const { data: memberProfile } = await admin
+          .from("profiles")
+          .select("whatsapp, full_name, display_name")
+          .eq("id", claim.user_id)
+          .maybeSingle();
+
+        if (memberProfile?.whatsapp) {
+          const { normalizePhoneForWhatsApp } = await import("@/lib/notifications/whatsapp-outbox");
+          const { e164 } = normalizePhoneForWhatsApp(memberProfile.whatsapp);
+          const name = memberProfile.full_name || memberProfile.display_name || "Founder";
+          if (e164) {
+            const { enqueueWhatsAppNotification } = await import("@/lib/notifications/whatsapp-outbox");
+            const waText = [
+              "🎉 *Coimbatore Startup Community Membership ID Card Activated!*",
+              "",
+              `வணக்கம் *${name}*! Your Coimbatore Startup Community Membership ID Card (*${memberNum}*) is now active.`,
+              "",
+              "Your digital membership card is unlocked with:",
+              "• 🪪 Official CSC Digital ID Card with QR Door Pass",
+              "• 🎫 Instant RSVP access for all offline founder meetups",
+              "• ⚡ Priority endorsement for TANSEED & SISFS grants",
+              "",
+              "👉 *View & Download your Digital ID Card:*",
+              "https://csc.logicintelligencetechnologies.in/profile",
+              "",
+              "🚀 *Connect • Build • Grow*",
+              "🌐 *Coimbatore Startup Community (CSC Circle)*",
+              "🤍 ⚙️ *Powered by Logic Intelligence Technologies*",
+            ].join("\n");
+
+            await enqueueWhatsAppNotification({
+              recipientPhone: e164,
+              text: waText,
+              messageType: "membership_approved",
+              idempotencyKey: `auto-approved-wa-${claim.user_id}-${memberNum}`,
+            });
+          }
+        }
+      } catch (waErr) {
+        console.warn("[autoApprove] Direct WhatsApp notification note:", waErr);
+      }
+
       approvedCount++;
     }
 

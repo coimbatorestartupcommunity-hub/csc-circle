@@ -231,7 +231,31 @@ export async function dispatchNotifications(batch = 15) {
 
           // Universal WhatsApp Notification Dispatch:
           // Automatically dispatch a matching WhatsApp message to the member if phone is known
-          const recipientPhone = (typeof payload.phone === "string" && payload.phone) || (typeof payload.whatsapp === "string" && payload.whatsapp) || "";
+          let recipientPhone =
+            (typeof payload.phone === "string" && payload.phone) ||
+            (typeof payload.whatsapp === "string" && payload.whatsapp) ||
+            "";
+
+          let recipientName =
+            (typeof payload.name === "string" && payload.name) || "";
+
+          if ((!recipientPhone || !recipientName) && job.recipient_user_id) {
+            const { data: memberProfile } = await sb
+              .from("profiles")
+              .select("whatsapp, full_name, display_name")
+              .eq("id", job.recipient_user_id)
+              .maybeSingle();
+
+            if (memberProfile) {
+              if (!recipientPhone && memberProfile.whatsapp) {
+                recipientPhone = memberProfile.whatsapp;
+              }
+              if (!recipientName) {
+                recipientName = memberProfile.full_name || memberProfile.display_name || "Founder";
+              }
+            }
+          }
+
           if (recipientPhone && recipientPhone.replace(/\D/g, "").length >= 10 && job.audience !== "admin") {
             try {
               const { getSubsystemMaintenanceConfig } = await import("@/lib/services/system-settings");
@@ -240,7 +264,29 @@ export async function dispatchNotifications(batch = 15) {
                 console.log("[dispatcher] WhatsApp mirror skipped: messagingAutomations subsystem is paused.");
               } else {
                 const cleanText = message.text.replace(/\r?\n\s*\r?\n/g, "\n\n").trim().slice(0, 900);
-                const whatsappMsg = `📢 *CSC Circle Notification: ${message.subject}*\n\n${cleanText}\n\n🌐 View in your account: https://csc.logicintelligencetechnologies.in/profile`;
+                let whatsappMsg: string;
+                if (job.template_key === "MembershipApproved") {
+                  whatsappMsg = [
+                    "🎉 *Coimbatore Startup Community Membership ID Card Activated!*",
+                    "",
+                    `வணக்கம் *${recipientName || "Founder"}*! Your Coimbatore Startup Community Membership ID Card is now active.`,
+                    "",
+                    "Your digital membership card is unlocked with:",
+                    "• 🪪 Official CSC Digital ID Card with QR Door Pass",
+                    "• 🎫 Instant RSVP access for all offline founder meetups",
+                    "• ⚡ Priority endorsement for TANSEED & SISFS grants",
+                    "",
+                    "👉 *View & Download your Digital ID Card:*",
+                    "https://csc.logicintelligencetechnologies.in/profile",
+                    "",
+                    "🚀 *Connect • Build • Grow*",
+                    "🌐 *Coimbatore Startup Community (CSC Circle)*",
+                    "🤍 ⚙️ *Powered by Logic Intelligence Technologies*",
+                  ].join("\n");
+                } else {
+                  whatsappMsg = `📢 *CSC Circle Notification: ${message.subject}*\n\n${cleanText}\n\n🌐 View in your account: https://csc.logicintelligencetechnologies.in/profile`;
+                }
+
                 await enqueueWhatsAppNotification({
                   recipientPhone,
                   text: whatsappMsg,

@@ -116,10 +116,15 @@ export async function enqueueWhatsAppNotification(
     try {
       let sendRes;
 
-      // Note: Meta rejects OTP/passkey templates under UTILITY with INCORRECT_CATEGORY.
-      // Calling MSG91 template API with a rejected template returns 200 asynchronously but Meta drops it.
-      // Therefore, rejected templates MUST be bypassed in favor of direct text messaging.
-      const REJECTED_TEMPLATES = new Set(["csc_otp_verification", "csc_login_passkey"]);
+      // Note: Meta rejects OTP/passkey templates under UTILITY with INCORRECT_CATEGORY,
+      // and phone_verification_success is pending review.
+      // Calling MSG91 template API with unapproved/pending templates returns 200 asynchronously but Meta drops them.
+      // Therefore, unapproved/pending templates MUST be bypassed in favor of direct text messaging.
+      const UNAPPROVED_TEMPLATES = new Set([
+        "csc_otp_verification",
+        "csc_login_passkey",
+        "phone_verification_success",
+      ]);
 
       const candidateTemplate =
         payload.templateName ||
@@ -128,7 +133,7 @@ export async function enqueueWhatsAppNotification(
           : undefined);
 
       const targetTemplate =
-        candidateTemplate && !REJECTED_TEMPLATES.has(candidateTemplate)
+        candidateTemplate && !UNAPPROVED_TEMPLATES.has(candidateTemplate)
           ? candidateTemplate
           : undefined;
 

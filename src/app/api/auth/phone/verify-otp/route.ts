@@ -77,6 +77,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // 4. Dispatch WhatsApp, Email & In-App verification confirmation notifications
+    try {
+      const { notifyPhoneVerifiedSuccess } = await import("@/lib/services/phone-verification-notifications");
+      await notifyPhoneVerifiedSuccess({
+        userId: user.userId,
+        phone,
+        email: user.email?.endsWith("@login.csc.internal") ? null : user.email,
+        name: null,
+      });
+    } catch (notifErr) {
+      console.warn("[verify-otp] Post-verification notification note:", notifErr);
+    }
+
     return NextResponse.json({
       ok: true,
       userId: user.userId,
