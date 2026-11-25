@@ -14,15 +14,6 @@ const linkEmailSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const ip = clientIp(request);
-  const ipLimit = rateLimit(`auth:phone:link:${ip}`, 10, 120_000);
-  if (!ipLimit.allowed) {
-    return NextResponse.json(
-      { error: "Too many attempts. Please wait a few minutes." },
-      { status: 429 }
-    );
-  }
-
   try {
     const sb = await createClient();
     const {

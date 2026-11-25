@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { rateLimit } from "@/lib/rate-limit";
 import { sendPhoneOtp } from "@/lib/auth/phone-auth";
 import { WHATSAPP_MAINTENANCE_LOCK } from "@/lib/whatsapp/maintenance-config";
 import { getWhatsAppLockConfig } from "@/lib/services/system-settings";
@@ -18,18 +18,6 @@ export async function POST(request: Request) {
       },
       { status: 503 }
     );
-  }
-
-  const ip = clientIp(request);
-  // High-concurrency allowance: allows up to 150 requests per 2 mins per IP to support university campuses & co-working NATs
-  if (ip && ip !== "unknown") {
-    const ipLimit = rateLimit(`auth:phone:send:${ip}`, 150, 120_000);
-    if (!ipLimit.allowed) {
-      return NextResponse.json(
-        { error: "Too many attempts from this network. Please wait a few minutes before requesting another code." },
-        { status: 429 }
-      );
-    }
   }
 
   try {

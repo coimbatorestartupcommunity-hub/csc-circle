@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { getWebsiteMaintenanceConfig } from "@/lib/services/system-settings";
 import {
   verifyPhoneOtpCode,
@@ -10,17 +9,6 @@ import {
 } from "@/lib/auth/phone-auth";
 
 export async function POST(request: Request) {
-  const ip = clientIp(request);
-  if (ip && ip !== "unknown") {
-    const ipLimit = rateLimit(`auth:phone:verify:${ip}`, 150, 120_000);
-    if (!ipLimit.allowed) {
-      return NextResponse.json(
-        { error: "Too many verification attempts from this network. Please wait a few minutes." },
-        { status: 429 }
-      );
-    }
-  }
-
   try {
     const body = await request.json();
     const phone = typeof body?.phone === "string" ? body.phone.trim() : "";

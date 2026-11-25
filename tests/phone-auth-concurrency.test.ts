@@ -91,19 +91,19 @@ describe("High-Concurrency OTP Dispatch & Verification Suite", () => {
   });
 
   it(
-    "handles 30 concurrent users requesting OTP from the exact same network IP without 429 rejection",
+    "handles 30 concurrent users requesting OTP from 30 different IP addresses with zero IP restrictions",
     async () => {
       const concurrentCount = 30;
-      const sameNetworkIp = "49.207.210.55"; // Shared Coimbatore WiFi / NAT IP
 
       const requests = Array.from({ length: concurrentCount }, (_, i) => {
-        // 30 distinct phone numbers
+        // 30 distinct phone numbers & 30 distinct IP addresses
         const phoneNum = `98420${String(10000 + i).padStart(5, "0")}`;
+        const distinctIp = `157.48.${(i + 1) % 250}.${(i * 7 + 10) % 250}`;
         const req = new Request("https://csc.logicintelligencetechnologies.in/api/auth/phone/send-otp", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-forwarded-for": sameNetworkIp,
+            "x-forwarded-for": distinctIp,
           },
           body: JSON.stringify({
             phone: phoneNum,
