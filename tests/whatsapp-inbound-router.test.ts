@@ -54,16 +54,43 @@ describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
     expect(res.replyText).toContain("Quick Navigation");
     expect(res.replyText).toContain("Upcoming Events");
     expect(res.replyText).toContain("Digital ID & Event Passes");
+    expect(mockSendText).toHaveBeenCalledTimes(1);
   });
 
-  it("renders Tamil navigation menu on வணக்கம்", async () => {
+  it("sends welcome greeting first and then navigation menu on Hi / Hello", async () => {
+    const res = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "Hi",
+    });
+
+    expect(res.handled).toBe(true);
+    expect(res.command).toBe("WELCOME_GREETING_AND_MENU");
+    expect(mockSendText).toHaveBeenCalledTimes(2);
+    expect(mockSendText).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        recipientPhone: "917550067712",
+        text: expect.stringContaining("Welcome to Coimbatore Startup Community!"),
+      })
+    );
+    expect(mockSendText).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        recipientPhone: "917550067712",
+        text: expect.stringContaining("Official Quick Navigation"),
+      })
+    );
+  });
+
+  it("renders Tamil welcome and navigation menu on வணக்கம்", async () => {
     const res = await routeInboundWhatsAppMessage({
       phone: "917550067712",
       text: "வணக்கம்",
     });
 
     expect(res.handled).toBe(true);
-    expect(res.command).toBe("MENU");
+    expect(res.command).toBe("WELCOME_GREETING_AND_MENU");
+    expect(mockSendText).toHaveBeenCalledTimes(2);
     expect(res.replyText).toContain("விரைவு வழிகாட்டி");
     expect(res.replyText).toContain("நிகழ்வுகள்");
   });

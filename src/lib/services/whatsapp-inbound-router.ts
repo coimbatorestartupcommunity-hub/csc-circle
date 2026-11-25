@@ -40,13 +40,39 @@ export async function routeInboundWhatsAppMessage(
     return { handled: true, replyText, command: "VOICE_NOTE" };
   }
 
-  // 2. Interactive Navigation Menu
-  if (
-    /^(menu|start|help|options|\?|வணக்கம்|hi|hello|hey|vanakkam)$/i.test(trimmed) ||
-    lower === "0"
-  ) {
+  // 2. Interactive Navigation Menu & Welcome Greetings
+  const isGreeting = /^(hi|hello|hey|வணக்கம்|vanakkam)$/i.test(trimmed);
+  const isMenu = /^(menu|start|help|options|\?)$/i.test(trimmed) || lower === "0";
+
+  if (isGreeting || isMenu) {
     const isTamil = /[\u0B80-\u0BFF]/.test(trimmed) || /vanakkam/i.test(trimmed);
-    const replyText = isTamil
+
+    // If it's a greeting ("hi", "hello", "hey", etc.), send the warm Welcome Message FIRST
+    if (isGreeting) {
+      const welcomeText = isTamil
+        ? [
+            "👋 *கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டிக்கு அன்புடன் வரவேற்கிறோம்!*",
+            "",
+            "வணக்கம்! கோவையின் முன்னணி தொழில்முனைவோர் & பில்டர்கள் நெட்வொர்க்கான *CSC Circle*-க்கு உங்களை அன்புடன் வரவேற்கிறோம் 🚀",
+            "",
+            "இணை-நிறுவனர்களைக் கண்டறிய, வரவிருக்கும் நிகழ்வுகளை அறிய, உங்கள் டிஜிட்டல் உறுப்பினர் அடையாள அட்டையைப் பெற அல்லது யோசனைகளைப் பகிர — நாங்கள் உங்களுக்கு உதவத் தயாராக உள்ளோம்.",
+            "",
+            CSC_WHATSAPP_FOOTER,
+          ].join("\n")
+        : [
+            "👋 *Welcome to Coimbatore Startup Community!*",
+            "",
+            "Hi there! Welcome to *CSC Circle*, Coimbatore's premier founder & builder network 🚀",
+            "",
+            "We are thrilled to have you here. Whether you're connecting with local co-founders, discovering upcoming meetups, retrieving your digital membership pass, or sharing ideas with our core leadership team — we're here to assist you 24/7.",
+            "",
+            CSC_WHATSAPP_FOOTER,
+          ].join("\n");
+
+      await sendReplySafely(cleanPhone, welcomeText);
+    }
+
+    const navigationMenuText = isTamil
       ? [
           "🌟 *கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டி*",
           "🚀 *CSC Circle — அதிகாரப்பூர்வ விரைவு வழிகாட்டி*",
@@ -100,8 +126,12 @@ export async function routeInboundWhatsAppMessage(
           CSC_WHATSAPP_FOOTER,
         ].join("\n");
 
-    await sendReplySafely(cleanPhone, replyText);
-    return { handled: true, replyText, command: "MENU" };
+    await sendReplySafely(cleanPhone, navigationMenuText);
+    return {
+      handled: true,
+      replyText: navigationMenuText,
+      command: isGreeting ? "WELCOME_GREETING_AND_MENU" : "MENU",
+    };
   }
 
   // 3. Digital Gate Pass & Membership Card Lookup

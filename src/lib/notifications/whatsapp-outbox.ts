@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendMsg91WhatsAppTextMessage } from "@/lib/services/msg91";
 
 export const SYSTEM_NOTIFICATION_CONTACT_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -70,6 +71,8 @@ export async function enqueueWhatsAppNotification(
       payload.idempotencyKey ||
       `notif-${payload.messageType || "msg"}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+    const formattedText = formatForWhatsApp(payload.text);
+
     const { data, error } = await admin
       .from("whatsapp_message_outbox")
       .insert({
@@ -78,7 +81,7 @@ export async function enqueueWhatsAppNotification(
         recipient_chat_id: finalChatId,
         message_type: payload.messageType || "system_notification",
         message_payload: {
-          text: formatForWhatsApp(payload.text),
+          text: formattedText,
           name: payload.name,
           enqueuedAt: new Date().toISOString(),
         },
@@ -91,6 +94,35 @@ export async function enqueueWhatsAppNotification(
     if (error) {
       console.error("[enqueueWhatsAppNotification] Database error:", error);
       return { success: false, error: error.message };
+    }
+
+    // Serverless Direct Dispatch via MSG91 WhatsApp Gateway for instant delivery
+    try {
+      const sendRes = await sendMsg91WhatsAppTextMessage({
+        recipientPhone: e164,
+        text: formattedText,
+      });
+
+      if (sendRes.success) {
+        await admin
+          .from("whatsapp_message_outbox")
+          .update({
+            status: "delivered",
+            sent_at: new Date().toISOString(),
+            openwa_message_id: "msg91_sent",
+          })
+          .eq("id", data.id);
+      } else {
+        await admin
+          .from("whatsapp_message_outbox")
+          .update({
+            last_error_message: sendRes.message || "Gateway dispatch failed",
+            last_error_code: String(sendRes.code || "DISPATCH_FAILED"),
+          })
+          .eq("id", data.id);
+      }
+    } catch (dispatchErr) {
+      console.warn("[enqueueWhatsAppNotification] Direct dispatch non-fatal error:", dispatchErr);
     }
 
     return { success: true, outboxId: data.id };

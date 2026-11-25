@@ -377,7 +377,14 @@ export async function sendMsg91WhatsAppTextMessage({
     text,
   };
 
-  const url = `${MSG91_BASE_URL}/whatsapp/whatsapp-outbound-message/`;
+  const queryParams = new URLSearchParams({
+    integrated_number: formattedSender,
+    recipient_number: formattedRecipient,
+    content_type: "text",
+    text,
+  });
+
+  const url = `${MSG91_BASE_URL}/whatsapp/whatsapp-outbound-message/?${queryParams.toString()}`;
 
   try {
     const res = await fetch(url, {
@@ -393,6 +400,10 @@ export async function sendMsg91WhatsAppTextMessage({
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok || data.status === "fail" || data.type === "error" || data.hasError) {
+      console.error("[sendMsg91WhatsAppTextMessage] Gateway error:", {
+        status: res.status,
+        data,
+      });
       return {
         success: false,
         message: data.message || data.errors || "WhatsApp text message failed to dispatch",
