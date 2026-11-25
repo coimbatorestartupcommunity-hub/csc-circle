@@ -790,7 +790,12 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
           data?.text ||
           data?.output ||
           data?.response;
-        if (reply && typeof reply === "string" && reply.trim()) {
+        if (
+          reply &&
+          typeof reply === "string" &&
+          reply.trim().length > 10 &&
+          !reply.trim().startsWith("<|")
+        ) {
           return reply.trim();
         }
       }

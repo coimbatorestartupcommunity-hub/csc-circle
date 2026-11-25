@@ -124,6 +124,17 @@ export function isOutboundWebhookPayload(body: Record<string, any>): boolean {
 export async function routeOutboundWhatsAppWebhook(
   input: OutboundWebhookInput
 ): Promise<OutboundWebhookResult> {
+  try {
+    const { getSubsystemMaintenanceConfig } = await import("@/lib/services/system-settings");
+    const subsystems = await getSubsystemMaintenanceConfig();
+    if (subsystems.whatsappOutbound?.paused) {
+      console.log(
+        `[whatsapp-outbound-router] Outbound processing skipped: paused by admin kill-switch (${subsystems.whatsappOutbound.reason || "Paused"})`
+      );
+      return { handled: true, type: "outbound_paused_by_admin", status: "paused" };
+    }
+  } catch {}
+
   const eventName = (input.eventName || "").toLowerCase();
   const rawStatus = (input.status || "").toLowerCase();
 

@@ -15,6 +15,7 @@ import {
   Layers,
   HelpCircle,
   BellRing,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,14 @@ const SUBSYSTEMS_META: SubsystemMeta[] = [
     description: "Controls the automated 24/7 WhatsApp AI agent, knowledge queries, and inbound message responses.",
     icon: Bot,
     defaultPauseReason: "Inbound AI agent temporarily sleeping during live event check-in peak to prioritize pass delivery.",
+  },
+  {
+    key: "whatsappOutbound",
+    name: "Outbound AI WhatsApp Assistant & Lifecycle Router",
+    category: "Conversational AI & Delivery",
+    description: "Controls dedicated outbound router, MSG91 request callbacks, recursive loop breaker, and delivery telemetry.",
+    icon: Send,
+    defaultPauseReason: "Outbound WhatsApp router temporarily paused for message delivery maintenance.",
   },
   {
     key: "messagingAutomations",

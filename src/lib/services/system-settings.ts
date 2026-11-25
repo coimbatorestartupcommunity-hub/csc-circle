@@ -23,7 +23,7 @@ export interface WebsiteMaintenanceConfig {
   updatedBy?: string;
 }
 
-export type SubsystemKey = "payments" | "eventRegistrations" | "idCardGeneration" | "whatsappBot" | "messagingAutomations";
+export type SubsystemKey = "payments" | "eventRegistrations" | "idCardGeneration" | "whatsappBot" | "whatsappOutbound" | "messagingAutomations";
 
 export interface SubsystemStatus {
   paused: boolean;
@@ -37,6 +37,7 @@ export interface SubsystemMaintenanceConfig {
   eventRegistrations: SubsystemStatus;
   idCardGeneration: SubsystemStatus;
   whatsappBot: SubsystemStatus;
+  whatsappOutbound: SubsystemStatus;
   messagingAutomations: SubsystemStatus;
 }
 
@@ -119,6 +120,11 @@ const DEFAULT_SUBSYSTEMS: SubsystemMaintenanceConfig = {
   whatsappBot: {
     paused: false,
     reason: "Inbound AI Assistant paused during live event check-in peak.",
+    updatedAt: new Date().toISOString(),
+  },
+  whatsappOutbound: {
+    paused: false,
+    reason: "Outbound AI Assistant & Lifecycle Router paused for routine maintenance.",
     updatedAt: new Date().toISOString(),
   },
   messagingAutomations: {
@@ -310,13 +316,23 @@ export async function setWebsiteMaintenanceConfig(
  * Subsystems Granular Kill-Switches (Feature 1)
  */
 export async function getSubsystemMaintenanceConfig(): Promise<SubsystemMaintenanceConfig> {
+  function normalizeSubsystems(cfg: any): SubsystemMaintenanceConfig {
+    return {
+      ...DEFAULT_SUBSYSTEMS,
+      ...(cfg || {}),
+      whatsappOutbound: cfg?.whatsappOutbound || DEFAULT_SUBSYSTEMS.whatsappOutbound,
+      messagingAutomations: cfg?.messagingAutomations || DEFAULT_SUBSYSTEMS.messagingAutomations,
+    };
+  }
+
   const redis = getRedisClient();
   if (redis) {
     try {
       const cached = await withRedisTimeout(redis.get<SubsystemMaintenanceConfig>(REDIS_KEY_SUBSYSTEMS), 1000);
       if (cached && typeof cached === "object" && "payments" in cached) {
-        memorySubsystems = cached;
-        return cached;
+        const norm = normalizeSubsystems(cached);
+        memorySubsystems = norm;
+        return norm;
       }
     } catch {}
   }
@@ -331,17 +347,18 @@ export async function getSubsystemMaintenanceConfig(): Promise<SubsystemMaintena
 
     if (data?.value) {
       const parsed = JSON.parse(data.value) as SubsystemMaintenanceConfig;
-      memorySubsystems = parsed;
+      const norm = normalizeSubsystems(parsed);
+      memorySubsystems = norm;
       if (redis) {
         try {
-          await redis.set(REDIS_KEY_SUBSYSTEMS, parsed, { ex: 300 });
+          await redis.set(REDIS_KEY_SUBSYSTEMS, norm, { ex: 300 });
         } catch {}
       }
-      return parsed;
+      return norm;
     }
   } catch {}
 
-  return memorySubsystems;
+  return normalizeSubsystems(memorySubsystems);
 }
 
 export async function setSubsystemMaintenanceConfig(
@@ -375,6 +392,12 @@ export async function setSubsystemMaintenanceConfig(
       ...(updates.whatsappBot || {}),
       updatedAt: updates.whatsappBot ? now : current.whatsappBot.updatedAt,
       updatedBy: updates.whatsappBot ? adminUser?.name : current.whatsappBot.updatedBy,
+    },
+    whatsappOutbound: {
+      ...(current.whatsappOutbound || DEFAULT_SUBSYSTEMS.whatsappOutbound),
+      ...(updates.whatsappOutbound || {}),
+      updatedAt: updates.whatsappOutbound ? now : current.whatsappOutbound?.updatedAt || now,
+      updatedBy: updates.whatsappOutbound ? adminUser?.name : current.whatsappOutbound?.updatedBy,
     },
     messagingAutomations: {
       ...current.messagingAutomations,
