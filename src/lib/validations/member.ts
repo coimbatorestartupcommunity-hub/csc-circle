@@ -39,8 +39,8 @@ const urlOrEmpty = z
 /* Onboarding — one schema per step for per-step validation. */
 
 export const onboardingStep1Schema = z.object({
-  fullName: z.string().trim().min(2, "Enter your full name.").max(80),
-  displayName: z.string().trim().min(2, "Enter a display name.").max(60),
+  fullName: z.string().trim().min(2, "Enter your full name.").max(120, "Full name must be 120 characters or fewer."),
+  displayName: z.string().trim().min(2, "Enter a display name.").max(100, "Display name must be 100 characters or fewer."),
   email: z.string().trim().email("Enter a valid email address."),
   whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
   city: z.string().trim().min(2, "Enter your city.").max(60),
@@ -64,11 +64,11 @@ export const onboardingStep2Schema = onboardingStep2FieldsSchema.superRefine((va
 });
 
 export const onboardingStep3Schema = z.object({
-  startupName: z.string().trim().max(120).optional(),
+  startupName: z.string().trim().max(180).optional(),
   startupWebsite: urlOrEmpty,
   industry: z.string().trim().optional(),
   stage: z.string().trim().optional(),
-  role: z.string().trim().max(80).optional(),
+  role: z.string().trim().max(120).optional(),
   description: z.string().trim().max(600).optional(),
   challenges: z.string().trim().max(600).optional(),
 });
@@ -105,16 +105,16 @@ export type OnboardingData = z.infer<typeof onboardingStep1Schema> &
 /* Membership claim */
 
 export const claimSchema = z.object({
-  fullName: z.string().trim().min(2, "Enter your full name.").max(80),
+  fullName: z.string().trim().min(2, "Enter your full name.").max(120, "Full name must be 120 characters or fewer."),
   linkedAccountEmail: z.string().trim().email("Enter a valid email address."),
   applicantType: z.enum(["existing_member", "new_applicant"], {
     message: "Select whether you're an existing member or new applicant.",
   }),
-  reference: z.string().trim().max(80).optional(),
+  reference: z.string().trim().max(160, "Reference must be 160 characters or fewer.").optional(),
   whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
   designation: designationSchema,
   designationOther: designationOtherSchema,
-  startupAffiliation: z.string().trim().max(120).optional(),
+  startupAffiliation: z.string().trim().max(180).optional(),
   declarationAccurate: z.literal(true, {
     message: "Please confirm the information is accurate.",
   }),
@@ -133,15 +133,15 @@ export type ClaimFormValues = z.infer<typeof claimSchema>;
 /* Profile edit */
 
 export const profileSchema = z.object({
-  fullName: z.string().trim().min(2).max(80),
-  displayName: z.string().trim().min(2).max(60),
+  fullName: z.string().trim().min(2, "Enter your full name.").max(120, "Full name must be 120 characters or fewer."),
+  displayName: z.string().trim().min(2, "Enter a display name.").max(100, "Display name must be 100 characters or fewer."),
   whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
   city: z.string().trim().max(60).optional(),
-  startupName: z.string().trim().max(120).optional(),
+  startupName: z.string().trim().max(180, "Startup name must be 180 characters or fewer.").optional(),
   startupWebsite: urlOrEmpty,
-  startupDescription: z.string().trim().max(600).optional(),
-  skills: z.string().trim().max(200).optional(),
-  aboutMe: z.string().trim().max(1200).optional(),
+  startupDescription: z.string().trim().max(1000, "Startup description must be 1,000 characters or fewer.").optional(),
+  skills: z.string().trim().max(500, "Skills must be 500 characters or fewer.").optional(),
+  aboutMe: z.string().trim().max(2000, "About me must be 2,000 characters or fewer.").optional(),
 });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;

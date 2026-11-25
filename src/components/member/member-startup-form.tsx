@@ -14,17 +14,17 @@ import { CheckCircle2, Clock3, ImagePlus, Loader2 } from "lucide-react";
 
 type StartupValues = Partial<MemberStartupInput>;
 const textFields = [
-  ["category", "Startup category", "e.g. Software, manufacturing, services"],
-  ["stage", "Startup stage", "Idea, prototype, early revenue, growth"],
-  ["city", "City", "Coimbatore"], ["state", "State", "Tamil Nadu"], ["country", "Country", "India"],
-  ["yearFounded", "Year founded", "2024"], ["tagline", "Short tagline", "Your startup in one sentence"],
-  ["website", "Startup website", "https://example.com"], ["supportEmail", "Support email", "support@example.com"],
-  ["additionalSupportEmail", "Additional support email", "Optional"], ["companyEmail", "Company contact email", "hello@example.com"],
-  ["companyMobile", "Company mobile", "+91 98765 43210"], ["companyWhatsapp", "Company WhatsApp", "Optional"], ["contactPerson", "Contact person", "Optional"],
-  ["founderRole", "Founder designation", "Founder"], ["founderCity", "Founder city", "Coimbatore"],
-  ["founderMobile", "Founder mobile", "Optional"], ["founderWhatsapp", "Founder WhatsApp", "Optional"],
-  ["founderEmail", "Founder email", "Optional"], ["founderWebsite", "Founder portfolio", "https://example.com"],
-  ["founderLinkedin", "Founder LinkedIn", "https://linkedin.com/in/…"],
+  ["category", "Startup category", "e.g. Software, manufacturing, services", 300],
+  ["stage", "Startup stage", "Idea, prototype, early revenue, growth", 120],
+  ["city", "City", "Coimbatore", 120], ["state", "State", "Tamil Nadu", 120], ["country", "Country", "India", 120],
+  ["yearFounded", "Year founded", "2024", 4], ["tagline", "Short tagline", "Your startup in one sentence", 300],
+  ["website", "Startup website", "https://example.com", 500], ["supportEmail", "Support email", "support@example.com", 254],
+  ["additionalSupportEmail", "Additional support email", "Optional", 254], ["companyEmail", "Company contact email", "hello@example.com", 254],
+  ["companyMobile", "Company mobile", "+91 98765 43210", 24], ["companyWhatsapp", "Company WhatsApp", "Optional", 24], ["contactPerson", "Contact person", "Optional", 180],
+  ["founderRole", "Founder designation", "Founder", 120], ["founderCity", "Founder city", "Coimbatore", 120],
+  ["founderMobile", "Founder mobile", "Optional", 24], ["founderWhatsapp", "Founder WhatsApp", "Optional", 24],
+  ["founderEmail", "Founder email", "Optional", 254], ["founderWebsite", "Founder portfolio", "https://example.com", 500],
+  ["founderLinkedin", "Founder LinkedIn", "https://linkedin.com/in/…", 500],
 ] as const;
 const longFields = [
   ["description", "Startup description", "Explain your startup, the problem it solves, who it serves, and what makes it different."],
@@ -63,7 +63,7 @@ export function MemberStartupForm({ initial, startupId, revisionId, isPublished 
   const submitMode = React.useRef<"approval" | "draft">("approval");
 
   const update = (key: string, value: unknown) => setValues((v) => ({ ...v, [key]: value }));
-  const slugify = (v: string) => v.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 120);
+  const slugify = (v: string) => v.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 180);
 
   async function upload(kind: "logo" | "directory", file?: File) {
     if (!file) return;
@@ -98,7 +98,62 @@ export function MemberStartupForm({ initial, startupId, revisionId, isPublished 
     raw.id = startupKey; raw.existingId = startupId; raw.revisionId = isPublished ? revisionKey : undefined; raw.submitForApproval = submitForApproval;
     raw.consent = formData.get("consent") === "on";
     const parsed = memberStartupSchema.safeParse(raw);
-    if (!parsed.success) { setError(parsed.error.issues[0]?.message ?? "Review the required fields."); return; }
+    if (!parsed.success) {
+      const firstIssue = parsed.error.issues[0];
+      const fieldPath = String(firstIssue?.path?.[0] ?? "");
+      const labelMap: Record<string, string> = {
+        name: "Startup name",
+        slug: "Directory URL slug",
+        industry: "Industry",
+        category: "Startup category",
+        stage: "Startup stage",
+        city: "City",
+        state: "State",
+        country: "Country",
+        yearFounded: "Year founded",
+        tagline: "Startup tagline",
+        description: "Startup description",
+        whatWeDo: "What we do",
+        howWeWork: "How we work",
+        mission: "Our mission",
+        vision: "Our vision",
+        problemsSolved: "Problems solved",
+        targetAudience: "Target audience",
+        approach: "Our approach",
+        website: "Startup website",
+        supportEmail: "Support email",
+        additionalSupportEmail: "Additional support email",
+        companyEmail: "Company contact email",
+        companyMobile: "Company mobile",
+        companyWhatsapp: "Company WhatsApp",
+        contactPerson: "Contact person",
+        founderRole: "Founder designation",
+        founderCity: "Founder city",
+        founderMobile: "Founder mobile",
+        founderWhatsapp: "Founder WhatsApp",
+        founderEmail: "Founder email",
+        founderWebsite: "Founder portfolio",
+        founderLinkedin: "Founder LinkedIn",
+        founderDescription: "Founder description",
+        directoryImagePath: "Directory image",
+        logoPath: "Company logo",
+        consent: "Publication consent",
+      };
+      const readableName = labelMap[fieldPath] ?? (fieldPath ? `Field "${fieldPath}"` : "");
+      let message = firstIssue?.message ?? "Review the required fields.";
+      if (message.toLowerCase().startsWith("too big") && readableName) {
+        message = `${readableName} exceeds the character limit. Please shorten it.`;
+      } else if (message.toLowerCase().startsWith("too small") && readableName) {
+        message = `${readableName} is too short.`;
+      } else if (readableName && !message.toLowerCase().includes(readableName.toLowerCase())) {
+        message = `${readableName}: ${message}`;
+      }
+      setError(message);
+      if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+        try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch {}
+      }
+      return;
+    }
     setSaving(true);
     try {
       const response = await memberRequest("startup-save", parsed.data);
@@ -124,24 +179,24 @@ export function MemberStartupForm({ initial, startupId, revisionId, isPublished 
     {error ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-200">{error}</p> : null}
     {revisionFeedback ? <aside role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4"><h2 className="text-sm font-semibold text-amber-950">Changes need an update</h2><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-amber-900">{revisionFeedback}</p><p className="mt-2 text-xs text-amber-900">Your approved directory listing is unchanged. Edit the proposed details below and submit again.</p></aside> : null}
     <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-7"><h2 className="mb-5 text-lg font-semibold">Startup identity</h2><div className="grid gap-4 sm:grid-cols-2">
-      <Field name="name" label="Startup name" value={values.name} required onChange={(v) => { update("name", v); if (!startupId && !values.slug) update("slug", slugify(v)); }} />
-      <Field name="slug" label="Directory URL slug" value={values.slug} required onChange={(v) => update("slug", slugify(v))} />
-      <Field name="industry" label="Industry" value={values.industry} required onChange={(v) => update("industry", v)} />
-      {textFields.slice(0, 6).map(([name, label, placeholder]) => <Field key={name} name={name} label={label} placeholder={placeholder} value={values[name] as string} onChange={(v) => update(name, v)} />)}
-      <Field name="tagline" label="Startup tagline" placeholder="Describe your startup in one sentence" value={values.tagline} onChange={(v) => update("tagline", v)} />
+      <Field name="name" label="Startup name" value={values.name} required maxLength={180} onChange={(v) => { update("name", v); if (!startupId && !values.slug) update("slug", slugify(v)); }} />
+      <Field name="slug" label="Directory URL slug" value={values.slug} required maxLength={180} onChange={(v) => update("slug", slugify(v))} />
+      <Field name="industry" label="Industry" value={values.industry} required maxLength={200} onChange={(v) => update("industry", v)} />
+      {textFields.slice(0, 6).map(([name, label, placeholder, maxLen]) => <Field key={name} name={name} label={label} placeholder={placeholder} maxLength={maxLen} value={values[name] as string} onChange={(v) => update(name, v)} />)}
+      <Field name="tagline" label="Startup tagline" placeholder="Describe your startup in one sentence" maxLength={300} value={values.tagline} onChange={(v) => update("tagline", v)} />
     </div></section>
     <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-7"><h2 className="mb-5 text-lg font-semibold">Contact information</h2><div className="grid gap-4 sm:grid-cols-2">
-      {textFields.slice(7, 14).map(([name, label, placeholder]) => <Field key={name} name={name} label={label} placeholder={placeholder} value={values[name] as string} onChange={(v) => update(name, v)} type={name.toLowerCase().includes("email") ? "email" : name.toLowerCase().includes("website") ? "url" : "text"} />)}
+      {textFields.slice(7, 14).map(([name, label, placeholder, maxLen]) => <Field key={name} name={name} label={label} placeholder={placeholder} maxLength={maxLen} value={values[name] as string} onChange={(v) => update(name, v)} type={name.toLowerCase().includes("email") ? "email" : name.toLowerCase().includes("website") ? "url" : "text"} />)}
     </div><p className="mt-3 text-xs text-brand-muted">Company contact fields are stored separately and only shown to members when you explicitly enable the matching setting below.</p></section>
     <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-7"><h2 className="mb-5 text-lg font-semibold">About the startup</h2><div className="grid gap-4 sm:grid-cols-2">
-      {longFields.slice(0, 8).map(([name, label, placeholder]) => <label key={name} className="flex min-w-0 flex-col gap-2 text-sm font-medium text-brand-ink">{label}{name === "description" ? " *" : ""}<Textarea name={name} rows={name === "description" ? 5 : 3} maxLength={name === "description" ? 3000 : 2000} required={name === "description"} placeholder={placeholder} value={values[name] as string} onChange={(e) => update(name, e.target.value)} /></label>)}
+      {longFields.slice(0, 8).map(([name, label, placeholder]) => <label key={name} className="flex min-w-0 flex-col gap-2 text-sm font-medium text-brand-ink">{label}{name === "description" ? " *" : ""}<Textarea name={name} rows={name === "description" ? 5 : 3} maxLength={name === "description" ? 4000 : 3000} required={name === "description"} placeholder={placeholder} value={values[name] as string} onChange={(e) => update(name, e.target.value)} /></label>)}
     </div></section>
     <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-7"><h2 className="mb-5 text-lg font-semibold">Skills and expertise</h2><div className="grid gap-4 sm:grid-cols-2">
       {tagFields.slice(0, 10).map(([name, label]) => <label key={name} className="flex min-w-0 flex-col gap-2 text-sm font-medium text-brand-ink">{label}<Input name={`tag:${name}`} placeholder="Separate entries with commas" value={(values[name] as string[] | undefined)?.join(", ") ?? ""} onChange={(e) => update(name, e.target.value.split(",").map((s) => s.trim()).filter(Boolean))} /></label>)}
     </div></section>
     <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-7"><h2 className="mb-5 text-lg font-semibold">Founder information</h2><div className="grid gap-4 sm:grid-cols-2">
-      {textFields.slice(14).map(([name, label, placeholder]) => <Field key={name} name={name} label={label} placeholder={placeholder} value={values[name] as string} onChange={(v) => update(name, v)} type={name.toLowerCase().includes("email") ? "email" : name.toLowerCase().includes("website") || name.toLowerCase().includes("linkedin") ? "url" : "text"} />)}
-      {longFields.slice(8).map(([name, label, placeholder]) => <label key={name} className="flex min-w-0 flex-col gap-2 text-sm font-medium text-brand-ink">{label}<Textarea name={name} rows={3} placeholder={placeholder} value={values[name] as string} onChange={(e) => update(name, e.target.value)} /></label>)}
+      {textFields.slice(14).map(([name, label, placeholder, maxLen]) => <Field key={name} name={name} label={label} placeholder={placeholder} maxLength={maxLen} value={values[name] as string} onChange={(v) => update(name, v)} type={name.toLowerCase().includes("email") ? "email" : name.toLowerCase().includes("website") || name.toLowerCase().includes("linkedin") ? "url" : "text"} />)}
+      {longFields.slice(8).map(([name, label, placeholder]) => <label key={name} className="flex min-w-0 flex-col gap-2 text-sm font-medium text-brand-ink">{label}<Textarea name={name} rows={3} maxLength={2000} placeholder={placeholder} value={values[name] as string} onChange={(e) => update(name, e.target.value)} /></label>)}
       <label className="flex min-w-0 flex-col gap-2 text-sm font-medium text-brand-ink">Founder skills<Input name="tag:founderSkills" placeholder="Separate entries with commas" defaultValue={(values.founderSkills ?? []).join(", ")} /></label>
     </div><p className="mt-3 text-xs text-brand-muted">Founder name is taken from your verified CSC profile. Other people can only be associated through an accepted CSC invitation.</p></section>
     <section className="rounded-2xl bg-white p-5 ring-1 ring-brand-border sm:p-7"><h2 className="mb-5 text-lg font-semibold">Startup media</h2><div className="grid gap-5 sm:grid-cols-2">
@@ -160,8 +215,8 @@ export function MemberStartupForm({ initial, startupId, revisionId, isPublished 
   </form>;
 }
 
-function Field({ name, label, value, placeholder, required, type = "text", onChange }: { name: string; label: string; value?: string | number | null; placeholder?: string; required?: boolean; type?: string; onChange?: (v: string) => void }) {
-  return <label className="flex min-w-0 flex-col gap-2 text-sm font-medium text-brand-ink">{label}{required ? " *" : ""}<Input name={name} type={type} value={value ?? ""} placeholder={placeholder} required={required} onChange={onChange ? (e) => onChange(e.target.value) : undefined} /></label>;
+function Field({ name, label, value, placeholder, required, type = "text", maxLength, onChange }: { name: string; label: string; value?: string | number | null; placeholder?: string; required?: boolean; type?: string; maxLength?: number; onChange?: (v: string) => void }) {
+  return <label className="flex min-w-0 flex-col gap-2 text-sm font-medium text-brand-ink">{label}{required ? " *" : ""}<Input name={name} type={type} value={value ?? ""} placeholder={placeholder} required={required} maxLength={maxLength} onChange={onChange ? (e) => onChange(e.target.value) : undefined} /></label>;
 }
 
 function Consent({ name, label, checked, onChange }: { name: string; label: string; checked?: boolean; onChange: (v: boolean) => void }) {

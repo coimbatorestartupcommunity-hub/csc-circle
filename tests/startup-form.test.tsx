@@ -100,4 +100,35 @@ describe("MemberStartupForm", () => {
     await waitFor(() => expect(requestMock).toHaveBeenCalledWith("startup-save", expect.objectContaining({ submitForApproval: false })));
     expect(await screen.findByText("Draft saved")).toBeInTheDocument();
   });
+
+  it("accepts a detailed multi-category string (over 80 characters) without throwing errors", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, path: "abababab-abab-4bab-8bab-abababababab/11111111-1111-4111-8111-111111111111-directory-startup.webp", previewUrl: "https://example.test/image.webp" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    requestMock.mockResolvedValue({ ok: true, id: "startup-multi-category-id" });
+    const { container } = render(<MemberStartupForm />);
+    const form = container.querySelector("form")!;
+    fillRequired(form);
+    const multiCategory = "Financial Markets, Investment Research, Risk Management, Real Estate, Wealth Advisory, FinTech";
+    expect(multiCategory.length).toBeGreaterThan(80);
+    fireEvent.change(form.querySelector('[name="category"]')!, { target: { value: multiCategory } });
+    fireEvent.change(document.getElementById("startup-directory-upload")!, { target: { files: [new File(["image"], "founder.png", { type: "image/png" })] } });
+    await waitFor(() => expect(form.querySelector("button[type=submit]")).not.toBeDisabled());
+    fireEvent.submit(form);
+    await waitFor(() => expect(requestMock).toHaveBeenCalledWith("startup-save", expect.objectContaining({
+      category: multiCategory,
+    })));
+    expect(await screen.findByText("Startup submitted")).toBeInTheDocument();
+  });
+
+  it("displays a clear user-friendly error specifying the field name if a character limit is exceeded", async () => {
+    const { container } = render(<MemberStartupForm />);
+    const form = container.querySelector("form")!;
+    fillRequired(form);
+    // category limit is 300, pass 310 chars
+    fireEvent.change(form.querySelector('[name="category"]')!, { target: { value: "A".repeat(310) } });
+    fireEvent.submit(form);
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/startup category/i);
+    expect(alert).not.toHaveTextContent("<=80");
+  });
 });

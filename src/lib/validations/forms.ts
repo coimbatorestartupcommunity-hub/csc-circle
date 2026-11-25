@@ -67,7 +67,7 @@ export type ReviewFormValues = z.infer<typeof reviewSchema>;
 
 /** Public (anonymous) RSVP submission accepted by /api/rsvp. */
 export const publicRsvpSchema = z.object({
-  fullName: z.string().trim().min(2).max(80),
+  fullName: z.string().trim().min(2, "Enter your full name.").max(120, "Full name must be 120 characters or fewer."),
   startup: z.string().trim().min(2).max(120),
   whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
   email: z.string().trim().email("Enter a valid email address."),
@@ -80,7 +80,7 @@ export type PublicRsvpValues = z.infer<typeof publicRsvpSchema>;
 
 /** Public (anonymous) consultation submission accepted by /api/consultations. */
 export const publicConsultationSchema = z.object({
-  fullName: z.string().trim().min(2).max(80),
+  fullName: z.string().trim().min(2, "Enter your full name.").max(120, "Full name must be 120 characters or fewer."),
   startup: z.string().trim().min(2).max(120),
   whatsapp: z.string().trim().regex(whatsappRegex, "Enter a valid WhatsApp number."),
   email: z.string().trim().email("Enter a valid email address."),
