@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { triggerViaSocketFlow } from "@/lib/services/viasocket";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { routeInboundWhatsAppMessage } from "@/lib/services/whatsapp-inbound-router";
-import { CSC_BUSINESS_NUMBERS } from "@/lib/services/whatsapp-outbound-router";
+import { CSC_BUSINESS_NUMBERS, isOutboundWebhookPayload } from "@/lib/services/whatsapp-outbound-router";
 
 // In-memory deduplication cache (TTL 60s)
 const processedMessageCache = new Map<string, number>();
@@ -84,6 +84,12 @@ export async function POST(request: Request) {
     // Guard: ignore self-messages from our own bot number
     if (CSC_BUSINESS_NUMBERS.has(cleanSender)) {
       return NextResponse.json({ status: "success", type: "self_message_ignored" });
+    }
+
+    // Guard: ignore outbound lifecycle callbacks if delivered to inbound endpoint
+    if (isOutboundWebhookPayload(body)) {
+      console.log(`[inbound-webhook] Outbound callback received on inbound route, absorbing cleanly`);
+      return NextResponse.json({ status: "success", type: "outbound_absorbed_on_inbound" });
     }
 
     // Guard: require valid customer number and text

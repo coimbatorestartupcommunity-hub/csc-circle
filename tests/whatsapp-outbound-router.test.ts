@@ -54,6 +54,14 @@ describe("WhatsApp Outbound Router & Safety Guards", () => {
       expect(isOutboundWebhookPayload({ eventName: "undelivered" })).toBe(true);
       expect(isOutboundWebhookPayload({ type: "outbound" })).toBe(true);
       expect(isOutboundWebhookPayload({ direction: "outbound" })).toBe(true);
+      expect(isOutboundWebhookPayload({ direction: "1" })).toBe(true);
+      expect(
+        isOutboundWebhookPayload({
+          eventName: "submitted",
+          customerNumber: "919342877474",
+          content: '{"text":"Hello from bot"}',
+        })
+      ).toBe(true);
     });
 
     it("detects dispatches originating from our CSC Business Number (+91 7550067712)", () => {
@@ -80,6 +88,13 @@ describe("WhatsApp Outbound Router & Safety Guards", () => {
         text: "who is the founder?",
       };
       expect(isOutboundWebhookPayload(standardInbound)).toBe(false);
+
+      const directionInbound = {
+        direction: 0,
+        customerNumber: "919342877474",
+        content: "Tell me about CSC",
+      };
+      expect(isOutboundWebhookPayload(directionInbound)).toBe(false);
     });
   });
 

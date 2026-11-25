@@ -62,65 +62,66 @@ export function isOutboundWebhookPayload(body: Record<string, any>): boolean {
     return true;
   }
 
-  // 1. Explicit inbound exclusion (Never treat inbound as outbound)
+  // 1. Explicit direction check (direction: "1" or "outbound")
+  if (direction === "outbound" || direction === "1") {
+    return true;
+  }
+
+  // 2. Stringified JSON text check:
+  // When MSG91 sends an outbound callback for a message that was dispatched,
+  // MSG91 echoes back the sent payload as stringified JSON in `content` or `text` (e.g. `{"text": ...}`)
+  const rawContent = (
+    typeof body.content === "string"
+      ? body.content
+      : typeof body.text === "string"
+      ? body.text
+      : ""
+  ).trim();
+
+  if (
+    rawContent.startsWith('{"text":') ||
+    rawContent.startsWith('{"payload":') ||
+    rawContent.startsWith('{"type":')
+  ) {
+    return true;
+  }
+
+  // 3. Specific MSG91 outbound event labels & delivery lifecycle receipts
+  const outboundLifecycleEvents = [
+    "submitted",
+    "delivered",
+    "read",
+    "sent",
+    "failed",
+    "undelivered",
+    "rejected",
+    "request_acknowledged",
+    "on outbound request received",
+    "on outbound message received",
+    "on outbound report received",
+  ];
+
+  if (eventName.includes("outbound") || outboundLifecycleEvents.includes(eventName)) {
+    return true;
+  }
+
+  if (
+    outboundLifecycleEvents.includes(rawStatus) &&
+    !eventName.includes("inbound") &&
+    eventName !== "message"
+  ) {
+    return true;
+  }
+
+  // 4. Explicit inbound exclusion (Never treat inbound as outbound)
   if (
     eventName.includes("inbound") ||
     direction === "inbound" ||
+    direction === "0" ||
     eventName.includes("on inbound request received") ||
     eventName.includes("on inbound message received")
   ) {
     return false;
-  }
-
-  // 2. Check for customer text content:
-  // If the payload contains user-authored text content from an external sender (not our bot),
-  // it is 100% an INBOUND user message!
-  const hasIncomingText = Boolean(
-    body.content ||
-    body.text ||
-    body.body ||
-    body.message ||
-    body.msg ||
-    body.caption ||
-    body.button_reply?.title ||
-    body.list_reply?.title ||
-    body.interactive?.button_reply?.title ||
-    body.interactive?.list_reply?.title ||
-    body.data?.content ||
-    body.data?.text ||
-    body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body
-  );
-
-  if (hasIncomingText && !eventName.includes("outbound") && direction !== "outbound") {
-    return false;
-  }
-
-  // 3. Explicit outbound identifiers
-  if (
-    eventName.includes("outbound") ||
-    direction === "outbound" ||
-    body.type === "outbound" ||
-    eventName.includes("on outbound request received") ||
-    eventName.includes("on outbound message received")
-  ) {
-    return true;
-  }
-
-  // 4. Standard delivery receipts (Delivered, Read, Failed, Undelivered, Sent) ONLY when there is no incoming text
-  const deliveryStatuses = [
-    "delivered",
-    "read",
-    "failed",
-    "undelivered",
-    "sent",
-    "submitted",
-    "rejected",
-  ];
-  if (
-    (deliveryStatuses.includes(eventName) || deliveryStatuses.includes(rawStatus)) &&
-    !hasIncomingText
-  ) {
-    return true;
   }
 
   return false;
