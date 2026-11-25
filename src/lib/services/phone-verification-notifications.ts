@@ -45,149 +45,174 @@ export async function notifyPhoneVerifiedSuccess(input: PhoneVerificationNotific
     };
   }
 
+  const jobs: Promise<void>[] = [];
+
   // 1. WhatsApp Confirmation Message
   if (e164 && e164.length >= 10) {
-    try {
-      const waText = [
-        "✅ *Mobile Number Verified Successfully!*",
-        "",
-        `வணக்கம் *${displayName}*! Your mobile number *+${e164}* has been verified on *Coimbatore Startup Community (CSC)*.`,
-        "",
-        "🎉 *Unga mobile number verify aayiruchu!*",
-        "Now your founder profile is fully unlocked with:",
-        "• 🎫 Instant WhatsApp Event Passes & RSVPs",
-        "• 🪪 Coimbatore Startup Community Membership ID Card",
-        "• ⚡ Priority Community Networking & Founder Hub Alerts",
-        "• 🤖 24/7 Multi-Lingual WhatsApp Concierge (+91 75500 67712)",
-        "",
-        `👉 *View your verified profile & ID card:*`,
-        `${BASE_URL}/profile`,
-        "",
-        "🚀 *Connect • Build • Grow*",
-        "🌐 *Coimbatore Startup Community (CSC Circle)*",
-        "🤍 ⚙️ *Powered by Logic Intelligence Technologies*",
-      ].join("\n");
+    jobs.push(
+      (async () => {
+        try {
+          const waText = [
+            "✅ *Mobile Number Verified Successfully!*",
+            "",
+            `வணக்கம் *${displayName}*! Your mobile number *+${e164}* has been verified on *Coimbatore Startup Community (CSC)*.`,
+            "",
+            "🎉 *Unga mobile number verify aayiruchu!*",
+            "Now your founder profile is fully unlocked with:",
+            "• 🎫 Instant WhatsApp Event Passes & RSVPs",
+            "• 🪪 Coimbatore Startup Community Membership ID Card",
+            "• ⚡ Priority Community Networking & Founder Hub Alerts",
+            "• 🤖 24/7 Multi-Lingual WhatsApp Concierge (+91 75500 67712)",
+            "",
+            `👉 *View your verified profile & ID card:*`,
+            `${BASE_URL}/profile`,
+            "",
+            "🚀 *Connect • Build • Grow*",
+            "🌐 *Coimbatore Startup Community (CSC Circle)*",
+            "🤍 ⚙️ *Powered by Logic Intelligence Technologies*",
+          ].join("\n");
 
-      const finalKey = input.force
-        ? `phone-verify-success-${userId}-${Date.now()}`
-        : `phone-verify-success-${userId}`;
+          const finalKey = input.force
+            ? `phone-verify-success-${userId}-${Date.now()}`
+            : `phone-verify-success-${userId}`;
 
-      const waRes = await enqueueWhatsAppNotification({
-        recipientPhone: e164,
-        text: waText,
-        messageType: "phone_verification_success",
-        templateName: "phone_verification_success",
-        templateVariables: [displayName, e164, `${BASE_URL}/profile`],
-        name: displayName,
-        idempotencyKey: finalKey,
-      });
+          const waRes = await enqueueWhatsAppNotification({
+            recipientPhone: e164,
+            text: waText,
+            messageType: "phone_verification_success",
+            templateName: "phone_verification_success",
+            templateVariables: [displayName, e164, `${BASE_URL}/profile`],
+            name: displayName,
+            idempotencyKey: finalKey,
+          });
 
-      results.whatsapp = waRes.success;
-      if (!waRes.success && waRes.error) {
-        results.errors.push(`WhatsApp error: ${waRes.error}`);
-      }
-    } catch (waErr) {
-      const msg = waErr instanceof Error ? waErr.message : String(waErr);
-      results.errors.push(`WhatsApp exception: ${msg}`);
-    }
+          results.whatsapp = waRes.success;
+          if (!waRes.success && waRes.error) {
+            results.errors.push(`WhatsApp error: ${waRes.error}`);
+          }
+        } catch (waErr) {
+          const msg = waErr instanceof Error ? waErr.message : String(waErr);
+          results.errors.push(`WhatsApp exception: ${msg}`);
+        }
+      })()
+    );
   }
 
   // 2. Email Notification (Meraki Editorial Standard)
   if (email && email.includes("@")) {
-    try {
-      const emailHtml = renderMerakiEditorialEmail({
-        base: BASE_URL,
-        support: SUPPORT_EMAIL,
-        badgeText: "MOBILE VERIFICATION CONFIRMED ✦",
-        headline: "Mobile Number Verified",
-        headlineItalic: "Successfully",
-        greeting: `வணக்கம் ${displayName},`,
-        body: `<p>Unga mobile number <strong>+${e164}</strong> has been successfully verified on <strong>Coimbatore Startup Community (CSC)</strong>.</p><p>Your account is now authenticated with 30-second rapid OTP login, instant WhatsApp event tickets & RSVPs, and Coimbatore Startup Community Membership ID Card access.</p>`,
-        polaroidCaption: "CSC Verified Member Network",
-        thumbtackNote: "Verified members receive real-time WhatsApp ticket delivery and priority entry at all CSC roundtables.",
-        gridNote: "Your verified mobile number is securely encrypted and linked exclusively to your founder profile.",
-        checklistItems: [
-          "Instant WhatsApp Event RSVPs & QR Pass delivery",
-          "Coimbatore Startup Community Membership ID Card unlocked",
-          "24/7 Multi-Lingual WhatsApp Concierge access (+91 75500 67712)",
-          "Priority entry to CSC Founder Mixers & Ecosystem cohorts",
-        ],
-        buttonText: "View Verified Profile & ID Card",
-        buttonUrl: `${BASE_URL}/profile`,
-      });
+    jobs.push(
+      (async () => {
+        try {
+          const emailHtml = renderMerakiEditorialEmail({
+            base: BASE_URL,
+            support: SUPPORT_EMAIL,
+            badgeText: "MOBILE VERIFICATION CONFIRMED ✦",
+            headline: "Mobile Number Verified",
+            headlineItalic: "Successfully",
+            greeting: `வணக்கம் ${displayName},`,
+            body: `<p>Unga mobile number <strong>+${e164}</strong> has been successfully verified on <strong>Coimbatore Startup Community (CSC)</strong>.</p><p>Your account is now authenticated with 30-second rapid OTP login, instant WhatsApp event tickets & RSVPs, and Coimbatore Startup Community Membership ID Card access.</p>`,
+            polaroidCaption: "CSC Verified Member Network",
+            thumbtackNote: "Verified members receive real-time WhatsApp ticket delivery and priority entry at all CSC roundtables.",
+            gridNote: "Your verified mobile number is securely encrypted and linked exclusively to your founder profile.",
+            checklistItems: [
+              "Instant WhatsApp Event RSVPs & QR Pass delivery",
+              "Coimbatore Startup Community Membership ID Card unlocked",
+              "24/7 Multi-Lingual WhatsApp Concierge access (+91 75500 67712)",
+              "Priority entry to CSC Founder Mixers & Ecosystem cohorts",
+            ],
+            buttonText: "View Verified Profile & ID Card",
+            buttonUrl: `${BASE_URL}/profile`,
+          });
 
-      const emailText = [
-        `Hello ${displayName},`,
-        "",
-        `Your mobile number +${e164} has been verified successfully on Coimbatore Startup Community (CSC).`,
-        "Unga mobile number verify aayiruchu!",
-        "",
-        "Unlocked Features:",
-        "1. Instant WhatsApp Event Passes & RSVPs",
-        "2. Coimbatore Startup Community Membership ID Card",
-        "3. 24/7 Multi-Lingual WhatsApp Concierge (+91 75500 67712)",
-        "",
-        `View Profile: ${BASE_URL}/profile`,
-        "",
-        "CSC Circle Team",
-      ].join("\n");
+          const emailText = [
+            `Hello ${displayName},`,
+            "",
+            `Your mobile number +${e164} has been verified successfully on Coimbatore Startup Community (CSC).`,
+            "Unga mobile number verify aayiruchu!",
+            "",
+            "Unlocked Features:",
+            "1. Instant WhatsApp Event Passes & RSVPs",
+            "2. Coimbatore Startup Community Membership ID Card",
+            "3. 24/7 Multi-Lingual WhatsApp Concierge (+91 75500 67712)",
+            "",
+            `View Profile: ${BASE_URL}/profile`,
+            "",
+            "CSC Circle Team",
+          ].join("\n");
 
-      const cleanNotificationId = `pv-${userId.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 32)}`;
-      await sendCommunityEmail({
-        to: email,
-        subject: "Mobile Number Verified — Coimbatore Startup Community",
-        text: emailText,
-        html: emailHtml,
-        notificationId: cleanNotificationId,
-      });
+          const cleanNotificationId = `pv-${userId.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 32)}`;
+          await sendCommunityEmail({
+            to: email,
+            subject: "Mobile Number Verified — Coimbatore Startup Community",
+            text: emailText,
+            html: emailHtml,
+            notificationId: cleanNotificationId,
+          });
 
-      results.email = true;
-    } catch (emailErr) {
-      const msg = emailErr instanceof Error ? emailErr.message : String(emailErr);
-      results.errors.push(`Email error: ${msg}`);
-    }
+          results.email = true;
+        } catch (emailErr) {
+          const msg = emailErr instanceof Error ? emailErr.message : String(emailErr);
+          results.errors.push(`Email error: ${msg}`);
+        }
+      })()
+    );
   }
 
   // 3. In-App Inbox Notification
-  try {
-    const dedupeKey = `phone-verify-success-${userId}`;
-    const { error: inAppErr } = await admin.from("notifications").upsert(
-      {
-        channel: "in_app",
-        type: "account",
-        recipient_user_id: userId,
-        title: "Mobile Number Verified (வெற்றிகரமாக உறுதியானது)",
-        message: "Unga mobile number verify aayiruchu. Your phone number is now linked for instant WhatsApp event passes, Digital ID card access, and priority notifications.",
-        action_url: "/profile",
-        status: "available",
-        delivered_at: new Date().toISOString(),
-        dedupe_key: dedupeKey,
-        audience: "member",
-      },
-      { onConflict: "dedupe_key" }
-    );
+  jobs.push(
+    (async () => {
+      try {
+        const dedupeKey = `phone-verify-success-${userId}`;
+        const { error: inAppErr } = await admin.from("notifications").upsert(
+          {
+            channel: "in_app",
+            type: "account",
+            recipient_user_id: userId,
+            title: "Mobile Number Verified (வெற்றிகரமாக உறுதியானது)",
+            message: "Unga mobile number verify aayiruchu. Your phone number is now linked for instant WhatsApp event passes, Digital ID card access, and priority notifications.",
+            action_url: "/profile",
+            status: "available",
+            delivered_at: new Date().toISOString(),
+            dedupe_key: dedupeKey,
+            audience: "member",
+          },
+          { onConflict: "dedupe_key" }
+        );
 
-    if (inAppErr) {
-      results.errors.push(`In-App error: ${inAppErr.message}`);
-    } else {
-      results.inApp = true;
-    }
-  } catch (inAppEx) {
-    const msg = inAppEx instanceof Error ? inAppEx.message : String(inAppEx);
-    results.errors.push(`In-App exception: ${msg}`);
-  }
+        if (inAppErr) {
+          results.errors.push(`In-App error: ${inAppErr.message}`);
+        } else {
+          results.inApp = true;
+        }
+      } catch (inAppEx) {
+        const msg = inAppEx instanceof Error ? inAppEx.message : String(inAppEx);
+        results.errors.push(`In-App exception: ${msg}`);
+      }
+    })()
+  );
 
   // 4. Alert Core Leadership Team WhatsApp Group & Admin phone
-  void dispatchTeamWhatsAppAlert({
-    type: "mobile_verified",
-    title: "Member Mobile Number Verified",
-    fields: {
-      "Member": displayName,
-      "Mobile Number": `+${e164}`,
-      "Email": email || "N/A",
-    },
-    actionUrl: `${BASE_URL}/admin/members`,
-  }).catch(() => {});
+  jobs.push(
+    (async () => {
+      try {
+        await dispatchTeamWhatsAppAlert({
+          type: "mobile_verified",
+          title: "Member Mobile Number Verified",
+          fields: {
+            "Member": displayName,
+            "Mobile Number": `+${e164}`,
+            "Email": email || "N/A",
+          },
+          actionUrl: `${BASE_URL}/admin/members`,
+        });
+      } catch {}
+    })()
+  );
+
+  // Await all notification channels in parallel
+  await Promise.allSettled(jobs);
+
+  return results;
 
   return results;
 }

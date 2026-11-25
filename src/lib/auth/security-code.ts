@@ -186,14 +186,20 @@ export async function sendSecurityCodeEmail({
   email,
   code,
   name,
+  purpose = "password_change",
 }: {
   email: string;
   code: string;
   name?: string | null;
+  purpose?: "login" | "password_change" | "security_code";
 }): Promise<void> {
   const config = emailConfiguration();
   const recipientName = name?.trim() || "CSC Circle Member";
-  const subject = `Your Security Verification Code: ${code} — CSC Circle`;
+  const isLogin = purpose === "login";
+
+  const subject = isLogin
+    ? `Your CSC Circle Login Verification Code: ${code} — CSC Circle`
+    : `Your Security Verification Code: ${code} — CSC Circle`;
 
   const codeBoxMarkup = `
     <div style="background-color: #FAF8F5; border-radius: 16px; border: 2px dashed #94A3B8; padding: 22px 16px; text-align: center; margin: 20px 0; box-sizing: border-box;">
@@ -205,25 +211,48 @@ export async function sendSecurityCodeEmail({
       </span>
     </div>
     <p style="font-size: 12px; line-height: 1.6; color: #64748B; margin: 0 0 16px 0; text-align: center;">
-      If you did not request to change your password, please sign in to your CSC Circle account immediately, check your recent activity, or contact support.
+      ${
+        isLogin
+          ? "If you did not attempt to sign in to CSC Circle, you can safely ignore this email or contact support."
+          : "If you did not request to change your password, please sign in to your CSC Circle account immediately, check your recent activity, or contact support."
+      }
     </p>
   `;
 
   const html = renderMerakiEditorialEmail({
     base: config.base,
     support: config.support,
-    badgeText: "CSC ACCOUNT SECURITY",
-    headline: "Security Verification Code",
-    headlineItalic: "Authorized Account Protection",
+    badgeText: isLogin ? "CSC INSTANT LOGIN ✦" : "CSC ACCOUNT SECURITY",
+    headline: isLogin ? "Sign-in Verification Code" : "Security Verification Code",
+    headlineItalic: isLogin ? "Instant Access Passkey" : "Authorized Account Protection",
     greeting: `Hello ${recipientName},`,
-    body: "You requested to update your account password on CSC Circle. Use the 6-digit security verification code below to authorize this change:",
+    body: isLogin
+      ? "Here is your 6-digit verification code to sign in to your Coimbatore Startup Community (CSC Circle) account:"
+      : "You requested to update your account password on CSC Circle. Use the 6-digit security verification code below to authorize this change:",
     customMarkup: codeBoxMarkup,
-    buttonText: "Sign In to CSC Circle",
+    buttonText: isLogin ? "Open CSC Circle" : "Sign In to CSC Circle",
     buttonUrl: `${config.base}/login`,
-    thumbtackNote: "Keep your credentials secure. Never share your verification code.",
+    thumbtackNote: isLogin
+      ? "Valid for 10 minutes. Never share this single-use verification code with anyone."
+      : "Keep your credentials secure. Never share your verification code.",
   });
 
-  const text = `
+  const text = isLogin
+    ? `
+CSC Circle — Login Verification Code
+
+Hello ${recipientName},
+
+Your 6-digit verification code is: ${code}
+
+Use this code to sign in to your Coimbatore Startup Community account.
+This code is valid for 10 minutes and can only be used once.
+
+If you did not request this code, please ignore this email or review your account security.
+
+— Coimbatore Startup Community
+    `.trim()
+    : `
 CSC Circle — Account Security Verification
 
 Hello ${recipientName},
@@ -236,7 +265,7 @@ This code is valid for 10 minutes and can only be used once.
 If you did not request this code, please ignore this email or review your account security.
 
 — Coimbatore Startup Community
-  `.trim();
+    `.trim();
 
   await sendCommunityEmail({
     to: email,

@@ -224,7 +224,7 @@ export async function dispatchNotifications(batch = 15) {
         }
         try {
           const response = await sendCommunityEmail({ to:recipient,...message,notificationId:job.id,attachments });
-          if (!response.accepted?.some(a=>String(a).toLowerCase()===recipient.toLowerCase())) throw { responseCode:550 };
+          if (!response.accepted?.some((a: unknown)=>String(a).toLowerCase()===recipient.toLowerCase())) throw { responseCode:550 };
           const recorded = await sb.rpc("csc_finish_email_delivery", { job:job.id,lease,digest,outcome:"accepted",code:"" });
           if (recorded.error) throw new Error("ACCEPTANCE_RECORD_FAILED");
           accepted++;

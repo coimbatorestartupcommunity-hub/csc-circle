@@ -100,6 +100,7 @@ export async function sendMsg91Otp({
         authkey: authKey,
         "content-type": "application/json",
       },
+      signal: AbortSignal.timeout(6000),
       body: JSON.stringify({
         ...extraVariables,
         ...(otp ? { otp } : {}),
@@ -161,6 +162,7 @@ export async function verifyMsg91Otp({
       headers: {
         authkey: authKey,
       },
+      signal: AbortSignal.timeout(6000),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -317,6 +319,7 @@ export async function sendMsg91WhatsAppTemplate({
         authkey: authKey,
         "content-type": "application/json",
       },
+      signal: AbortSignal.timeout(6000),
       body: JSON.stringify(payload),
     });
 
@@ -396,6 +399,7 @@ export async function sendMsg91WhatsAppTextMessage({
         accept: "application/json",
         "content-type": "application/json",
       },
+      signal: AbortSignal.timeout(6000),
       body: JSON.stringify(payload),
     });
 

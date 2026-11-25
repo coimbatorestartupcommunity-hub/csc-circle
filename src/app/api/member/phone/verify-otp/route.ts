@@ -72,20 +72,23 @@ export async function POST(request: Request) {
       console.warn("[verify-otp] User metadata update warning:", metaErr);
     }
 
-    // 4. Dispatch WhatsApp, Email & In-App verification confirmation notifications
-    const memberName = profile?.full_name || profile?.display_name || ctx.user.user_metadata?.full_name || "Founder";
-    const memberEmail = profile?.email || ctx.user.email;
-    try {
-      await notifyPhoneVerifiedSuccess({
-        userId: ctx.user.id,
-        phone: e164,
-        email: memberEmail,
-        name: memberName,
-        force: true,
-      });
-    } catch (notifErr) {
-      console.warn("[verify-otp] Post-verification notification warning:", notifErr);
-    }
+    // 4. Dispatch WhatsApp, Email & In-App verification confirmation notifications in background
+    const user = ctx.user;
+    void (async () => {
+      const memberName = profile?.full_name || profile?.display_name || user.user_metadata?.full_name || "Founder";
+      const memberEmail = profile?.email || user.email;
+      try {
+        await notifyPhoneVerifiedSuccess({
+          userId: user.id,
+          phone: e164,
+          email: memberEmail,
+          name: memberName,
+          force: true,
+        });
+      } catch (notifErr) {
+        console.warn("[verify-otp] Post-verification notification warning:", notifErr);
+      }
+    })();
 
     return authResponse({ ok: true, phone: e164 });
   } catch (err) {

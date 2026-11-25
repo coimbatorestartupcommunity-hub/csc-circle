@@ -11,12 +11,14 @@ import {
 
 export async function POST(request: Request) {
   const ip = clientIp(request);
-  const ipLimit = rateLimit(`auth:phone:verify:${ip}`, 15, 120_000);
-  if (!ipLimit.allowed) {
-    return NextResponse.json(
-      { error: "Too many verification attempts. Please wait a few minutes." },
-      { status: 429 }
-    );
+  if (ip && ip !== "unknown") {
+    const ipLimit = rateLimit(`auth:phone:verify:${ip}`, 150, 120_000);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many verification attempts from this network. Please wait a few minutes." },
+        { status: 429 }
+      );
+    }
   }
 
   try {
@@ -77,18 +79,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Dispatch WhatsApp, Email & In-App verification confirmation notifications
-    try {
-      const { notifyPhoneVerifiedSuccess } = await import("@/lib/services/phone-verification-notifications");
-      await notifyPhoneVerifiedSuccess({
-        userId: user.userId,
-        phone,
-        email: user.email?.endsWith("@login.csc.internal") ? null : user.email,
-        name: null,
-      });
-    } catch (notifErr) {
-      console.warn("[verify-otp] Post-verification notification note:", notifErr);
-    }
+    // 4. Dispatch WhatsApp, Email & In-App verification confirmation notifications in the background
+    void (async () => {
+      try {
+        const { notifyPhoneVerifiedSuccess } = await import("@/lib/services/phone-verification-notifications");
+        await notifyPhoneVerifiedSuccess({
+          userId: user.userId,
+          phone,
+          email: user.email?.endsWith("@login.csc.internal") ? null : user.email,
+          name: null,
+        });
+      } catch (notifErr) {
+        console.warn("[verify-otp] Post-verification notification note:", notifErr);
+      }
+    })();
 
     return NextResponse.json({
       ok: true,

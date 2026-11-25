@@ -51,6 +51,7 @@ export function LoginForm() {
   const [sendingOtp, setSendingOtp] = React.useState(false);
   const [verifyingOtp, setVerifyingOtp] = React.useState(false);
   const [channel, setChannel] = React.useState<"whatsapp" | "email">("whatsapp");
+  const [emailForOtp, setEmailForOtp] = React.useState("");
   const [countdown, setCountdown] = React.useState(0);
   const [showEmailModal, setShowEmailModal] = React.useState(false);
 
@@ -94,7 +95,11 @@ export function LoginForm() {
       const res = await fetch("/api/auth/phone/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: cleanPhone, channel }),
+        body: JSON.stringify({
+          phone: cleanPhone,
+          channel,
+          email: channel === "email" && emailForOtp.trim() ? emailForOtp.trim() : undefined,
+        }),
       });
 
       const data = await res.json();
@@ -107,7 +112,7 @@ export function LoginForm() {
       setCountdown(30); // 30-second resend cooldown requested by user
       toast.success(
         channel === "email"
-          ? "Verification code dispatched to your registered email!"
+          ? "Verification code dispatched to your email! (Check inbox & spam)"
           : "Verification code dispatched to your WhatsApp! (Resend available in 30s)"
       );
     } catch {
@@ -275,6 +280,23 @@ export function LoginForm() {
                   <span>Email</span>
                 </label>
               </div>
+
+              {channel === "email" ? (
+                <div className="flex flex-col gap-1.5 pt-0.5">
+                  <Label htmlFor="login-otp-email" className="text-xs font-semibold text-slate-800">
+                    Email Address <span className="text-[11px] font-normal text-slate-500">(Optional if mobile is already linked)</span>
+                  </Label>
+                  <Input
+                    id="login-otp-email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                    value={emailForOtp}
+                    onChange={(e) => setEmailForOtp(e.target.value)}
+                    className="h-10 text-sm font-medium rounded-xl"
+                  />
+                </div>
+              ) : null}
 
               <Button
                 type="submit"

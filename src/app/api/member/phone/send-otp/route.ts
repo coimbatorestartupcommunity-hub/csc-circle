@@ -40,7 +40,12 @@ export async function POST(request: Request) {
       return authResponse({ error: "Please enter a valid 10-digit mobile number." }, 400);
     }
 
-    const res = await sendPhoneOtp({ phone, channel: "whatsapp" });
+    const channel = (body?.channel === "email" || body?.channel === "both") ? body.channel : "whatsapp";
+    const res = await sendPhoneOtp({
+      phone,
+      channel,
+      email: ctx.user.email || undefined,
+    });
     if (!res.success) {
       return authResponse({ error: res.error || "Failed to dispatch verification code." }, 400);
     }

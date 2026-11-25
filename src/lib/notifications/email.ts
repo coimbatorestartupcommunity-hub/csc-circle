@@ -1,11 +1,39 @@
 import "server-only";
 import nodemailer from "nodemailer";
 import { emailConfiguration, validEmail } from "@/lib/notifications/config";
+
+let cachedTransport: ReturnType<typeof nodemailer.createTransport> | null = null;
+
 export function createEmailTransport() {
+  if (cachedTransport) return cachedTransport;
   try {
     const c = emailConfiguration();
-    return nodemailer.createTransport({ host: c.host, port: c.port, secure: c.secure, ...(c.localCapture ? {} : { requireTLS: true, auth: { user: c.user, pass: c.password }, tls: { minVersion: "TLSv1.2" as const, rejectUnauthorized: true } }), connectionTimeout: 8_000, greetingTimeout: 8_000, socketTimeout: 12_000, disableFileAccess: true, disableUrlAccess: true });
-  } catch { return null; }
+    cachedTransport = nodemailer.createTransport({
+      host: c.host,
+      port: c.port,
+      secure: c.secure,
+      ...(c.localCapture
+        ? {}
+        : {
+            requireTLS: true,
+            auth: { user: c.user, pass: c.password },
+            tls: { minVersion: "TLSv1.2" as const, rejectUnauthorized: true },
+          }),
+      pool: true,
+      maxConnections: 10,
+      maxMessages: 100,
+      rateDelta: 1000,
+      rateLimit: 15,
+      connectionTimeout: 6_000,
+      greetingTimeout: 6_000,
+      socketTimeout: 10_000,
+      disableFileAccess: true,
+      disableUrlAccess: true,
+    });
+    return cachedTransport;
+  } catch {
+    return null;
+  }
 }
 export async function verifyEmailTransport() {
   const transport = createEmailTransport();

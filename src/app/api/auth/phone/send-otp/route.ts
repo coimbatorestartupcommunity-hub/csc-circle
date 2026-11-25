@@ -21,18 +21,22 @@ export async function POST(request: Request) {
   }
 
   const ip = clientIp(request);
-  const ipLimit = rateLimit(`auth:phone:send:${ip}`, 10, 120_000);
-  if (!ipLimit.allowed) {
-    return NextResponse.json(
-      { error: "Too many attempts. Please wait a few minutes before requesting another code." },
-      { status: 429 }
-    );
+  // High-concurrency allowance: allows up to 150 requests per 2 mins per IP to support university campuses & co-working NATs
+  if (ip && ip !== "unknown") {
+    const ipLimit = rateLimit(`auth:phone:send:${ip}`, 150, 120_000);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many attempts from this network. Please wait a few minutes before requesting another code." },
+        { status: 429 }
+      );
+    }
   }
 
   try {
     const body = await request.json();
     const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
     const channel = (body?.channel === "email" || body?.channel === "both") ? body.channel : "whatsapp";
+    const email = typeof body?.email === "string" ? body.email.trim() : undefined;
 
     if (!phone || phone.replace(/\D/g, "").length < 10) {
       return NextResponse.json(
@@ -52,7 +56,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await sendPhoneOtp({ phone, channel });
+    const result = await sendPhoneOtp({ phone, channel, email });
     if (!result.success) {
       return NextResponse.json({ error: result.error || "Failed to dispatch code." }, { status: 400 });
     }
@@ -61,7 +65,12 @@ export async function POST(request: Request) {
       ok: true,
       phone: result.phone,
       channel,
-      message: channel === "email" ? "Verification code sent to email." : "Verification code sent to WhatsApp.",
+      message:
+        channel === "email"
+          ? "Verification code sent to your email."
+          : channel === "both"
+          ? "Verification code sent to WhatsApp and Email."
+          : "Verification code sent to WhatsApp.",
     });
   } catch {
     return NextResponse.json(

@@ -17,8 +17,10 @@ export async function POST(request: Request, context: { params: Promise<{ action
   const { action } = await context.params;
   if (!["login", "signup", "recover", "reset", "reauthenticate", "change-password", "resend"].includes(action)) return authResponse({ error: "Not found." }, 404);
   const ip = clientIp(request);
-  const limit = rateLimit(`auth:${action}:${ip}`, 10, 120_000);
-  if (!limit.allowed) return authResponse({ error: "Too many attempts. Please wait a few minutes before trying again." }, 429);
+  if (ip && ip !== "unknown") {
+    const limit = rateLimit(`auth:${action}:${ip}`, 120, 120_000);
+    if (!limit.allowed) return authResponse({ error: "Too many attempts from this network. Please wait a few minutes before trying again." }, 429);
+  }
   try {
     const body = await readAuthBody(request);
     if (!body) return authResponse({ error: "Invalid request." }, 400);
