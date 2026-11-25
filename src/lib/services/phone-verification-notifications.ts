@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { enqueueWhatsAppNotification, formatForWhatsApp, normalizePhoneForWhatsApp } from "@/lib/notifications/whatsapp-outbox";
 import { sendCommunityEmail } from "@/lib/notifications/email";
 import { renderMerakiEditorialEmail } from "@/lib/notifications/template-meraki";
+import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 export interface PhoneVerificationNotificationInput {
   userId: string;
@@ -155,6 +156,18 @@ export async function notifyPhoneVerifiedSuccess(input: PhoneVerificationNotific
     const msg = inAppEx instanceof Error ? inAppEx.message : String(inAppEx);
     results.errors.push(`In-App exception: ${msg}`);
   }
+
+  // 4. Alert Core Leadership Team WhatsApp Group & Admin phone
+  void dispatchTeamWhatsAppAlert({
+    type: "mobile_verified",
+    title: "Member Mobile Number Verified",
+    fields: {
+      "Member": displayName,
+      "Mobile Number": `+${e164}`,
+      "Email": email || "N/A",
+    },
+    actionUrl: `${BASE_URL}/admin/members`,
+  }).catch(() => {});
 
   return results;
 }

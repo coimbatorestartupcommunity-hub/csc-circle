@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
+import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const opportunitySchema = z.object({
   title: z.string().min(3).max(140),
@@ -82,6 +83,21 @@ export async function POST(request: Request) {
       // In case publication_status or columns slightly differ, log and return graceful confirmation
       console.warn("Member opportunity insert notice:", error.message);
     }
+
+    // Dispatch real-time alert to Leadership Team WhatsApp Group & Admin phone
+    void dispatchTeamWhatsAppAlert({
+      type: "opportunity_submitted",
+      title: "New Opportunity / Collaboration Posted",
+      fields: {
+        "Title": title,
+        "Category": category,
+        "Organization": organization,
+        "Participation Mode": participationMode,
+        "Contact Email": contact,
+        "Deadline": deadline || "Open",
+      },
+      actionUrl: "https://csc.logicintelligencetechnologies.in/admin/opportunities",
+    }).catch((alertErr) => console.warn("[POST /api/member/opportunities] Team alert note:", alertErr));
 
     return NextResponse.json(
       {

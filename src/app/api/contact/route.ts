@@ -3,6 +3,7 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { normalizePhoneNumber, maskPhoneNumber } from "@/lib/phone/normalize";
 import { contactFormSchema } from "@/lib/validations/contact.schema";
 import { createSubmissionClient } from "@/lib/supabase/submissions";
+import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 interface SubmitContactInquiryResult {
   contact_id: string;
@@ -148,6 +149,19 @@ export async function POST(req: Request) {
     }
 
     const outcome = data as unknown as SubmitContactInquiryResult;
+
+    // Dispatch real-time alert to Leadership Team WhatsApp Group & Admin phone
+    void dispatchTeamWhatsAppAlert({
+      type: "contact_inquiry",
+      title: "New Website Contact Inquiry",
+      fields: {
+        "Name": name,
+        "Phone": phoneResult.e164,
+        "Inquiry": inquiry ? inquiry.slice(0, 200) : "General Inquiry",
+        "WhatsApp Consent": whatsappConsent ? "Yes" : "No",
+      },
+      actionUrl: "https://csc.logicintelligencetechnologies.in/admin",
+    }).catch((alertErr) => console.warn("[POST /api/contact] Team alert note:", alertErr));
 
     return NextResponse.json(
       {

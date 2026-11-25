@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
+import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const eventProposalSchema = z.object({
   organizerName: z.string().min(2).max(80),
@@ -83,6 +84,23 @@ export async function POST(request: Request) {
     if (error) {
       console.warn("Notice inserting event proposal:", error.message);
     }
+
+    // Dispatch real-time alert to Leadership Team WhatsApp Group & Admin phone
+    void dispatchTeamWhatsAppAlert({
+      type: "event_proposed",
+      title: "New Community Event Proposed",
+      fields: {
+        "Title": data.title,
+        "Organizer": data.organizerName,
+        "Organization": data.organization || "Independent",
+        "Email": data.email,
+        "Phone": data.phone,
+        "Format": data.format,
+        "Proposed Date": data.proposedDate || "Flexible",
+        "Reference": refCode,
+      },
+      actionUrl: "https://csc.logicintelligencetechnologies.in/admin/events",
+    }).catch((alertErr) => console.warn("[POST /api/events/propose] Team alert note:", alertErr));
 
     return NextResponse.json(
       {

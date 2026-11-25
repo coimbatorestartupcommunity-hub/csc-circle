@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
+import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const resourceProposalSchema = z.object({
   title: z.string().min(3).max(180),
@@ -96,6 +97,22 @@ ${data.details}`;
       console.error("Failed to insert resource proposal:", error);
       throw error;
     }
+
+    // Dispatch real-time alert to Leadership Team WhatsApp Group & Admin phone
+    void dispatchTeamWhatsAppAlert({
+      type: "resource_proposed",
+      title: "New Community Resource Proposed",
+      fields: {
+        "Title": data.title,
+        "Category": data.category,
+        "Contributor": data.contributorName,
+        "Startup / Org": data.startup || "Independent",
+        "Email": data.email,
+        "Phone": data.phone,
+        "Reference": refCode,
+      },
+      actionUrl: "https://csc.logicintelligencetechnologies.in/admin/resources",
+    }).catch((alertErr) => console.warn("[POST /api/resources/propose] Team alert note:", alertErr));
 
     return NextResponse.json({
       ok: true,
