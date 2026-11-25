@@ -446,12 +446,14 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
     }
   }
 
-  // 2. Try Modal AI Direct Endpoint ($100 Inference Server provided by Founder)
+  // 2. Try Modal AI Direct Endpoint ($100 Inference Server: Muse-Spark-Open-816B-A42B)
   const modalBaseUrl = (
     process.env.MODAL_AI_ENDPOINT ||
     "https://createwithvikash--ep-muse-spark-open-816b-a42b-server.us-west.modal.direct"
   ).trim().replace(/\/+$/, "");
-  const modalToken = process.env.MODAL_PROXY_TOKEN || "";
+  const modalToken =
+    process.env.MODAL_PROXY_TOKEN ||
+    "wk-b1DTWrd3OBJhle19ldoPF8.ws-wznhluHnVPZ4DvGmDGiBQP";
 
   if (modalBaseUrl) {
     try {
@@ -461,13 +463,18 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
       };
       if (modalToken) {
         modalHeaders["Authorization"] = `Bearer ${modalToken}`;
+        if (modalToken.includes(".")) {
+          const [k, s] = modalToken.split(".");
+          modalHeaders["Modal-Key"] = k;
+          modalHeaders["Modal-Secret"] = s;
+        }
       }
 
       const res = await fetch(modalUrl, {
         method: "POST",
         headers: modalHeaders,
         body: JSON.stringify({
-          model: "default",
+          model: "meta-models/Muse-Spark-Open-816B-A42B",
           messages: [
             { role: "system", content: CSC_KNOWLEDGE_BASE_SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
@@ -475,6 +482,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
           temperature: 0.3,
           max_tokens: 350,
         }),
+        signal: AbortSignal.timeout(3500),
       });
 
       if (res.ok) {

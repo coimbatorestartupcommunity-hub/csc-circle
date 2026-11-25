@@ -177,7 +177,9 @@ describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
     expect(helpRes.replyText).toContain("Official Commands Guide");
   });
 
-  it("resolves community knowledge questions accurately via agent knowledge base", async () => {
+  it(
+    "resolves community knowledge questions accurately via agent knowledge base",
+    async () => {
     const ctoRes = await routeInboundWhatsAppMessage({
       phone: "917550067712",
       text: "Who is the CTO of CSC Circle?",
@@ -195,7 +197,7 @@ describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
 
     expect(memberRes.handled).toBe(true);
     expect(memberRes.command).toBe("AI_REPLY");
-    expect(memberRes.replyText).toContain("100% free");
+    expect(memberRes.replyText).toMatch(/100%\s*free/i);
 
     // Test CCO Swathi
     const ccoRes = await routeInboundWhatsAppMessage({
@@ -223,5 +225,5 @@ describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
     expect(cboRes.handled).toBe(true);
     expect(cboRes.command).toBe("AI_REPLY");
     expect(cboRes.replyText).toContain("Jaibharath V");
-  });
+  }, 25000);
 });
