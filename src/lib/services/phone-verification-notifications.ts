@@ -58,6 +58,8 @@ export async function notifyPhoneVerifiedSuccess(input: PhoneVerificationNotific
         recipientPhone: e164,
         text: waText,
         messageType: "phone_verification_success",
+        templateName: "phone_verification_success",
+        templateVariables: [displayName, e164, `${BASE_URL}/profile`],
         name: displayName,
         idempotencyKey: `phone-verify-success-${userId}`,
       });

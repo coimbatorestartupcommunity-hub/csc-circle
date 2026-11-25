@@ -844,7 +844,8 @@ const CSC_KNOWLEDGE_BASE_SYSTEM_PROMPT = `You are the official 24/7 AI WhatsApp 
 - Official Email: coimbatorestartupcommunity@gmail.com
 - Technical Support Email: hello@logicintelligencetechnologies.in / helpline: +91 75500 67712
 
-### Language Policy (Strict Multi-lingual Routing):
+### Language Policy & Response Formatting (Strict Rules):
+- If the user asks about the community AND guidelines, provide a concise, balanced summary including BOTH the community overview (mission/purpose) AND the WhatsApp group guidelines (allowed vs prohibited conduct & 3-stage moderation).
 - If the user writes in Tamil script, reply strictly in clean, polite Tamil.
 - If the user writes in Tanglish (Tamil words written in English letters, e.g. "vanakkam bro, events epdi check panradhu?"), reply in natural, relatable, friendly Tanglish!
 - If the user writes in English, reply strictly in crisp, professional English.
@@ -918,9 +919,9 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
             { role: "user", content: userPrompt },
           ],
           temperature: 0.3,
-          max_tokens: 1200,
+          max_tokens: 1500,
         }),
-        signal: AbortSignal.timeout(9500),
+        signal: AbortSignal.timeout(11000),
       });
 
       if (res.ok) {

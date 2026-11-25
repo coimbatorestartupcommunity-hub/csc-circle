@@ -1,6 +1,9 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendMsg91WhatsAppTextMessage } from "@/lib/services/msg91";
+import {
+  sendMsg91WhatsAppTextMessage,
+  sendMsg91WhatsAppTemplate,
+} from "@/lib/services/msg91";
 
 export const SYSTEM_NOTIFICATION_CONTACT_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -17,6 +20,8 @@ export interface WhatsAppNotificationPayload {
   messageType?: string;
   name?: string;
   idempotencyKey?: string;
+  templateName?: string;
+  templateVariables?: string[];
 }
 
 /**
@@ -98,10 +103,44 @@ export async function enqueueWhatsAppNotification(
 
     // Serverless Direct Dispatch via MSG91 WhatsApp Gateway for instant delivery
     try {
-      const sendRes = await sendMsg91WhatsAppTextMessage({
-        recipientPhone: e164,
-        text: formattedText,
-      });
+      let sendRes;
+      const targetTemplate =
+        payload.templateName ||
+        (payload.messageType === "phone_verification_success"
+          ? "phone_verification_success"
+          : undefined);
+
+      if (targetTemplate) {
+        const bodyParams =
+          payload.templateVariables && payload.templateVariables.length > 0
+            ? payload.templateVariables
+            : targetTemplate === "phone_verification_success"
+            ? [
+                payload.name || "Member",
+                e164,
+                "https://csc.logicintelligencetechnologies.in/profile",
+              ]
+            : [];
+
+        sendRes = await sendMsg91WhatsAppTemplate({
+          recipientPhone: e164,
+          templateName: targetTemplate,
+          bodyParameters: bodyParams,
+        });
+
+        // If template dispatch fails (e.g. pending approval), seamlessly fall back to text message
+        if (!sendRes.success) {
+          sendRes = await sendMsg91WhatsAppTextMessage({
+            recipientPhone: e164,
+            text: formattedText,
+          });
+        }
+      } else {
+        sendRes = await sendMsg91WhatsAppTextMessage({
+          recipientPhone: e164,
+          text: formattedText,
+        });
+      }
 
       if (sendRes.success) {
         await admin
@@ -109,7 +148,7 @@ export async function enqueueWhatsAppNotification(
           .update({
             status: "delivered",
             sent_at: new Date().toISOString(),
-            openwa_message_id: "msg91_sent",
+            openwa_message_id: targetTemplate ? `template:${targetTemplate}` : "msg91_sent",
           })
           .eq("id", data.id);
       } else {

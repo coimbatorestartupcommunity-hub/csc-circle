@@ -32,7 +32,7 @@ describe("CSC WhatsApp Inbound Router & Community RAG Knowledge Engine", () => {
     expect(res.replyText.toLowerCase()).toMatch(/guidelines|rules|conduct|prohibited/);
     // Must NOT contain the generic fallback
     expect(res.replyText).not.toContain("Reply */menu* for our quick options or */help* for all slash commands");
-  });
+  }, 15000);
 
   it("answers 'WhatsApp community guidelines' accurately", async () => {
     const res = await routeInboundWhatsAppMessage({
@@ -43,7 +43,7 @@ describe("CSC WhatsApp Inbound Router & Community RAG Knowledge Engine", () => {
     expect(res.handled).toBe(true);
     expect(res.replyText.toLowerCase()).toMatch(/guidelines|rules/);
     expect(res.replyText).toContain("https://csc.logicintelligencetechnologies.in/community-guidelines");
-  });
+  }, 15000);
 
   it("handles the new official command /rules and option 7", async () => {
     const res = await routeInboundWhatsAppMessage({
@@ -56,7 +56,7 @@ describe("CSC WhatsApp Inbound Router & Community RAG Knowledge Engine", () => {
     expect(res.replyText.toLowerCase()).toContain("code of conduct");
     expect(res.replyText).toContain("Stage 1");
     expect(res.replyText).toContain("Stage 3");
-  });
+  }, 15000);
 
   it("explains the 5 official WhatsApp groups and bios from csc-whatsapp-ecosystem-bios.txt", async () => {
     const res = await routeInboundWhatsAppMessage({
@@ -70,7 +70,7 @@ describe("CSC WhatsApp Inbound Router & Community RAG Knowledge Engine", () => {
     expect(res.replyText).toContain("CSC Mindsprint");
     expect(res.replyText).toContain("CSC Business Network");
     expect(res.replyText).toContain("CSC Opportunities");
-  });
+  }, 15000);
 
   it("accurately names the leadership desk including Founder, Co-Founder, CTO, CEO, CCO, COO, CBO", async () => {
     const res = await routeInboundWhatsAppMessage({
@@ -81,7 +81,7 @@ describe("CSC WhatsApp Inbound Router & Community RAG Knowledge Engine", () => {
     expect(res.handled).toBe(true);
     expect(res.replyText).toContain("Vikash Saravanan");
     expect(res.replyText).toContain("Logic Intelligence Technologies");
-  });
+  }, 15000);
 
   it("never refers to the digital ID card as pump set", async () => {
     const res = await routeInboundWhatsAppMessage({
@@ -93,5 +93,5 @@ describe("CSC WhatsApp Inbound Router & Community RAG Knowledge Engine", () => {
     expect(res.replyText).toContain("https://csc.logicintelligencetechnologies.in/profile/id-card");
     expect(res.replyText.toLowerCase()).not.toContain("pump set");
     expect(res.replyText.toLowerCase()).not.toContain("pumpset");
-  });
+  }, 15000);
 });
