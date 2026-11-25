@@ -49,3 +49,25 @@ describe("event time formatting (Asia/Kolkata)", () => {
     expect(d).toContain("Mar");
   });
 });
+
+describe("WhatsApp Bold Formatting & Line Preservation", () => {
+  it("converts double stars to single stars without double stars", async () => {
+    const { formatForWhatsApp } = await import("@/lib/notifications/whatsapp-outbox");
+    expect(formatForWhatsApp("Hello **Vikash** world")).toBe("Hello *Vikash* world");
+    expect(formatForWhatsApp("Hello * Vikash * world")).toBe("Hello *Vikash* world");
+    expect(formatForWhatsApp("Hello * Vikash* world")).toBe("Hello *Vikash* world");
+    expect(formatForWhatsApp("Hello *Vikash * world")).toBe("Hello *Vikash* world");
+    expect(formatForWhatsApp("Hello ****Vikash**** world")).toBe("Hello *Vikash* world");
+  });
+
+  it("strictly preserves newlines between bold headers and body text", async () => {
+    const { formatForWhatsApp } = await import("@/lib/notifications/whatsapp-outbox");
+    const input =
+      "🔐 *CSC Circle Login Verification*\n\n" +
+      "Your 6-digit verification code is: *203340*\n\n" +
+      "Use this code to sign in to your Coimbatore Startup Community account.";
+    const result = formatForWhatsApp(input);
+    expect(result).toContain("🔐 *CSC Circle Login Verification*\n\nYour 6-digit verification code is: *203340*");
+    expect(result).not.toContain("**");
+  });
+});

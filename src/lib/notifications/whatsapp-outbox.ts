@@ -37,16 +37,20 @@ export function formatForWhatsApp(text: string): string {
   let out = text;
   // Convert markdown bullet points (* or + at start of line) to •
   out = out.replace(/^([ \t]*)[\*\+]\s+/gm, "$1• ");
+  // Four or more asterisks ****text**** -> *text*
+  out = out.replace(/\*{4,}([^\*\r\n]+?)\*{4,}/g, "*$1*");
   // Triple asterisks (bold italic) ***text*** -> _*text*_
-  out = out.replace(/\*{3,}([^\*\n]+?)\*{3,}/g, "_*$1*_");
-  // Double or multiple asterisks (markdown bold) **text** -> *text*
-  out = out.replace(/\*{2,}([^\*\n]+?)\*{2,}/g, "*$1*");
+  out = out.replace(/\*{3}([^\*\r\n]+?)\*{3}/g, "_*$1*_");
+  // Double asterisks (markdown bold) **text** -> *text*
+  out = out.replace(/\*{2}([^\*\r\n]+?)\*{2}/g, "*$1*");
   // Markdown headings (# Heading) -> *Heading*
   out = out.replace(/^#{1,6}\s+(.*)$/gm, "*$1*");
   // Clean up any remaining multiple asterisks (** or *** -> *)
   out = out.replace(/\*{2,}/g, "*");
-  // Clean spaces right inside bold asterisks e.g. * Vikash * -> *Vikash*
-  out = out.replace(/\*\s+([^\*\n]+?)\s+\*/g, "*$1*");
+  // Clean spaces right inside bold asterisks e.g. * Vikash * -> *Vikash*, * Vikash* -> *Vikash*, *Vikash * -> *Vikash*
+  // Match ONLY horizontal whitespace [ \t], never newlines (\r or \n) to prevent collapsing lines
+  out = out.replace(/\*[ \t]+([^\*\r\n]+?)\*/g, "*$1*");
+  out = out.replace(/\*([^\*\r\n]+?)[ \t]+\*/g, "*$1*");
   return out;
 }
 

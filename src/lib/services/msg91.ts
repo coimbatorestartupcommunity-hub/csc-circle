@@ -100,7 +100,10 @@ export async function sendMsg91Otp({
         authkey: authKey,
         "content-type": "application/json",
       },
-      body: JSON.stringify(extraVariables),
+      body: JSON.stringify({
+        ...extraVariables,
+        ...(otp ? { otp } : {}),
+      }),
     });
 
     const data = await res.json().catch(() => ({}));

@@ -66,8 +66,14 @@ export async function POST(request: Request, context: { params: Promise<{ action
       });
 
       if (error) {
-        if (error.code === "user_already_exists" || /already\s+(registered|exists)/i.test(error.message)) {
-          return authResponse({ error: "An account with this email already exists. Please sign in." }, 409);
+        const isAlreadyRegistered =
+          error.code === "user_already_exists" ||
+          error.code === "email_exists" ||
+          /already\s+(?:been\s+)?(?:registered|exists)/i.test(error.message) ||
+          /email\s+(?:address\s+)?already/i.test(error.message);
+
+        if (isAlreadyRegistered) {
+          return authResponse({ error: "An account with this email already exists. Please sign in or use WhatsApp login." }, 409);
         }
         // Resilient fallback: Create user via admin API with email_confirm: true when Supabase SMTP fails
         try {
@@ -85,8 +91,14 @@ export async function POST(request: Request, context: { params: Promise<{ action
             },
           });
           if (adminErr) {
-            if (adminErr.code === "user_already_exists" || /already\s+(registered|exists)/i.test(adminErr.message)) {
-              return authResponse({ error: "An account with this email already exists. Please sign in." }, 409);
+            const adminIsRegistered =
+              adminErr.code === "user_already_exists" ||
+              adminErr.code === "email_exists" ||
+              /already\s+(?:been\s+)?(?:registered|exists)/i.test(adminErr.message) ||
+              /email\s+(?:address\s+)?already/i.test(adminErr.message);
+
+            if (adminIsRegistered) {
+              return authResponse({ error: "An account with this email already exists. Please sign in or use WhatsApp login." }, 409);
             }
             console.error("[signup] Admin user creation fallback failed:", adminErr);
             return authResponse({ error: "Unable to complete signup. Try again later or sign in if you already have an account." }, 400);

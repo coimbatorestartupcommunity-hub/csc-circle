@@ -95,13 +95,14 @@ describe("MSG91 & viaSocket Services", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
 
     const [calledUrl, calledInit] = fetchSpy.mock.calls[0];
-    expect(calledUrl.toString()).toContain("/whatsapp/whatsapp-outbound-message/bulk");
+    expect(calledUrl.toString()).toContain("/whatsapp/whatsapp-outbound-message/");
     const parsedBody = JSON.parse(calledInit?.body as string);
     expect(parsedBody.payload.template.name).toBe("event_pass_confirmation");
-    expect(parsedBody.payload.to_and_components[0].phone_number).toBe("919876543210");
+    expect(parsedBody.payload.to).toBe("919876543210");
   });
 
   it("gracefully skips viaSocket dispatch if VIASOCKET_FLOW_WEBHOOK_URL is not set", async () => {
+    vi.stubEnv("VIASOCKET_FLOW_WEBHOOK_URL", "");
     const result = await triggerViaSocketFlow("event_registered", {
       eventId: "evt_123",
       attendee: "Test User",

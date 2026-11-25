@@ -230,6 +230,19 @@ export async function verifyPhoneOtpCode(phone: string, inputCode: string): Prom
     }
   }
 
+  // 4. Try MSG91 Verify API as resilient fallback
+  if (!storedCode) {
+    try {
+      const { verifyMsg91Otp } = await import("@/lib/services/msg91");
+      const msg91Res = await verifyMsg91Otp({ phone: e164, otp: cleanInput });
+      if (msg91Res.success) {
+        storedCode = cleanInput;
+      }
+    } catch (msg91Err) {
+      console.warn("[verifyPhoneOtpCode] MSG91 verify fallback note:", msg91Err);
+    }
+  }
+
   if (!storedCode) return false;
 
   const matches = crypto.timingSafeEqual(
