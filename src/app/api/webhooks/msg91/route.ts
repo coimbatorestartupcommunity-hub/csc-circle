@@ -15,14 +15,55 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     console.log("[msg91-webhook] Received callback:", JSON.stringify(body).slice(0, 300));
 
-    const eventName = (body.eventName || body.event || body.type || "").toLowerCase();
-    const customerNumber = body.customerNumber || body.mobile || body.from || "";
-    const text = body.text || body.body || body.message || "";
-    const messageId = body.uuid || body.messageId || body.requestId || "";
+    const eventName = (body.eventName || body.event || body.type || body.direction || "").toLowerCase();
+    
+    // Resilient extraction for MSG91, Meta Cloud API, and generic webhook schemas
+    const customerNumber = (
+      body.customerNumber ||
+      body.mobile ||
+      body.from ||
+      body.sender ||
+      body.wa_id ||
+      body.phone ||
+      body.data?.customerNumber ||
+      body.data?.from ||
+      body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from ||
+      body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.wa_id ||
+      ""
+    ).toString();
+
+    const text = (
+      body.content ||
+      body.text ||
+      body.body ||
+      body.message ||
+      body.msg ||
+      body.caption ||
+      body.button_reply?.title ||
+      body.list_reply?.title ||
+      body.interactive?.button_reply?.title ||
+      body.interactive?.list_reply?.title ||
+      body.data?.content ||
+      body.data?.text ||
+      body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body ||
+      body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.interactive?.button_reply?.title ||
+      body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.interactive?.list_reply?.title ||
+      ""
+    ).toString();
+
+    const messageId = body.uuid || body.messageId || body.requestId || body.crqid || "";
     const integratedNumber = body.integratedNumber || body.to || "";
 
+    const isInbound =
+      eventName.includes("inbound") ||
+      eventName.includes("received") ||
+      eventName.includes("incoming") ||
+      eventName === "message" ||
+      body.direction === "inbound" ||
+      Boolean(customerNumber && text);
+
     // 1. Inbound User Message (User texted WhatsApp +91 7550067712)
-    if (eventName === "inbound" || (customerNumber && text)) {
+    if (isInbound && (customerNumber || text)) {
       console.log(`[msg91-webhook] Inbound message from ${customerNumber}: "${text.slice(0, 50)}..."`);
 
       // Forward to viaSocket Flow so visual automations can act on it

@@ -22,7 +22,9 @@ export async function routeInboundWhatsAppMessage(
 ): Promise<InboundRouterResult> {
   const cleanPhone = input.phone.replace(/\D/g, "");
   const trimmed = (input.text || "").trim();
-  const lower = trimmed.toLowerCase();
+  // Strip optional leading slash or hash (e.g. /menu -> menu, /events -> events, #events -> events)
+  const cmd = trimmed.replace(/^[/#!]\s*/, "").trim();
+  const lower = cmd.toLowerCase();
 
   // 1. Voice Note / Audio polite refusal (Zero token spend, no Whisper)
   if (input.isAudio) {
@@ -41,11 +43,11 @@ export async function routeInboundWhatsAppMessage(
   }
 
   // 2. Interactive Navigation Menu & Welcome Greetings
-  const isGreeting = /^(hi|hello|hey|வணக்கம்|vanakkam)$/i.test(trimmed);
-  const isMenu = /^(menu|start|help|options|\?)$/i.test(trimmed) || lower === "0";
+  const isGreeting = /^(hi|hello|hey|வணக்கம்|vanakkam)$/i.test(cmd);
+  const isMenu = /^(menu|start|options)$/i.test(cmd) || lower === "0";
 
   if (isGreeting || isMenu) {
-    const isTamil = /[\u0B80-\u0BFF]/.test(trimmed) || /vanakkam/i.test(trimmed);
+    const isTamil = /[\u0B80-\u0BFF]/.test(cmd) || /vanakkam/i.test(cmd);
 
     // If it's a greeting ("hi", "hello", "hey", etc.), send the warm Welcome Message FIRST
     if (isGreeting) {
@@ -79,23 +81,25 @@ export async function routeInboundWhatsAppMessage(
           "",
           "வணக்கம்! உடனடி தகவல்களைப் பெற கீழே உள்ள எண் அல்லது முக்கிய வார்த்தையை அனுப்பவும்:",
           "",
-          "1️⃣ *நிகழ்வுகள்* (பதில்: *1* அல்லது *EVENTS*)",
+          "1️⃣ *நிகழ்வுகள்* (பதில்: *1* அல்லது */events*)",
           "   அடுத்த ஆஃப்லைன் பவுண்டர் மீட்டிங் & மாஸ்டர்கிளாஸ் விவரங்கள்.",
           "",
-          "2️⃣ *டிஜிட்டல் அடையாள அட்டை* (பதில்: *2* அல்லது *PASS*)",
+          "2️⃣ *டிஜிட்டல் அடையாள அட்டை* (பதில்: *2* அல்லது */pass*)",
           "   உறுப்பினர் கார்டு மற்றும் நிகழ்வு நுழைவு QR கோட்.",
           "",
-          "3️⃣ *தொழில்முனைவோர் இணைப்பு* (பதில்: *3* அல்லது *MATCH <துறை>*)",
+          "3️⃣ *தொழில்முனைவோர் இணைப்பு* (பதில்: *3* அல்லது */match <துறை>*)",
           "   கோவையின் ஸ்டார்ட்அப்கள் & இணை-நிறுவனர்கள் நெட்வொர்க்.",
           "",
-          "4️⃣ *யோசனைகள் & தலைப்புகள்* (பதில்: *4* அல்லது *IDEA <யோசனை>*)",
+          "4️⃣ *யோசனைகள் & தலைப்புகள்* (பதில்: *4* அல்லது */idea <யோசனை>*)",
           "   அடுத்த நிகழ்வுக்கான தலைப்புகள் (தலைமைக் குழுவுக்குச் செல்லும்).",
           "",
-          "5️⃣ *அதிகாரப்பூர்வ வாட்ஸ்அப் குழு* (பதில்: *5* அல்லது *COMMUNITY*)",
+          "5️⃣ *அதிகாரப்பூர்வ வாட்ஸ்அப் குழு* (பதில்: *5* அல்லது */community*)",
           "   தலைமைக் குழு மற்றும் பவுண்டர்கள் குழுவில் இணைய.",
           "",
-          "6️⃣ *நிர்வாகிகள் உதவி* (பதில்: *6* அல்லது *SUPPORT*)",
+          "6️⃣ *நிர்வாகிகள் உதவி* (பதில்: *6* அல்லது */support*)",
           "   ஒருங்கிணைப்பாளர்களுடன் நேரடியாகப் பேச.",
+          "",
+          "ℹ️ *கட்டளைகள் வழிகாட்டி:* */help* என அனுப்பவும்.",
           "",
           CSC_WHATSAPP_FOOTER,
         ].join("\n")
@@ -103,25 +107,27 @@ export async function routeInboundWhatsAppMessage(
           "🌟 *COIMBATORE STARTUP COMMUNITY*",
           "🚀 *CSC Circle — Official Quick Navigation*",
           "",
-          "Welcome! Reply with a number or keyword below for instant assistance:",
+          "Welcome! Reply with a number or slash command below for instant assistance:",
           "",
-          "1️⃣ *Upcoming Events* (Reply: *1* or *EVENTS*)",
+          "1️⃣ *Upcoming Events* (Reply: *1* or */events*)",
           "   Explore upcoming offline founder meetups & masterclasses.",
           "",
-          "2️⃣ *Digital ID & Event Passes* (Reply: *2* or *PASS*)",
+          "2️⃣ *Digital ID & Event Passes* (Reply: *2* or */pass*)",
           "   Retrieve your official membership card & QR door entry pass.",
           "",
-          "3️⃣ *Founder Matchmaking* (Reply: *3* or *MATCH <domain>*)",
-          "   Connect with local founders & co-founders (e.g. *MATCH AI*, *MATCH SAAS*).",
+          "3️⃣ *Founder Matchmaking* (Reply: *3* or */match <domain>*)",
+          "   Connect with local founders & co-founders (e.g. */match AI*, */match SaaS*).",
           "",
-          "4️⃣ *Suggest Meetup Topic* (Reply: *4* or *IDEA <your idea>*)",
+          "4️⃣ *Suggest Meetup Topic* (Reply: *4* or */idea <your idea>*)",
           "   Submit ideas directly to our 7-member Core Leadership Team.",
           "",
-          "5️⃣ *Join Community Group* (Reply: *5* or *COMMUNITY*)",
+          "5️⃣ *Join Community Group* (Reply: *5* or */community*)",
           "   Join the verified leadership WhatsApp network.",
           "",
-          "6️⃣ *Talk to Human Support* (Reply: *6* or *SUPPORT*)",
+          "6️⃣ *Talk to Human Support* (Reply: *6* or */support*)",
           "   Escalate directly to our organizing team.",
+          "",
+          "ℹ️ *Slash Commands Guide:* Type */help* anytime.",
           "",
           CSC_WHATSAPP_FOOTER,
         ].join("\n");
@@ -134,8 +140,34 @@ export async function routeInboundWhatsAppMessage(
     };
   }
 
-  // 3. Digital Gate Pass & Membership Card Lookup
-  if (/^(pass|ticket|my pass|2)$/i.test(trimmed)) {
+  // 3. Official Slash Commands & Help Menu
+  if (/^(help|commands|cmd|\?)$/i.test(cmd)) {
+    const replyText = [
+      "📋 *CSC Circle Official Commands Guide*",
+      "",
+      "You can send any number, keyword, or slash command anytime:",
+      "",
+      "• *1* or */events* — View Upcoming Founder Meetups & Masterclasses",
+      "• *2* or */pass* — Access Digital Membership Card & QR Entry Pass",
+      "• *3* or */match <domain>* — Founder & Co-Founder Matchmaking",
+      "• *4* or */idea <topic>* — Submit a Topic or Speaker Suggestion",
+      "• *5* or */community* — Join Official Leadership WhatsApp Group",
+      "• *6* or */support* — Connect with Community Organizers",
+      "• */menu* — Main Navigation Menu",
+      "• */pulse* — Fortnightly Ecosystem Pulse",
+      "• */help* — Show this Commands Guide",
+      "",
+      "💡 *Ask Me Anything:* You can also ask natural questions about our ecosystem, events, membership, or leadership team!",
+      "",
+      CSC_WHATSAPP_FOOTER,
+    ].join("\n");
+
+    await sendReplySafely(cleanPhone, replyText);
+    return { handled: true, replyText, command: "HELP" };
+  }
+
+  // 4. Digital Gate Pass & Membership Card Lookup
+  if (/^(pass|ticket|my pass|id|id-card|2)$/i.test(cmd)) {
     const passLink = "https://csc.logicintelligencetechnologies.in/profile/id-card";
     const replyText = [
       "🎟️ *CSC Circle — Digital ID & Event Passes*",
@@ -153,8 +185,8 @@ export async function routeInboundWhatsAppMessage(
     return { handled: true, replyText, command: "PASS" };
   }
 
-  // 4. Upcoming Events
-  if (/^(events|event|1)$/i.test(trimmed)) {
+  // 5. Upcoming Events
+  if (/^(events|event|1)$/i.test(cmd)) {
     const eventsLink = "https://csc.logicintelligencetechnologies.in/events";
     const replyText = [
       "📅 *Upcoming CSC Community Events*",
@@ -171,18 +203,18 @@ export async function routeInboundWhatsAppMessage(
     return { handled: true, replyText, command: "EVENTS" };
   }
 
-  // 5. Idea & Community Feedback Collector
-  if (/^idea/i.test(trimmed) || trimmed === "4") {
-    const ideaContent = trimmed.replace(/^idea\s*/i, "").trim();
+  // 6. Idea & Community Feedback Collector
+  if (/^idea/i.test(cmd) || cmd === "4") {
+    const ideaContent = cmd.replace(/^idea\s*/i, "").trim();
 
-    if (!ideaContent || trimmed === "4") {
+    if (!ideaContent || cmd === "4") {
       const replyText = [
         "💡 *Suggest a Meetup Topic or Speaker*",
         "",
         "Please reply in this format:",
-        "*IDEA <your topic or speaker suggestion>*",
+        "*/idea <your topic or speaker suggestion>*",
         "",
-        "Example: _IDEA Masterclass on B2B SaaS pricing from Coimbatore_",
+        "Example: _/idea Masterclass on B2B SaaS pricing from Coimbatore_",
         "",
         "Your proposal goes straight to our 7-member Leadership Group!",
         "",
@@ -222,8 +254,8 @@ export async function routeInboundWhatsAppMessage(
     return { handled: true, replyText, command: "IDEA_RECORDED" };
   }
 
-  // 6. Community Group Link
-  if (/^(community|group|whatsapp group|link|5)$/i.test(trimmed)) {
+  // 7. Community Group Link
+  if (/^(community|group|whatsapp group|link|5)$/i.test(cmd)) {
     const replyText = [
       "👥 *Official CSC Leadership & Community Group*",
       "",
@@ -239,21 +271,21 @@ export async function routeInboundWhatsAppMessage(
     return { handled: true, replyText, command: "COMMUNITY" };
   }
 
-  // 7. Founder Matchmaking
-  if (/^match/i.test(trimmed) || trimmed === "3") {
-    const domain = trimmed.replace(/^match\s*/i, "").trim();
+  // 8. Founder Matchmaking
+  if (/^match/i.test(cmd) || cmd === "3") {
+    const domain = cmd.replace(/^match\s*/i, "").trim();
 
-    if (!domain || trimmed === "3") {
+    if (!domain || cmd === "3") {
       const replyText = [
         "🤝 *CSC Founder & Co-Founder Matchmaking*",
         "",
         "Search local founders and startups by industry or tech stack:",
-        "*MATCH <sector or keyword>*",
+        "*/match <sector or keyword>*",
         "",
         "Examples:",
-        "• *MATCH AI*",
-        "• *MATCH SaaS*",
-        "• *MATCH Agritech*",
+        "• */match AI*",
+        "• */match SaaS*",
+        "• */match Agritech*",
         "",
         CSC_WHATSAPP_FOOTER,
       ].join("\n");
@@ -269,7 +301,7 @@ export async function routeInboundWhatsAppMessage(
       `Explore Coimbatore founders and startups working in *${domain}*:`,
       `👉 ${directoryLink}`,
       "",
-      "Looking for a specific introduction? Reply *SUPPORT* to connect with our organizers.",
+      "Looking for a specific introduction? Reply */support* to connect with our organizers.",
       "",
       CSC_WHATSAPP_FOOTER,
     ].join("\n");
@@ -278,16 +310,16 @@ export async function routeInboundWhatsAppMessage(
     return { handled: true, replyText, command: "MATCH_SEARCH" };
   }
 
-  // 8. Fortnightly Sunday Community Pulse
-  if (/^pulse$/i.test(trimmed)) {
-    const isTa = /[\u0B80-\u0BFF]/.test(trimmed);
+  // 9. Fortnightly Sunday Community Pulse
+  if (/^pulse$/i.test(cmd)) {
+    const isTa = /[\u0B80-\u0BFF]/.test(cmd);
     const replyText = formatBiWeeklyCommunityPulse(isTa ? "ta" : "en");
     await sendReplySafely(cleanPhone, replyText);
     return { handled: true, replyText, command: "PULSE" };
   }
 
-  // 9. Organizer / Human Support
-  if (/^(support|human|admin|helpdesk|contact|6)$/i.test(trimmed)) {
+  // 10. Organizer / Human Support
+  if (/^(support|human|admin|helpdesk|contact|6)$/i.test(cmd)) {
     await dispatchTeamWhatsAppAlert({
       type: "support_escalated",
       title: "Member Requested Organizer Support",
@@ -314,8 +346,8 @@ export async function routeInboundWhatsAppMessage(
     return { handled: true, replyText, command: "SUPPORT" };
   }
 
-  // 10. General AI Query Resolution (Groq AI)
-  const aiReply = await answerWithGroqAI(trimmed);
+  // 11. Deep Community AI Knowledge Hub (Groq AI + xAI Grok / Musk API)
+  const aiReply = await answerWithCommunityAI(trimmed);
   const finalReply = `${aiReply}\n\n${CSC_WHATSAPP_FOOTER}`;
   await sendReplySafely(cleanPhone, finalReply);
   return { handled: true, replyText: finalReply, command: "AI_REPLY" };
@@ -332,64 +364,160 @@ async function sendReplySafely(phone: string, text: string): Promise<void> {
   }
 }
 
-async function answerWithGroqAI(userPrompt: string): Promise<string> {
-  const apiKey = process.env.GROQ_API_KEY || process.env.GROK_API_KEY;
-  if (!apiKey) {
-    const isTa = /[\u0B80-\u0BFF]/.test(userPrompt);
-    if (isTa) {
-      return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டிக்கு வரவேற்கிறோம். உடனடி வழிகாட்டுதலுக்கு *MENU* அல்லது *PASS* என்று பதில் அனுப்பவும்.";
-    }
-    return "Welcome to Coimbatore Startup Community (CSC Circle)! Reply *MENU* for our quick options or *PASS* to view your digital membership pass.";
-  }
+const CSC_KNOWLEDGE_BASE_SYSTEM_PROMPT = `You are the official 24/7 AI WhatsApp assistant for Coimbatore Startup Community (CSC Circle), powered by Logic Intelligence Technologies (LIT).
 
-  const systemPrompt = `You are the official 24/7 AI WhatsApp assistant for Coimbatore Startup Community (CSC Circle), powered by Logic Intelligence Technologies (LIT).
-Core Leadership Team:
+### Community Overview & Ethos:
+- Coimbatore Startup Community (CSC Circle) is Coimbatore's premier startup ecosystem, connecting founders, developers, designers, operators, and angel investors across the Kongu region.
+- Motto: Connect • Build • Grow.
+- Website: https://csc.logicintelligencetechnologies.in
+
+### Core Leadership Team:
 - K. N. Reyash: Founder
 - E. R. Sharan: Co-Founder
 - Mirra Mahendran: Chief Executive Officer (CEO)
-- Vikash Saravanan: Chief Technology Officer (CTO) & Head of Tech at Logic Intelligence Technologies
+- Vikash Saravanan: Chief Technology Officer (CTO) & Head of Tech at Logic Intelligence Technologies (Technical Partner)
 - Yuvraj: Design Lead
 - Jeya Krishna: Operations Lead
 - Ashif: Community Manager
-- Technical Partner: Logic Intelligence Technologies (LIT)
+- Technical Architecture & Infrastructure Partner: Logic Intelligence Technologies (LIT)
 
-Guidelines:
-- Answer concisely, politely, and warmly.
-- Keep answers under 3-4 sentences suitable for WhatsApp messaging.
+### Core Offerings & Direct Links:
+1. Lifelong Free Membership:
+   - 100% Free with automated 5-minute approval.
+   - Join: https://csc.logicintelligencetechnologies.in/membership
+2. Offline Events & Masterclasses:
+   - Regular offline founder mixers, pitch battles, workshops, and networking dinners in Coimbatore.
+   - RSVP & Passes: https://csc.logicintelligencetechnologies.in/events
+3. Digital Membership Pass:
+   - Apple Wallet & Google Wallet compatible pass with dynamic QR door entry code.
+   - Pass Link: https://csc.logicintelligencetechnologies.in/profile/id-card
+4. Founder Directory & Matchmaking:
+   - Search Coimbatore startups & co-founders in AI, SaaS, Agritech, EV, Fintech.
+   - Directory: https://csc.logicintelligencetechnologies.in/directory
+5. Community Feedback & Ideas:
+   - Suggest topics, speakers, or pitch opportunities: /idea <your idea>
+6. Official Community WhatsApp Network:
+   - Direct Group: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3
+7. Human Support & Helpdesk:
+   - Email: csc@logicintelligencetechnologies.in
+   - Helpline: +91 75500 67712
+
+### Legal, Security & Privacy:
+- DPDP Act 2023 compliant.
+- Row-Level Security (RLS) protects all user data.
+- Built-in anti-scraping and honeypots protect founder phone numbers and emails.
+
+### Guidelines for Responses:
+- Answer warmly, concisely, and accurately in 2-4 sentences suitable for WhatsApp messaging.
 - If asked in Tamil or Tanglish, reply in the same language.
-- Always guide founders to explore events (https://csc.logicintelligencetechnologies.in/events) or digital pass (https://csc.logicintelligencetechnologies.in/profile/id-card).`;
+- Mention relevant portal links and suggest typing /menu for instant navigation options.`;
 
-  try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 300,
-      }),
-    });
+async function answerWithCommunityAI(userPrompt: string): Promise<string> {
+  const groqKey = process.env.GROQ_API_KEY;
+  const grokKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
 
-    if (res.ok) {
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content;
-      if (reply) return reply.trim();
+  // 1. Try Groq AI (Llama 3.3 70B)
+  if (groqKey) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${groqKey}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: CSC_KNOWLEDGE_BASE_SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 350,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content;
+        if (reply && reply.trim()) return reply.trim();
+      }
+    } catch (groqErr) {
+      console.warn("[answerWithCommunityAI] Groq attempt warning:", groqErr);
     }
-  } catch {
-    // Fallback to contextual response
   }
 
-  // Graceful contextual fallback if LLM is unavailable
-  const isTa = /[\u0B80-\u0BFF]/.test(userPrompt);
-  if (isTa) {
-    return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டிக்கு வரவேற்கிறோம். உடனடி வழிகாட்டுதலுக்கு *MENU* அல்லது *PASS* என்று பதில் அனுப்பவும்.";
+  // 2. Try xAI Grok (Musk API: grok-2-latest)
+  if (grokKey) {
+    try {
+      const res = await fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${grokKey}`,
+        },
+        body: JSON.stringify({
+          model: "grok-2-latest",
+          messages: [
+            { role: "system", content: CSC_KNOWLEDGE_BASE_SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.3,
+          max_tokens: 350,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content;
+        if (reply && reply.trim()) return reply.trim();
+      }
+    } catch (grokErr) {
+      console.warn("[answerWithCommunityAI] xAI Grok attempt warning:", grokErr);
+    }
   }
-  return "Welcome to Coimbatore Startup Community (CSC Circle)! Reply *MENU* for our quick options or *PASS* to view your digital membership pass.";
+
+  // 3. Graceful Contextual Knowledge Engine Fallback (No External API Required)
+  const lower = userPrompt.toLowerCase();
+  const isTa = /[\u0B80-\u0BFF]/.test(userPrompt);
+
+  if (/cto|head of tech|tech lead|vikash/i.test(lower)) {
+    return isTa
+      ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை தொழில்நுட்ப அதிகாரி (CTO) மற்றும் தொழில்நுட்பத் தலைவர் *விகாஷ் சரவணன்* (Vikash Saravanan). தொழில்நுட்ப கூட்டாண்மை: Logic Intelligence Technologies (LIT)."
+      : "*Vikash Saravanan* is the Chief Technology Officer (CTO) & Head of Tech for Coimbatore Startup Community (CSC Circle) and Logic Intelligence Technologies (LIT).";
+  }
+
+  if (/ceo|chief executive/i.test(lower)) {
+    return isTa
+      ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை நிர்வாக அதிகாரி (CEO) *மிர்ரா மகேந்திரன்* (Mirra Mahendran) ஆவார்."
+      : "*Mirra Mahendran* is the Chief Executive Officer (CEO) of Coimbatore Startup Community (CSC Circle).";
+  }
+
+  if (/founder|co-founder|reyash|sharan|who started/i.test(lower)) {
+    return isTa
+      ? "CSC Circle அமைப்பின் நிறுவனர் *K. N. ரேயாஷ்* (K. N. Reyash) மற்றும் இணை நிறுவனர் *E. R. சரண்* (E. R. Sharan) ஆவர்."
+      : "Coimbatore Startup Community was founded by *K. N. Reyash* (Founder) and *E. R. Sharan* (Co-Founder).";
+  }
+
+  if (/membership|free|join|cost|fees|fee/i.test(lower)) {
+    return isTa
+      ? "CSC Circle உறுப்பினர் சேர்க்கை 100% முற்றிலும் இலவசம்! 5 நிமிடங்களில் தானியங்கி ஒப்புதல் பெற இணையுங்கள்: https://csc.logicintelligencetechnologies.in/membership"
+      : "Membership in CSC Circle is 100% free with automated 5-minute approval! Join here: https://csc.logicintelligencetechnologies.in/membership";
+  }
+
+  if (/event|meetup|masterclass|pitch/i.test(lower)) {
+    return isTa
+      ? "கோவையின் அடுத்த ஆஃப்லைன் பவுண்டர் மீட்டிங் & மாஸ்டர்கிளாஸ் விவரங்களை அறிய: https://csc.logicintelligencetechnologies.in/events அல்லது */events* என அனுப்பவும்."
+      : "Explore upcoming offline founder meetups and masterclasses in Coimbatore at: https://csc.logicintelligencetechnologies.in/events or reply */events*.";
+  }
+
+  if (/pass|ticket|card|qr/i.test(lower)) {
+    return isTa
+      ? "உங்கள் டிஜிட்டல் உறுப்பினர் அட்டை மற்றும் நிகழ்வு நுழைவு QR கோட் பெற: https://csc.logicintelligencetechnologies.in/profile/id-card அல்லது */pass* என அனுப்பவும்."
+      : "Access your digital membership card & event QR gate pass at: https://csc.logicintelligencetechnologies.in/profile/id-card or reply */pass*.";
+  }
+
+  if (isTa) {
+    return "வணக்கம்! கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டிக்கு வரவேற்கிறோம். உடனடி வழிகாட்டுதலுக்கு */menu* அல்லது கட்டளைகளுக்கு */help* என அனுப்பவும்.";
+  }
+  return "Welcome to Coimbatore Startup Community (CSC Circle)! Reply */menu* for our quick options or */help* for all slash commands.";
 }

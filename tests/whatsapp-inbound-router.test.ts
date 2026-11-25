@@ -148,15 +148,53 @@ describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
     expect(res.replyText).toContain("/directory?q=AI");
   });
 
-  it("dispatches fortnightly pulse on PULSE command", async () => {
-    const res = await routeInboundWhatsAppMessage({
+  it("handles slash commands seamlessly (e.g. /events, /pass, /help)", async () => {
+    // /events test
+    const eventsRes = await routeInboundWhatsAppMessage({
       phone: "917550067712",
-      text: "PULSE",
+      text: "/events",
+    });
+    expect(eventsRes.handled).toBe(true);
+    expect(eventsRes.command).toBe("EVENTS");
+    expect(eventsRes.replyText).toContain("/events");
+
+    // /pass test
+    const passRes = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "/pass",
+    });
+    expect(passRes.handled).toBe(true);
+    expect(passRes.command).toBe("PASS");
+    expect(passRes.replyText).toContain("/profile/id-card");
+
+    // /help test
+    const helpRes = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "/help",
+    });
+    expect(helpRes.handled).toBe(true);
+    expect(helpRes.command).toBe("HELP");
+    expect(helpRes.replyText).toContain("Official Commands Guide");
+  });
+
+  it("resolves community knowledge questions accurately via agent knowledge base", async () => {
+    const ctoRes = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "Who is the CTO of CSC Circle?",
     });
 
-    expect(res.handled).toBe(true);
-    expect(res.command).toBe("PULSE");
-    expect(res.replyText).toContain("Fortnightly Pulse Check-In");
-    expect(res.replyText).toContain("What did you build, launch, or achieve recently?");
+    expect(ctoRes.handled).toBe(true);
+    expect(ctoRes.command).toBe("AI_REPLY");
+    expect(ctoRes.replyText).toContain("Vikash Saravanan");
+    expect(ctoRes.replyText).toContain("Logic Intelligence Technologies");
+
+    const memberRes = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "How much does membership cost?",
+    });
+
+    expect(memberRes.handled).toBe(true);
+    expect(memberRes.command).toBe("AI_REPLY");
+    expect(memberRes.replyText).toContain("100% free");
   });
 });
