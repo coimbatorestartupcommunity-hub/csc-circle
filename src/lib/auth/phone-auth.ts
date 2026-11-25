@@ -82,6 +82,24 @@ export async function sendPhoneOtp({
     }
   }
 
+  // 3b. Dispatch via MSG91 Multi-Channel SendOTP API (SMS fallback)
+  try {
+    const { sendMsg91Otp } = await import("@/lib/services/msg91");
+    const otpRes = await sendMsg91Otp({
+      phone: e164,
+      otp: code,
+      otpLength: 6,
+      otpExpiryMinutes: 10,
+    });
+    if (otpRes.success) {
+      dispatched = true;
+    } else {
+      console.warn("[phone-auth] MSG91 SendOTP notice:", otpRes.message);
+    }
+  } catch (otpErr) {
+    console.warn("[phone-auth] MSG91 SendOTP call exception:", otpErr);
+  }
+
   // 4. Dispatch via Email (Mirrored for 100% delivery guarantee)
   // If user requested email OR if an existing profile is linked to this phone, dispatch email in parallel
   try {

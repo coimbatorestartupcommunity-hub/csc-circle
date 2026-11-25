@@ -656,11 +656,30 @@ export async function routeInboundWhatsAppMessage(
 }
 
 async function sendReplySafely(phone: string, text: string): Promise<void> {
+  const cleanPhone = phone.replace(/\D/g, "");
   try {
-    await sendMsg91WhatsAppTextMessage({
-      recipientPhone: phone,
+    const res = await sendMsg91WhatsAppTextMessage({
+      recipientPhone: cleanPhone,
       text,
     });
+    try {
+      const admin = createAdminClient();
+      await admin.from("whatsapp_message_outbox").insert({
+        contact_id: "00000000-0000-0000-0000-000000000000",
+        recipient_phone: cleanPhone,
+        recipient_chat_id: `${cleanPhone}@c.us`,
+        message_type: "inbound_ai_reply",
+        message_payload: {
+          text,
+          sentAt: new Date().toISOString(),
+          gatewaySuccess: res.success,
+          message: res.message,
+        },
+        status: res.success ? "delivered" : "failed",
+        last_error_message: res.success ? null : (res.message || "Dispatch error"),
+        idempotency_key: `reply-${cleanPhone}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      });
+    } catch {}
   } catch (err) {
     console.error("[sendReplySafely] Failed to send via MSG91 API:", err);
   }
