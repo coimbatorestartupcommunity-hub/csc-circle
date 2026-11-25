@@ -122,24 +122,30 @@ export async function verifySecurityCode(userId: string, inputCode: string): Pro
         .eq("recipient_chat_id", `user:${userId}`)
         .eq("message_type", "auth_security_code")
         .gte("created_at", tenMinutesAgo)
-        .neq("status", "verified")
+        .neq("status", "cancelled")
         .order("created_at", { ascending: false })
         .limit(5);
 
       if (records && records.length > 0) {
         const matchingRecord = records.find((r) => {
           const payload = r.message_payload as Record<string, any> | null;
+          if (payload?.verified_at) return false;
           const payloadCode = payload?.code;
           return payloadCode && payloadCode.toString().trim() === cleanInput;
         });
 
         if (matchingRecord) {
           storedCode = cleanInput;
+          const existingPayload = (matchingRecord.message_payload as Record<string, any>) || {};
           void admin
             .from("whatsapp_message_outbox")
             .update({
-              status: "verified",
-              last_error_message: `Verified at ${new Date().toISOString()}`,
+              status: "cancelled",
+              last_error_message: `Verified and consumed at ${new Date().toISOString()}`,
+              message_payload: {
+                ...existingPayload,
+                verified_at: new Date().toISOString(),
+              },
             })
             .eq("id", matchingRecord.id);
         }

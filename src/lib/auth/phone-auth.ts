@@ -198,14 +198,15 @@ export async function verifyPhoneOtpCode(phone: string, inputCode: string): Prom
         .eq("recipient_phone", e164)
         .eq("message_type", "phone_login_otp")
         .gte("created_at", tenMinutesAgo)
-        .neq("status", "verified")
+        .neq("status", "cancelled")
         .order("created_at", { ascending: false })
         .limit(5);
 
       if (records && records.length > 0) {
-        // Find if cleanInput matches any active, unverified code for this phone
+        // Find if cleanInput matches any active, unconsumed code for this phone
         const matchingRecord = records.find((r) => {
           const payload = r.message_payload as Record<string, any> | null;
+          if (payload?.verified_at) return false;
           const payloadCode =
             payload?.code ||
             payload?.otp ||
@@ -215,12 +216,17 @@ export async function verifyPhoneOtpCode(phone: string, inputCode: string): Prom
 
         if (matchingRecord) {
           storedCode = cleanInput;
-          // Invalidate single-use code immediately
+          // Invalidate single-use code immediately (mark status as cancelled and stamp verified_at)
+          const existingPayload = (matchingRecord.message_payload as Record<string, any>) || {};
           void admin
             .from("whatsapp_message_outbox")
             .update({
-              status: "verified",
-              last_error_message: `Verified at ${new Date().toISOString()}`,
+              status: "cancelled",
+              last_error_message: `Verified and consumed at ${new Date().toISOString()}`,
+              message_payload: {
+                ...existingPayload,
+                verified_at: new Date().toISOString(),
+              },
             })
             .eq("id", matchingRecord.id);
         }
