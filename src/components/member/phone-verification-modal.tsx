@@ -10,6 +10,10 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Clock } from "lucide-react";
 import { WHATSAPP_MAINTENANCE_LOCK } from "@/lib/whatsapp/maintenance-config";
+import {
+  VerificationSuccessView,
+  AnimatedOtpInput,
+} from "@/components/common/verification-success-animation";
 
 export interface PhoneVerificationModalProps {
   isVerified: boolean;
@@ -29,6 +33,7 @@ export function PhoneVerificationModal({
   const [verifying, setVerifying] = React.useState(false);
   const [countdown, setCountdown] = React.useState(0);
   const [error, setError] = React.useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = React.useState(false);
 
   // Check on mount if modal should appear - prompts on every profile navigation until verified
   React.useEffect(() => {
@@ -111,9 +116,12 @@ export function PhoneVerificationModal({
         return;
       }
 
+      setIsSuccess(true);
       toast.success("Mobile number verified successfully! Your account is secured.");
-      setOpen(false);
-      router.refresh();
+      setTimeout(() => {
+        setOpen(false);
+        router.refresh();
+      }, 1800);
     } catch {
       setError("Network error during verification. Please try again.");
     } finally {
@@ -149,7 +157,13 @@ export function PhoneVerificationModal({
           </div>
         )}
 
-        {!otpSent ? (
+        {isSuccess ? (
+          <VerificationSuccessView
+            title="Verification Confirmed"
+            description="Your mobile number has been successfully verified & secured with Coimbatore Startup Community."
+            badgeLabel="Official CSC Member"
+          />
+        ) : !otpSent ? (
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="modal-phone" className="text-xs font-semibold text-slate-800">
@@ -201,18 +215,13 @@ export function PhoneVerificationModal({
                   Change Number
                 </button>
               </div>
-              <div className="relative">
-                <KeyRound className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  id="modal-otp"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  autoFocus
-                  placeholder="123456"
+              <div className="pt-1 pb-2">
+                <AnimatedOtpInput
+                  length={6}
                   value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                  className="h-11 pl-10 text-center text-lg font-bold tracking-[6px] rounded-xl font-mono"
+                  onChange={setOtpCode}
+                  disabled={verifying}
+                  autoFocus
                 />
               </div>
               <div className="flex items-center justify-between text-[11px] text-slate-500">

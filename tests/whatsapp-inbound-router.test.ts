@@ -17,11 +17,51 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn(() => ({})),
 }));
 
-import { routeInboundWhatsAppMessage } from "../src/lib/services/whatsapp-inbound-router";
+import {
+  routeInboundWhatsAppMessage,
+  detectLanguage,
+} from "../src/lib/services/whatsapp-inbound-router";
 
 describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("accurately detects language: Tamil, Tanglish, and English", () => {
+    expect(detectLanguage("வணக்கம்")).toBe("ta");
+    expect(detectLanguage("நிகழ்வுகள் எப்போது?")).toBe("ta");
+
+    expect(detectLanguage("vanakkam nanba")).toBe("tanglish");
+    expect(detectLanguage("events epdi paakanum bro?")).toBe("tanglish");
+    expect(detectLanguage("founder yaaru-nu solunga")).toBe("tanglish");
+
+    expect(detectLanguage("Hello there")).toBe("en");
+    expect(detectLanguage("Who is the CTO?")).toBe("en");
+  });
+
+  it("renders Tanglish welcome and navigation menu on Tanglish greetings", async () => {
+    const res = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "vanakkam bro",
+    });
+
+    expect(res.handled).toBe(true);
+    expect(res.command).toBe("WELCOME_GREETING_AND_MENU");
+    expect(mockSendText).toHaveBeenCalledTimes(2);
+    expect(mockSendText).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        recipientPhone: "917550067712",
+        text: expect.stringContaining("Coimbatore Startup Community-ku Anbana Varaverpu!"),
+      })
+    );
+    expect(mockSendText).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        recipientPhone: "917550067712",
+        text: expect.stringContaining("Official Quick Navigation"),
+      })
+    );
   });
 
   it("handles voice note politely without token consumption", async () => {

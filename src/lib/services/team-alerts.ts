@@ -2,6 +2,7 @@ import "server-only";
 import { enqueueWhatsAppNotification, formatForWhatsApp } from "@/lib/notifications/whatsapp-outbox";
 import { triggerViaSocketFlow } from "@/lib/services/viasocket";
 import { CSC_WHATSAPP_FOOTER } from "@/lib/notifications/whatsapp-outbox";
+import { sendMsg91WhatsAppTextMessage } from "@/lib/services/msg91";
 
 /**
  * Core Leadership Team WhatsApp Group Alerts Dispatcher
@@ -103,7 +104,20 @@ export async function dispatchTeamWhatsAppAlert(params: TeamAlertParams): Promis
       idempotencyKey: `team-alert-${params.type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     });
 
-    console.log(`[team-alerts] Dispatched ${params.type} to Team WhatsApp Group`);
+    // 3. Direct WhatsApp dispatch to Core Leadership Phone (+91 93428 77474 - Vikash, CTO & LIT)
+    const adminPhones = ["919342877474"];
+    for (const phone of adminPhones) {
+      try {
+        await sendMsg91WhatsAppTextMessage({
+          recipientPhone: phone,
+          text: formattedText,
+        });
+      } catch (directErr) {
+        console.warn("[team-alerts] Direct admin phone alert note:", directErr);
+      }
+    }
+
+    console.log(`[team-alerts] Dispatched ${params.type} to Team WhatsApp Group & Leadership Phone`);
     return { success: true, messageId: outboxRes.outboxId };
   } catch (err) {
     const error = err instanceof Error ? err.message : "Unknown error";

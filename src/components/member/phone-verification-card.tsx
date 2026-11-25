@@ -10,6 +10,10 @@ import { useRouter } from "next/navigation";
 import { CircularSocialIcon } from "@/components/common/brand-icons";
 import { AlertTriangle, Clock } from "lucide-react";
 import { WHATSAPP_MAINTENANCE_LOCK } from "@/lib/whatsapp/maintenance-config";
+import {
+  VerificationSuccessView,
+  AnimatedOtpInput,
+} from "@/components/common/verification-success-animation";
 
 export interface PhoneVerificationCardProps {
   initialPhone?: string | null;
@@ -29,6 +33,7 @@ export function PhoneVerificationCard({
   const [verifying, setVerifying] = React.useState(false);
   const [countdown, setCountdown] = React.useState(0);
   const [error, setError] = React.useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = React.useState(false);
 
   React.useEffect(() => {
     if (countdown > 0) {
@@ -93,11 +98,15 @@ export function PhoneVerificationCard({
         throw new Error(data.error || "Invalid verification code.");
       }
 
-      setIsVerified(true);
-      setOtpSent(false);
-      setOtpCode("");
+      setIsSuccess(true);
       toast.success("Mobile number verified successfully!");
-      router.refresh();
+      setTimeout(() => {
+        setIsVerified(true);
+        setOtpSent(false);
+        setOtpCode("");
+        setIsSuccess(false);
+        router.refresh();
+      }, 1800);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed.");
       toast.error(err instanceof Error ? err.message : "Invalid code");
@@ -152,7 +161,15 @@ export function PhoneVerificationCard({
         </div>
       )}
 
-      {isVerified && !otpSent ? (
+      {isSuccess ? (
+        <div className="mt-4">
+          <VerificationSuccessView
+            title="Verification Confirmed"
+            description="Your mobile number has been successfully verified & secured with Coimbatore Startup Community."
+            badgeLabel="Verified Founder Member"
+          />
+        </div>
+      ) : isVerified && !otpSent ? (
         <div className="mt-5 flex flex-col gap-4">
           <div className="flex items-center justify-between rounded-xl bg-brand-cloud/40 p-4 text-sm ring-1 ring-brand-border/40">
             <div>
@@ -224,20 +241,14 @@ export function PhoneVerificationCard({
                 <Label htmlFor="settings-otp" className="text-xs font-semibold text-brand-ink">
                   Enter 6-Digit WhatsApp Code
                 </Label>
-                <div className="relative">
-                  <Input
-                    id="settings-otp"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="123456"
+                <div className="pt-1 pb-1">
+                  <AnimatedOtpInput
+                    length={6}
                     value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                    className="h-11 border-brand-border bg-white text-center font-mono text-base tracking-widest sm:text-lg focus-visible:ring-brand-accent/20"
+                    onChange={setOtpCode}
+                    disabled={verifying}
                     autoFocus
-                    required
                   />
-                  <KeyRound className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-muted" />
                 </div>
               </div>
 

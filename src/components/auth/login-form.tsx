@@ -19,10 +19,15 @@ import { authRequest } from "@/lib/auth/request";
 import { loginSchema, type LoginValues } from "@/lib/validations/auth";
 import { safeNext } from "@/lib/auth/redirects";
 import { CircularSocialIcon } from "@/components/common/brand-icons";
+import {
+  VerificationSuccessView,
+  AnimatedOtpInput,
+} from "@/components/common/verification-success-animation";
 
 export function LoginForm() {
   const [authMode, setAuthMode] = React.useState<"email" | "phone">("phone");
   const [captchaToken, setCaptchaToken] = React.useState("");
+  const [isOtpSuccess, setIsOtpSuccess] = React.useState(false);
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
@@ -136,14 +141,17 @@ export function LoginForm() {
         return;
       }
 
+      setIsOtpSuccess(true);
       toast.success("Successfully verified! Welcome to CSC Circle.");
 
-      if (data.needsEmailPrompt) {
-        setShowEmailModal(true);
-      } else {
-        router.push(`/auth/complete?next=${encodeURIComponent(next)}`);
-        router.refresh();
-      }
+      setTimeout(() => {
+        if (data.needsEmailPrompt) {
+          setShowEmailModal(true);
+        } else {
+          router.push(`/auth/complete?next=${encodeURIComponent(next)}`);
+          router.refresh();
+        }
+      }, 1600);
     } catch {
       setFormError("Network error during verification. Please try again.");
     } finally {
@@ -212,7 +220,13 @@ export function LoginForm() {
       {/* WhatsApp / Phone OTP Sign-in Mode */}
       {authMode === "phone" ? (
         <div className="flex flex-col gap-3 text-left">
-          {!otpSent ? (
+          {isOtpSuccess ? (
+            <VerificationSuccessView
+              title="Verification Confirmed"
+              description="Welcome back to Coimbatore Startup Community! Signing in..."
+              badgeLabel="CSC Verified Founder"
+            />
+          ) : !otpSent ? (
             <form onSubmit={handleSendPhoneOtp} className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="login-phone" className="text-xs font-semibold text-slate-800">
@@ -289,18 +303,13 @@ export function LoginForm() {
                     Change Number
                   </button>
                 </div>
-                <div className="relative">
-                  <KeyRound className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    id="login-otp"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    autoFocus
-                    placeholder="123456"
+                <div className="pt-1 pb-1">
+                  <AnimatedOtpInput
+                    length={6}
                     value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-                    className="h-11 pl-10 text-center text-lg font-bold tracking-[6px] rounded-xl font-mono"
+                    onChange={setOtpCode}
+                    disabled={verifyingOtp}
+                    autoFocus
                   />
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-slate-500">

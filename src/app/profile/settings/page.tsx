@@ -5,7 +5,7 @@ import { MemberSettingsForm } from "@/components/member/member-settings-form";
 import { PhoneVerificationCard } from "@/components/member/phone-verification-card";
 import { DpdpCompliancePanel } from "@/components/member/dpdp-compliance-panel";
 import { EmptyState } from "@/components/common/empty-state";
-import { Settings, ShieldCheck } from "lucide-react";
+import { Settings, ShieldCheck, CheckCircle2, Phone, Mail } from "lucide-react";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 
@@ -25,6 +25,11 @@ export default async function MemberSettingsPage() {
   }
 
   const profile = res.data;
+  const isPhoneVerified = Boolean(
+    (profile?.consent as Record<string, unknown> | undefined)?.phone_verified ||
+    (profile as any)?.phone_verified ||
+    ctx.user?.user_metadata?.phone_verified
+  );
 
   return (
     <>
@@ -36,12 +41,45 @@ export default async function MemberSettingsPage() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div className="grid items-stretch gap-5 lg:grid-cols-2">
           <section className="flex h-full flex-col rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
-            <h2 className="text-sm font-semibold text-brand-ink">Account</h2>
-            <dl className="mt-5 flex flex-col gap-3 text-sm">
-            <div className="flex justify-between gap-4">
-              <dt className="text-brand-muted">Email</dt>
-              <dd className="min-w-0 break-all text-right font-medium text-brand-ink">{profile.email || "—"}</dd>
-            </div>
+            <h2 className="text-sm font-semibold text-brand-ink">Account &amp; Verified Contacts</h2>
+            <dl className="mt-5 flex flex-col gap-3.5 text-sm">
+              {/* Mobile Number (Prominently Placed Above Email) */}
+              <div className="flex items-center justify-between gap-4">
+                <dt className="flex items-center gap-1.5 text-brand-muted">
+                  <Phone className="size-3.5 text-brand-muted" />
+                  <span>Mobile Number</span>
+                </dt>
+                <dd className="flex items-center gap-2 font-medium text-brand-ink">
+                  <span className="font-mono text-xs sm:text-sm">
+                    {profile.whatsapp ? `+91 ${profile.whatsapp.replace(/\D/g, "").slice(-10)}` : (profile as any).phone || "—"}
+                  </span>
+                  {isPhoneVerified ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20">
+                      <CheckCircle2 className="size-3 text-emerald-600" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-600/20">
+                      Unverified
+                    </span>
+                  )}
+                </dd>
+              </div>
+
+              {/* Email Address */}
+              <div className="flex items-center justify-between gap-4 border-t border-brand-border/60 pt-3">
+                <dt className="flex items-center gap-1.5 text-brand-muted">
+                  <Mail className="size-3.5 text-brand-muted" />
+                  <span>Email ID</span>
+                </dt>
+                <dd className="flex items-center gap-2 min-w-0 text-right font-medium text-brand-ink">
+                  <span className="min-w-0 truncate text-xs sm:text-sm">{profile.email || "—"}</span>
+                  <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20">
+                    <CheckCircle2 className="size-3 text-emerald-600" />
+                    Verified
+                  </span>
+                </dd>
+              </div>
             </dl>
             <div className="mt-auto flex flex-wrap gap-2 pt-6">
               <Link
@@ -72,10 +110,13 @@ export default async function MemberSettingsPage() {
           <MemberSettingsForm key={profile.id} profile={profile} isDemo={ctx.mode === "preview"} />
         </div>
 
-        <PhoneVerificationCard
-          initialPhone={profile.whatsapp}
-          isVerified={Boolean((profile.consent as any)?.phone_verified)}
-        />
+        {/* Display phone verification card only when phone is not yet verified */}
+        {!isPhoneVerified && (
+          <PhoneVerificationCard
+            initialPhone={profile.whatsapp}
+            isVerified={isPhoneVerified}
+          />
+        )}
 
         <DpdpCompliancePanel
           email={profile.email}
