@@ -43,7 +43,7 @@ describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
     );
   });
 
-  it("renders interactive navigation menu on MENU or START command", async () => {
+  it("renders interactive navigation menu on MENU, START, or SELECT command", async () => {
     const res = await routeInboundWhatsAppMessage({
       phone: "917550067712",
       text: "MENU",
@@ -54,6 +54,16 @@ describe("Live WhatsApp Inbound Router (Serverless MSG91 Integration)", () => {
     expect(res.replyText).toContain("Quick Navigation");
     expect(res.replyText).toContain("Upcoming Events");
     expect(res.replyText).toContain("Digital ID & Event Passes");
+    expect(mockSendText).toHaveBeenCalledTimes(1);
+
+    mockSendText.mockClear();
+    const selectRes = await routeInboundWhatsAppMessage({
+      phone: "917550067712",
+      text: "select",
+    });
+    expect(selectRes.handled).toBe(true);
+    expect(selectRes.command).toBe("MENU");
+    expect(selectRes.replyText).toContain("Quick Navigation");
     expect(mockSendText).toHaveBeenCalledTimes(1);
   });
 

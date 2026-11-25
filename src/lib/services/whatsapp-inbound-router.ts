@@ -44,7 +44,7 @@ export async function routeInboundWhatsAppMessage(
 
   // 2. Interactive Navigation Menu & Welcome Greetings
   const isGreeting = /^(hi|hello|hey|வணக்கம்|vanakkam)$/i.test(cmd);
-  const isMenu = /^(menu|start|options)$/i.test(cmd) || lower === "0";
+  const isMenu = /^(menu|start|options|select)$/i.test(cmd) || lower === "0";
 
   if (isGreeting || isMenu) {
     const isTamil = /[\u0B80-\u0BFF]/.test(cmd) || /vanakkam/i.test(cmd);
@@ -72,6 +72,8 @@ export async function routeInboundWhatsAppMessage(
           ].join("\n");
 
       await sendReplySafely(cleanPhone, welcomeText);
+      // Wait 600ms so MSG91 & WhatsApp strictly deliver Message 1 (Welcome) before Message 2 (Menu)
+      await new Promise((r) => setTimeout(r, 600));
     }
 
     const navigationMenuText = isTamil
@@ -533,39 +535,46 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
 
   // 4. Graceful Contextual Knowledge Engine Fallback (No External API Required)
   const lower = userPrompt.toLowerCase();
+  const trimmed = userPrompt.trim();
   const isTa = /[\u0B80-\u0BFF]/.test(userPrompt);
 
-  if (/cto|head of tech|tech lead|vikash/i.test(lower)) {
+  const isFounderQuery =
+    /^(who is the founder|who are the founders|who started csc|who started|who founded|founder\?|co-founder\?)/i.test(trimmed) ||
+    /^(founder|co-founder|founders|co-founders|leadership)$/i.test(trimmed) ||
+    /(who (is|are) (the )?(founder|co-founder|founders)|who started (csc|coimbatore startup))/i.test(lower) ||
+    /நிறுவனர் யார்|யார் நிறுவனர்|நிறுவனர்/i.test(trimmed);
+
+  if (/(who (is|are) (the )?)?(cto|head of tech|tech lead)\b|vikash/i.test(lower)) {
     return isTa
       ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை தொழில்நுட்ப அதிகாரி (CTO) மற்றும் தொழில்நுட்பத் தலைவர் *விகாஷ் சரவணன்* (Vikash Saravanan). தொழில்நுட்ப கூட்டாண்மை: Logic Intelligence Technologies (LIT)."
       : "*Vikash Saravanan* is the Chief Technology Officer (CTO) & Head of Tech for Coimbatore Startup Community (CSC Circle) and Founder & CEO of Logic Intelligence Technologies (LIT).";
   }
 
-  if (/ceo|chief executive/i.test(lower)) {
+  if (/(who (is|are) (the )?)?(ceo|chief executive)\b|mirra/i.test(lower)) {
     return isTa
       ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை நிர்வாக அதிகாரி (CEO) *மிர்ரா மகேந்திரன்* (Mirra Mahendran) ஆவார்."
       : "*Mirra Mahendran* is the Chief Executive Officer (CEO) of Coimbatore Startup Community (CSC Circle).";
   }
 
-  if (/founder|co-founder|reyash|sharan|who started/i.test(lower)) {
+  if (isFounderQuery) {
     return isTa
       ? "CSC Circle அமைப்பின் நிறுவனர் *K. N. ரேயாஷ்* (K. N. Reyash) மற்றும் இணை நிறுவனர் *E. R. சரண்* (E. R. Sharan) ஆவர்."
       : "Coimbatore Startup Community was founded by *K. N. Reyash* (Founder, Belvoria) and *E. R. Sharan* (Co-Founder, Founder of CECIL Groups).";
   }
 
-  if (/cco|community officer|community lead|swathi/i.test(lower)) {
+  if (/(who (is|are) (the )?)?(cco|community officer|community lead)\b|swathi/i.test(lower)) {
     return isTa
       ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை சமூக அதிகாரி (Chief Community Officer - CCO) *சுவாதி* (Swathi) ஆவார்."
       : "*Swathi* is the Chief Community Officer (CCO) of Coimbatore Startup Community (CSC Circle).";
   }
 
-  if (/coo|operating officer|operations lead|kishore/i.test(lower)) {
+  if (/(who (is|are) (the )?)?(coo|operating officer|operations lead)\b|kishore/i.test(lower)) {
     return isTa
       ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை செயல்பாட்டு அதிகாரி (Chief Operating Officer - COO) *கிஷோர் சி* (Kishore C) ஆவார். இவர் APARÈ Clothing நிறுவனத்தின் நிறுவனர்."
       : "*Kishore C* is the Chief Operating Officer (COO) of Coimbatore Startup Community (CSC Circle) and Founder of APARÈ Clothing.";
   }
 
-  if (/cbo|brand officer|brand lead|branding|jaibharath|jai bharath/i.test(lower)) {
+  if (/(who (is|are) (the )?)?(cbo|brand officer|brand lead|branding)\b|jaibharath|jai bharath/i.test(lower)) {
     return isTa
       ? "கோயம்புத்தூர் ஸ்டார்ட்அப் கம்யூனிட்டியின் தலைமை பிராண்ட் அதிகாரி (Chief Brand Officer - CBO) *ஜெய்பரத் வி* (Jaibharath V) ஆவார். இவர் Flickkora Agency நிறுவனத்தின் நிறுவனர்."
       : "*Jaibharath V* is the Chief Brand Officer (CBO) of Coimbatore Startup Community (CSC Circle) and Founder of Flickkora Agency.";
