@@ -79,8 +79,8 @@ export function PhoneVerificationModal({
       }
 
       setOtpSent(true);
-      setCountdown(300); // 5-minute timer (300 seconds)
-      toast.success("Verification code dispatched to your WhatsApp! (Valid for 5 minutes)");
+      setCountdown(30); // 30-second resend cooldown requested by user
+      toast.success("Verification code dispatched to your WhatsApp! (Resend available in 30s)");
     } catch {
       setError("Network error while dispatching code. Please try again.");
     } finally {

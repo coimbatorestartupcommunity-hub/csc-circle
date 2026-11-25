@@ -43,11 +43,11 @@ export async function POST(request: Request) {
 
     const cleanNumber = phone.replace(/\D/g, "").slice(-10);
 
-    // 5-Minute Rate Limit Restriction per phone number requested by user
-    const phoneLimit = rateLimit(`auth:phone:throttle:${cleanNumber}`, 1, 300_000);
+    // 30-Second Rate Limit Restriction per phone number requested by user
+    const phoneLimit = rateLimit(`auth:phone:throttle:${cleanNumber}`, 1, 30_000);
     if (!phoneLimit.allowed) {
       return NextResponse.json(
-        { error: "A verification code was recently sent. For security, please wait 5 minutes before requesting another OTP." },
+        { error: "A verification code was recently sent. Please wait 30 seconds before requesting another OTP." },
         { status: 429 }
       );
     }

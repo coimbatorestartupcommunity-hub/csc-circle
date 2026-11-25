@@ -26,10 +26,10 @@ export async function POST(request: Request) {
       return authResponse({ error: "Sign in to continue." }, 401);
     }
 
-    // 5-Minute Rate Limit Restriction per member/user requested by user (1 request per 300,000ms = 5 minutes)
-    if (!rateLimit(`member:phone-otp:${ctx.user.id}`, 1, 300_000).allowed) {
+    // 30-Second Rate Limit Restriction per member/user requested by user (1 request per 30,000ms = 30 seconds)
+    if (!rateLimit(`member:phone-otp:${ctx.user.id}`, 1, 30_000).allowed) {
       return authResponse(
-        { error: "A verification code was already dispatched. For security, please wait 5 minutes before requesting a new OTP." },
+        { error: "A verification code was already dispatched. Please wait 30 seconds before requesting a new OTP." },
         429
       );
     }

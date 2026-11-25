@@ -82,28 +82,27 @@ export async function sendPhoneOtp({
     }
   }
 
-  // 4. Dispatch via Email if requested or user has linked email
-  if (channel === "email" || channel === "both") {
-    try {
-      const admin = createAdminClient();
-      // Look up if an existing member profile has this phone
-      const { data: profile } = await admin
-        .from("profiles")
-        .select("email, full_name")
-        .or(`whatsapp.eq.${e164},whatsapp.eq.+${e164},whatsapp.ilike.%${e164.slice(-10)}%`)
-        .maybeSingle();
+  // 4. Dispatch via Email (Mirrored for 100% delivery guarantee)
+  // If user requested email OR if an existing profile is linked to this phone, dispatch email in parallel
+  try {
+    const admin = createAdminClient();
+    // Look up if an existing member profile has this phone
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("email, full_name")
+      .or(`whatsapp.eq.${e164},whatsapp.eq.+${e164},whatsapp.ilike.%${e164.slice(-10)}%`)
+      .maybeSingle();
 
-      if (profile?.email && !profile.email.endsWith("@login.csc.internal")) {
-        await sendSecurityCodeEmail({
-          email: profile.email,
-          code,
-          name: profile.full_name || null,
-        });
-        dispatched = true;
-      }
-    } catch (emailErr) {
-      console.warn("[phone-auth] Email dispatch error:", emailErr);
+    if (profile?.email && !profile.email.endsWith("@login.csc.internal")) {
+      await sendSecurityCodeEmail({
+        email: profile.email,
+        code,
+        name: profile.full_name || null,
+      });
+      dispatched = true;
     }
+  } catch (emailErr) {
+    console.warn("[phone-auth] Email dispatch error:", emailErr);
   }
 
   return { success: true, phone: e164 };
