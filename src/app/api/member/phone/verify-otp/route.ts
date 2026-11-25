@@ -4,6 +4,7 @@ import { verifyPhoneOtpCode } from "@/lib/auth/phone-auth";
 import { normalizePhoneForWhatsApp } from "@/lib/notifications/whatsapp-outbox";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
+import { notifyPhoneVerifiedSuccess } from "@/lib/services/phone-verification-notifications";
 
 export async function POST(request: Request) {
   try {
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     // 1. Fetch existing profile consent
     const { data: profile } = await admin
       .from("profiles")
-      .select("consent")
+      .select("consent, full_name, display_name, email")
       .eq("id", ctx.user.id)
       .maybeSingle();
 
@@ -70,6 +71,18 @@ export async function POST(request: Request) {
     } catch (metaErr) {
       console.warn("[verify-otp] User metadata update warning:", metaErr);
     }
+
+    // 4. Dispatch WhatsApp, Email & In-App verification confirmation notifications
+    const memberName = profile?.full_name || profile?.display_name || ctx.user.user_metadata?.full_name || "Founder";
+    const memberEmail = profile?.email || ctx.user.email;
+    notifyPhoneVerifiedSuccess({
+      userId: ctx.user.id,
+      phone: e164,
+      email: memberEmail,
+      name: memberName,
+    }).catch((notifErr) => {
+      console.warn("[verify-otp] Post-verification notification warning:", notifErr);
+    });
 
     return authResponse({ ok: true, phone: e164 });
   } catch (err) {

@@ -1,6 +1,10 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
+import dotenv from "dotenv";
+
+dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env.production.local" });
 
 // globals:false means React Testing Library's automatic cleanup is not wired
 // up, so rendered trees would otherwise persist across tests and their effects
