@@ -29,7 +29,7 @@ function StateView({ status, submittedAt }: { status: MembershipStatus; submitte
           official digital membership ID card is ready to view and download.
         </p>
         <Link
-          href="/member/id-card"
+          href="/profile/id-card"
           className="inline-flex items-center gap-2 rounded-lg bg-brand-ink px-5 py-2.5 text-sm font-medium text-brand-white hover:bg-brand-ink/90"
         >
           View My Digital ID Card

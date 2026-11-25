@@ -10,6 +10,25 @@ describe("notification action destinations", () => {
       href: "/admin/accept-invitation?invitationId=11111111-1111-4111-8111-111111111111",
       label: "Review & Accept Invitation",
     });
+    expect(notificationAction("claim.pending_verification", "/member/claim")).toEqual({
+      href: "/profile/claim",
+      label: "View Application",
+    });
+  });
+
+  it("routes admins to dedicated management pages for applications and submissions", () => {
+    expect(notificationAction("claim.pending_verification", "/member/claim", true)).toEqual({
+      href: "/admin/membership-claims",
+      label: "View Application",
+    });
+    expect(notificationAction("startup.submitted", "/member/startups", true)).toEqual({
+      href: "/admin/startups",
+      label: "View Submission",
+    });
+    expect(notificationAction("review.submitted", "/member/reviews", true)).toEqual({
+      href: "/admin/reviews",
+      label: "View Review Status",
+    });
   });
 
   it.each([

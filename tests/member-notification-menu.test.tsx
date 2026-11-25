@@ -39,6 +39,74 @@ describe("member notification inbox", () => {
     }));
   });
 
+  it("deletes a notification when delete button is clicked", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          unreadCount: 1,
+          items: [{
+            id: "11111111-1111-4111-8111-111111111111",
+            type: "claim.active",
+            title: "CSC membership is active",
+            message: "Your CSC membership is now active.",
+            action_url: "/profile/id-card",
+            read_at: null,
+            created_at: "2026-10-20T10:00:00Z",
+            delivered_at: "2026-10-20T10:00:00Z",
+          }],
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<MemberNotificationMenu />);
+    fireEvent.click(await screen.findByRole("button", { name: "Notifications, 1 unread" }));
+    expect(await screen.findByText("Your CSC membership is now active.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete notification" }));
+    await waitFor(() => expect(screen.queryByText("Your CSC membership is now active.")).not.toBeInTheDocument());
+
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/member/notifications", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ action: "delete", id: "11111111-1111-4111-8111-111111111111" }),
+    }));
+  });
+
+  it("clears all notifications when Clear button is clicked", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          unreadCount: 1,
+          items: [{
+            id: "11111111-1111-4111-8111-111111111111",
+            type: "claim.active",
+            title: "CSC membership is active",
+            message: "Your CSC membership is now active.",
+            action_url: "/profile/id-card",
+            read_at: null,
+            created_at: "2026-10-20T10:00:00Z",
+            delivered_at: "2026-10-20T10:00:00Z",
+          }],
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<MemberNotificationMenu />);
+    fireEvent.click(await screen.findByRole("button", { name: "Notifications, 1 unread" }));
+    expect(await screen.findByText("Your CSC membership is now active.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    await waitFor(() => expect(screen.queryByText("Your CSC membership is now active.")).not.toBeInTheDocument());
+
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/member/notifications", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ action: "clear_all" }),
+    }));
+  });
+
   it("keeps the notification panel inside a narrow mobile viewport", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ unreadCount: 0, items: [] }) }));
     Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });

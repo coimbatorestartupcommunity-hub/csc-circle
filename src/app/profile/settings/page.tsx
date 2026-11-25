@@ -83,14 +83,14 @@ export default async function MemberSettingsPage() {
             </dl>
             <div className="mt-auto flex flex-wrap gap-2 pt-6">
               <Link
-                href="/member/profile"
+                href="/profile/account"
                 prefetch={true}
                 className="inline-flex h-10 items-center justify-center rounded-lg border border-brand-border px-4 text-sm font-medium text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 Edit profile
               </Link>
               <Link
-                href="/member/settings/security"
+                href="/profile/settings/security"
                 className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-brand-border px-4 text-sm font-medium text-brand-ink transition hover:bg-brand-cloud focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 <ShieldCheck className="size-4 text-teal-600" />

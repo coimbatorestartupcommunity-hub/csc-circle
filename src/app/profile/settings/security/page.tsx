@@ -17,7 +17,7 @@ export default async function MemberSecurityPage() {
     <>
       <div className="mb-2">
         <Link
-          href="/member/settings"
+          href="/profile/settings"
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition"
         >
           <ArrowLeft className="size-4" /> Back to Settings

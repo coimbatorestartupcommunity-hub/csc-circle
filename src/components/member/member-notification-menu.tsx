@@ -34,6 +34,7 @@ export function MemberNotificationMenu() {
   const [error, setError] = React.useState<string | null>(null);
   const [items, setItems] = React.useState<InboxItem[]>([]);
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const [isAdmin, setIsAdmin] = React.useState(false);
   const [category, setCategory] = React.useState<"all" | "events" | "passes" | "updates">("all");
 
   const load = React.useCallback(async (signal?: AbortSignal) => {
@@ -43,6 +44,7 @@ export function MemberNotificationMenu() {
       if (!response.ok) throw new Error(data.error ?? "Notifications are unavailable.");
       setItems(Array.isArray(data.items) ? data.items : []);
       setUnreadCount(Number(data.unreadCount) || 0);
+      setIsAdmin(Boolean(data.isAdmin));
       setError(null);
     } catch (cause) {
       if (cause instanceof DOMException && cause.name === "AbortError") return;
@@ -178,11 +180,13 @@ export function MemberNotificationMenu() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "delete", id }),
       });
-      if (!response.ok) throw new Error("Could not delete notification.");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "Could not delete notification.");
       setItems((current) => current.filter((item) => item.id !== id));
       setUnreadCount((current) => Math.max(0, current - (items.some((item) => item.id === id && !item.read_at) ? 1 : 0)));
-    } catch {
-      // optimistic ignore
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete notification.");
     } finally {
       setWorking(false);
     }
@@ -196,11 +200,13 @@ export function MemberNotificationMenu() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clear_all" }),
       });
-      if (!response.ok) throw new Error("Could not clear notifications.");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "Could not clear notifications.");
       setItems([]);
       setUnreadCount(0);
-    } catch {
-      // optimistic ignore
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not clear notifications.");
     } finally {
       setWorking(false);
     }
@@ -328,7 +334,7 @@ export function MemberNotificationMenu() {
             {loading ? <div className="flex justify-center px-4 py-8"><Loader2 className="size-5 animate-spin text-brand-muted" aria-label="Loading notifications" /></div> : null}
             {!loading && !error && filteredItems.length === 0 ? <p className="px-4 py-8 text-center text-sm text-brand-muted">No notifications in this category.</p> : null}
             {!loading ? filteredItems.map((item) => {
-              const action = notificationAction(item.type, item.action_url);
+              const action = notificationAction(item.type, item.action_url, isAdmin);
               return <div key={item.id} className={cn("group border-b border-brand-border px-4 py-3 last:border-0 transition", !item.read_at && "bg-brand-purple/10")}>
                 <div className="flex items-start gap-2">
                   <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", item.read_at ? "bg-transparent" : "bg-brand-accent")} aria-hidden="true" />

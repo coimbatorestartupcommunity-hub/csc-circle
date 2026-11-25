@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { autoApproveDueMembershipClaims } from "@/lib/services/member/auto-approve";
 
 export async function GET() {
@@ -54,7 +55,20 @@ export async function GET() {
   if (!Array.isArray(inboxObject.items) || typeof inboxObject.unreadCount !== "number") {
     return send({ error: "Sign in to view notifications." }, 401, true);
   }
-  return send({ items: inboxObject.items, unreadCount: inboxObject.unreadCount }, 200, true);
+
+  // Check whether the authenticated user has an active admin role
+  const { data: adminRole } = await sb
+    .from("admin_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+
+  return send({
+    items: inboxObject.items,
+    unreadCount: inboxObject.unreadCount,
+    isAdmin: Boolean(adminRole),
+  }, 200, true);
 }
 
 const actionSchema = z.discriminatedUnion("action", [
@@ -77,12 +91,11 @@ export async function POST(request: Request) {
   const parsed = actionSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid notification action." }, { status: 422 });
 
-  const sb = await createClient();
-
   if (parsed.data.action === "delete") {
-    const { error } = await sb
+    const adminSb = createAdminClient();
+    const { error } = await adminSb
       .from("notifications")
-      .update({ status: "archived", read_at: new Date().toISOString() })
+      .update({ status: "superseded", read_at: new Date().toISOString() })
       .eq("channel", "in_app")
       .eq("recipient_user_id", ctx.user.id)
       .eq("id", parsed.data.id);
@@ -91,9 +104,10 @@ export async function POST(request: Request) {
   }
 
   if (parsed.data.action === "clear_all") {
-    const { error } = await sb
+    const adminSb = createAdminClient();
+    const { error } = await adminSb
       .from("notifications")
-      .update({ status: "archived", read_at: new Date().toISOString() })
+      .update({ status: "superseded", read_at: new Date().toISOString() })
       .eq("channel", "in_app")
       .eq("recipient_user_id", ctx.user.id)
       .eq("status", "available");
@@ -101,6 +115,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "private, no-store" } });
   }
 
+  const sb = await createClient();
   let query = sb.from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("channel", "in_app")
