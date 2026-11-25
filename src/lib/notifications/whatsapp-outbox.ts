@@ -111,11 +111,22 @@ export async function enqueueWhatsAppNotification(
     // Serverless Direct Dispatch via MSG91 WhatsApp Gateway for instant delivery
     try {
       let sendRes;
-      const targetTemplate =
+
+      // Note: Meta rejects OTP/passkey templates under UTILITY with INCORRECT_CATEGORY.
+      // Calling MSG91 template API with a rejected template returns 200 asynchronously but Meta drops it.
+      // Therefore, rejected templates MUST be bypassed in favor of direct text messaging.
+      const REJECTED_TEMPLATES = new Set(["csc_otp_verification", "csc_login_passkey"]);
+
+      const candidateTemplate =
         payload.templateName ||
         (payload.messageType === "phone_verification_success"
           ? "phone_verification_success"
           : undefined);
+
+      const targetTemplate =
+        candidateTemplate && !REJECTED_TEMPLATES.has(candidateTemplate)
+          ? candidateTemplate
+          : undefined;
 
       if (targetTemplate) {
         const bodyParams =

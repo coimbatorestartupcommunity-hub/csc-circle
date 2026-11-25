@@ -75,7 +75,6 @@ export async function sendPhoneOtp({
       recipientPhone: e164,
       text,
       messageType: "phone_login_otp",
-      templateName: "csc_otp_verification",
       templateVariables: [code],
     });
 
