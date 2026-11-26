@@ -10,7 +10,7 @@ interface FormattedClauseProps {
 
 // Regex to identify quoted entities, statutory references, and critical legal keywords
 const HIGHLIGHT_REGEX =
-  /("(?:Agreement|MoU|Charter|CSC|LIT|Leader|Sponsor)"|Coimbatore Startup Community|Logic Intelligence Technologies(?:\s*\(LIT\))?|Section 10A|Section 65B|Information Technology Act,\s*2000|Indian Contract Act,\s*1872|DPDP Act,\s*2023|sole and exclusive|sole & exclusive|perpetual|thirty \(30\) days'|ninety \(90\) days'|strict confidentiality)/gi;
+  /("(?:Agreement|MoU|Charter|CSC|LIT|Leader|Sponsor|Co-Host|Partner|Speaker|Mentor)"|Coimbatore Startup Community|Logic Intelligence Technologies(?:\s*\(LIT\))?|Section 10A|Section 65B|Section 27|Information Technology Act,\s*2000|Indian Contract Act,\s*1872|Arbitration and Conciliation Act,\s*1996|Digital Personal Data Protection Act,\s*2023|DPDP Act,\s*2023|Income Tax Act,\s*1961|sole and exclusive|sole & exclusive|perpetual|thirty \(30\) days'|ninety \(90\) days'|strict confidentiality|Data Fiduciary|Technical Data Processor)/gi;
 
 export function highlightKeywords(text: string): React.ReactNode[] {
   const parts = text.split(HIGHLIGHT_REGEX);
