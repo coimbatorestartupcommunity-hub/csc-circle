@@ -33,7 +33,8 @@ interface LeaderProfile {
   name: string;
   role: string;
   focus: string;
-  image: string;
+  posterImage: string;
+  circularImage: string;
   badge: string;
 }
 
@@ -43,7 +44,8 @@ const LEADERSHIP_TEAM: LeaderProfile[] = [
     name: "K. N. Reyash",
     role: "Founder & President",
     focus: "Ecosystem Vision",
-    image: "/images/agreements/leaders/1-reyash.jpg",
+    posterImage: "/images/agreements/leaders/1-reyash.jpg",
+    circularImage: "/images/agreements/circular-image/reyash.jpg",
     badge: "Ecosystem Stewardship",
   },
   {
@@ -51,7 +53,8 @@ const LEADERSHIP_TEAM: LeaderProfile[] = [
     name: "E. R. Sharan",
     role: "Co-Founder & VP",
     focus: "Strategic Growth",
-    image: "/images/agreements/leaders/2-sharan.jpg",
+    posterImage: "/images/agreements/leaders/2-sharan.jpg",
+    circularImage: "/images/agreements/circular-image/sharan.jpg",
     badge: "Strategic Expansion",
   },
   {
@@ -59,7 +62,8 @@ const LEADERSHIP_TEAM: LeaderProfile[] = [
     name: "Mirra Mahendran",
     role: "Chief Executive Officer",
     focus: "Operations & Alliances",
-    image: "/images/agreements/leaders/3-mirra.jpg",
+    posterImage: "/images/agreements/leaders/3-mirra.jpg",
+    circularImage: "/images/agreements/circular-image/mirra.jpg",
     badge: "Executive Operations",
   },
   {
@@ -67,7 +71,8 @@ const LEADERSHIP_TEAM: LeaderProfile[] = [
     name: "Vikash Saravanan",
     role: "Chief Technology Officer",
     focus: "Tech & LIT Architecture",
-    image: "/images/agreements/leaders/4-vikash.jpg",
+    posterImage: "/images/agreements/leaders/4-vikash.jpg",
+    circularImage: "/images/agreements/circular-image/vikash.jpg",
     badge: "LIT Platform Architecture",
   },
   {
@@ -75,7 +80,8 @@ const LEADERSHIP_TEAM: LeaderProfile[] = [
     name: "Swathi",
     role: "Chief Community Officer",
     focus: "Community Experience",
-    image: "/images/agreements/leaders/5-swathi.jpg",
+    posterImage: "/images/agreements/leaders/5-swathi.jpg",
+    circularImage: "/images/agreements/circular-image/swathi.jpg",
     badge: "Member Experience",
   },
   {
@@ -83,7 +89,8 @@ const LEADERSHIP_TEAM: LeaderProfile[] = [
     name: "Kishore C",
     role: "Chief Operating Officer",
     focus: "Programs & Logistics",
-    image: "/images/agreements/leaders/6-kishore.jpg",
+    posterImage: "/images/agreements/leaders/6-kishore.jpg",
+    circularImage: "/images/agreements/circular-image/kishore.jpg",
     badge: "Programs & Operations",
   },
   {
@@ -91,7 +98,8 @@ const LEADERSHIP_TEAM: LeaderProfile[] = [
     name: "Jaibharath V",
     role: "Chief Business Officer",
     focus: "Partnerships & Value",
-    image: "/images/agreements/leaders/7-jaibharath.jpg",
+    posterImage: "/images/agreements/leaders/7-jaibharath.jpg",
+    circularImage: "/images/agreements/circular-image/jai.jpg",
     badge: "Venture Partnerships",
   },
 ];
@@ -125,7 +133,7 @@ function Slide3LeadersShowcase() {
       <div className="relative overflow-hidden rounded-xl border border-brand-border/80 bg-slate-900 shadow-md">
         <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full max-h-[380px] flex items-center justify-center bg-slate-950">
           <Image
-            src={activeLeader ? activeLeader.image : "/images/agreements/leaders/csc-leaders-lockup.jpg"}
+            src={activeLeader ? activeLeader.posterImage : "/images/agreements/leaders/csc-leaders-lockup.jpg"}
             alt={activeLeader ? `${activeLeader.name} - ${activeLeader.role}` : "CSC Circle Leadership Team"}
             fill
             className={activeLeader ? "object-contain" : "object-cover"}
@@ -174,7 +182,7 @@ function Slide3LeadersShowcase() {
                   <span className="rounded bg-brand-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
                     Full Team Panorama
                   </span>
-                  <p className="mt-0.5 text-base sm:text-lg font-bold text-white">Coimbatore Startup Community Stewards</p>
+                  <p className="mt-0.5 text-base sm:text-lg font-bold text-white">Coimbatore Startup Community Core Leadership Team</p>
                   <p className="text-xs text-zinc-300">Seven dedicated leaders steering community vision &amp; ecosystem growth.</p>
                 </>
               )}
@@ -191,7 +199,7 @@ function Slide3LeadersShowcase() {
         </div>
       </div>
 
-      {/* Interactive Leader Selection Grid */}
+      {/* Interactive Leader Selection Grid (Exact circular avatars for all 7 leaders) */}
       <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4 sm:gap-2.5">
         {LEADERSHIP_TEAM.map((leader, idx) => {
           const isSelected = selectedIndex === idx;
@@ -206,13 +214,13 @@ function Slide3LeadersShowcase() {
                   : "border-brand-border/70 bg-white hover:border-brand-accent/50 hover:bg-brand-cloud/40 shadow-2xs"
               }`}
             >
-              <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-brand-border/60 bg-brand-cloud shadow-2xs">
+              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-brand-border/60 bg-brand-cloud shadow-2xs">
                 <Image
-                  src={leader.image}
+                  src={leader.circularImage}
                   alt={leader.name}
                   fill
-                  className="object-cover object-top"
-                  sizes="36px"
+                  className="object-cover"
+                  sizes="40px"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -352,9 +360,9 @@ export function CommunityShowcaseDeck() {
     // Slide 3: The People Behind CSC Circle
     {
       id: 3,
-      eyebrow: "Leadership & Stewards · Slide 3 of 7",
+      eyebrow: "Leadership & Founding Team · Slide 3 of 7",
       title: "The People Behind CSC Circle",
-      subtitle: "Seven dedicated leaders steering the community's vision and operations.",
+      subtitle: "Seven dedicated leaders steering community vision, ecosystem growth, and operations.",
       content: <Slide3LeadersShowcase />,
     },
 
