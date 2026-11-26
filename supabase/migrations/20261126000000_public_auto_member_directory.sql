@@ -1,10 +1,12 @@
 -- Make the CSC Member Directory publicly accessible (anon + authenticated) and
 -- automatically include all active members without requiring manual opt-in.
+-- Falls back to Google login avatar_url when portrait_path is not set, and
+-- falls back to membership_claims designation/startup_affiliation when profile fields are empty.
 -- WhatsApp number remains opt-in only via shareWhatsappWithMembers consent.
 
 create or replace function public.list_discoverable_members(
   p_search text default '',
-  p_limit integer default 30,
+  p_limit integer default 50,
   p_offset integer default 0
 )
 returns table(
@@ -28,27 +30,46 @@ declare
 begin
   return query
     select p.id,
-      coalesce(nullif(p.display_name, ''), p.full_name),
-      p.city,
-      coalesce(p.designations[1]::text, ''),
+      coalesce(nullif(trim(p.display_name), ''), nullif(trim(p.full_name), '')),
+      nullif(trim(p.city), ''),
+      coalesce(
+        nullif(p.designations[1]::text, ''),
+        (
+          select mc.designation::text
+          from public.membership_claims mc
+          where mc.user_id = p.id
+          order by mc.created_at desc
+          limit 1
+        ),
+        ''
+      ),
       p.about_me,
       p.skills,
-      (
-        select d.name
-        from public.directory_startups d
-        where d.user_id = p.id and d.status = 'published'
-        order by d.updated_at desc
-        limit 1
+      coalesce(
+        (
+          select d.name
+          from public.directory_startups d
+          where d.user_id = p.id and d.status = 'published'
+          order by d.updated_at desc
+          limit 1
+        ),
+        (
+          select nullif(trim(mc.startup_affiliation), '')
+          from public.membership_claims mc
+          where mc.user_id = p.id
+          order by mc.created_at desc
+          limit 1
+        )
       ),
       case
         when coalesce((p.consent->>'shareWhatsappWithMembers')::boolean, false)
         then p.whatsapp
       end,
-      p.portrait_path is not null
+      (p.portrait_path is not null or nullif(trim(coalesce(p.avatar_url, '')), '') is not null)
     from public.profiles p
     join public.memberships m on m.user_id = p.id and m.status = 'active'
     where private.member_directory_eligible(p.id)
-      and coalesce(nullif(p.display_name, ''), nullif(p.full_name, '')) is not null
+      and coalesce(nullif(trim(p.display_name), ''), nullif(trim(p.full_name), '')) is not null
       and (
         v_query = ''
         or p.display_name ilike '%' || v_query || '%'
@@ -63,6 +84,12 @@ begin
         )
         or exists (
           select 1
+          from public.membership_claims mc
+          where mc.user_id = p.id
+            and (mc.startup_affiliation ilike '%' || v_query || '%' or mc.designation::text ilike '%' || v_query || '%')
+        )
+        or exists (
+          select 1
           from unnest(p.designations) desig
           where desig::text ilike '%' || v_query || '%'
         )
@@ -73,8 +100,8 @@ begin
         )
         or p.about_me ilike '%' || v_query || '%'
       )
-    order by coalesce(nullif(p.display_name, ''), p.full_name)
-    limit greatest(1, least(coalesce(p_limit, 30), 50))
+    order by coalesce(nullif(trim(p.display_name), ''), nullif(trim(p.full_name), ''))
+    limit greatest(1, least(coalesce(p_limit, 50), 100))
     offset greatest(0, least(coalesce(p_offset, 0), 10000));
 end;
 $$;
@@ -103,23 +130,42 @@ as $$
 begin
   return query
     select p.id,
-      coalesce(nullif(p.display_name, ''), p.full_name),
-      p.city,
-      coalesce(p.designations[1]::text, ''),
+      coalesce(nullif(trim(p.display_name), ''), nullif(trim(p.full_name), '')),
+      nullif(trim(p.city), ''),
+      coalesce(
+        nullif(p.designations[1]::text, ''),
+        (
+          select mc.designation::text
+          from public.membership_claims mc
+          where mc.user_id = p.id
+          order by mc.created_at desc
+          limit 1
+        ),
+        ''
+      ),
       p.about_me,
       p.skills,
-      (
-        select d.name
-        from public.directory_startups d
-        where d.user_id = p.id and d.status = 'published'
-        order by d.updated_at desc
-        limit 1
+      coalesce(
+        (
+          select d.name
+          from public.directory_startups d
+          where d.user_id = p.id and d.status = 'published'
+          order by d.updated_at desc
+          limit 1
+        ),
+        (
+          select nullif(trim(mc.startup_affiliation), '')
+          from public.membership_claims mc
+          where mc.user_id = p.id
+          order by mc.created_at desc
+          limit 1
+        )
       ),
       case
         when coalesce((p.consent->>'shareWhatsappWithMembers')::boolean, false)
         then p.whatsapp
       end,
-      p.portrait_path is not null,
+      (p.portrait_path is not null or nullif(trim(coalesce(p.avatar_url, '')), '') is not null),
       (
         select d.website
         from public.directory_startups d
@@ -131,7 +177,7 @@ begin
     join public.memberships m on m.user_id = p.id and m.status = 'active'
     where p.id = p_member_id
       and private.member_directory_eligible(p.id)
-      and coalesce(nullif(p.display_name, ''), nullif(p.full_name, '')) is not null;
+      and coalesce(nullif(trim(p.display_name), ''), nullif(trim(p.full_name), '')) is not null;
 end;
 $$;
 

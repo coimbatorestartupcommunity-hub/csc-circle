@@ -12,12 +12,14 @@ export async function GET(request: Request) {
   const search = (url.searchParams.get("q") ?? "").trim().slice(0, 80);
   const offset = Math.max(0, Math.min(Number(url.searchParams.get("offset") ?? 0) || 0, 10000));
   const sb = await createClient();
-  const { data, error } = await sb.rpc("list_discoverable_members", { p_search: search, p_limit: 30, p_offset: offset });
+  const pageSize = 50;
+  const { data, error } = await sb.rpc("list_discoverable_members", { p_search: search, p_limit: pageSize, p_offset: offset });
   if (error) {
     return NextResponse.json({ error: "Member profiles could not be loaded." }, { status: 503 });
   }
+  const rows = data ?? [];
   return NextResponse.json(
-    { members: data ?? [] },
+    { members: rows, hasMore: rows.length >= pageSize },
     {
       headers: {
         "Cache-Control": search

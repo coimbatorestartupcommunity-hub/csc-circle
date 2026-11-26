@@ -17,7 +17,7 @@ export default async function MembersPage() {
   const sb = await createClient();
   const { data: initialMembers } = await sb.rpc("list_discoverable_members", {
     p_search: "",
-    p_limit: 30,
+    p_limit: 50,
     p_offset: 0,
   });
 

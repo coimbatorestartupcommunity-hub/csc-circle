@@ -5,6 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, MapPin, ArrowUpRight, UsersRound, Loader2, Sparkles, Building2, Award } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { designationLabels } from "@/lib/content/member-taxonomy";
+import type { MemberDesignation } from "@/types/member";
 
 type CommunityMember = {
   member_id: string;
@@ -80,9 +83,12 @@ export function CommunityMemberDirectory({
   const [query, setQuery] = React.useState("");
   const [activePersona, setActivePersona] = React.useState<PersonaFilter>("all");
   const [members, setMembers] = React.useState<CommunityMember[]>(initialMembers);
+  const [hasMore, setHasMore] = React.useState(initialMembers.length >= 50);
   const [busy, setBusy] = React.useState(initialMembers.length === 0);
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const [error, setError] = React.useState("");
   const hasMountedRef = React.useRef(false);
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     // Skip redundant client fetch on first render if initial members present with empty query
@@ -99,15 +105,18 @@ export function CommunityMemberDirectory({
       setBusy(true);
       setError("");
       try {
-        const response = await fetch(`/api/members?q=${encodeURIComponent(query)}`, {
+        const response = await fetch(`/api/members?q=${encodeURIComponent(query)}&offset=0`, {
           signal: controller.signal,
         });
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error ?? "Member profiles are unavailable.");
-        setMembers(payload.members ?? []);
+        const rows = (payload.members ?? []) as CommunityMember[];
+        setMembers(rows);
+        setHasMore(Boolean(payload.hasMore ?? rows.length >= 50));
       } catch (cause) {
         if (!controller.signal.aborted) {
           setMembers([]);
+          setHasMore(false);
           setError(cause instanceof Error ? cause.message : "Member profiles are unavailable.");
         }
       } finally {
@@ -120,6 +129,39 @@ export function CommunityMemberDirectory({
       controller.abort();
     };
   }, [query, initialMembers.length]);
+
+  const loadMore = React.useCallback(async () => {
+    if (loadingMore || busy || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const response = await fetch(
+        `/api/members?q=${encodeURIComponent(query)}&offset=${members.length}`,
+      );
+      const payload = await response.json();
+      if (!response.ok) return;
+      const next = (payload.members ?? []) as CommunityMember[];
+      setMembers((prev) => {
+        const seen = new Set(prev.map((item) => item.member_id));
+        return [...prev, ...next.filter((item) => !seen.has(item.member_id))];
+      });
+      setHasMore(Boolean(payload.hasMore ?? next.length >= 50));
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [busy, hasMore, loadingMore, members.length, query]);
+
+  React.useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasMore || busy) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMore();
+      },
+      { rootMargin: "300px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [busy, hasMore, loadMore]);
 
   const filteredMembers = React.useMemo(() => {
     return members.filter((m) => matchesPersona(m.designation, activePersona));
@@ -203,7 +245,7 @@ export function CommunityMemberDirectory({
                   <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-snug text-brand-muted sm:gap-x-3 sm:text-sm">
                     {m.designation && (
                       <span className="font-medium text-brand-accent break-words">
-                        {m.designation.replaceAll("_", " ")}
+                        {designationLabels[m.designation as MemberDesignation] ?? m.designation.replaceAll("_", " ")}
                       </span>
                     )}
                     {m.city && (
@@ -240,7 +282,24 @@ export function CommunityMemberDirectory({
             </li>
           ))}
         </ul>
-      ) : (
+      ) : null}
+
+      {!busy && !error && hasMore ? (
+        <div ref={sentinelRef} className="flex justify-center pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void loadMore()}
+            disabled={loadingMore}
+            className="gap-2 rounded-xl"
+          >
+            {loadingMore ? <Loader2 className="size-4 animate-spin" /> : null}
+            {loadingMore ? "Loading more profiles..." : "Load More Profiles"}
+          </Button>
+        </div>
+      ) : null}
+
+      {!busy && !error && !filteredMembers.length ? (
         <section className="rounded-2xl bg-white p-10 text-center ring-1 ring-brand-border">
           <UsersRound className="mx-auto size-8 text-brand-muted" />
           <h2 className="mt-3 font-semibold text-brand-ink">No matching founder profiles found</h2>
@@ -250,7 +309,7 @@ export function CommunityMemberDirectory({
               : "Try switching to 'All Builders' or a different persona filter."}
           </p>
         </section>
-      )}
+      ) : null}
     </div>
   );
 }

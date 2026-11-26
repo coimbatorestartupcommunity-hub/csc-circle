@@ -10,10 +10,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ memb
   if (!visible?.[0]?.has_photo) return new NextResponse(null, { status: 404 });
   const admin = createAdminClient();
   const [{ data: profile }, { data: membership }] = await Promise.all([
-    admin.from("profiles").select("portrait_path").eq("id", memberId).maybeSingle(),
+    admin.from("profiles").select("portrait_path,avatar_url").eq("id", memberId).maybeSingle(),
     admin.from("memberships").select("status").eq("user_id", memberId).maybeSingle(),
   ]);
-  if (!profile?.portrait_path || membership?.status !== "active") return new NextResponse(null, { status: 404 });
+  if (membership?.status !== "active") return new NextResponse(null, { status: 404 });
+
+  if (!profile?.portrait_path) {
+    const avatarUrl = profile?.avatar_url?.trim() ?? "";
+    if (/^https:\/\//i.test(avatarUrl)) {
+      return NextResponse.redirect(avatarUrl, {
+        status: 307,
+        headers: {
+          "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+        },
+      });
+    }
+    return new NextResponse(null, { status: 404 });
+  }
 
   const etag = `W/"${Buffer.from(profile.portrait_path).toString("base64url")}"`;
   if (request.headers.get("if-none-match") === etag) {
