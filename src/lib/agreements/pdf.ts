@@ -43,25 +43,24 @@ export interface AgreementPdfInput {
 
 const A4_W = 595.28;
 const A4_H = 841.89;
-const MARGIN_X = 46;
-const CONTENT_W = A4_W - MARGIN_X * 2; // 503.28
+const MARGIN_X = 36;
+const CONTENT_W = A4_W - MARGIN_X * 2; // 523.28
 
-// Exact Color Palette Extracted from User's Editorial Template
-const P1_BG = rgb(245 / 255, 240 / 255, 237 / 255); // #F5F0ED warm linen
-const P1_PILL_BG = rgb(226 / 255, 191 / 255, 198 / 255); // #E2BFC6 dusty rose
-const P1_CALLOUT_BG = rgb(247 / 255, 232 / 255, 236 / 255); // #F7E8EC light blush callout
-const P1_CALLOUT_BORDER = rgb(234 / 255, 198 / 255, 207 / 255); // #EAC6CF
-const ACCENT_ROSE = rgb(184 / 255, 106 / 255, 123 / 255); // #B86A7B
-const ACCENT_ROSE_BORDER = rgb(216 / 255, 168 / 255, 178 / 255); // #D8A8B2
-const INK_DARK = rgb(45 / 255, 41 / 255, 38 / 255); // #2D2926 charcoal
-const INK_BODY = rgb(74 / 255, 67 / 255, 64 / 255); // #4A4340
-const INK_MUTED = rgb(138 / 255, 107 / 255, 115 / 255); // #8A6B73
-const WHITE = rgb(1, 1, 1);
-
-const P2_BG = rgb(244 / 255, 198 / 255, 209 / 255); // #F4C6D1 blush pink
-const P2_GRID = rgb(232 / 255, 176 / 255, 190 / 255); // #E8B0BE graph quad grid lines
-const P2_INK_DARK = rgb(45 / 255, 33 / 255, 36 / 255); // #2D2124 dark plum
-const P2_INK_BODY = rgb(58 / 255, 43 / 255, 46 / 255); // #3A2B2E
+// Clean, Modern Web Layout Color Palette (Matches Chrome Web Printout)
+const PAGE_BG = rgb(1, 1, 1); // Pure White
+const CARD_BG = rgb(1, 1, 1);
+const CARD_BORDER = rgb(226 / 255, 232 / 255, 240 / 255); // #E2E8F0
+const CARD_MUTED_BG = rgb(248 / 255, 250 / 255, 252 / 255); // #F8FAFC
+const TEXT_DARK = rgb(15 / 255, 23 / 255, 42 / 255); // #0F172A
+const TEXT_BODY = rgb(51 / 255, 65 / 255, 85 / 255); // #334155
+const TEXT_MUTED = rgb(100 / 255, 116 / 255, 139 / 255); // #64748B
+const ACCENT_PURPLE = rgb(124 / 255, 58 / 255, 237 / 255); // #7C3AED
+const PILL_BLUE_BG = rgb(239 / 255, 246 / 255, 255 / 255); // #EFF6FF
+const PILL_BLUE_BORDER = rgb(191 / 255, 219 / 255, 254 / 255); // #BFDBFE
+const PILL_BLUE_TEXT = rgb(37 / 255, 99 / 255, 235 / 255); // #2563EB
+const AUDIT_BG = rgb(236 / 255, 253 / 255, 245 / 255); // #ECFDF5
+const AUDIT_BORDER = rgb(167 / 255, 243 / 255, 208 / 255); // #A7F3D0
+const AUDIT_TEXT = rgb(4 / 255, 120 / 255, 87 / 255); // #047857
 const SIG_BLUE = rgb(30 / 255, 58 / 255, 138 / 255); // #1E3A8A deep signature ink
 
 async function loadFontFile(filename: string): Promise<Uint8Array> {
@@ -92,45 +91,25 @@ function drawRoundedRect(
     borderWidth?: number;
   },
 ) {
-  const radius = Math.min(r, w / 2, h / 2);
+  const radius = Math.max(0, Math.min(r, w / 2, h / 2));
+  if (radius <= 0) {
+    if (options.color) {
+      page.drawRectangle({ x, y, width: w, height: h, color: options.color });
+    }
+    if (options.borderColor && options.borderWidth) {
+      page.drawRectangle({
+        x,
+        y,
+        width: w,
+        height: h,
+        borderColor: options.borderColor,
+        borderWidth: options.borderWidth,
+      });
+    }
+    return;
+  }
   const svg = `M ${x + radius} ${y} h ${w - 2 * radius} a ${radius} ${radius} 0 0 1 ${radius} ${radius} v ${h - 2 * radius} a ${radius} ${radius} 0 0 1 -${radius} ${radius} h -${w - 2 * radius} a ${radius} ${radius} 0 0 1 -${radius} -${radius} v -${h - 2 * radius} a ${radius} ${radius} 0 0 1 ${radius} -${radius} Z`;
   page.drawSvgPath(svg, options);
-}
-
-function drawCheckmark(page: PDFPage, x: number, y: number, size: number, color: Color) {
-  page.drawLine({
-    start: { x: x, y: y + size * 0.45 },
-    end: { x: x + size * 0.35, y: y },
-    thickness: 1.2,
-    color,
-  });
-  page.drawLine({
-    start: { x: x + size * 0.35, y: y },
-    end: { x: x + size, y: y + size * 0.85 },
-    thickness: 1.2,
-    color,
-  });
-}
-
-function drawArrow(page: PDFPage, x: number, y: number, length: number, color: Color) {
-  page.drawLine({
-    start: { x, y: y + 2 },
-    end: { x: x + length, y: y + 2 },
-    thickness: 0.8,
-    color,
-  });
-  page.drawLine({
-    start: { x: x + length - 3, y: y + 4.5 },
-    end: { x: x + length, y: y + 2 },
-    thickness: 0.8,
-    color,
-  });
-  page.drawLine({
-    start: { x: x + length - 3, y: y - 0.5 },
-    end: { x: x + length, y: y + 2 },
-    thickness: 0.8,
-    color,
-  });
 }
 
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
@@ -160,143 +139,40 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
   return lines;
 }
 
-function drawCenteredText(
-  page: PDFPage,
-  text: string,
-  y: number,
-  font: PDFFont,
-  size: number,
-  color = INK_DARK,
-) {
-  const width = font.widthOfTextAtSize(text, size);
-  page.drawText(text, { x: (A4_W - width) / 2, y, size, font, color });
-}
-
-// Helper to render a clause with BOLD numbered prefixes and BOLD colon titles
-function drawFormattedClause(
-  page: PDFPage,
-  x: number,
-  y: number,
-  clause: string,
-  maxWidth: number,
-  boldFont: PDFFont,
-  sansFont: PDFFont,
-  accentColor: Color,
-  darkColor: Color,
-  bodyColor: Color,
-): number {
-  drawCheckmark(page, x + 2, y - 1, 7, accentColor);
-
-  const numMatch = clause.match(/^([0-9]+\.[0-9]+(?:\.[0-9]+)?|[•✦\-])\s*([\s\S]*)/);
-  let prefix = "";
-  let colonTitle = "";
-  let bodyText = clause;
-
-  if (numMatch) {
-    prefix = numMatch[1];
-    const rest = numMatch[2];
-    const colonMatch = rest.match(/^([^:]+:)\s*([\s\S]*)/);
-    if (colonMatch && colonMatch[1].length < 80) {
-      colonTitle = colonMatch[1];
-      bodyText = colonMatch[2];
-    } else {
-      bodyText = rest;
-    }
-  } else {
-    const colonMatch = clause.match(/^([^:]+:)\s*([\s\S]*)/);
-    if (colonMatch && colonMatch[1].length < 80) {
-      colonTitle = colonMatch[1];
-      bodyText = colonMatch[2];
-    }
-  }
-
-  const boldHeader = [prefix, colonTitle].filter(Boolean).join(" ");
-  if (boldHeader) {
-    page.drawText(boldHeader, {
-      x: x + 16,
-      y,
-      size: 7.6,
-      font: boldFont,
-      color: darkColor,
-    });
-    const headerWidth = boldFont.widthOfTextAtSize(boldHeader + " ", 7.6);
-    const availableW = maxWidth - 18 - headerWidth;
-    const bodyLines = wrapText(bodyText, sansFont, 7.5, Math.max(availableW, 140));
-
-    if (bodyLines.length > 0 && availableW >= 140) {
-      page.drawText(bodyLines[0], {
-        x: x + 16 + headerWidth,
-        y,
-        size: 7.5,
-        font: sansFont,
-        color: bodyColor,
-      });
-      y -= 12.5;
-      for (let i = 1; i < Math.min(bodyLines.length, 3); i++) {
-        page.drawText(bodyLines[i], {
-          x: x + 16,
-          y,
-          size: 7.5,
-          font: sansFont,
-          color: bodyColor,
-        });
-        y -= 11.5;
-      }
-    } else {
-      y -= 12;
-      const fullBodyLines = wrapText(bodyText, sansFont, 7.5, maxWidth - 18);
-      for (let i = 0; i < Math.min(fullBodyLines.length, 3); i++) {
-        page.drawText(fullBodyLines[i], {
-          x: x + 16,
-          y,
-          size: 7.5,
-          font: sansFont,
-          color: bodyColor,
-        });
-        y -= 11.5;
-      }
-    }
-  } else {
-    const fullBodyLines = wrapText(clause, sansFont, 7.5, maxWidth - 18);
-    for (let i = 0; i < Math.min(fullBodyLines.length, 3); i++) {
-      page.drawText(fullBodyLines[i], {
-        x: x + 16,
-        y,
-        size: 7.5,
-        font: sansFont,
-        color: bodyColor,
-      });
-      y -= 11.5;
-    }
-  }
-
-  return y - 2;
-}
-
 export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Buffer> {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
 
-  // Load typography & brand images
+  // Load typography & assets
   const [
     sansBytes,
     scriptBytes,
     serifBytes,
-    italicBytes,
     cscLogoPng,
+    sealCirclePng,
+    socialWhatsappPng,
+    socialAgentPng,
+    socialLinkedinPng,
+    socialInstagramPng,
+    socialMailPng,
     qrPng,
   ] = await Promise.all([
     loadFontFile("PlusJakartaSans.ttf"),
     loadFontFile("Caveat.ttf"),
     loadFontFile("CormorantGaramond.ttf"),
-    loadFontFile("CormorantGaramond-Italic.ttf"),
     loadCachedPng("public/brand/csc-circle-seal.png", 240, 240),
+    loadCachedPng("public/images/agreements/circular-image/reyash.jpg", 160, 160),
+    loadCachedPng("public/images/agreements/social/whatsapp.png", 64, 64),
+    loadCachedPng("public/images/agreements/social/whatsapp-agent.png", 64, 64),
+    loadCachedPng("public/images/agreements/social/linkedin.png", 64, 64),
+    loadCachedPng("public/images/agreements/social/instagram.png", 64, 64),
+    loadCachedPng("public/images/agreements/social/mail.png", 64, 64),
     QRCode.toBuffer(
       `https://csc.logicintelligencetechnologies.in/agreements/sign/${input.referenceCode}`,
       {
         margin: 1,
         width: 240,
-        color: { dark: "#2D2124", light: "#F4C6D1" },
+        color: { dark: "#0F172A", light: "#FFFFFF" },
       },
     ),
   ]);
@@ -305,7 +181,6 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const script = await doc.embedFont(scriptBytes);
   const serif = await doc.embedFont(serifBytes);
-  const italic = await doc.embedFont(italicBytes);
 
   let cscLogoImg: PDFImage | null = null;
   if (cscLogoPng) {
@@ -313,6 +188,15 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
       cscLogoImg = await doc.embedPng(new Uint8Array(cscLogoPng));
     } catch {
       cscLogoImg = null;
+    }
+  }
+
+  let sealCircleImg: PDFImage | null = null;
+  if (sealCirclePng) {
+    try {
+      sealCircleImg = await doc.embedPng(new Uint8Array(sealCirclePng));
+    } catch {
+      sealCircleImg = null;
     }
   }
 
@@ -338,445 +222,698 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     }
   }
 
-  const isSigned = input.status === "signed" || Boolean(input.signedAt);
-
-  // Distribute all input sections across Page 1 and Page 2
-  const sec1 = input.sections[0] || {
-    heading: "1. Purpose & Alliance Mandate",
-    clauses: [
-      "1.1 Collaborative Ecosystem Acceleration: The parties agree to co-create high-impact initiatives supporting founders across Western Tamil Nadu.",
-      "1.2 Non-Transactional Ethos: Engagement is strictly founded upon peer mentorship, transparent knowledge sharing, and give-first values.",
-      "1.3 Official Alliance Representation: Mutual rights to publicly reference the alliance across official platforms, demo days, and founder forums.",
-    ],
-  };
-
-  const sec2 = input.sections[1] || {
-    heading: "2. Intellectual Property, Governance & Independence",
-    clauses: [
-      "2.1 Proprietary Platform Ownership: Each party retains sole and unencumbered ownership of its pre-existing IP, brand trademarks, and software.",
-      "2.2 Confidentiality & Non-Disclosure: All member data, roadmap details, and internal discussions remain strictly confidential and privileged.",
-      "2.3 Term & Mutual Disengagement: Valid for a twelve-month duration, reviewable annually with a thirty-day bilateral notice window.",
-    ],
-  };
-
-  const remainingSections = input.sections.slice(2);
-
-  // =========================================================================
-  // PAGE 1: WARM LINEN TEMPLATE (Matches Left Page in User's Screenshot)
-  // =========================================================================
-  const p1 = doc.addPage([A4_W, A4_H]);
-  p1.drawRectangle({ x: 0, y: 0, width: A4_W, height: A4_H, color: P1_BG });
-
-  // Top Arched Oval Badge for Logo (Matching the arch in user template)
-  const archW = 88;
-  const archH = 68;
-  const archX = (A4_W - archW) / 2;
-  const archY = A4_H - 104;
-
-  drawRoundedRect(p1, archX, archY, archW, archH, 34, {
-    color: rgb(250 / 255, 246 / 255, 244 / 255),
-    borderColor: ACCENT_ROSE_BORDER,
-    borderWidth: 1,
-  });
-
-  if (partnerLogoImg && cscLogoImg) {
-    p1.drawImage(cscLogoImg, {
-      x: archX + 6,
-      y: archY + 14,
-      width: 36,
-      height: 36,
-    });
-    p1.drawImage(partnerLogoImg, {
-      x: archX + 46,
-      y: archY + 14,
-      width: 36,
-      height: 36,
-    });
-  } else if (cscLogoImg) {
-    p1.drawImage(cscLogoImg, {
-      x: (A4_W - 46) / 2,
-      y: archY + (archH - 46) / 2,
-      width: 46,
-      height: 46,
-    });
-  }
-
-  // Document Title Line 1: Modern Roman / Clean Sans (Matches "Воронка для")
-  const titleText = (input.title || "Digital Partnership Agreement").toUpperCase();
-  drawCenteredText(p1, titleText, archY - 26, bold, 13.5, INK_DARK);
-
-  // Document Title Line 2: Elegant Cursive Script in dusty rose (Matches "услуги - маникюр")
-  const subtitleText = input.subtitle || "Memorandum of Understanding";
-  drawCenteredText(p1, subtitleText, archY - 48, script, 22, ACCENT_ROSE);
-
-  let curY = archY - 76;
-
-  // --- STAGE 1: PILL BADGE & CONTENT (Matches "Этап 1: Осведомленность") ---
-  const s1PillText = `Stage 1: ${sec1.heading.replace(/^[0-9.]+\s*/, "")}`;
-  const s1PillW = Math.min(bold.widthOfTextAtSize(s1PillText, 8) + 24, CONTENT_W - 80);
-  drawRoundedRect(p1, MARGIN_X, curY - 18, s1PillW, 20, 6, { color: P1_PILL_BG });
-  p1.drawText(s1PillText, {
-    x: MARGIN_X + 10,
-    y: curY - 13,
-    size: 7.8,
-    font: bold,
-    color: INK_DARK,
-  });
-
-  curY -= 28;
-  drawArrow(p1, MARGIN_X, curY, 14, ACCENT_ROSE);
-  const s1Lead = `Formal alliance established between Coimbatore Startup Community and ${input.recipientOrg || input.recipientName}.`;
-  p1.drawText(s1Lead.slice(0, 92), {
-    x: MARGIN_X + 20,
-    y: curY - 1,
-    size: 7.8,
-    font: sans,
-    color: INK_BODY,
-  });
-
-  curY -= 15;
-  p1.drawText("Mutual Covenants & Action Points:", {
-    x: MARGIN_X,
-    y: curY,
-    size: 7.8,
-    font: italic,
-    color: rgb(110 / 255, 90 / 255, 96 / 255),
-  });
-
-  curY -= 14;
-  for (const clause of sec1.clauses.slice(0, 3)) {
-    curY = drawFormattedClause(
-      p1,
-      MARGIN_X,
-      curY,
-      clause,
-      CONTENT_W,
-      bold,
-      sans,
-      ACCENT_ROSE,
-      INK_DARK,
-      INK_BODY,
-    );
-  }
-
-  // --- LIGHT PINK CALLOUT BOX WITH CIRCLE BADGE (Matches "Что важно:" box) ---
-  curY -= 4;
-  const calloutH = 46;
-  drawRoundedRect(p1, MARGIN_X, curY - calloutH, CONTENT_W, calloutH, 6, {
-    color: P1_CALLOUT_BG,
-    borderColor: P1_CALLOUT_BORDER,
-    borderWidth: 0.5,
-  });
-
-  const cText =
-    "Key Mandate: Both parties commit to collaborative ecosystem acceleration, mutual operational transparency, and non-transactional founder mentorship across Western Tamil Nadu.";
-  const cLines = wrapText(cText, italic, 7.8, CONTENT_W - 48);
-  let cy = curY - 18;
-  cLines.forEach((l) => {
-    p1.drawText(l, {
-      x: MARGIN_X + 16,
-      y: cy,
-      size: 7.8,
-      font: italic,
-      color: rgb(90 / 255, 69 / 255, 75 / 255),
-    });
-    cy -= 11;
-  });
-
-  // White circular badge on right side
-  drawRoundedRect(p1, MARGIN_X + CONTENT_W - 28, curY - 32, 18, 18, 9, {
-    color: WHITE,
-    borderColor: P1_CALLOUT_BORDER,
-    borderWidth: 0.5,
-  });
-
-  curY -= calloutH + 18;
-
-  // --- STAGE 2: PILL BADGE & CONTENT (Matches "Этап 2: Интерес") ---
-  const s2PillText = `Stage 2: ${sec2.heading.replace(/^[0-9.]+\s*/, "")}`;
-  const s2PillW = Math.min(bold.widthOfTextAtSize(s2PillText, 8) + 24, CONTENT_W);
-  drawRoundedRect(p1, MARGIN_X, curY - 18, s2PillW, 20, 6, { color: P1_PILL_BG });
-  p1.drawText(s2PillText, {
-    x: MARGIN_X + 10,
-    y: curY - 13,
-    size: 7.8,
-    font: bold,
-    color: INK_DARK,
-  });
-
-  curY -= 28;
-  drawArrow(p1, MARGIN_X, curY, 14, ACCENT_ROSE);
-  p1.drawText("Preserving operational independence and safeguarding proprietary ecosystem assets.", {
-    x: MARGIN_X + 20,
-    y: curY - 1,
-    size: 7.8,
-    font: sans,
-    color: INK_BODY,
-  });
-
-  curY -= 15;
-  p1.drawText("Terms & Obligations:", {
-    x: MARGIN_X,
-    y: curY,
-    size: 7.8,
-    font: italic,
-    color: rgb(110 / 255, 90 / 255, 96 / 255),
-  });
-
-  curY -= 14;
-  for (const clause of sec2.clauses.slice(0, 3)) {
-    curY = drawFormattedClause(
-      p1,
-      MARGIN_X,
-      curY,
-      clause,
-      CONTENT_W,
-      bold,
-      sans,
-      ACCENT_ROSE,
-      INK_DARK,
-      INK_BODY,
-    );
-  }
-
-  // Page 1 Footer: ( 26 )
-  drawCenteredText(p1, "( 26 )", 28, italic, 9, INK_MUTED);
-
-  // =========================================================================
-  // PAGE 2: BLUSH PINK WITH QUAD GRAPH GRID (Matches Right Page in Screenshot)
-  // DIGITAL EXECUTION & SIGNATURES
-  // =========================================================================
-  const p2 = doc.addPage([A4_W, A4_H]);
-  p2.drawRectangle({ x: 0, y: 0, width: A4_W, height: A4_H, color: P2_BG });
-
-  // Quad Grid Lines (24pt grid pattern matching graph paper in template)
-  const gridSize = 24;
-  for (let x = 0; x <= A4_W; x += gridSize) {
-    p2.drawLine({ start: { x, y: 0 }, end: { x, y: A4_H }, thickness: 0.5, color: P2_GRID });
-  }
-  for (let y = 0; y <= A4_H; y += gridSize) {
-    p2.drawLine({ start: { x: 0, y }, end: { x: A4_W, y }, thickness: 0.5, color: P2_GRID });
-  }
-
-  // Top White Pill Badge (Matches "глава 5")
-  const topPillW = 84;
-  const topPillH = 18;
-  drawRoundedRect(p2, (A4_W - topPillW) / 2, A4_H - 42, topPillW, topPillH, 9, { color: WHITE });
-  drawCenteredText(p2, "section 02", A4_H - 35, bold, 7.5, rgb(122 / 255, 88 / 255, 97 / 255));
-
-  // Main Title: Elegant Classical Serif 2-Line Title (Matches "Бонусы и дополнительные / инструменты")
-  drawCenteredText(p2, "Statutory Execution &", A4_H - 78, serif, 22, P2_INK_DARK);
-  drawCenteredText(p2, "Digital Signatures", A4_H - 102, serif, 22, P2_INK_DARK);
-
-  // Secondary Floating White Card (Matches "01 | Как повысить ценность предложения?")
-  const cardY = A4_H - 150;
-  drawRoundedRect(p2, MARGIN_X, cardY, CONTENT_W, 28, 6, {
-    color: WHITE,
-    borderColor: rgb(229 / 255, 184 / 255, 196 / 255),
-    borderWidth: 0.5,
-  });
-  drawCenteredText(
-    p2,
-    "01 | Legal Acceptance & Tamper-Evident Signatures",
-    cardY + 9,
-    bold,
-    9.5,
-    ACCENT_ROSE,
-  );
-
-  // Introductory Body Paragraph
-  const introText =
-    "This digital agreement is executed under Section 10A of the Information Technology Act, 2000 and the Indian Contract Act, 1872. By completing digital execution, both parties acknowledge and accept all covenants, schedules, and terms set forth herein.";
-  const introLines = wrapText(introText, sans, 7.6, CONTENT_W);
-  let p2y = cardY - 20;
-  introLines.forEach((l) => {
-    p2.drawText(l, { x: MARGIN_X, y: p2y, size: 7.6, font: sans, color: P2_INK_BODY });
-    p2y -= 11;
-  });
-
-  // If there are additional sections (e.g. Section 3 IP / Section 4 Confidentiality), render brief summary pill & clauses
-  if (remainingSections.length > 0) {
-    const extraSec = remainingSections[0];
-    p2y -= 4;
-    const extraPillW = Math.min(bold.widthOfTextAtSize(`Key Covenant: ${extraSec.heading}`, 8) + 24, CONTENT_W);
-    drawRoundedRect(p2, MARGIN_X, p2y - 16, extraPillW, 18, 5, { color: WHITE });
-    p2.drawText(`Key Covenant: ${extraSec.heading.slice(0, 48)}`, {
-      x: MARGIN_X + 8,
-      y: p2y - 12,
-      size: 7.5,
-      font: bold,
-      color: P2_INK_DARK,
-    });
-    p2y -= 24;
-
-    for (const ec of extraSec.clauses.slice(0, 2)) {
-      p2y = drawFormattedClause(
-        p2,
-        MARGIN_X,
-        p2y,
-        ec,
-        CONTENT_W,
-        bold,
-        sans,
-        ACCENT_ROSE,
-        P2_INK_DARK,
-        P2_INK_BODY,
-      );
+  // Social icons
+  const socialIcons: (PDFImage | null)[] = [];
+  for (const b of [
+    socialWhatsappPng,
+    socialAgentPng,
+    socialLinkedinPng,
+    socialInstagramPng,
+    socialMailPng,
+  ]) {
+    if (b) {
+      try {
+        socialIcons.push(await doc.embedPng(new Uint8Array(b)));
+      } catch {
+        socialIcons.push(null);
+      }
+    } else {
+      socialIcons.push(null);
     }
   }
 
-  // Sub-section Pill (Matches "#1 Скидки, акции и бонусы: как использовать эффективно?")
-  p2y -= 6;
-  const p2PillW = 265;
-  drawRoundedRect(p2, MARGIN_X, p2y - 18, p2PillW, 20, 6, { color: WHITE });
-  p2.drawText("#1 CSC Circle & Counterparty Digital Execution", {
-    x: MARGIN_X + 10,
-    y: p2y - 13,
-    size: 7.8,
-    font: bold,
-    color: P2_INK_DARK,
-  });
+  const isSigned = input.status === "signed" || Boolean(input.signedAt);
 
-  p2y -= 26;
-  drawArrow(p2, MARGIN_X, p2y, 14, ACCENT_ROSE);
-  p2.drawText(
-    "Cryptographically verified digital sign-off and audit trail recorded on secure ledger.",
-    {
-      x: MARGIN_X + 20,
-      y: p2y - 1,
-      size: 7.6,
-      font: sans,
-      color: P2_INK_BODY,
-    },
-  );
+  // Helper for multi-page management
+  let currentPage = doc.addPage([A4_W, A4_H]);
+  let pageNumber = 1;
+  let curY = A4_H - 36;
 
-  p2y -= 14;
-  p2.drawText("Execution Details & Authorized Signatories:", {
-    x: MARGIN_X,
-    y: p2y,
-    size: 7.8,
-    font: italic,
-    color: rgb(90 / 255, 69 / 255, 75 / 255),
-  });
-
-  // 3 Checkmark Execution Blocks (Matching Page 2 template checkmark items)
-  p2y -= 16;
-
-  // Block 1: CSC Signatory
-  drawCheckmark(p2, MARGIN_X + 2, p2y + 16, 8, ACCENT_ROSE);
-  p2.drawText("Authorized Signatory — Coimbatore Startup Community:", {
-    x: MARGIN_X + 16,
-    y: p2y + 17,
-    size: 8,
-    font: bold,
-    color: P2_INK_DARK,
-  });
-  p2.drawText(input.cscSignatoryName, {
-    x: MARGIN_X + 16,
-    y: p2y - 6,
-    size: 22,
-    font: script,
-    color: SIG_BLUE,
-  });
-  p2.drawText(
-    `${input.cscSignatoryName} · ${input.cscSignatoryRole} · Coimbatore Startup Community (CSC Circle)`,
-    {
-      x: MARGIN_X + 16,
-      y: p2y - 18,
-      size: 7.2,
-      font: sans,
-      color: P2_INK_BODY,
-    },
-  );
-
-  p2y -= 48;
-
-  // Block 2: Counterparty Signatory
-  drawCheckmark(p2, MARGIN_X + 2, p2y + 16, 8, ACCENT_ROSE);
-  p2.drawText("Authorized Signatory — Counterparty / Recipient:", {
-    x: MARGIN_X + 16,
-    y: p2y + 17,
-    size: 8,
-    font: bold,
-    color: P2_INK_DARK,
-  });
-
-  const counterpartySig =
-    isSigned && input.signedName ? input.signedName : input.recipientName;
-  p2.drawText(counterpartySig, {
-    x: MARGIN_X + 16,
-    y: p2y - 6,
-    size: 22,
-    font: script,
-    color: SIG_BLUE,
-  });
-  const auditState = isSigned
-    ? `Verified Signature · ${input.signedEmail || input.recipientEmail}`
-    : `Pending Execution · ${input.recipientEmail}`;
-  p2.drawText(
-    `${input.signedName || input.recipientName} · ${
-      input.signedRole || input.recipientRole || "Authorized Signatory"
-    }${input.signedOrg || input.recipientOrg ? ` · ${input.signedOrg || input.recipientOrg}` : ""} (${auditState})`,
-    {
-      x: MARGIN_X + 16,
-      y: p2y - 18,
-      size: 7.2,
-      font: sans,
-      color: P2_INK_BODY,
-    },
-  );
-
-  p2y -= 48;
-
-  // Block 3: Statutory Acceptance Declaration & QR Code
-  drawCheckmark(p2, MARGIN_X + 2, p2y + 16, 8, ACCENT_ROSE);
-  p2.drawText("Statutory Acceptance & Tamper-Evident Verification:", {
-    x: MARGIN_X + 16,
-    y: p2y + 17,
-    size: 8,
-    font: bold,
-    color: P2_INK_DARK,
-  });
-
-  const hashSnippet = (input.documentHash || "SHA256-VERIFIED-RECORD").slice(0, 32);
-  const declText = `Confirmed under Section 10A & 65B of Information Technology Act, 2000. Cryptographic Record: ${hashSnippet}... Both parties are legally bound upon digital execution.`;
-  const dLines = wrapText(declText, sans, 7.2, CONTENT_W - 84);
-  let dy = p2y - 2;
-  dLines.forEach((dl) => {
-    p2.drawText(dl, { x: MARGIN_X + 16, y: dy, size: 7.2, font: sans, color: P2_INK_BODY });
-    dy -= 10;
-  });
-
-  // Verification QR Code on right side of statutory block
-  if (qrImg) {
-    p2.drawImage(qrImg, {
-      x: MARGIN_X + CONTENT_W - 68,
-      y: p2y - 28,
-      width: 60,
-      height: 60,
+  function drawTopHeader(page: PDFPage) {
+    if (cscLogoImg) {
+      page.drawImage(cscLogoImg, {
+        x: MARGIN_X,
+        y: A4_H - 38,
+        width: 22,
+        height: 22,
+      });
+    }
+    page.drawText("CSC Circle", {
+      x: MARGIN_X + 28,
+      y: A4_H - 26,
+      size: 10.5,
+      font: bold,
+      color: TEXT_DARK,
+    });
+    page.drawText("COIMBATORE STARTUP COMMUNITY", {
+      x: MARGIN_X + 28,
+      y: A4_H - 36,
+      size: 5.5,
+      font: bold,
+      color: TEXT_MUTED,
     });
   }
 
-  // Minimal 2-Line Official Attribution at bottom of Page 2
-  drawCenteredText(
-    p2,
-    "Coimbatore Startup Community — A Community-Led Initiative",
-    64,
-    sans,
-    8,
-    P2_INK_BODY,
+  function drawPageFooter(page: PDFPage, num: number) {
+    page.drawLine({
+      start: { x: MARGIN_X, y: 28 },
+      end: { x: MARGIN_X + CONTENT_W, y: 28 },
+      thickness: 0.5,
+      color: CARD_BORDER,
+    });
+    page.drawText(`CSC Circle · Official Digital Agreement — Page ${num}`, {
+      x: MARGIN_X,
+      y: 18,
+      size: 6.5,
+      font: sans,
+      color: TEXT_MUTED,
+    });
+    page.drawText("Confidential & Tamper-Evident", {
+      x: MARGIN_X + CONTENT_W - 105,
+      y: 18,
+      size: 6.5,
+      font: sans,
+      color: TEXT_MUTED,
+    });
+  }
+
+  function startNewPage(): PDFPage {
+    drawPageFooter(currentPage, pageNumber);
+    pageNumber++;
+    currentPage = doc.addPage([A4_W, A4_H]);
+    drawTopHeader(currentPage);
+    curY = A4_H - 56;
+    return currentPage;
+  }
+
+  function ensureSpace(requiredH: number) {
+    if (curY - requiredH < 44) {
+      startNewPage();
+    }
+  }
+
+  // --- PAGE 1 TOP HEADER BAR ---
+  drawTopHeader(currentPage);
+  curY -= 20;
+
+  // --- HEADER SUMMARY CARD (White rounded card with border #E2E8F0) ---
+  const headerCardH = 96;
+  drawRoundedRect(currentPage, MARGIN_X, curY - headerCardH, CONTENT_W, headerCardH, 8, {
+    color: CARD_BG,
+    borderColor: CARD_BORDER,
+    borderWidth: 1,
+  });
+
+  // CSC Circular Seal on left
+  if (cscLogoImg) {
+    currentPage.drawImage(cscLogoImg, {
+      x: MARGIN_X + 14,
+      y: curY - 44,
+      width: 32,
+      height: 32,
+    });
+  }
+
+  // Eyebrow & Title
+  const eyebrowText = (input.eyebrow || "COIMBATORE STARTUP COMMUNITY CORE MANDATE").toUpperCase();
+  currentPage.drawText(eyebrowText.slice(0, 68), {
+    x: MARGIN_X + 54,
+    y: curY - 24,
+    size: 7,
+    font: bold,
+    color: ACCENT_PURPLE,
+  });
+
+  const mainTitle = (input.title || "EXECUTIVE LEADERSHIP CHARTER").toUpperCase();
+  currentPage.drawText(mainTitle.slice(0, 52), {
+    x: MARGIN_X + 54,
+    y: curY - 38,
+    size: 11.5,
+    font: bold,
+    color: TEXT_DARK,
+  });
+
+  // Status Pill on top right
+  const statusLabel = isSigned ? "Digitally Signed" : "Awaiting Signature";
+  const statusPillW = bold.widthOfTextAtSize(statusLabel, 7.5) + 20;
+  const statusX = MARGIN_X + CONTENT_W - statusPillW - 14;
+  drawRoundedRect(currentPage, statusX, curY - 36, statusPillW, 18, 9, {
+    color: isSigned ? AUDIT_BG : CARD_MUTED_BG,
+    borderColor: isSigned ? AUDIT_BORDER : CARD_BORDER,
+    borderWidth: 0.8,
+  });
+  currentPage.drawText(statusLabel, {
+    x: statusX + 10,
+    y: curY - 31,
+    size: 7.5,
+    font: bold,
+    color: isSigned ? AUDIT_TEXT : TEXT_BODY,
+  });
+
+  // Card Divider
+  currentPage.drawLine({
+    start: { x: MARGIN_X + 14, y: curY - 50 },
+    end: { x: MARGIN_X + CONTENT_W - 14, y: curY - 50 },
+    thickness: 0.8,
+    color: CARD_BORDER,
+  });
+
+  // 2-Column Metadata inside Header Card
+  const colW = (CONTENT_W - 48) / 2;
+  const col1X = MARGIN_X + 16;
+  const col2X = col1X + colW + 16;
+
+  // Left Column: Reference & Effective Date
+  currentPage.drawText("Reference & Effective Date", {
+    x: col1X,
+    y: curY - 64,
+    size: 7.5,
+    font: bold,
+    color: TEXT_DARK,
+  });
+  currentPage.drawText(input.referenceCode, {
+    x: col1X,
+    y: curY - 76,
+    size: 7.2,
+    font: sans,
+    color: TEXT_MUTED,
+  });
+  currentPage.drawText(`Effective: ${input.effectiveDate} · Term: ${input.durationLabel}`, {
+    x: col1X,
+    y: curY - 87,
+    size: 7,
+    font: sans,
+    color: TEXT_MUTED,
+  });
+
+  // Right Column: Addressed To
+  currentPage.drawText("Addressed To", {
+    x: col2X,
+    y: curY - 64,
+    size: 7.5,
+    font: bold,
+    color: TEXT_DARK,
+  });
+  const recipientLine = `${input.recipientName}${
+    input.recipientOrg ? ` — ${input.recipientOrg}` : ""
+  }`;
+  currentPage.drawText(recipientLine.slice(0, 50), {
+    x: col2X,
+    y: curY - 76,
+    size: 7.2,
+    font: sans,
+    color: TEXT_MUTED,
+  });
+  currentPage.drawText(input.recipientEmail.slice(0, 50), {
+    x: col2X,
+    y: curY - 87,
+    size: 7,
+    font: sans,
+    color: TEXT_MUTED,
+  });
+
+  curY -= headerCardH + 16;
+
+  // --- CATEGORY BAR ---
+  currentPage.drawText((input.subtitle || "MEMORANDUM OF UNDERSTANDING").toUpperCase(), {
+    x: MARGIN_X,
+    y: curY,
+    size: 7,
+    font: bold,
+    color: TEXT_MUTED,
+  });
+  const jurisText = "Laws of India · Coimbatore Jurisdiction";
+  const jurisW = sans.widthOfTextAtSize(jurisText, 7);
+  currentPage.drawText(jurisText, {
+    x: MARGIN_X + CONTENT_W - jurisW,
+    y: curY,
+    size: 7,
+    font: sans,
+    color: TEXT_MUTED,
+  });
+
+  curY -= 14;
+
+  // --- SECTIONS & CLAUSES RENDERING (DYNAMIC PAGINATION) ---
+  for (let sIdx = 0; sIdx < input.sections.length; sIdx++) {
+    const sec = input.sections[sIdx];
+
+    // Ensure space for section header + at least 1 clause (~65pt)
+    ensureSpace(65);
+
+    // Section Header Card
+    const secH = 24;
+    drawRoundedRect(currentPage, MARGIN_X, curY - secH, CONTENT_W, secH, 6, {
+      color: CARD_BG,
+      borderColor: CARD_BORDER,
+      borderWidth: 1,
+    });
+
+    const secTitle = sec.heading.toUpperCase();
+    currentPage.drawText(secTitle.slice(0, 80), {
+      x: MARGIN_X + 12,
+      y: curY - 16,
+      size: 7.5,
+      font: bold,
+      color: TEXT_DARK,
+    });
+
+    // Clause count pill on right
+    const clausePillLabel = `${sec.clauses.length} Clauses`;
+    const cPillW = sans.widthOfTextAtSize(clausePillLabel, 6.5) + 16;
+    drawRoundedRect(
+      currentPage,
+      MARGIN_X + CONTENT_W - cPillW - 8,
+      curY - 18,
+      cPillW,
+      14,
+      4,
+      {
+        color: CARD_MUTED_BG,
+        borderColor: CARD_BORDER,
+        borderWidth: 0.6,
+      },
+    );
+    currentPage.drawText(clausePillLabel, {
+      x: MARGIN_X + CONTENT_W - cPillW,
+      y: curY - 14,
+      size: 6.5,
+      font: sans,
+      color: TEXT_MUTED,
+    });
+
+    curY -= secH + 6;
+
+    // Render each clause inside section
+    for (const rawClause of sec.clauses) {
+      // Parse numbered prefix, colon lead, and body
+      const numMatch = rawClause.match(
+        /^([0-9]+\.[0-9]+(?:\.[0-9]+)?|[•✦\-])\s*([\s\S]*)/,
+      );
+      let pillPrefix = "";
+      let colonTitle = "";
+      let bodyText = rawClause;
+
+      if (numMatch) {
+        pillPrefix = numMatch[1];
+        const rest = numMatch[2];
+        const colonMatch = rest.match(/^([^:]+:)\s*([\s\S]*)/);
+        if (colonMatch && colonMatch[1].length < 80) {
+          colonTitle = colonMatch[1];
+          bodyText = colonMatch[2];
+        } else {
+          bodyText = rest;
+        }
+      } else {
+        const colonMatch = rawClause.match(/^([^:]+:)\s*([\s\S]*)/);
+        if (colonMatch && colonMatch[1].length < 80) {
+          colonTitle = colonMatch[1];
+          bodyText = colonMatch[2];
+        }
+      }
+
+      // Compute wrapped lines
+      const textIndentX = pillPrefix ? 46 : 14;
+      const textMaxW = CONTENT_W - textIndentX - 16;
+      const fullText = colonTitle ? `${colonTitle} ${bodyText}` : bodyText;
+      const wrapped = wrapText(fullText, sans, 7.2, textMaxW);
+      const lineHeight = 10.5;
+      const cardInnerH = Math.max(wrapped.length * lineHeight + 12, 28);
+
+      ensureSpace(cardInnerH + 6);
+
+      // Clause Card
+      drawRoundedRect(currentPage, MARGIN_X, curY - cardInnerH, CONTENT_W, cardInnerH, 6, {
+        color: CARD_BG,
+        borderColor: CARD_BORDER,
+        borderWidth: 0.7,
+      });
+
+      // Left blue pill badge (e.g. "1.1")
+      if (pillPrefix) {
+        const pillW = Math.max(bold.widthOfTextAtSize(pillPrefix, 6.8) + 12, 22);
+        drawRoundedRect(
+          currentPage,
+          MARGIN_X + 10,
+          curY - 21,
+          pillW,
+          14,
+          4,
+          {
+            color: PILL_BLUE_BG,
+            borderColor: PILL_BLUE_BORDER,
+            borderWidth: 0.6,
+          },
+        );
+        currentPage.drawText(pillPrefix, {
+          x: MARGIN_X + 10 + (pillW - bold.widthOfTextAtSize(pillPrefix, 6.8)) / 2,
+          y: curY - 17,
+          size: 6.8,
+          font: bold,
+          color: PILL_BLUE_TEXT,
+        });
+      }
+
+      // Draw lines
+      let lineY = curY - 15;
+      for (let lIdx = 0; lIdx < wrapped.length; lIdx++) {
+        const line = wrapped[lIdx];
+        if (lIdx === 0 && colonTitle && line.startsWith(colonTitle)) {
+          // Highlight bold colon title
+          currentPage.drawText(colonTitle, {
+            x: MARGIN_X + textIndentX,
+            y: lineY,
+            size: 7.2,
+            font: bold,
+            color: TEXT_DARK,
+          });
+          const cTitleW = bold.widthOfTextAtSize(colonTitle + " ", 7.2);
+          const remainder = line.slice(colonTitle.length).trim();
+          if (remainder) {
+            currentPage.drawText(remainder, {
+              x: MARGIN_X + textIndentX + cTitleW,
+              y: lineY,
+              size: 7.2,
+              font: sans,
+              color: TEXT_BODY,
+            });
+          }
+        } else {
+          currentPage.drawText(line, {
+            x: MARGIN_X + textIndentX,
+            y: lineY,
+            size: 7.2,
+            font: sans,
+            color: TEXT_BODY,
+          });
+        }
+        lineY -= lineHeight;
+      }
+
+      curY -= cardInnerH + 6;
+    }
+
+    curY -= 6;
+  }
+
+  // --- DIGITAL EXECUTION & SIGNATURES CARD ---
+  // Ensure enough space for the execution card (~190pt)
+  ensureSpace(190);
+
+  const sigCardH = partnerLogoImg ? 186 : 172;
+  drawRoundedRect(currentPage, MARGIN_X, curY - sigCardH, CONTENT_W, sigCardH, 8, {
+    color: CARD_BG,
+    borderColor: CARD_BORDER,
+    borderWidth: 1,
+  });
+
+  // Card Header: DIGITAL EXECUTION & SIGNATURES
+  currentPage.drawText("DIGITAL EXECUTION & SIGNATURES", {
+    x: MARGIN_X + 16,
+    y: curY - 20,
+    size: 8.5,
+    font: bold,
+    color: TEXT_DARK,
+  });
+
+  // Statutory Pill on right
+  const statBadge = "Section 10A · IT Act 2000";
+  const statW = sans.widthOfTextAtSize(statBadge, 6.8) + 16;
+  drawRoundedRect(
+    currentPage,
+    MARGIN_X + CONTENT_W - statW - 14,
+    curY - 24,
+    statW,
+    15,
+    4,
+    {
+      color: CARD_MUTED_BG,
+      borderColor: CARD_BORDER,
+      borderWidth: 0.6,
+    },
   );
-  drawCenteredText(
-    p2,
-    "Platform Architecture & Engineering by Logic Intelligence Technologies (LIT)",
-    50,
-    sans,
-    7.2,
-    rgb(122 / 255, 88 / 255, 97 / 255),
+  currentPage.drawText(statBadge, {
+    x: MARGIN_X + CONTENT_W - statW - 6,
+    y: curY - 20,
+    size: 6.8,
+    font: sans,
+    color: TEXT_MUTED,
+  });
+
+  let innerY = curY - 32;
+
+  // If partner logo attached, display verification banner inside card
+  if (partnerLogoImg) {
+    drawRoundedRect(
+      currentPage,
+      MARGIN_X + 14,
+      innerY - 30,
+      CONTENT_W - 28,
+      28,
+      5,
+      {
+        color: CARD_MUTED_BG,
+        borderColor: CARD_BORDER,
+        borderWidth: 0.6,
+      },
+    );
+    currentPage.drawImage(partnerLogoImg, {
+      x: MARGIN_X + 20,
+      y: innerY - 26,
+      width: 20,
+      height: 20,
+    });
+    if (cscLogoImg) {
+      currentPage.drawImage(cscLogoImg, {
+        x: MARGIN_X + 44,
+        y: innerY - 26,
+        width: 20,
+        height: 20,
+      });
+    }
+    currentPage.drawText(
+      "Verified Counterparty Organization Logo Attached & Bound to Digital Seal",
+      {
+        x: MARGIN_X + 70,
+        y: innerY - 18,
+        size: 7,
+        font: bold,
+        color: TEXT_DARK,
+      },
+    );
+    innerY -= 36;
+  }
+
+  // Left Sub-box: Counterparty Signatory
+  const boxW = (CONTENT_W - 36) / 2;
+  const leftBoxX = MARGIN_X + 14;
+  const rightBoxX = leftBoxX + boxW + 8;
+
+  currentPage.drawText("COUNTERPARTY SIGNATORY SIGNATURE", {
+    x: leftBoxX,
+    y: innerY - 2,
+    size: 6.5,
+    font: bold,
+    color: TEXT_MUTED,
+  });
+
+  const counterpartyName = isSigned && input.signedName ? input.signedName : input.recipientName;
+  // Cursive signature
+  currentPage.drawText(counterpartyName, {
+    x: leftBoxX,
+    y: innerY - 24,
+    size: 20,
+    font: script,
+    color: SIG_BLUE,
+  });
+
+  const signatoryDetails = `${counterpartyName} · ${
+    input.signedRole || input.recipientRole || "Authorized Signatory"
+  }${input.signedOrg || input.recipientOrg ? ` · ${input.signedOrg || input.recipientOrg}` : ""}`;
+  currentPage.drawText(signatoryDetails.slice(0, 52), {
+    x: leftBoxX,
+    y: innerY - 36,
+    size: 6.8,
+    font: bold,
+    color: TEXT_DARK,
+  });
+  currentPage.drawText(
+    `${input.signedEmail || input.recipientEmail} (${
+      isSigned ? "Verified Digital Signature" : "Pending Execution"
+    })`,
+    {
+      x: leftBoxX,
+      y: innerY - 46,
+      size: 6.5,
+      font: sans,
+      color: TEXT_MUTED,
+    },
   );
 
-  // Page 2 Footer: ( 62 )
-  drawCenteredText(p2, "( 62 )", 28, italic, 9, rgb(138 / 255, 107 / 255, 115 / 255));
+  // Right Sub-box: Cryptographic Audit Stamp
+  drawRoundedRect(currentPage, rightBoxX, innerY - 54, boxW, 54, 6, {
+    color: AUDIT_BG,
+    borderColor: AUDIT_BORDER,
+    borderWidth: 0.8,
+  });
+
+  currentPage.drawText("Cryptographic Audit Stamp", {
+    x: rightBoxX + 10,
+    y: innerY - 14,
+    size: 7.5,
+    font: bold,
+    color: AUDIT_TEXT,
+  });
+
+  const timestampStr = input.signedAt
+    ? new Date(input.signedAt).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "Active Session Record";
+  currentPage.drawText(`Timestamp: ${timestampStr} · Token Verified`, {
+    x: rightBoxX + 10,
+    y: innerY - 26,
+    size: 6.5,
+    font: sans,
+    color: AUDIT_TEXT,
+  });
+  currentPage.drawText(`Ref: ${input.referenceCode}`, {
+    x: rightBoxX + 10,
+    y: innerY - 36,
+    size: 6.5,
+    font: sans,
+    color: AUDIT_TEXT,
+  });
+  const hashPreview = (input.documentHash || "SHA256-AUTHENTICATED-LEDGER-HASH").slice(0, 28);
+  currentPage.drawText(`Hash: ${hashPreview}...`, {
+    x: rightBoxX + 10,
+    y: innerY - 46,
+    size: 6,
+    font: sans,
+    color: AUDIT_TEXT,
+  });
+
+  // QR Code on right inside stamp box
+  if (qrImg) {
+    currentPage.drawImage(qrImg, {
+      x: rightBoxX + boxW - 46,
+      y: innerY - 50,
+      width: 42,
+      height: 42,
+    });
+  }
+
+  // Statutory declaration line
+  innerY -= 68;
+  const statDec =
+    "I confirm that I have read the entire agreement above, am authorized to execute it, and agree to be legally bound under Section 10A of the Information Technology Act, 2000 and the Indian Contract Act, 1872.";
+  const decLines = wrapText(statDec, sans, 6.5, CONTENT_W - 28);
+  decLines.forEach((dl) => {
+    currentPage.drawText(dl, {
+      x: MARGIN_X + 14,
+      y: innerY,
+      size: 6.5,
+      font: sans,
+      color: TEXT_BODY,
+    });
+    innerY -= 9;
+  });
+
+  // CSC Signatory footer inside card
+  innerY -= 2;
+  currentPage.drawText(
+    `CSC Authorized Signatory: ${input.cscSignatoryName} (${input.cscSignatoryRole})`,
+    {
+      x: MARGIN_X + 14,
+      y: innerY,
+      size: 7,
+      font: bold,
+      color: TEXT_DARK,
+    },
+  );
+
+  curY -= sigCardH + 16;
+
+  // --- OFFICIAL STAY CONNECTED FOOTER ---
+  ensureSpace(90);
+
+  currentPage.drawLine({
+    start: { x: MARGIN_X, y: curY },
+    end: { x: MARGIN_X + CONTENT_W, y: curY },
+    thickness: 0.5,
+    color: CARD_BORDER,
+  });
+  curY -= 14;
+
+  // Stay connected title
+  const stayTitle = "STAY CONNECTED";
+  const stayW = bold.widthOfTextAtSize(stayTitle, 7);
+  currentPage.drawText(stayTitle, {
+    x: (A4_W - stayW) / 2,
+    y: curY,
+    size: 7,
+    font: bold,
+    color: TEXT_MUTED,
+  });
+
+  // 5 Social Icons
+  curY -= 24;
+  const iconSize = 16;
+  const iconGap = 12;
+  const totalIconsW = 5 * iconSize + 4 * iconGap;
+  let iconX = (A4_W - totalIconsW) / 2;
+
+  for (const icon of socialIcons) {
+    if (icon) {
+      currentPage.drawImage(icon, {
+        x: iconX,
+        y: curY,
+        width: iconSize,
+        height: iconSize,
+      });
+    }
+    iconX += iconSize + iconGap;
+  }
+
+  curY -= 14;
+
+  // Attribution Lines
+  const attr1 = "Coimbatore Startup Community — A Community-Led Initiative";
+  const a1W = bold.widthOfTextAtSize(attr1, 7.5);
+  currentPage.drawText(attr1, {
+    x: (A4_W - a1W) / 2,
+    y: curY,
+    size: 7.5,
+    font: bold,
+    color: TEXT_DARK,
+  });
+
+  curY -= 11;
+  const attr2 = "Platform Architecture & Engineering by Logic Intelligence Technologies (LIT)";
+  const a2W = sans.widthOfTextAtSize(attr2, 6.8);
+  currentPage.drawText(attr2, {
+    x: (A4_W - a2W) / 2,
+    y: curY,
+    size: 6.8,
+    font: sans,
+    color: TEXT_MUTED,
+  });
+
+  curY -= 10;
+  const attr3 = "coimbatorestartupcommunity@gmail.com · Official Digital Agreement";
+  const a3W = sans.widthOfTextAtSize(attr3, 6.5);
+  currentPage.drawText(attr3, {
+    x: (A4_W - a3W) / 2,
+    y: curY,
+    size: 6.5,
+    font: sans,
+    color: TEXT_MUTED,
+  });
+
+  // Draw footer on last page
+  drawPageFooter(currentPage, pageNumber);
 
   const bytes = await doc.save();
   return Buffer.from(bytes);
