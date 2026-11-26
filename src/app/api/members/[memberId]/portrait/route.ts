@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { fetchDiscoverableMember } from "@/lib/services/member/discoverable";
 
 export async function GET(request: Request, { params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(memberId)) return new NextResponse(null, { status: 404 });
-  const sb = await createClient();
-  const { data: visible } = await sb.rpc("get_discoverable_member", { p_member_id: memberId });
-  if (!visible?.[0]?.has_photo) return new NextResponse(null, { status: 404 });
+  const member = await fetchDiscoverableMember(memberId);
+  if (!member?.has_photo) return new NextResponse(null, { status: 404 });
   const admin = createAdminClient();
   const [{ data: profile }, { data: membership }] = await Promise.all([
     admin.from("profiles").select("portrait_path,avatar_url").eq("id", memberId).maybeSingle(),

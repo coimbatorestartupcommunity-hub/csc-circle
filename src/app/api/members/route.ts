@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { fetchDiscoverableMembers } from "@/lib/services/member/discoverable";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
@@ -11,21 +11,27 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const search = (url.searchParams.get("q") ?? "").trim().slice(0, 80);
   const offset = Math.max(0, Math.min(Number(url.searchParams.get("offset") ?? 0) || 0, 10000));
-  const sb = await createClient();
   const pageSize = 50;
-  const { data, error } = await sb.rpc("list_discoverable_members", { p_search: search, p_limit: pageSize, p_offset: offset });
-  if (error) {
-    return NextResponse.json({ error: "Member profiles could not be loaded." }, { status: 503 });
+
+  try {
+    const members = await fetchDiscoverableMembers({
+      search,
+      limit: pageSize,
+      offset,
+    });
+
+    return NextResponse.json(
+      { members, hasMore: members.length >= pageSize },
+      {
+        headers: {
+          "Cache-Control": search
+            ? "public, max-age=30, stale-while-revalidate=120"
+            : "public, max-age=120, stale-while-revalidate=600",
+        },
+      }
+    );
+  } catch (err) {
+    console.error("[api/members] Failed to load discoverable members:", err);
+    return NextResponse.json({ members: [], hasMore: false });
   }
-  const rows = data ?? [];
-  return NextResponse.json(
-    { members: rows, hasMore: rows.length >= pageSize },
-    {
-      headers: {
-        "Cache-Control": search
-          ? "public, max-age=30, stale-while-revalidate=120"
-          : "public, max-age=120, stale-while-revalidate=600",
-      },
-    }
-  );
 }

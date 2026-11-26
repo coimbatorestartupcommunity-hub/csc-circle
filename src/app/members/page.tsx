@@ -1,6 +1,6 @@
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { CommunityMemberDirectory } from "@/components/member/community-member-directory";
-import { createClient } from "@/lib/supabase/server";
+import { fetchDiscoverableMembers } from "@/lib/services/member/discoverable";
 import Link from "next/link";
 import { ArrowRight, Settings2, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,10 @@ export const metadata = {
 export const instant = false;
 
 export default async function MembersPage() {
-  const sb = await createClient();
-  const { data: initialMembers } = await sb.rpc("list_discoverable_members", {
-    p_search: "",
-    p_limit: 50,
-    p_offset: 0,
+  const initialMembers = await fetchDiscoverableMembers({
+    search: "",
+    limit: 50,
+    offset: 0,
   });
 
   return (
@@ -47,7 +46,7 @@ export default async function MembersPage() {
         </Link>
       </div>
 
-      <CommunityMemberDirectory initialMembers={initialMembers ?? []} />
+      <CommunityMemberDirectory initialMembers={initialMembers} />
     </div>
   );
 }

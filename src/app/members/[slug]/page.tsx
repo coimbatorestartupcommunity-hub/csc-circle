@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, MapPin, MessageCircle, UserRound, ShieldCheck, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/server";
+import { fetchDiscoverableMember } from "@/lib/services/member/discoverable";
 import { getPublicStartups } from "@/lib/services/public-data";
 import { siteConfig } from "@/lib/content/site";
 import { designationLabels } from "@/lib/content/member-taxonomy";
@@ -37,9 +37,7 @@ export async function generateMetadata({
   if (!/^[0-9a-f-]{36}$/i.test(slug)) {
     return { title: "CSC Member Profile — Founder Circle" };
   }
-  const sb = await createClient();
-  const { data } = await sb.rpc("get_discoverable_member", { p_member_id: slug });
-  const member = data?.[0] as PublicMember | undefined;
+  const member = await fetchDiscoverableMember(slug);
   if (!member) {
     return { title: "CSC Member Profile — Founder Circle" };
   }
@@ -90,9 +88,7 @@ export default async function CommunityMemberPage({
   const { slug } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(slug)) notFound();
 
-  const sb = await createClient();
-  const { data } = await sb.rpc("get_discoverable_member", { p_member_id: slug });
-  const member = data?.[0] as PublicMember | undefined;
+  const member = await fetchDiscoverableMember(slug);
   if (!member) notFound();
 
   const startups = (await getPublicStartups()).filter(
