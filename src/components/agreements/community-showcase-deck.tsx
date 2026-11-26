@@ -105,7 +105,7 @@ const LEADERSHIP_TEAM: LeaderProfile[] = [
 ];
 
 function Slide3LeadersShowcase() {
-  const [selectedIndex, setSelectedIndex] = React.useState<number | null>(0);
+  const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
 
   const activeLeader = selectedIndex !== null ? LEADERSHIP_TEAM[selectedIndex] : null;
 
@@ -130,14 +130,14 @@ function Slide3LeadersShowcase() {
   return (
     <div className="flex flex-col gap-4">
       {/* Featured Leader Spotlight Container */}
-      <div className="relative overflow-hidden rounded-xl border border-brand-border/80 bg-slate-900 shadow-md">
-        <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full max-h-[380px] flex items-center justify-center bg-slate-950">
+      <div className="relative overflow-hidden rounded-2xl border border-brand-border/80 bg-zinc-950 shadow-md">
+        <div className="relative aspect-[16/9] w-full max-h-[420px] flex items-center justify-center bg-zinc-950">
           <Image
             src={activeLeader ? activeLeader.posterImage : "/images/agreements/leaders/csc-leaders-lockup.jpg"}
-            alt={activeLeader ? `${activeLeader.name} - ${activeLeader.role}` : "CSC Circle Leadership Team"}
+            alt={activeLeader ? `${activeLeader.name} - ${activeLeader.role}` : "The People Behind CSC Circle — Full Team Lockup"}
             fill
-            className={activeLeader ? "object-contain" : "object-cover"}
-            sizes="(max-width: 768px) 100vw, 700px"
+            className="object-contain"
+            sizes="(max-width: 768px) 100vw, 800px"
             priority
           />
 
@@ -163,39 +163,35 @@ function Slide3LeadersShowcase() {
             </button>
           </div>
 
-          {/* Overlay Tag */}
-          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3.5 pt-8 text-white z-10 flex flex-wrap items-end justify-between gap-2">
-            <div>
-              {activeLeader ? (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-brand-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-                      Leader {selectedIndex! + 1} of 7
-                    </span>
-                    <span className="text-[11px] text-zinc-300 font-medium">{activeLeader.badge}</span>
-                  </div>
-                  <p className="mt-0.5 text-base sm:text-lg font-bold text-white leading-tight">{activeLeader.name}</p>
-                  <p className="text-xs text-zinc-300">{activeLeader.role} · <span className="text-brand-accent">{activeLeader.focus}</span></p>
-                </>
-              ) : (
-                <>
+          {/* Mode Badge & Overlay */}
+          {activeLeader ? (
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3.5 pt-8 text-white z-10 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
                   <span className="rounded bg-brand-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-                    Full Team Panorama
+                    Leader {selectedIndex! + 1} of 7
                   </span>
-                  <p className="mt-0.5 text-base sm:text-lg font-bold text-white">Coimbatore Startup Community Core Leadership Team</p>
-                  <p className="text-xs text-zinc-300">Seven dedicated leaders steering community vision &amp; ecosystem growth.</p>
-                </>
-              )}
-            </div>
+                  <span className="text-[11px] text-zinc-300 font-medium">{activeLeader.badge}</span>
+                </div>
+                <p className="mt-0.5 text-base sm:text-lg font-bold text-white leading-tight">{activeLeader.name}</p>
+                <p className="text-xs text-zinc-300">{activeLeader.role} · <span className="text-brand-accent">{activeLeader.focus}</span></p>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => setSelectedIndex(activeLeader ? null : 0)}
-              className="rounded-md border border-white/20 bg-white/10 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
-            >
-              {activeLeader ? "View Team Panorama" : "View Leader Spotlight"}
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => setSelectedIndex(null)}
+                className="rounded-md border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                View Full Team Lockup
+              </button>
+            </div>
+          ) : (
+            <div className="absolute top-3 right-3 z-10">
+              <span className="rounded-full border border-white/20 bg-black/70 px-3 py-1 text-[10.5px] font-semibold tracking-wide text-white backdrop-blur-sm">
+                Full Team Lockup
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
