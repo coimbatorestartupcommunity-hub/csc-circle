@@ -8,6 +8,7 @@ import {
   AgreementSigningClient,
   type PublicAgreementView,
 } from "@/components/agreements/agreement-signing-client";
+import { SigningFooter } from "@/components/agreements/signing-footer";
 
 export const metadata: Metadata = {
   title: "Digital Agreement — CSC Circle",
@@ -59,14 +60,17 @@ export default async function SignAgreementPage({
   };
 
   return (
-    <section className="bg-brand-cloud/30 py-10 sm:py-14">
-      <Container>
-        <AgreementSigningClient
-          token={token}
-          agreement={view}
-          currentUserEmail={user?.email ?? null}
-        />
-      </Container>
-    </section>
+    <div className="flex min-h-screen flex-col bg-brand-cloud/30">
+      <section className="flex-1 py-10 sm:py-14">
+        <Container>
+          <AgreementSigningClient
+            token={token}
+            agreement={view}
+            currentUserEmail={user?.email ?? null}
+          />
+        </Container>
+      </section>
+      <SigningFooter />
+    </div>
   );
 }

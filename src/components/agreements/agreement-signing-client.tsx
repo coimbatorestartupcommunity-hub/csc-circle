@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { brandAssets } from "@/lib/content/site";
 import type { AgreementSection } from "@/lib/agreements/templates";
+import { CommunityShowcaseDeck } from "@/components/agreements/community-showcase-deck";
 
 export interface PublicAgreementView {
   id: string;
@@ -410,6 +411,9 @@ export function AgreementSigningClient({
           </div>
         </form>
       ) : null}
+
+      {/* 7-Slide Community & Ecosystem Deck (Showcasing CSC Vision, Leadership & Programs) */}
+      <CommunityShowcaseDeck />
     </div>
   );
 }

@@ -147,7 +147,8 @@ describe("Digital Agreements Templates, Hashing & Editorial PDF Generator", () =
 
       expect(pdfBuffer.byteLength).toBeGreaterThan(5000);
       const parsed = await PDFDocument.load(new Uint8Array(pdfBuffer));
-      expect(parsed.getPageCount()).toBeGreaterThanOrEqual(2);
+      // Legal terms + Signature block + Section 65B Audit Certificate + 4 Appendix Deck Pages (Slides 1-7)
+      expect(parsed.getPageCount()).toBeGreaterThanOrEqual(6);
     }
   }, 30_000);
 });
