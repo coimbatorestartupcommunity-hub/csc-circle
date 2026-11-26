@@ -247,7 +247,7 @@ export function ClaimForm({ isDemo }: { isDemo: boolean }) {
           </label>
         ) : !photoConfirmed ? (
           <div>
-            <div className="relative mx-auto h-64 w-48 overflow-hidden rounded-xl bg-brand-cloud">
+            <div className="relative mx-auto aspect-[4/5] w-44 overflow-hidden rounded-xl bg-brand-cloud ring-1 ring-brand-border">
               <Cropper
                 image={photoSource}
                 crop={crop}

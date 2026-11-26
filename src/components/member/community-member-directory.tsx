@@ -19,6 +19,8 @@ type CommunityMember = {
   startup_name: string | null;
   whatsapp: string | null;
   has_photo: boolean;
+  member_number?: string | null;
+  membership_status?: string | null;
 };
 
 type PersonaFilter = "all" | "founders" | "idea_stage" | "entrepreneurs" | "investors_mentors" | "innovators";
@@ -239,8 +241,19 @@ export function CommunityMemberDirectory({
                   )}
                 </span>
                 <span className="min-w-0 sm:flex-1">
-                  <span className="block break-words text-sm font-semibold leading-snug text-brand-ink sm:text-base">
-                    {m.display_name}
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="break-words text-sm font-semibold leading-snug text-brand-ink sm:text-base">
+                      {m.display_name}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                      <Award className="size-3 shrink-0" />
+                      Active Member
+                    </span>
+                    {m.member_number ? (
+                      <span className="rounded-full bg-brand-cloud px-2 py-0.5 font-mono text-[10px] font-semibold text-brand-ink ring-1 ring-brand-border">
+                        #{m.member_number}
+                      </span>
+                    ) : null}
                   </span>
                   <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-snug text-brand-muted sm:gap-x-3 sm:text-sm">
                     {m.designation && (

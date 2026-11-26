@@ -3,12 +3,13 @@ import { connection } from "next/server";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, MapPin, MessageCircle, UserRound, Share2, ShieldCheck, Building2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, MapPin, MessageCircle, UserRound, ShieldCheck, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicStartups } from "@/lib/services/public-data";
 import { siteConfig } from "@/lib/content/site";
+import { designationLabels } from "@/lib/content/member-taxonomy";
+import type { MemberDesignation } from "@/types/member";
 
 export const instant = false;
 
@@ -23,6 +24,8 @@ type PublicMember = {
   whatsapp: string | null;
   has_photo: boolean;
   startup_website: string | null;
+  member_number?: string | null;
+  membership_status?: string | null;
 };
 
 export async function generateMetadata({
@@ -126,8 +129,15 @@ export default async function CommunityMemberPage({
           )}
         </div>
 
-        <div className="mt-4 flex items-center gap-1.5 rounded-full bg-brand-cloud px-3 py-1 text-xs font-semibold text-brand-accent">
-          <ShieldCheck className="size-3.5" /> Verified Community Member
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+            <ShieldCheck className="size-3.5" /> Active Member
+          </span>
+          {member.member_number ? (
+            <span className="rounded-full bg-brand-cloud px-3 py-1 font-mono text-xs font-semibold text-brand-ink ring-1 ring-brand-border">
+              Member #{member.member_number}
+            </span>
+          ) : null}
         </div>
 
         <h1 className="mt-3 max-w-full break-words text-2xl font-bold text-brand-ink sm:text-3xl">
@@ -137,7 +147,7 @@ export default async function CommunityMemberPage({
         <div className="mt-2 flex max-w-full flex-wrap justify-center gap-2 text-sm text-brand-secondary sm:gap-3">
           {member.designation && (
             <span className="font-semibold text-brand-ink break-words">
-              {member.designation.replaceAll("_", " ")}
+              {designationLabels[member.designation as MemberDesignation] ?? member.designation.replaceAll("_", " ")}
             </span>
           )}
           {member.city && (
@@ -177,22 +187,6 @@ export default async function CommunityMemberPage({
                 <ExternalLink className="size-4 shrink-0" /> Company Website
               </a>
             )}
-          </div>
-
-          <div className="mt-1 flex w-full justify-center">
-            <SocialShareToolbar
-              url={profileUrl}
-              title={`${member.display_name} — ${member.designation ? member.designation.replaceAll("_", " ") : "Founder"}${member.startup_name ? ` at ${member.startup_name}` : ""} | CSC Circle`}
-              summary={member.about_me || `Verified ecosystem member and founder at Coimbatore Startup Community (CSC Circle). Connect and collaborate.`}
-              hashtags={[
-                "#CoimbatoreStartups",
-                "#CSCCircle",
-                "#VerifiedFounder",
-                "#TamilNaduFounders",
-              ]}
-              showWhatsApp={false}
-              showCopyCaption={true}
-            />
           </div>
         </div>
       </header>

@@ -165,7 +165,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
 
   let cscLogoImg: PDFImage | null = null;
   if (cscLogoPng) {
-    cscLogoImg = await doc.embedPng(cscLogoPng);
+    cscLogoImg = await doc.embedPng(new Uint8Array(cscLogoPng));
   }
 
   let partnerLogoImg: PDFImage | null = null;
@@ -175,7 +175,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
         .resize(240, 120, { fit: "inside" })
         .png()
         .toBuffer();
-      partnerLogoImg = await doc.embedPng(normalized);
+      partnerLogoImg = await doc.embedPng(new Uint8Array(normalized));
     } catch {
       partnerLogoImg = null;
     }
