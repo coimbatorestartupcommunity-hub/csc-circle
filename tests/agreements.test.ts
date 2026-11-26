@@ -64,9 +64,19 @@ describe("Digital Agreements Templates, Hashing & Editorial PDF Generator", () =
         durationLabel: "Active Tenure",
         leadershipRole: role,
       });
+      const headings = sections.map((s) => s.heading).join(" ");
       const text = sections.flatMap((s) => s.clauses).join("\n");
       expect(text).toContain(profile.defaultName);
       expect(text).toContain(profile.externalVenture);
+
+      // Verify role-specific individualized headings
+      if (role === "founder") expect(headings).toContain("Presidential Office");
+      if (role === "co_founder") expect(headings).toContain("Vice Presidency");
+      if (role === "ceo") expect(headings).toContain("Chief Executive");
+      if (role === "cto") expect(headings).toContain("Chief Technology Officer");
+      if (role === "cco") expect(headings).toContain("Chief Community Officer");
+      if (role === "coo") expect(headings).toContain("Chief Operating Officer");
+      if (role === "cbo") expect(headings).toContain("Chief Brand Officer");
     }
   });
 

@@ -49,7 +49,7 @@ export const AGREEMENT_TYPE_META: Record<AgreementType, AgreementTypeMeta> = {
     label: "Executive Leadership Charter (7 Leaders)",
     shortLabel: "Leadership Charter",
     description:
-      "Role mandate, fiduciary duty, conflict-of-interest disclosure, and handover charter for CSC's 7 Core Leaders.",
+      "Role-specific mandate, fiduciary duty, conflict-of-interest disclosure, and handover charter for each of CSC's 7 Core Leaders.",
     defaultTitle: "EXECUTIVE LEADERSHIP CHARTER",
     defaultEyebrow: "Coimbatore Startup Community Core Leadership Mandate",
     defaultSubtitle: "GOVERNANCE, FIDUCIARY DUTY & OPERATIONAL AUTHORITY",
@@ -60,7 +60,7 @@ export const AGREEMENT_TYPE_META: Record<AgreementType, AgreementTypeMeta> = {
     label: "Strategic Partnership MoU",
     shortLabel: "Partnership MoU",
     description:
-      "Ecosystem, college, incubator, or brand Memorandum of Understanding with NDA, brand rules, and DPDP compliance.",
+      "Ecosystem, college, incubator, or brand Memorandum of Understanding with NDA, brand rules, security, and DPDP compliance.",
     defaultTitle: "STRATEGIC PARTNERSHIP MEMORANDUM OF UNDERSTANDING",
     defaultEyebrow: "Ecosystem Collaboration & Mutual Growth Charter",
     defaultSubtitle: "COIMBATORE STARTUP COMMUNITY ECOSYSTEM ALLIANCE",
@@ -71,7 +71,7 @@ export const AGREEMENT_TYPE_META: Record<AgreementType, AgreementTypeMeta> = {
     label: "Event Collaboration & Co-Hosting Agreement",
     shortLabel: "Event Co-Hosting",
     description:
-      "Joint meetup, hackathon, or workshop agreement defining venue, ticketing, data ownership, and liability.",
+      "Joint meetup, hackathon, or workshop agreement defining venue, ticketing, data ownership, safety, and liability.",
     defaultTitle: "EVENT COLLABORATION & CO-HOSTING AGREEMENT",
     defaultEyebrow: "Joint Community Program & Event Execution Pact",
     defaultSubtitle: "RESPONSIBILITIES, TICKETING & ON-GROUND GOVERNANCE",
@@ -82,7 +82,7 @@ export const AGREEMENT_TYPE_META: Record<AgreementType, AgreementTypeMeta> = {
     label: "Sponsorship & Brand Partner Agreement",
     shortLabel: "Sponsorship",
     description:
-      "Cash or in-kind sponsorship contract covering deliverables, UTR reconciliation, refunds, and pitch rules.",
+      "Cash or in-kind sponsorship contract covering deliverables, UTR reconciliation, refunds, privacy, and pitch rules.",
     defaultTitle: "SPONSORSHIP & BRAND PARTNER AGREEMENT",
     defaultEyebrow: "Official Community Event & Program Sponsorship",
     defaultSubtitle: "DELIVERABLES, BRAND PLACEMENT & COMMERCIAL TERMS",
@@ -93,7 +93,7 @@ export const AGREEMENT_TYPE_META: Record<AgreementType, AgreementTypeMeta> = {
     label: "Speaker, Mentor & Advisor Agreement",
     shortLabel: "Speaker / Mentor",
     description:
-      "Non-fiduciary advisory charter with founder pitch confidentiality (NDA) and social media recording release.",
+      "Non-fiduciary advisory charter with founder pitch confidentiality (NDA), media release, and code of conduct.",
     defaultTitle: "SPEAKER, MENTOR & ADVISOR AGREEMENT",
     defaultEyebrow: "Ecosystem Guidance & Media Release Charter",
     defaultSubtitle: "CONFIDENTIALITY, ADVISORY BOUNDARIES & MEDIA CONSENT",
@@ -123,7 +123,7 @@ export interface LeadershipProfileTemplate {
 export const LEADERSHIP_PROFILES: Record<LeadershipRoleKey, LeadershipProfileTemplate> = {
   founder: {
     key: "founder",
-    roleTitle: "Founder, Coimbatore Startup Community",
+    roleTitle: "Founder & President, Coimbatore Startup Community",
     defaultName: "K. N. Reyash",
     externalVenture: "Belvoria (Founder) & Independent Startup Developer",
     mandateSummary:
@@ -131,17 +131,17 @@ export const LEADERSHIP_PROFILES: Record<LeadershipRoleKey, LeadershipProfileTem
   },
   co_founder: {
     key: "co_founder",
-    roleTitle: "Co-Founder, Coimbatore Startup Community",
+    roleTitle: "Co-Founder & Vice President, Coimbatore Startup Community",
     defaultName: "E. R. Sharan",
     externalVenture: "CECIL Groups of Companies & Industries (Founder)",
     mandateSummary:
-      "Provides co-founding strategic leadership, high-level industry connections, institutional partnerships, and ecosystem expansion across Coimbatore and Tamil Nadu.",
+      "Provides co-founding strategic leadership, high-level corporate connections, institutional partnerships, and ecosystem expansion across Coimbatore and Tamil Nadu.",
   },
   ceo: {
     key: "ceo",
     roleTitle: "Chief Executive Officer (CEO), Coimbatore Startup Community",
     defaultName: "Mirra Mahendran",
-    externalVenture: "Independent Executive Leadership",
+    externalVenture: "Independent Executive Leadership & Strategic Consulting",
     mandateSummary:
       "Leads day-to-day execution, cross-functional team coordination, task follow-ups, and operational delivery of CSC programs following Founder alignment.",
   },
@@ -192,6 +192,369 @@ export interface BuildAgreementInput {
   customSections?: AgreementSection[];
 }
 
+function buildIndividualizedLeadershipCharter(
+  roleKey: LeadershipRoleKey,
+  input: BuildAgreementInput,
+  effective: string,
+  duration: string,
+): AgreementSection[] {
+  const profile = LEADERSHIP_PROFILES[roleKey];
+  const leaderName = input.recipientName || profile.defaultName;
+  const leaderRole = input.recipientRole || profile.roleTitle;
+  const externalVenture = input.formData?.externalVenture || profile.externalVenture;
+  const customMandate = input.formData?.mandateNotes?.trim();
+
+  switch (roleKey) {
+    case "founder":
+      return [
+        {
+          heading: "1. Presidential Office, Constitutional Mandate & Ecosystem Stewardship",
+          clauses: [
+            `1.1 Formal Executive Appointment: This Executive Leadership Charter ("Charter") is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the stewardship of ${leaderName} ("Leader"), serving in the supreme office of ${leaderRole}.`,
+            `1.2 Custodian of Core Vision: The Leader serves as the primary custodian of CSC's founding philosophy, non-transactional ethos, and long-term ecosystem roadmap across Coimbatore and Tamil Nadu.${customMandate ? ` ${customMandate}` : ""}`,
+            `1.3 Presidential Veto & Final Ratification Authority: Major institutional alliances, state government partnerships, structural amendments to community bylaws, and the appointment of core leadership council members require final review and written ratification by the Founder & President.`,
+          ],
+        },
+        {
+          heading: "2. Fiduciary Stewardship, Founder Alignment & Ecosystem Representation",
+          clauses: [
+            `2.1 Highest Standard of Fiduciary Care: The Leader shall exercise unwavering loyalty, integrity, and good faith, placing the sustainable growth of regional entrepreneurs above personal or commercial interests.`,
+            `2.2 Institutional Representation: Serving as the principal diplomatic representative and voice of CSC before government bodies (such as StartupTN, MSME, and DPIIT), academic senates, venture funds, and angel networks.`,
+            `2.3 Advisory Council & Patron Appointments: Authority to nominate, invite, and induct prominent startup founders, venture capitalists, and industry veterans into CSC's Board of Advisors.`,
+          ],
+        },
+        {
+          heading: "3. Conflict of Interest, Belvoria & Startup Builder Governance",
+          clauses: [
+            `3.1 Formally Disclosed External Venture: CSC formally acknowledges that the Leader actively operates and leads independent startup ventures, specifically recorded as: ${externalVenture}.`,
+            `3.2 Strict Entity Separation: Independent software ventures, including Belvoria, remain legally, financially, and operationally independent from Coimbatore Startup Community.`,
+            `3.3 Zero Self-Dealing & Arm's-Length Standard: Any collaboration, pilot program, or resource sharing between CSC and the Leader's independent ventures must be conducted at arm's length, fully disclosed in writing, and approved by the Executive Council without self-dealing.`,
+          ],
+        },
+        {
+          heading: "4. Community Constitutional Assets & Brand Governance",
+          clauses: [
+            `4.1 Community Asset Stewardship: CSC's official trade name, circular emblem, founding charters, website domains, and media archives are held in trust for the collective benefit of the startup community.`,
+            `4.2 Brand Protection & Trademark Integrity: The Leader shall actively defend the CSC brand against unauthorized commercial exploitation, trademark dilution, or predatory third-party misuse.`,
+          ],
+        },
+        {
+          heading: "5. Data Governance, Member Privacy & DPDP Act 2023 Compliance",
+          clauses: [
+            `5.1 Presidential Data Governance: Ensuring that all administrative organs, event systems, and digital portals of CSC adhere strictly to India's Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `5.2 Protection of Founder Disclosures: Ensuring member directories, founder phone numbers, and confidential pitch decks remain protected and are never monetized, rented, or brokered.`,
+          ],
+        },
+        {
+          heading: "6. Council Consensus, Presidential Succession & Handover Protocol",
+          clauses: [
+            `6.1 Executive Council Leadership: Presiding over quarterly executive review sessions and guiding functional officers in delivering high-impact community programs.`,
+            `6.2 Orderly Presidential Succession: In the event of voluntary transition, the Leader agrees to execute an orderly sixty (60) day transition handover, transferring domain ownership, social media credentials, and community assets to designated successors.`,
+            `6.3 Governing Law: Governed by the substantive laws of India, with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+          ],
+        },
+      ];
+
+    case "co_founder":
+      return [
+        {
+          heading: "1. Co-Founding Mandate, Vice Presidency & Industrial Expansion",
+          clauses: [
+            `1.1 Co-Founder & Vice President Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the office of ${leaderRole}.`,
+            `1.2 Industrial & Ecosystem Growth Mandate: Driving strategic expansion, high-level corporate partnerships, industry-academia linkages, and regional chapter growth across Coimbatore and Tamil Nadu.${customMandate ? ` ${customMandate}` : ""}`,
+            `1.3 Executive Deputation & Presidential Collaboration: Serving as co-executive lead, presiding over Executive Council sessions in the President's absence, and co-signing major institutional alliances.`,
+          ],
+        },
+        {
+          heading: "2. Fiduciary Duty, Corporate Ethics & Strategic Governance",
+          clauses: [
+            `2.1 Corporate Fiduciary Care: Applying rigorous enterprise-grade governance, strategic planning, and operational ethics to all CSC community initiatives.`,
+            `2.2 Non-Exploitation of Community Trust: Absolute covenant not to utilize CSC internal founder networks for predatory corporate recruitment, unapproved industrial lobbying, or unsolicited commercial prospecting.`,
+            `2.3 Inclusive Regional Growth: Championing equitable growth for traditional manufacturing and engineering enterprises transitioning into modern technology ventures.`,
+          ],
+        },
+        {
+          heading: "3. Conflict of Interest, CECIL Groups & Enterprise Disclosures",
+          clauses: [
+            `3.1 Formally Disclosed External Venture: CSC formally recognizes that the Leader operates and leads independent industrial enterprises, specifically recorded as: ${externalVenture}.`,
+            `3.2 Enterprise Separation: Strict legal, accounting, and operational boundary between CECIL corporate operations and CSC non-profit activities.`,
+            `3.3 Ethical Recusal: Voluntary recusal from any procurement, vendor selection, or sponsorship vote where CECIL Groups is an interested party.`,
+          ],
+        },
+        {
+          heading: "4. Industrial Alliances, Institutional MoUs & Brand Rights",
+          clauses: [
+            `4.1 Institutional Outreach Authority: Leading strategic outreach to industry bodies (such as CODISSIA, CII, TiE Coimbatore, and Indian Chamber of Commerce) and premier engineering colleges.`,
+            `4.2 Brand Representation: Authorized to represent CSC brand interests at senior corporate roundtables, industrial delegations, and state economic summits.`,
+          ],
+        },
+        {
+          heading: "5. Data Protection, Industrial Privacy & DPDP Act 2023 Compliance",
+          clauses: [
+            `5.1 Protection of Industrial & Founder Secrets: Maintaining strict confidentiality regarding proprietary enterprise technologies, patent disclosures, and startup cap tables accessed through CSC forums.`,
+            `5.2 Compliance with DPDP Act, 2023: Ensuring all corporate partnership attendee lists and industrial delegacies comply strictly with the Digital Personal Data Protection Act, 2023.`,
+          ],
+        },
+        {
+          heading: "6. Active Tenure, Co-Leadership Continuity & Orderly Transition",
+          clauses: [
+            `6.1 Active Tenure: Binding for ${duration} during active leadership as Co-Founder & Vice President.`,
+            `6.2 30-Day Transition Handover: Either party may conclude active operational duties with thirty (30) days' written notice, requiring full handover of ongoing corporate alliance dossiers and partner contacts.`,
+            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+          ],
+        },
+      ];
+
+    case "ceo":
+      return [
+        {
+          heading: "1. Chief Executive Appointment & Operational Leadership Mandate",
+          clauses: [
+            `1.1 Executive Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
+            `1.2 Operational Delivery Mandate: Spearheading the day-to-day execution, operational cadence, cross-functional team coordination, task follow-ups, and milestone delivery of CSC programs following Founder alignment.${customMandate ? ` ${customMandate}` : ""}`,
+            `1.3 Cross-Functional Executive Steering: Aligning engineering, operations, brand, community, and partnerships into a cohesive execution roadmap.`,
+          ],
+        },
+        {
+          heading: "2. Fiduciary Duty, Operational Transparency & Team Stewardship",
+          clauses: [
+            `2.1 Executive Fiduciary Duty: Acting in utmost good faith, maintaining operational transparency, and fostering an inclusive, high-morale volunteer and leadership environment.`,
+            `2.2 Zero Tolerance for Community Misuse: Guaranteeing that administrative authority is exercised solely for community welfare without personal commercial prospecting.`,
+            `2.3 Accountability to Executive Council: Delivering monthly operational status reports and sprint reviews to the Founder and Executive Council.`,
+          ],
+        },
+        {
+          heading: "3. Conflict of Interest & Independent Executive Ventures",
+          clauses: [
+            `3.1 Disclosed Independent Ventures: Formal recognition of independent executive leadership, consulting, and advisory activities, specifically recorded as: ${externalVenture}.`,
+            `3.2 Ethical Governance: Ensuring that all external advisory engagements remain completely distinct and never conflict with CSC leadership responsibilities.`,
+          ],
+        },
+        {
+          heading: "4. Alliance Execution, Project Management & Operational Assets",
+          clauses: [
+            `4.1 Partnership Execution: Operationalizing signed MoUs, sponsor deliverables, and university partnerships into actionable timelines and tracking metrics.`,
+            `4.2 Community Operational Assets: All SOPs (Standard Operating Procedures), project management boards, event run-sheets, and coordinator guidelines created under this mandate belong to CSC.`,
+          ],
+        },
+        {
+          heading: "5. Member Data Governance, Privacy & DPDP Act Compliance",
+          clauses: [
+            `5.1 Operational Data Stewardship: Overseeing operational data workflows to ensure end-to-end compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `5.2 Strict Confidentiality of Sensitive Records: Maintaining strict non-disclosure over founder feedback surveys, internal incident reports, and executive council deliberations.`,
+          ],
+        },
+        {
+          heading: "6. Active Tenure, 30-Day Transition Protocol & Jurisdiction",
+          clauses: [
+            `6.1 Active Tenure: Effective for ${duration} throughout active service as Chief Executive Officer.`,
+            `6.2 30-Day Notice & Operational Handover: Structured thirty (30) day notice period to transition operational run-sheets, team assignments, and open alliance deliverables.`,
+            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+          ],
+        },
+      ];
+
+    case "cto":
+      return [
+        {
+          heading: "1. Chief Technology Officer Appointment & Technical Infrastructure Mandate",
+          clauses: [
+            `1.1 Executive Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
+            `1.2 Comprehensive Technology Mandate: Leading all CSC technology strategy, platform architecture, cybersecurity, software engineering, Digital ID approvals, and technical infrastructure delivered exclusively through Logic Intelligence Technologies (LIT).${customMandate ? ` ${customMandate}` : ""}`,
+            `1.3 Technical Autonomy & Architectural Authority: Sole and final authority over software frameworks, hosting architectures, database schemas, security patch deployments, and third-party API integrations.`,
+          ],
+        },
+        {
+          heading: "2. LIT Exclusive Technology Partnership & IP Alignment",
+          clauses: [
+            `2.1 Synergy with LIT Master Partnership: Direct alignment with the Exclusive Technology Partner Agreement designating LIT as sole platform developer.`,
+            `2.2 Preservation of LIT Background Codebase: All software source code, database architectures, API designs, and security modules developed by LIT remain 100% LIT's proprietary intellectual property, with operational license to CSC.`,
+            `2.3 CSC Community Identity Protection: Respecting and safeguarding CSC's brand identity, domain names, and member community records.`,
+          ],
+        },
+        {
+          heading: "3. Conflict of Interest, LIT Governance & Arm's-Length Commercials",
+          clauses: [
+            `3.1 Transparent Venture Disclosure: Official disclosure of Logic Intelligence Technologies — LIT (Founder & CEO) as an independent enterprise technology enterprise, specifically recorded as: ${externalVenture}.`,
+            `3.2 Dual Capacity Management: Transparent separation of CTO governance duties from LIT commercial contracts, ensuring high-value technical delivery with zero hidden overheads.`,
+          ],
+        },
+        {
+          heading: "4. DPDP Act 2023 Technical Data Processing, Encryption & Platform Security",
+          clauses: [
+            `4.1 Statutory Technical Data Processor Mandate: Serving as the principal technical data processor under India's Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `4.2 Security Architecture: Enforcing AES-256 encryption at rest, TLS 1.3 in transit, automated health probes, database Row-Level Security (RLS), and zero-trust administrative access controls.`,
+            `4.3 Incident Response & Disaster Recovery: Maintaining automated cloud backups, emergency maintenance failover, and rapid vulnerability remediation protocols.`,
+          ],
+        },
+        {
+          heading: "5. Digital Identity Integrity, Mobile Passes & Tamper-Evident Verification",
+          clauses: [
+            `5.1 Digital Membership Engine: Designing and managing dynamic QR ID passes, cryptographic SHA-256 digital seals, and mobile wallet integrations (.pkpass for Apple Wallet & Google Wallet passes).`,
+            `5.2 Verification Portal & Check-In Scanners: Deploying high-throughput check-in software for flagship summits, preventing badge forgery or unauthorized entry.`,
+          ],
+        },
+        {
+          heading: "6. Active Tenure, Code Custody, Handover & Jurisdiction",
+          clauses: [
+            `6.1 Active Tenure: Binding for ${duration} for the duration of the CTO mandate.`,
+            `6.2 30-Day Transition & Data Portability Protocol: Orderly thirty (30) day notice window providing complete data exports of CSC member records while preserving LIT's proprietary codebases.`,
+            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+          ],
+        },
+      ];
+
+    case "cco":
+      return [
+        {
+          heading: "1. Chief Community Officer Appointment & Community Culture Mandate",
+          clauses: [
+            `1.1 Executive Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
+            `1.2 Community Stewardship Mandate: Spearheading member onboarding, community engagement, founder discussion channels, welcoming new innovators, and curating an inspiring, supportive peer-to-peer ecosystem.${customMandate ? ` ${customMandate}` : ""}`,
+            `1.3 Cultural Tone & Community Voice: Preserving CSC's give-first, non-transactional culture and fostering strong inter-founder relationships across Western Tamil Nadu.`,
+          ],
+        },
+        {
+          heading: "2. Fiduciary Duty, Safe Spaces & Anti-Harassment Safeguards",
+          clauses: [
+            `2.1 Psychological Safety & Inclusivity: Ensuring all community groups, physical mixers, and digital channels are welcoming, safe, and free from discrimination, gender bias, or predatory behavior.`,
+            `2.2 Strict Anti-Harassment Enforcement: Rapid intervention and disciplinary authority regarding complaints of harassment, abusive language, or unsolicited direct messaging.`,
+            `2.3 Community Trust Preservation: Prohibiting the use of member lists for aggressive sales prospecting or third-party marketing.`,
+          ],
+        },
+        {
+          heading: "3. Conflict of Interest & External Community Engagements",
+          clauses: [
+            `3.1 Transparent Venture Disclosure: Official recognition of external community facilitation and independent professional engagements, specifically recorded as: ${externalVenture}.`,
+            `3.2 Non-Conflict Commitment: Ensuring external consulting or community projects do not dilute loyalty, engagement, or active presence at CSC flagship programs.`,
+          ],
+        },
+        {
+          heading: "4. Member Onboarding, Community Retention & Volunteer Leadership",
+          clauses: [
+            `4.1 Welcoming & Onboarding Architecture: Structuring seamless onboarding workflows for newly approved CSC Circle members, ensuring active participation and value discovery.`,
+            `4.2 Volunteer Network Stewardship: Mentoring and organizing community volunteers, campus ambassadors, and student coordinators for on-ground events.`,
+          ],
+        },
+        {
+          heading: "5. Member Privacy, Communication Consent & DPDP Act Compliance",
+          clauses: [
+            `5.1 Respect for Founder Privacy: Maintaining strict confidentiality regarding sensitive founder queries, personal feedback, and community grievances.`,
+            `5.2 Anti-Spam & Communication Ethics: Ensuring all WhatsApp broadcasts, Telegram channels, and community newsletters operate strictly on an opt-in basis compliant with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+          ],
+        },
+        {
+          heading: "6. Active Tenure, 30-Day Transition Handover & Jurisdiction",
+          clauses: [
+            `6.1 Active Tenure: Active for ${duration} throughout tenure as Chief Community Officer.`,
+            `6.2 30-Day Handover Protocol: Transitioning community administrator privileges, communication channel moderation rights, and volunteer rosters upon notice.`,
+            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+          ],
+        },
+      ];
+
+    case "coo":
+      return [
+        {
+          heading: "1. Chief Operating Officer Appointment & On-Ground Operations Mandate",
+          clauses: [
+            `1.1 Executive Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
+            `1.2 End-to-End Operational Mandate: Owning end-to-end event operations, venue logistics, vendor negotiations, stage setup, equipment coordination, on-ground check-in flow, and operational excellence.${customMandate ? ` ${customMandate}` : ""}`,
+            `1.3 Execution Discipline: Ensuring all CSC summits, mixers, and founder workshops run on schedule, within safety standards, and with flawless logistical coordination.`,
+          ],
+        },
+        {
+          heading: "2. Fiduciary Duty, Safety Standards & Vendor Ethics",
+          clauses: [
+            `2.1 Transparent Vendor Stewardship: Applying strict procurement ethics, competitive bidding, and arm's-length negotiation with event venues, caterers, sound/visual vendors, and fabricators.`,
+            `2.2 Venue Health & Safety Compliance: Enforcing fire safety, emergency exit protocols, crowd management, and public safety regulations at all physical gathering sites.`,
+            `2.3 Zero Tolerance for Gatekeeping: Ensuring on-ground event entry is welcoming, seamless, and free from discrimination.`,
+          ],
+        },
+        {
+          heading: "3. Conflict of Interest, APARÈ Clothing & Apparel Brand Disclosures",
+          clauses: [
+            `3.1 Formally Disclosed External Venture: Official disclosure of independent lifestyle and apparel enterprise, specifically recorded as: ${externalVenture}.`,
+            `3.2 Commercial Independence: Complete separation of APARÈ Clothing business operations from CSC non-profit operations.`,
+            `3.3 Transparent Merchandise Collaboration: Any official community apparel, leadership merchandise, or volunteer uniforms supplied by APARÈ Clothing must be approved transparently by the Executive Council at fair market or subsidized cost without self-dealing.`,
+          ],
+        },
+        {
+          heading: "4. Event Infrastructure, Equipment Care & Operational Assets",
+          clauses: [
+            `4.1 Logistics Asset Management: Care, storage, inventory control, and transport of CSC on-ground physical assets (standees, banners, check-in kiosks, audio badges, and signage).`,
+            `4.2 Standard Operational Playbooks: Run-sheets, vendor contact directories, and venue checklists created under this mandate belong to CSC.`,
+          ],
+        },
+        {
+          heading: "5. On-Ground Attendee Data Handling & DPDP Act Compliance",
+          clauses: [
+            `5.1 Physical Check-In Data Security: Ensuring physical sign-in sheets, QR scanning stations, and temporary on-site badge printers do not expose attendee phone numbers or emails to unauthorized third parties.`,
+            `5.2 Secure Disposal of Temporary Rosters: Immediate secure shredding or digital purging of printed attendee lists following event wrap-up in compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+          ],
+        },
+        {
+          heading: "6. Active Tenure, 30-Day Transition Handover & Jurisdiction",
+          clauses: [
+            `6.1 Active Tenure: Valid for ${duration} throughout active tenure as Chief Operating Officer.`,
+            `6.2 30-Day Operational Handover: Structured handover of vendor contracts, venue keys, physical inventory, and upcoming logistics plans upon notice.`,
+            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+          ],
+        },
+      ];
+
+    case "cbo":
+      return [
+        {
+          heading: "1. Chief Brand Officer Appointment & Creative Direction Mandate",
+          clauses: [
+            `1.1 Executive Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
+            `1.2 Brand Governance & Visual Storytelling Mandate: Leading CSC brand identity, visual storytelling, cinematic video/reel production, event media coverage, photography, graphic design standards, and digital brand presence.${customMandate ? ` ${customMandate}` : ""}`,
+            `1.3 Creative Quality Control: Ensuring all public-facing visual collateral, digital flyers, stage backdrops, and promotional campaigns adhere to world-class aesthetic standards.`,
+          ],
+        },
+        {
+          heading: "2. Fiduciary Duty, Media Ethics & Brand Stewardship",
+          clauses: [
+            `2.1 Brand Integrity & Accuracy: Ensuring all promotional media truthfully and accurately represents CSC initiatives, founder stories, and sponsor partnerships without misleading exaggerations.`,
+            `2.2 Respect for Attendee Privacy in Media: Adhering to professional media ethics regarding event photography, obtaining voluntary consent, and respecting attendees who prefer not to appear in close-up social reels.`,
+            `2.3 Non-Exploitation of Media Access: Prohibiting the use of raw event photography and founder interviews for unapproved third-party commercial portfolio promotion without authorization.`,
+          ],
+        },
+        {
+          heading: "3. Conflict of Interest, Flickkora Agency & Creative Studio Disclosures",
+          clauses: [
+            `3.1 Formally Disclosed External Venture: Official disclosure of independent creative media and cinematography agency, specifically recorded as: ${externalVenture}.`,
+            `3.2 Operational & Accounting Separation: Complete legal, financial, and client-servicing separation between Flickkora Agency and CSC activities.`,
+            `3.3 Transparent Production Arrangements: Any specialized high-end equipment rental, studio editing, or production services provided by Flickkora Agency to CSC must be documented transparently and approved by the Executive Council at fair market or subsidized terms.`,
+          ],
+        },
+        {
+          heading: "4. Community Media IP, Raw Footage & Design System Ownership",
+          clauses: [
+            `4.1 Media Asset Ownership: All final edited videos, social reels, photography archives, brand guidelines, typography systems, and promotional graphics produced for CSC belong exclusively to Coimbatore Startup Community.`,
+            `4.2 Raw Footage Archival: Ensuring safe cloud archival of all master event footage, keynote recordings, and high-resolution photography for historical community records.`,
+          ],
+        },
+        {
+          heading: "5. Digital Media Privacy, Copyright Protection & DPDP Act Compliance",
+          clauses: [
+            `5.1 Media Copyright Compliance: Ensuring all soundtrack music, stock graphics, and video elements used in CSC content are properly licensed and free from copyright infringement.`,
+            `5.2 Digital Privacy Safeguards: Strict adherence to the Digital Personal Data Protection Act, 2023 (DPDP Act), regarding tagging, identification, and publication of attendee likenesses.`,
+          ],
+        },
+        {
+          heading: "6. Active Tenure, 30-Day Creative Handover & Jurisdiction",
+          clauses: [
+            `6.1 Active Tenure: Valid for ${duration} throughout active tenure as Chief Brand Officer.`,
+            `6.2 30-Day Handover Protocol: Transitioning social media media channels, Figma design systems, Canva team assets, high-resolution media archives, and creative accounts upon notice.`,
+            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+          ],
+        },
+      ];
+  }
+}
+
 export function buildAgreementSections(input: BuildAgreementInput): AgreementSection[] {
   const fd = input.formData ?? {};
   const partnerName = input.recipientOrg || input.recipientName;
@@ -234,7 +597,7 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
           ],
         },
         {
-          heading: "4. Intellectual Property Rights (IPR), Background Codebase & Brand Licensing",
+          heading: "4. Intellectual Property Rights (IPR), Proprietary Code & Brand Licensing",
           clauses: [
             `4.1 Sole Ownership of LIT Background & Foreground IP: All source code, application architectures, database models, algorithms, UI component libraries, automation workflows, security implementations, and developer tooling authored or deployed by LIT remain the sole, absolute, and unencumbered intellectual property of Logic Intelligence Technologies.`,
             `4.2 Limited Operational License to CSC: LIT grants CSC a non-exclusive, non-transferable, revocable license to utilize the CSC Circle platform solely for legitimate community operations and member facilitation throughout the active term of this Agreement.`,
@@ -258,18 +621,26 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
           ],
         },
         {
-          heading: "7. Term, Orderly Transition, Dispute Resolution & Jurisdiction",
+          heading: "7. Terms & Conditions: Warranties, Limitation of Liability & Force Majeure",
           clauses: [
-            `7.1 Term & Perpetual Auto-Renewal: This Agreement shall remain in full force and effect on a perpetual, auto-renewing basis for ${duration}, subject to annual strategic alignment reviews by both parties.`,
-            `7.2 Bilateral Termination & 90-Day Transition Window: Either party may terminate this Agreement by serving ninety (90) days' prior written notice to the other. Upon termination, LIT shall provide standard CSV/JSON database exports of CSC community member records to CSC leadership, while retaining all underlying codebase, frameworks, and intellectual property.`,
-            `7.3 Dispute Resolution & Arbitration: Any dispute or claim arising out of or in connection with this Agreement shall be referred to and finally resolved by binding arbitration under the Arbitration and Conciliation Act, 1996. The seat and venue of arbitration shall be Coimbatore, Tamil Nadu, and proceedings shall be conducted in English by a sole arbitrator mutually appointed by the parties.`,
-            `7.4 Governing Law: This Agreement is governed by and shall be construed in accordance with the substantive laws of India, with exclusive jurisdiction vested in the competent courts of Coimbatore, Tamil Nadu.`,
+            `7.1 Mutual Representations & Warranties: Each party represents and warrants that it has the full power, corporate authority, and legal capacity to enter into and execute this Agreement.`,
+            `7.2 Limitation of Liability Cap: Except for breach of intellectual property covenants or confidentiality obligations, neither party's aggregate liability under this Agreement shall exceed direct expenses incurred during the preceding six (6) months.`,
+            `7.3 Force Majeure: Neither party shall be held liable for failure or delay in performance resulting from acts of God, widespread telecommunication blackouts, governmental sanctions, civil unrest, or catastrophic network failure beyond reasonable commercial control.`,
+          ],
+        },
+        {
+          heading: "8. Term, Orderly Transition, Dispute Resolution & Jurisdiction",
+          clauses: [
+            `8.1 Term & Perpetual Auto-Renewal: This Agreement shall remain in full force and effect on a perpetual, auto-renewing basis for ${duration}, subject to annual strategic alignment reviews by both parties.`,
+            `8.2 Bilateral Termination & 90-Day Transition Window: Either party may terminate this Agreement by serving ninety (90) days' prior written notice to the other. Upon termination, LIT shall provide standard CSV/JSON database exports of CSC community member records to CSC leadership, while retaining all underlying codebase, frameworks, and intellectual property.`,
+            `8.3 Dispute Resolution & Arbitration: Any dispute or claim arising out of or in connection with this Agreement shall be referred to and finally resolved by binding arbitration under the Arbitration and Conciliation Act, 1996. The seat and venue of arbitration shall be Coimbatore, Tamil Nadu, and proceedings shall be conducted in English by a sole arbitrator mutually appointed by the parties.`,
+            `8.4 Governing Law: This Agreement is governed by and shall be construed in accordance with the substantive laws of India, with exclusive jurisdiction vested in the competent courts of Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
       if (specialClauses) {
         sections.push({
-          heading: "8. Additional Mutually Agreed Covenants",
+          heading: "9. Additional Mutually Agreed Covenants",
           clauses: specialClauses.split(/\n+/).filter(Boolean),
         });
       }
@@ -278,66 +649,7 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
 
     case "leadership_charter": {
       const roleKey = input.leadershipRole || "ceo";
-      const profile = LEADERSHIP_PROFILES[roleKey];
-      const externalVenture = fd.externalVenture || profile.externalVenture;
-      const customMandate = fd.mandateNotes?.trim();
-
-      return [
-        {
-          heading: "1. Executive Appointment & Institutional Mandate",
-          clauses: [
-            `1.1 Formal Executive Appointment: This Executive Leadership Charter ("Charter") is formally executed on ${effective} by Coimbatore Startup Community ("CSC") to confirm the appointment of ${input.recipientName} ("Leader"), serving in the high office of ${input.recipientRole || profile.roleTitle}.`,
-            `1.2 Core Operational Mandate: ${profile.mandateSummary}${customMandate ? ` ${customMandate}` : ""} The Leader accepts full responsibility for stewardship, continuous excellence, and dedicated execution of their designated functional portfolio.`,
-            `1.3 Executive Council Authority & Consensus: Institutional partnerships, long-term legal agreements, external funding decisions, public policy representations, and operational expenditures exceeding standard discretionary limits require consensus alignment with the Founder and the CSC Executive Leadership Council.`,
-          ],
-        },
-        {
-          heading: "2. Fiduciary Duty, Ecosystem Ethics & Good Faith Stewardship",
-          clauses: [
-            `2.1 Duty of Utmost Good Faith: The Leader shall exercise the highest standard of loyalty, honesty, transparency, and care in all community engagements, prioritizing the collective growth of the Coimbatore startup ecosystem above personal interests.`,
-            `2.2 Strict Prohibition against Commercial Exploitation: The Leader expressly covenants not to exploit CSC's member directories, internal WhatsApp groups, founder databases, attendee rosters, or executive privileges for unsolicited commercial solicitation, predatory customer prospecting, spam marketing, or personal financial gain.`,
-            `2.3 Inclusive Community Standards & Zero Tolerance: The Leader shall uphold CSC's zero-tolerance policy against workplace harassment, gender or caste discrimination, defamation, or unethical conduct across both physical community summits and digital discussion boards.`,
-          ],
-        },
-        {
-          heading: "3. Conflict of Interest, External Ventures & Independent Business Disclosures",
-          clauses: [
-            `3.1 Formally Disclosed External Ventures: CSC formally recognizes and respects that the Leader actively operates, leads, or advises independent commercial ventures, specifically disclosed on official record as: ${externalVenture}.`,
-            `3.2 Strict Arm's-Length Commercial Separation: Independent commercial ventures shall remain legally, financially, and operationally independent from Coimbatore Startup Community. Any commercial engagement, vendor contract, or co-sponsorship between CSC and an executive's venture must be conducted at arm's length, fully disclosed in writing, and approved by the Executive Council without self-dealing.`,
-            `3.3 Recusal on Conflicted Matters: The Leader agrees to voluntarily recuse themselves from voting, steering deliberations, or executive decision-making whenever a direct operational or commercial conflict of interest arises.`,
-          ],
-        },
-        {
-          heading: "4. Intellectual Property, Community Assets & Brand Governance",
-          clauses: [
-            `4.1 Ownership of CSC Community Assets: All brand collateral, event slide decks, video reels, photographs, event structures, attendee archives, and community guidelines developed specifically under the Leader's CSC mandate remain the exclusive property of Coimbatore Startup Community (with the explicit exception of LIT's proprietary platform code and partners' pre-existing trademarks).`,
-            `4.2 Brand Representation & Trademarks: The Leader is granted a limited, revocable right to represent CSC at official forums, conferences, and media channels, adhering strictly to CSC's approved visual identity guidelines, key messaging, and official brand positioning.`,
-          ],
-        },
-        {
-          heading: "5. Member Data Protection, Privacy & DPDP Act 2023 Compliance",
-          clauses: [
-            `5.1 Confidentiality of Community Personal Data: Administrative access granted to the Leader covering founder contact details, phone numbers, email directories, payment UTR verification logs, and private startup pitch records is strictly confidential.`,
-            `5.2 Absolute Prohibition on Unauthorized Data Export: Exporting, backing up to personal cloud storage, sharing, or disseminating CSC community member data outside official CSC operational workflows is strictly prohibited and constitutes a material breach under the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
-            `5.3 Security Breach Notification: The Leader shall immediately report any suspected security compromise, unauthorized credential access, or data leakage affecting CSC member systems to the Chief Technology Officer (CTO) and the Executive Council.`,
-          ],
-        },
-        {
-          heading: "6. Operational Authority, Financial Discretion & Audit Integrity",
-          clauses: [
-            `6.1 Operational Budget Discretion: The Leader may commit pre-approved routine operational budgets required for event execution, venue coordination, guest speaker hospitality, and visual production, within thresholds authorized by the Executive Council.`,
-            `6.2 Transparent Expense Reconciliation: All expenditures made on behalf of CSC must be evidenced by legitimate GST invoices, receipts, and verified bank/UPI transaction records submitted for community audit and ledger reconciliation.`,
-          ],
-        },
-        {
-          heading: "7. Active Tenure, Orderly Handover, Resignation & Jurisdiction",
-          clauses: [
-            `7.1 Term of Appointment: This Charter shall remain active and legally binding for ${duration} while the Leader holds office in Coimbatore Startup Community.`,
-            `7.2 Resignation & Mandatory 30-Day Transition Handover: Either CSC or the Leader may conclude the leadership tenure by providing thirty (30) days' advance written notice. Upon resignation or transition, the Leader shall immediately complete a comprehensive handover, returning all administrative logins, digital assets, social media credentials, and community records.`,
-            `7.3 Governing Law & Jurisdiction: This Charter is governed by the laws of India, with exclusive jurisdiction vested in the competent courts of Coimbatore, Tamil Nadu.`,
-          ],
-        },
-      ];
+      return buildIndividualizedLeadershipCharter(roleKey, input, effective, duration);
     }
 
     case "strategic_mou": {
@@ -368,7 +680,7 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
           heading: "3. Legal Character: Binding vs. Non-Binding Intent",
           clauses: [
             `3.1 Non-Binding Collaborative Objectives: The programmatic goals, student attendance targets, and collaborative aspirations set forth in Section 1 and Section 2 express mutual goodwill and operational intent and do not constitute an enforceable financial debt, legal agency, or commercial joint venture under the Indian Partnership Act, 1932.`,
-            `3.2 Binding Legal Covenants: The provisions of Section 4 (Intellectual Property & Brand Usage), Section 5 (Confidentiality & Non-Disclosure), Section 6 (DPDP Act Data Protection), Section 7 (Financial Disclaimers), and Section 8 (Term, Termination & Governing Law) are strictly binding and enforceable under the Indian Contract Act, 1872.`,
+            `3.2 Binding Legal Covenants: The provisions of Section 4 (Intellectual Property & Brand Usage), Section 5 (Confidentiality & Non-Disclosure), Section 6 (DPDP Act Data Protection), Section 7 (Terms, Warranties & Liabilities), and Section 8 (Term, Termination & Governing Law) are strictly binding and enforceable under the Indian Contract Act, 1872.`,
             `3.3 Exclusivity Classification: This strategic alliance is established on a ${exclusivity} basis. Neither party is prohibited from forging alliances with other incubators, colleges, or industry bodies.`,
           ],
         },
@@ -395,10 +707,11 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
           ],
         },
         {
-          heading: "7. Financial Disclaimers & Independent Liability",
+          heading: "7. Terms & Conditions: Warranties, Disclaimers & Independent Liability",
           clauses: [
             `7.1 Zero Financial Liability Model: This MoU operates on a non-financial cooperative basis. Each party shall independently absorb its own overheads and administrative costs unless a separate, project-specific commercial contract is formally executed in writing.`,
             `7.2 Independent Contractors: The relationship between CSC and ${partnerName} is strictly that of independent entities. Neither party has the legal authority to bind, obligate, or represent the other in financial or legal matters.`,
+            `7.3 Mutual Indemnification: Each party agrees to indemnify the other against third-party claims arising from gross negligence, wilful misconduct, or unauthorized use of third-party intellectual property.`,
           ],
         },
         {
@@ -453,7 +766,7 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
         {
           heading: "4. Attendee Data Governance, Privacy & Cryptographic Verification",
           clauses: [
-            `4.1 Master Registry & DPDP Act Compliance: All attendee registrations, UPI payment verifications, and cryptographic QR check-in logs processed via CSC Circle remain protected under the Digital Personal Data Protection Act, 2023.`,
+            `4.1 Master Registry & DPDP Act Compliance: All attendee registrations, UPI payment verifications, and cryptographic QR check-in logs processed via CSC Circle remain protected under the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
             `4.2 Aggregate Metrics vs. Personal Data: CSC shall provide ${partnerName} with aggregate attendance demographics (attendance count, industry breakdown, founder percentage). Personal phone numbers and emails shall only be transferred if attendees have explicitly opted in during registration.`,
           ],
         },
@@ -465,17 +778,25 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
           ],
         },
         {
-          heading: "6. Event Postponement, Cancellation, Force Majeure & Mutual Indemnity",
+          heading: "6. Terms & Conditions: Event Postponement, Cancellation, Force Majeure & Mutual Indemnity",
           clauses: [
             `6.1 Force Majeure & Good-Faith Rescheduling: Neither party shall be liable for failure to conduct the event due to extreme weather, natural disasters, municipal restrictions, or civic emergencies. In such event, both parties agree to reschedule within forty-five (45) days.`,
             `6.2 Mutual Property & Injury Indemnity: Each party shall be responsible for its own staff, contractors, and on-ground property, indemnifying the other against gross negligence or wilful misconduct occurring on the premises.`,
+            `6.3 Third-Party Disclaimers: Neither party assumes liability for personal items lost, stolen, or damaged during on-ground attendance.`,
           ],
         },
         {
-          heading: "7. Active Term, Electronic Execution & Governing Law",
+          heading: "7. Cybersecurity, Physical Safety & On-Ground Incident Management",
           clauses: [
-            `7.1 Term of Agreement: Valid for ${duration}, concluding upon final post-event audit wrap-up and reconciliation of event assets.`,
-            `7.2 Electronic Execution under Section 10A of IT Act, 2000: Executed electronically under Section 10A of the Information Technology Act, 2000, governed by the laws of India, with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+            `7.1 Digital Ticket Integrity: All attendee entries must be authenticated against CSC Circle live cryptographic check-in scanners to prevent fraudulent badge transfers or unauthorized entry.`,
+            `7.2 Emergency Incident Protocol: In case of on-site medical or physical safety incidents, the venue coordinator and CSC operational leads shall coordinate emergency services immediately according to civic safety guidelines.`,
+          ],
+        },
+        {
+          heading: "8. Active Term, Electronic Execution & Governing Law",
+          clauses: [
+            `8.1 Term of Agreement: Valid for ${duration}, concluding upon final post-event audit wrap-up and reconciliation of event assets.`,
+            `8.2 Electronic Execution under Section 10A of IT Act, 2000: Executed electronically under Section 10A of the Information Technology Act, 2000, governed by the laws of India, with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
@@ -534,7 +855,7 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
           ],
         },
         {
-          heading: "6. Event Rescheduling, Organizer Cancellation & Refund Policies",
+          heading: "6. Terms & Conditions: Event Rescheduling, Organizer Cancellation & Refund Policies",
           clauses: [
             `6.1 Organizer Cancellation Refund: If CSC permanently cancels the sponsored event without rescheduling, all unutilized cash sponsorship fees shall be refunded to Sponsor within ten (10) business days.`,
             `6.2 Good-Faith Rescheduling: If the event is postponed due to weather, civic restrictions, or venue challenges, all sponsorship entitlements and branding deliverables shall seamlessly carry over to the rescheduled date.`,
@@ -542,17 +863,25 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
           ],
         },
         {
-          heading: "7. Mutual Indemnification, Limitation of Liability & Confidentiality",
+          heading: "7. Mutual Indemnification, Limitation of Liability & Commercial Confidentiality",
           clauses: [
             `7.1 Limitation of Liability: Under no circumstances shall either party's aggregate liability under this Agreement exceed the total sponsorship fee actually received by CSC.`,
             `7.2 Commercial Confidentiality: Both parties shall treat the financial consideration, negotiated discounts, and proprietary business discussions as strictly confidential.`,
+            `7.3 Mutual Indemnity: Each party shall indemnify and hold harmless the other from third-party IP infringement claims arising from its provided logos, banners, or presentation content.`,
           ],
         },
         {
-          heading: "8. Active Term, Audit Compliance & Dispute Resolution",
+          heading: "8. Data Privacy Policy & Statutory Information Security Controls",
           clauses: [
-            `8.1 Term of Agreement: Valid for ${duration}, covering the pre-event marketing cycle through post-event wrap-up.`,
-            `8.2 Dispute Resolution & Jurisdiction: Governed by the laws of India, with exclusive jurisdiction in the competent courts of Coimbatore, Tamil Nadu.`,
+            `8.1 Privacy Law Adherence: All data processing associated with this sponsorship must adhere to the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `8.2 Lead Generation Protocols: Any contact details exchanged at sponsor exhibition booths must be collected transparently via voluntary badge scanning or explicit business card handshakes.`,
+          ],
+        },
+        {
+          heading: "9. Active Term, Audit Compliance & Dispute Resolution",
+          clauses: [
+            `9.1 Term of Agreement: Valid for ${duration}, covering the pre-event marketing cycle through post-event wrap-up.`,
+            `9.2 Dispute Resolution & Jurisdiction: Governed by the laws of India, with exclusive jurisdiction in the competent courts of Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
@@ -613,10 +942,18 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
           ],
         },
         {
-          heading: "7. Engagement Term, Survival Obligations & Governing Law",
+          heading: "7. Terms & Conditions: Privacy Policy, Data Protection & Limitation of Liability",
           clauses: [
-            `7.1 Term: This Agreement is effective for ${duration}, with confidentiality and media release provisions surviving session completion.`,
-            `7.2 Governing Law & Jurisdiction: Governed by the laws of India, with exclusive jurisdiction vested in Coimbatore, Tamil Nadu.`,
+            `7.1 Privacy Policy Adherence: The Speaker's professional profile, bio, and headshot are processed in strict compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `7.2 Limitation of Liability: Neither party shall be liable for consequential, indirect, or incidental damages arising out of session delivery.`,
+            `7.3 Force Majeure & Rescheduling: In the event of illness, travel disruption, or unavoidable emergency, the Speaker shall notify CSC promptly to explore digital participation or a rescheduled session date.`,
+          ],
+        },
+        {
+          heading: "8. Engagement Term, Survival Obligations & Governing Law",
+          clauses: [
+            `8.1 Term: This Agreement is effective for ${duration}, with confidentiality and media release provisions surviving session completion.`,
+            `8.2 Governing Law & Jurisdiction: Governed by the laws of India, with exclusive jurisdiction vested in Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
@@ -633,7 +970,7 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
             heading: `${provided.length + 1}. Data Privacy, Electronic Execution & Governing Law`,
             clauses: [
               `Both parties agree to comply with India's Digital Personal Data Protection Act, 2023 (DPDP Act) regarding any shared personal information.`,
-              `This Agreement is executed electronically under Section 10A of the Information Technology Act, 2000 and is governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+              `This Agreement is executed electronically under Section 10A and Section 65B of the Information Technology Act, 2000 and the Indian Contract Act, 1872, and is governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
             ],
           },
         ];
@@ -663,24 +1000,32 @@ export function buildAgreementSections(input: BuildAgreementInput): AgreementSec
           ],
         },
         {
-          heading: "4. Data Privacy, Non-Disclosure & DPDP Act 2023 Compliance",
+          heading: "4. Data Privacy Policy, Non-Disclosure & DPDP Act 2023 Compliance",
           clauses: [
             `4.1 Confidentiality of Non-Public Information: Both parties agree to protect proprietary operational details, member databases, and commercial discussions with strict confidentiality for a minimum of two (2) years.`,
             `4.2 Compliance with DPDP Act, 2023: Both parties agree to adhere strictly to the Digital Personal Data Protection Act, 2023, ensuring zero unauthorized transfer, scraping, or commercial sale of personal member records.`,
           ],
         },
         {
-          heading: "5. Term, Bilateral Notice & Orderly Handover",
+          heading: "5. General Terms & Conditions: Warranties, Limitation of Liability & Force Majeure",
           clauses: [
-            `5.1 Active Duration: This Agreement remains in effect for ${duration} from ${effective}, renewable by mutual written consent.`,
-            `5.2 Notice for Termination: Either party may conclude this Agreement by providing thirty (30) days' advance written notice, ensuring all ongoing deliverables are concluded equitably.`,
+            `5.1 Mutual Representations: Each party represents that it holds the necessary authorizations and power to execute this Agreement.`,
+            `5.2 Limitation of Liability: Neither party shall be liable for indirect, punitive, or consequential damages arising out of performance under this Agreement.`,
+            `5.3 Force Majeure: Neither party shall be liable for delays caused by circumstances beyond reasonable control, including natural disasters, governmental mandates, or civic disruptions.`,
           ],
         },
         {
-          heading: "6. Electronic Execution, Statutory Validity & Jurisdiction",
+          heading: "6. Active Duration, Bilateral Notice & Orderly Handover",
           clauses: [
-            `6.1 Electronic Execution Validity: This Agreement is executed electronically and authenticated under Section 10A and Section 65B of the Information Technology Act, 2000 and the Indian Contract Act, 1872.`,
-            `6.2 Governing Law: Governed by the laws of India, with exclusive jurisdiction vested in the competent courts of Coimbatore, Tamil Nadu.`,
+            `6.1 Active Duration: This Agreement remains in effect for ${duration} from ${effective}, renewable by mutual written consent.`,
+            `6.2 Notice for Termination: Either party may conclude this Agreement by providing thirty (30) days' advance written notice, ensuring all ongoing deliverables are concluded equitably.`,
+          ],
+        },
+        {
+          heading: "7. Electronic Execution, Statutory Validity & Jurisdiction",
+          clauses: [
+            `7.1 Electronic Execution Validity: This Agreement is executed electronically and authenticated under Section 10A and Section 65B of the Information Technology Act, 2000 and the Indian Contract Act, 1872.`,
+            `7.2 Governing Law: Governed by the laws of India, with exclusive jurisdiction vested in the competent courts of Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
