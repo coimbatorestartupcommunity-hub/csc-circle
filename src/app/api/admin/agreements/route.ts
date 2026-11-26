@@ -14,9 +14,6 @@ import { computeAgreementHash } from "@/lib/agreements/hash";
 import { sendAgreementInvitationEmail } from "@/lib/agreements/notify";
 import { siteConfig } from "@/lib/content/site";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 const sectionSchema = z.object({
   heading: z.string().trim().min(1).max(200),
   clauses: z.array(z.string().trim().min(1).max(4000)).min(1).max(20),

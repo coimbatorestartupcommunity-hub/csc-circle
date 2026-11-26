@@ -6,9 +6,6 @@ import { authResponse, isSafeOrigin, readAuthBody } from "@/lib/auth/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { agreementsTable, type DigitalAgreementRow } from "@/lib/agreements/db";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
 

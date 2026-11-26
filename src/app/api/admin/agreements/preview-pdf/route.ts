@@ -10,9 +10,6 @@ import {
 import { computeAgreementHash } from "@/lib/agreements/hash";
 import { generateAgreementPdf } from "@/lib/agreements/pdf";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 export async function GET(request: Request) {
   const ctx = await getAdminContext();
   const allowed =

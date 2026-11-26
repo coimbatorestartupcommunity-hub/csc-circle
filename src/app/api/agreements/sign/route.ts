@@ -8,9 +8,6 @@ import { computeAgreementHash } from "@/lib/agreements/hash";
 import { generateAgreementPdf } from "@/lib/agreements/pdf";
 import { sendSignedAgreementEmailsAndAlerts } from "@/lib/agreements/notify";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 const signSchema = z.object({
   token: z.string().trim().min(32).max(128),
   signedName: z.string().trim().min(2, "Enter your full legal name to sign.").max(140),

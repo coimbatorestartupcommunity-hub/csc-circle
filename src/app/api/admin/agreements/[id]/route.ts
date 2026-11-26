@@ -6,9 +6,6 @@ import { agreementsTable, type DigitalAgreementRow } from "@/lib/agreements/db";
 import { sendAgreementInvitationEmail } from "@/lib/agreements/notify";
 import { siteConfig } from "@/lib/content/site";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 const patchSchema = z.object({
   action: z.enum(["void", "resend"]),
 });
