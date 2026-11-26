@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/lib/content/site";
+import { CircularSocialIcon } from "@/components/common/brand-icons";
 import QRCode from "qrcode";
 
 export interface DeckSlide {
@@ -25,6 +26,228 @@ export interface DeckSlide {
   title: string;
   subtitle: string;
   content: React.ReactNode;
+}
+
+interface LeaderProfile {
+  id: string;
+  name: string;
+  role: string;
+  focus: string;
+  image: string;
+  badge: string;
+}
+
+const LEADERSHIP_TEAM: LeaderProfile[] = [
+  {
+    id: "reyash",
+    name: "K. N. Reyash",
+    role: "Founder & President",
+    focus: "Ecosystem Vision",
+    image: "/images/agreements/leaders/1-reyash.jpg",
+    badge: "Ecosystem Stewardship",
+  },
+  {
+    id: "sharan",
+    name: "E. R. Sharan",
+    role: "Co-Founder & VP",
+    focus: "Strategic Growth",
+    image: "/images/agreements/leaders/2-sharan.jpg",
+    badge: "Strategic Expansion",
+  },
+  {
+    id: "mirra",
+    name: "Mirra Mahendran",
+    role: "Chief Executive Officer",
+    focus: "Operations & Alliances",
+    image: "/images/agreements/leaders/3-mirra.jpg",
+    badge: "Executive Operations",
+  },
+  {
+    id: "vikash",
+    name: "Vikash Saravanan",
+    role: "Chief Technology Officer",
+    focus: "Tech & LIT Architecture",
+    image: "/images/agreements/leaders/4-vikash.jpg",
+    badge: "LIT Platform Architecture",
+  },
+  {
+    id: "swathi",
+    name: "Swathi",
+    role: "Chief Community Officer",
+    focus: "Community Experience",
+    image: "/images/agreements/leaders/5-swathi.jpg",
+    badge: "Member Experience",
+  },
+  {
+    id: "kishore",
+    name: "Kishore C",
+    role: "Chief Operating Officer",
+    focus: "Programs & Logistics",
+    image: "/images/agreements/leaders/6-kishore.jpg",
+    badge: "Programs & Operations",
+  },
+  {
+    id: "jaibharath",
+    name: "Jaibharath V",
+    role: "Chief Business Officer",
+    focus: "Partnerships & Value",
+    image: "/images/agreements/leaders/7-jaibharath.jpg",
+    badge: "Venture Partnerships",
+  },
+];
+
+function Slide3LeadersShowcase() {
+  const [selectedIndex, setSelectedIndex] = React.useState<number | null>(0);
+
+  const activeLeader = selectedIndex !== null ? LEADERSHIP_TEAM[selectedIndex] : null;
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedIndex === null) {
+      setSelectedIndex(LEADERSHIP_TEAM.length - 1);
+    } else {
+      setSelectedIndex((selectedIndex - 1 + LEADERSHIP_TEAM.length) % LEADERSHIP_TEAM.length);
+    }
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedIndex === null) {
+      setSelectedIndex(0);
+    } else {
+      setSelectedIndex((selectedIndex + 1) % LEADERSHIP_TEAM.length);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Featured Leader Spotlight Container */}
+      <div className="relative overflow-hidden rounded-xl border border-brand-border/80 bg-slate-900 shadow-md">
+        <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full max-h-[380px] flex items-center justify-center bg-slate-950">
+          <Image
+            src={activeLeader ? activeLeader.image : "/images/agreements/leaders/csc-leaders-lockup.jpg"}
+            alt={activeLeader ? `${activeLeader.name} - ${activeLeader.role}` : "CSC Circle Leadership Team"}
+            fill
+            className={activeLeader ? "object-contain" : "object-cover"}
+            sizes="(max-width: 768px) 100vw, 700px"
+            priority
+          />
+
+          {/* Quick Prev / Next Arrows */}
+          <div className="absolute inset-y-0 left-2 flex items-center z-10">
+            <button
+              type="button"
+              onClick={handlePrev}
+              aria-label="Previous Leader"
+              className="rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm transition-all hover:bg-black/90 hover:scale-105 active:scale-95"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="absolute inset-y-0 right-2 flex items-center z-10">
+            <button
+              type="button"
+              onClick={handleNext}
+              aria-label="Next Leader"
+              className="rounded-full bg-black/60 p-1.5 text-white backdrop-blur-sm transition-all hover:bg-black/90 hover:scale-105 active:scale-95"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Overlay Tag */}
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3.5 pt-8 text-white z-10 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              {activeLeader ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded bg-brand-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                      Leader {selectedIndex! + 1} of 7
+                    </span>
+                    <span className="text-[11px] text-zinc-300 font-medium">{activeLeader.badge}</span>
+                  </div>
+                  <p className="mt-0.5 text-base sm:text-lg font-bold text-white leading-tight">{activeLeader.name}</p>
+                  <p className="text-xs text-zinc-300">{activeLeader.role} · <span className="text-brand-accent">{activeLeader.focus}</span></p>
+                </>
+              ) : (
+                <>
+                  <span className="rounded bg-brand-accent px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                    Full Team Panorama
+                  </span>
+                  <p className="mt-0.5 text-base sm:text-lg font-bold text-white">Coimbatore Startup Community Stewards</p>
+                  <p className="text-xs text-zinc-300">Seven dedicated leaders steering community vision &amp; ecosystem growth.</p>
+                </>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSelectedIndex(activeLeader ? null : 0)}
+              className="rounded-md border border-white/20 bg-white/10 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+            >
+              {activeLeader ? "View Team Panorama" : "View Leader Spotlight"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Interactive Leader Selection Grid */}
+      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4 sm:gap-2.5">
+        {LEADERSHIP_TEAM.map((leader, idx) => {
+          const isSelected = selectedIndex === idx;
+          return (
+            <button
+              type="button"
+              key={leader.id}
+              onClick={() => setSelectedIndex(idx)}
+              className={`flex items-center gap-2.5 text-left rounded-lg border p-2 transition-all ${
+                isSelected
+                  ? "border-brand-accent bg-blue-50/80 shadow-xs ring-2 ring-brand-accent/20"
+                  : "border-brand-border/70 bg-white hover:border-brand-accent/50 hover:bg-brand-cloud/40 shadow-2xs"
+              }`}
+            >
+              <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-brand-border/60 bg-brand-cloud shadow-2xs">
+                <Image
+                  src={leader.image}
+                  alt={leader.name}
+                  fill
+                  className="object-cover object-top"
+                  sizes="36px"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <p className={`truncate text-xs font-semibold ${isSelected ? "text-brand-accent" : "text-brand-ink"}`}>
+                    {leader.name}
+                  </p>
+                  {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-brand-accent shrink-0 ml-1" />}
+                </div>
+                <p className="truncate text-[10px] text-brand-muted">{leader.role}</p>
+                <p className="truncate text-[9.5px] text-brand-secondary font-medium">{leader.focus}</p>
+              </div>
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => setSelectedIndex(null)}
+          className={`flex items-center justify-center rounded-lg border p-2 text-center transition-all ${
+            selectedIndex === null
+              ? "border-brand-accent bg-blue-50/80 ring-2 ring-brand-accent/20"
+              : "border-dashed border-brand-border bg-brand-cloud/40 hover:bg-brand-cloud/80"
+          }`}
+        >
+          <div>
+            <span className={`text-[11px] font-semibold block ${selectedIndex === null ? "text-brand-accent" : "text-brand-ink"}`}>
+              Full Team Lockup
+            </span>
+            <span className="text-[9.5px] text-brand-muted">Guided by Collective Growth</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function CommunityShowcaseDeck() {
@@ -132,40 +355,7 @@ export function CommunityShowcaseDeck() {
       eyebrow: "Leadership & Stewards · Slide 3 of 7",
       title: "The People Behind CSC Circle",
       subtitle: "Seven dedicated leaders steering the community's vision and operations.",
-      content: (
-        <div className="flex flex-col gap-4">
-          <div className="relative overflow-hidden rounded-xl border border-brand-border/80 bg-brand-cloud/40 shadow-xs aspect-[2000/1398] w-full max-h-[320px]">
-            <Image
-              src="/images/agreements/leaders/csc-leaders-lockup.jpg"
-              alt="The People Behind CSC Circle - Seven dedicated leaders steering the community's vision"
-              fill
-              className="object-contain"
-              sizes="(max-width: 768px) 100vw, 700px"
-              priority
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4 sm:gap-2.5">
-            {[
-              { name: "K. N. Reyash", role: "Founder & President", focus: "Ecosystem Vision" },
-              { name: "E. R. Sharan", role: "Co-Founder & VP", focus: "Strategic Growth" },
-              { name: "Mirra Mahendran", role: "Chief Executive Officer", focus: "Operations & Alliances" },
-              { name: "Vikash Saravanan", role: "Chief Technology Officer", focus: "Tech & LIT Architecture" },
-              { name: "Swathi", role: "Chief Community Officer", focus: "Community Experience" },
-              { name: "Kishore C", role: "Chief Operating Officer", focus: "Programs & Logistics" },
-              { name: "Jaibharath V", role: "Chief Business Officer", focus: "Partnerships & Value" },
-            ].map((leader) => (
-              <div key={leader.name} className="rounded-lg border border-brand-border/60 bg-white p-2.5 shadow-2xs">
-                <p className="font-semibold text-brand-ink truncate">{leader.name}</p>
-                <p className="text-[10px] text-brand-accent font-medium">{leader.role}</p>
-                <p className="text-[10px] text-brand-muted truncate">{leader.focus}</p>
-              </div>
-            ))}
-            <div className="flex items-center justify-center rounded-lg border border-dashed border-brand-border bg-brand-cloud/40 p-2 text-center">
-              <span className="text-[11px] font-medium text-brand-muted">Guided by Collective Growth</span>
-            </div>
-          </div>
-        </div>
-      ),
+      content: <Slide3LeadersShowcase />,
     },
 
     // Slide 4: Technology Partner Spotlight (LIT)
@@ -367,44 +557,36 @@ export function CommunityShowcaseDeck() {
                 href={siteConfig.social.whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
+                className="flex items-center gap-2.5 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
               >
-                <div className="relative size-5 shrink-0">
-                  <Image src="/images/agreements/social/whatsapp.png" alt="WhatsApp" fill className="object-contain" />
-                </div>
+                <CircularSocialIcon network="whatsapp" size={24} />
                 <span className="truncate">WhatsApp Group</span>
               </Link>
               <Link
                 href={siteConfig.social.whatsappAgent}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
+                className="flex items-center gap-2.5 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
               >
-                <div className="relative size-5 shrink-0">
-                  <Image src="/images/agreements/social/whatsapp-agent.png" alt="AI Agent" fill className="object-contain" />
-                </div>
+                <CircularSocialIcon network="ai_agent" size={24} />
                 <span className="truncate">WhatsApp AI</span>
               </Link>
               <Link
                 href={siteConfig.social.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
+                className="flex items-center gap-2.5 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
               >
-                <div className="relative size-5 shrink-0">
-                  <Image src="/images/agreements/social/linkedin.png" alt="LinkedIn" fill className="object-contain" />
-                </div>
+                <CircularSocialIcon network="linkedin" size={24} />
                 <span className="truncate">LinkedIn Page</span>
               </Link>
               <Link
                 href={siteConfig.social.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
+                className="flex items-center gap-2.5 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
               >
-                <div className="relative size-5 shrink-0">
-                  <Image src="/images/agreements/social/instagram.png" alt="Instagram" fill className="object-contain" />
-                </div>
+                <CircularSocialIcon network="instagram" size={24} />
                 <span className="truncate">Instagram</span>
               </Link>
             </div>

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Ban, Check, Copy, Download, Mail, Loader2 } from "lucide-react";
+import { Ban, Check, Copy, Download, Mail, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function AdminAgreementActions({
@@ -64,7 +64,7 @@ export function AdminAgreementActions({
         <Download className="size-4" />
         Download Editorial PDF
       </Button>
-      {status === "sent" ? (
+      {status === "sent" || status === "opened" ? (
         <>
           <Button
             type="button"
@@ -88,6 +88,31 @@ export function AdminAgreementActions({
           </Button>
         </>
       ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        disabled={busy}
+        onClick={async () => {
+          if (!window.confirm("Are you sure you want to permanently delete this agreement? This action cannot be undone.")) return;
+          setBusy(true);
+          try {
+            const res = await fetch(`/api/admin/agreements/${id}`, { method: "DELETE" });
+            if (!res.ok) {
+              const data = await res.json();
+              toast.error(data.error ?? "Delete failed");
+              return;
+            }
+            toast.success("Agreement permanently deleted.");
+            router.push("/admin/agreements");
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+      >
+        <Trash2 className="size-4" />
+        Delete
+      </Button>
     </div>
   );
 }

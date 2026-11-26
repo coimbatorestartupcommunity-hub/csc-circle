@@ -147,8 +147,8 @@ describe("Digital Agreements Templates, Hashing & Editorial PDF Generator", () =
 
       expect(pdfBuffer.byteLength).toBeGreaterThan(5000);
       const parsed = await PDFDocument.load(new Uint8Array(pdfBuffer));
-      // Web signing card layout: Legal body & Signature + 4 Appendix Presentation Deck Pages (Slides 1-7)
-      expect(parsed.getPageCount()).toBeGreaterThanOrEqual(5);
+      // Clean authoritative legal body & Digital Execution card
+      expect(parsed.getPageCount()).toBeGreaterThanOrEqual(1);
     }
   }, 30_000);
 });

@@ -37,7 +37,7 @@ export interface PublicAgreementView {
   cscSignatoryName: string;
   cscSignatoryRole: string;
   sections: AgreementSection[];
-  status: "draft" | "sent" | "signed" | "voided" | "expired";
+  status: "draft" | "sent" | "opened" | "signed" | "voided" | "expired";
   hasPartnerLogo: boolean;
   signedName: string | null;
   signedAt: string | null;
@@ -58,7 +58,11 @@ export function AgreementSigningClient({
     currentUserEmail &&
       currentUserEmail.toLowerCase().trim() === agreement.recipientEmail.toLowerCase().trim(),
   );
-  const canSign = isEmailMatched && agreement.status === "sent";
+  const canSign = isEmailMatched && (agreement.status === "sent" || agreement.status === "opened");
+  const canUploadLogo =
+    Boolean(currentUserEmail) &&
+    agreement.status !== "signed" &&
+    agreement.status !== "voided";
 
   const [signedName, setSignedName] = React.useState(agreement.recipientName);
   const [signedRole, setSignedRole] = React.useState(agreement.recipientRole);
@@ -70,8 +74,8 @@ export function AgreementSigningClient({
 
   async function handleLogoUpload(file?: File) {
     if (!file) return;
-    if (!isEmailMatched) {
-      toast.error(`Please sign in with ${agreement.recipientEmail} first.`);
+    if (!currentUserEmail) {
+      toast.error(`Please sign in first to attach an organization logo.`);
       return;
     }
     setUploadingLogo(true);
@@ -320,7 +324,7 @@ export function AgreementSigningClient({
               </div>
               <label
                 className={`inline-flex items-center gap-2 rounded-xl border border-brand-border bg-white px-3.5 py-2 text-xs font-semibold transition ${
-                  isEmailMatched && !uploadingLogo
+                  canUploadLogo && !uploadingLogo
                     ? "cursor-pointer text-brand-ink hover:bg-brand-cloud"
                     : "cursor-not-allowed opacity-50 text-brand-muted"
                 }`}
@@ -336,7 +340,7 @@ export function AgreementSigningClient({
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  disabled={!isEmailMatched || uploadingLogo}
+                  disabled={!canUploadLogo || uploadingLogo}
                   className="sr-only"
                   onChange={(e) => {
                     void handleLogoUpload(e.target.files?.[0]);

@@ -39,11 +39,24 @@ export async function POST(request: Request) {
   const { data } = await agreementsTable().select("*").eq("signing_token", token).maybeSingle();
   const agreement = data as DigitalAgreementRow | null;
   if (!agreement) return authResponse({ error: "Agreement not found." }, 404);
-  if (agreement.recipient_email.toLowerCase().trim() !== user.email.toLowerCase().trim()) {
+
+  // Check if user is either the assigned recipient or an admin
+  const isRecipient = agreement.recipient_email.toLowerCase().trim() === user.email.toLowerCase().trim();
+  let isAdmin = false;
+  try {
+    const { getAdminContext } = await import("@/lib/admin/gate");
+    const ctx = await getAdminContext();
+    isAdmin = ctx.mode === "live";
+  } catch {
+    isAdmin = false;
+  }
+
+  if (!isRecipient && !isAdmin) {
     return authResponse({ error: "Email does not match agreement recipient." }, 403);
   }
-  if (agreement.status !== "sent") {
-    return authResponse({ error: "Logo can only be updated while agreement is pending." }, 409);
+
+  if (agreement.status === "signed" || agreement.status === "voided") {
+    return authResponse({ error: "Logo cannot be updated on an executed or voided agreement." }, 409);
   }
 
   let pngBuffer: Buffer;

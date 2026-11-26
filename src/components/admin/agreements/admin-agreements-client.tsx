@@ -6,13 +6,17 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Check,
+  CheckCircle2,
   Copy,
   Download,
   ExternalLink,
+  Eye,
   FileSignature,
   Loader2,
   Plus,
   Send,
+  Trash2,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,14 +60,17 @@ export function AdminAgreementsClient({
   const [customTitle, setCustomTitle] = React.useState("");
   const [customBody, setCustomBody] = React.useState("");
   const [formData, setFormData] = React.useState<Record<string, string>>({});
+  const [partnerLogoFile, setPartnerLogoFile] = React.useState<File | null>(null);
   const [sendEmail, setSendEmail] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   function selectType(type: AgreementType) {
     setSelectedType(type);
     setDurationLabel(AGREEMENT_TYPE_META[type].defaultDuration);
     setFormData({});
+    setPartnerLogoFile(null);
     if (type === "tech_partner") {
       setRecipientName("Vikash Saravanan");
       setRecipientRole("Founder & CEO, LIT / CTO, CSC");
@@ -131,8 +138,22 @@ export function AdminAgreementsClient({
         toast.error(data.error ?? "Failed to create agreement.");
         return;
       }
+
+      // If a partner logo file was selected, upload it immediately
+      if (partnerLogoFile && data.agreement?.signing_token) {
+        try {
+          const lForm = new FormData();
+          lForm.append("token", data.agreement.signing_token);
+          lForm.append("logo", partnerLogoFile);
+          await fetch("/api/agreements/partner-logo", { method: "POST", body: lForm });
+        } catch {
+          // Non-blocking fallback
+        }
+      }
+
       setAgreements((prev) => [data.agreement as DigitalAgreementRow, ...prev]);
       setShowBuilder(false);
+      setPartnerLogoFile(null);
       toast.success(
         sendEmail
           ? "Agreement created and signing link emailed!"
@@ -141,6 +162,32 @@ export function AdminAgreementsClient({
       router.refresh();
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(agr: DigitalAgreementRow) {
+    const ok = window.confirm(
+      `Are you sure you want to permanently delete agreement ${agr.reference_code} (${agr.title})? This will delete all records and cannot be undone.`
+    );
+    if (!ok) return;
+
+    setDeletingId(agr.id);
+    try {
+      const res = await fetch(`/api/admin/agreements/${agr.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to delete agreement");
+        return;
+      }
+      setAgreements((prev) => prev.filter((a) => a.id !== agr.id));
+      toast.success(`Agreement ${agr.reference_code} deleted successfully.`);
+      router.refresh();
+    } catch {
+      toast.error("Failed to delete agreement");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -281,6 +328,15 @@ export function AdminAgreementsClient({
                   value={durationLabel}
                   onChange={(e) => setDurationLabel(e.target.value)}
                   placeholder="e.g. 12 Months"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-xs font-medium text-brand-ink">
+                Partner / Organization Logo (Optional)
+                <Input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => setPartnerLogoFile(e.target.files?.[0] ?? null)}
+                  className="cursor-pointer file:cursor-pointer"
                 />
               </label>
             </div>
@@ -530,17 +586,32 @@ export function AdminAgreementsClient({
                     <p className="text-[11px] text-brand-muted">{agr.recipient_email}</p>
                   </td>
                   <td className="p-3.5">
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                        agr.status === "signed"
-                          ? "bg-emerald-50 text-emerald-800"
-                          : agr.status === "voided"
-                            ? "bg-red-50 text-red-800"
-                            : "bg-amber-50 text-amber-900"
-                      }`}
-                    >
-                      {agr.status.toUpperCase()}
-                    </span>
+                    {agr.status === "signed" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 ring-1 ring-emerald-600/30">
+                        <CheckCircle2 className="size-3 text-emerald-600" />
+                        Signed &amp; Verified
+                      </span>
+                    ) : agr.status === "opened" ? (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-800 ring-1 ring-sky-600/30"
+                        title={agr.opened_at ? `Opened at ${new Date(agr.opened_at).toLocaleString()}` : "Opened by recipient"}
+                      >
+                        <Eye className="size-3 text-sky-600" />
+                        Opened / Viewed
+                      </span>
+                    ) : agr.status === "sent" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-900 ring-1 ring-amber-600/30">
+                        Sent — Awaiting Open
+                      </span>
+                    ) : agr.status === "voided" ? (
+                      <span className="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-800 ring-1 ring-red-600/30">
+                        Voided
+                      </span>
+                    ) : (
+                      <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                        {agr.status.toUpperCase()}
+                      </span>
+                    )}
                   </td>
                   <td className="p-3.5 text-right">
                     <div className="inline-flex items-center gap-1.5">
@@ -571,6 +642,22 @@ export function AdminAgreementsClient({
                       >
                         <ExternalLink className="size-3.5" />
                         Manage
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={deletingId === agr.id}
+                        onClick={() => void handleDelete(agr)}
+                        className="h-8 gap-1 px-2 text-[11px] text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                        title="Delete this agreement permanently"
+                      >
+                        {deletingId === agr.id ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="size-3.5" />
+                        )}
+                        Delete
                       </Button>
                     </div>
                   </td>

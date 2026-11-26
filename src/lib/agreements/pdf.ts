@@ -2,7 +2,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
+import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage, StandardFonts } from "pdf-lib";
 import sharp from "sharp";
 import QRCode from "qrcode";
 import type { AgreementSection } from "@/lib/agreements/templates";
@@ -140,6 +140,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
   ]);
 
   const sans = await doc.embedFont(sansBytes);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const script = await doc.embedFont(scriptBytes);
   const serif = await doc.embedFont(serifBytes);
 
@@ -462,19 +463,48 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
       cursorY -= 20;
     }
 
-    // Section Heading
-    page.drawText(section.heading.toUpperCase(), {
+    // Section Heading with subtle bar
+    page.drawRectangle({
       x: MARGIN_X + 16,
-      y: cursorY,
+      y: cursorY - 18,
+      width: textW,
+      height: 20,
+      color: SUB_CARD_BG,
+      borderColor: CARD_BORDER,
+      borderWidth: 0.5,
+    });
+    page.drawText(section.heading.toUpperCase(), {
+      x: MARGIN_X + 24,
+      y: cursorY - 13,
       size: 8.5,
-      font: sans,
+      font: bold,
       color: INK_DARK,
     });
-    cursorY -= 14;
+    cursorY -= 28;
 
     for (const clause of section.clauses) {
-      const cLines = wrapText(clause, sans, 8, textW);
-      for (const cl of cLines) {
+      // Check for bullet or number prefix
+      const numMatch = clause.match(/^([0-9]+\.[0-9]+(?:\.[0-9]+)?|[•✦\-])\s*([\s\S]*)/);
+      let prefix = "";
+      let titleBold = "";
+      let bodyText = clause;
+
+      if (numMatch) {
+        prefix = numMatch[1];
+        bodyText = numMatch[2];
+        const colonMatch = bodyText.match(/^([^:]+:)\s*([\s\S]*)/);
+        if (colonMatch && colonMatch[1].length < 70) {
+          titleBold = colonMatch[1];
+          bodyText = colonMatch[2];
+        }
+      }
+
+      const boldPrefix = [prefix, titleBold].filter(Boolean).join(" ");
+      const fullText = boldPrefix ? `${boldPrefix} ${bodyText}` : clause;
+      const cLines = wrapText(fullText, sans, 8, textW - 8);
+
+      for (let lineIdx = 0; lineIdx < cLines.length; lineIdx++) {
+        const cl = cLines[lineIdx];
         if (cursorY < 90) {
           ({ page, cursorY } = createWebCardPage("Agreement Terms & Covenants"));
           page.drawRectangle({
@@ -488,18 +518,52 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
           });
           cursorY -= 20;
         }
-        page.drawText(cl, {
-          x: MARGIN_X + 16,
-          y: cursorY,
-          size: 8,
-          font: sans,
-          color: INK_BODY,
-        });
-        cursorY -= 12;
+
+        // On first line, if we have a bold prefix, draw prefix in boldFont
+        if (lineIdx === 0 && boldPrefix) {
+          const prefixLead = `${boldPrefix} `;
+          if (cl.startsWith(prefixLead)) {
+            const leadW = bold.widthOfTextAtSize(prefixLead, 8);
+            page.drawText(prefixLead, {
+              x: MARGIN_X + 20,
+              y: cursorY,
+              size: 8,
+              font: bold,
+              color: INK_DARK,
+            });
+            const rest = cl.slice(prefixLead.length);
+            if (rest) {
+              page.drawText(rest, {
+                x: MARGIN_X + 20 + leadW,
+                y: cursorY,
+                size: 8,
+                font: sans,
+                color: INK_BODY,
+              });
+            }
+          } else {
+            page.drawText(cl, {
+              x: MARGIN_X + 20,
+              y: cursorY,
+              size: 8,
+              font: sans,
+              color: INK_BODY,
+            });
+          }
+        } else {
+          page.drawText(cl, {
+            x: MARGIN_X + 20,
+            y: cursorY,
+            size: 8,
+            font: sans,
+            color: INK_BODY,
+          });
+        }
+        cursorY -= 12.5;
       }
-      cursorY -= 4;
+      cursorY -= 6; // Comfortable gap between clauses
     }
-    cursorY -= 8;
+    cursorY -= 10; // Comfortable gap between sections
   }
 
   // =========================================================================
@@ -686,614 +750,27 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
 
   cursorY -= sigCardH + 18;
 
-  // =========================================================================
-  // APPENDED 7-SLIDE COMMUNITY SHOWCASE DECK (Matching Web Showcase Deck)
-  // =========================================================================
 
-  const drawSlidePresentationCard = (
-    p: PDFPage,
-    topY: number,
-    cardH: number,
-    slideNum: number,
-    eyebrow: string,
-    title: string,
-    subtitle: string,
-  ) => {
-    p.drawRectangle({
-      x: MARGIN_X,
-      y: topY - cardH,
-      width: CONTENT_W,
-      height: cardH,
-      color: WHITE,
-      borderColor: CARD_BORDER,
-      borderWidth: 0.75,
-    });
-
-    p.drawText(`SLIDE 0${slideNum} OF 07 · ${eyebrow.toUpperCase()}`, {
-      x: MARGIN_X + 16,
-      y: topY - 18,
-      size: 7,
-      font: sans,
-      color: ACCENT_BLUE,
-    });
-
-    p.drawText(title, {
-      x: MARGIN_X + 16,
-      y: topY - 34,
-      size: 11.5,
-      font: sans,
-      color: INK_DARK,
-    });
-
-    p.drawText(subtitle, {
-      x: MARGIN_X + 16,
-      y: topY - 47,
-      size: 7.5,
-      font: sans,
-      color: INK_MUTED,
-    });
-
-    p.drawLine({
-      start: { x: MARGIN_X + 16, y: topY - 54 },
-      end: { x: MARGIN_X + CONTENT_W - 16, y: topY - 54 },
-      thickness: 0.5,
-      color: CARD_BORDER,
-    });
-  };
-
-  // --- APPENDIX PAGE 1: SLIDES 1 & 2 ---
-  {
-    const ap1 = createWebCardPage("Community Deck · Slides 1 & 2");
-    let y = ap1.cursorY;
-
-    // Slide 1: Ecosystem Overview
-    const card1H = 350;
-    drawSlidePresentationCard(
-      ap1.page,
-      y,
-      card1H,
-      1,
-      "Ecosystem Overview",
-      "Great Ideas Grow in the Right Circle",
-      "Coimbatore Startup Community — Connect. Build. Grow.",
-    );
-
-    if (bannerImg) {
-      const bannerW = CONTENT_W - 32;
-      const bannerH = 145;
-      ap1.page.drawImage(bannerImg, {
-        x: MARGIN_X + 16,
-        y: y - 64 - bannerH,
-        width: bannerW,
-        height: bannerH,
-      });
-    }
-
-    const colW = (CONTENT_W - 48) / 3;
-    const colY = y - 225;
-    const bullets = [
-      ["FOUNDERS & BUILDERS", "Bridging early-stage creators with experienced operators and angels."],
-      ["COIMBATORE HUB", "Rooted in South India's premier industrial and engineering corridor."],
-      ["GIVE-FIRST ETHOS", "Peer problem-solving, transparency, and collaborative acceleration."],
-    ];
-
-    bullets.forEach(([btitle, bdesc], i) => {
-      const bx = MARGIN_X + 16 + i * (colW + 8);
-      ap1.page.drawRectangle({
-        x: bx,
-        y: colY - 95,
-        width: colW,
-        height: 95,
-        color: SUB_CARD_BG,
-        borderColor: CARD_BORDER,
-        borderWidth: 0.5,
-      });
-      ap1.page.drawText(btitle, { x: bx + 10, y: colY - 18, size: 7.2, font: sans, color: INK_DARK });
-      const dLines = wrapText(bdesc, sans, 7, colW - 20);
-      dLines.forEach((dl, di) => {
-        ap1.page.drawText(dl, { x: bx + 10, y: colY - 32 - di * 10, size: 7, font: sans, color: INK_MUTED });
-      });
-    });
-
-    y -= card1H + 18;
-
-    // Slide 2: About CSC & Founding Movement
-    const card2H = 350;
-    drawSlidePresentationCard(
-      ap1.page,
-      y,
-      card2H,
-      2,
-      "Our Story & Movement",
-      "Building South India's Most Dynamic Founder Hub",
-      "Founded with a mission to unite ambitious minds across Coimbatore.",
-    );
-
-    if (ticelImg) {
-      const imgW = 200;
-      const imgH = 150;
-      ap1.page.drawImage(ticelImg, {
-        x: MARGIN_X + 16,
-        y: y - 66 - imgH,
-        width: imgW,
-        height: imgH,
-      });
-
-      const textX = MARGIN_X + 16 + imgW + 16;
-      const storyW = CONTENT_W - 48 - imgW;
-      const story =
-        "Coimbatore Startup Community (CSC Circle) was established to provide aspiring founders, creators, and builders with an authentic home base.\n\nFrom closed-door founder roundtables at TICEL Bio Park to open-air masterminds and coffee house pitch teardowns, we create intentional spaces for builders to solve real problems and build enduring ventures.";
-      const sLines = wrapText(story, sans, 8, storyW);
-      let sy = y - 76;
-      sLines.forEach((sl) => {
-        ap1.page.drawText(sl, { x: textX, y: sy, size: 8, font: sans, color: INK_BODY });
-        sy -= 12;
-      });
-
-      // Quick Stats Pills
-      ap1.page.drawRectangle({
-        x: textX,
-        y: sy - 40,
-        width: 110,
-        height: 36,
-        color: SUB_CARD_BG,
-        borderColor: CARD_BORDER,
-        borderWidth: 0.5,
-      });
-      ap1.page.drawText("100+ FOUNDERS", { x: textX + 10, y: sy - 20, size: 7.5, font: sans, color: INK_DARK });
-      ap1.page.drawText("Active Startups", { x: textX + 10, y: sy - 31, size: 6.8, font: sans, color: INK_MUTED });
-
-      ap1.page.drawRectangle({
-        x: textX + 118,
-        y: sy - 40,
-        width: 110,
-        height: 36,
-        color: SUB_CARD_BG,
-        borderColor: CARD_BORDER,
-        borderWidth: 0.5,
-      });
-      ap1.page.drawText("BI-WEEKLY", { x: textX + 128, y: sy - 20, size: 7.5, font: sans, color: INK_DARK });
-      ap1.page.drawText("Meetups & Clinics", { x: textX + 128, y: sy - 31, size: 6.8, font: sans, color: INK_MUTED });
-    }
+  // Minimal 2-line attribution at base of agreement
+  if (cursorY < 60) {
+    ({ page, cursorY } = createWebCardPage("Attribution & Verification"));
   }
-
-  // --- APPENDIX PAGE 2: SLIDES 3 & 4 ---
-  {
-    const ap2 = createWebCardPage("Community Deck · Slides 3 & 4");
-    let y = ap2.cursorY;
-
-    // Slide 3: The People Behind CSC Circle
-    const card3H = 350;
-    drawSlidePresentationCard(
-      ap2.page,
-      y,
-      card3H,
-      3,
-      "Leadership & Stewards",
-      "The People Behind CSC Circle",
-      "Seven dedicated leaders steering the community's vision and operations.",
-    );
-
-    if (leadersImg) {
-      const lockupW = 220;
-      const lockupH = 154;
-      ap2.page.drawImage(leadersImg, {
-        x: MARGIN_X + 16,
-        y: y - 66 - lockupH,
-        width: lockupW,
-        height: lockupH,
-      });
-
-      const rosterX = MARGIN_X + 16 + lockupW + 14;
-      const rosterW = CONTENT_W - 46 - lockupW;
-      const leadersList = [
-        ["K. N. Reyash", "Founder & President · Ecosystem Vision"],
-        ["E. R. Sharan", "Co-Founder & VP · Strategic Growth"],
-        ["Mirra Mahendran", "Chief Executive Officer · Operations & Alliances"],
-        ["Vikash Saravanan", "Chief Technology Officer · LIT Tech Partner"],
-        ["Swathi", "Chief Community Officer · Member Experience"],
-        ["Kishore C", "Chief Operating Officer · Programs & Logistics"],
-        ["Jaibharath V", "Chief Business Officer · Partnerships & Value"],
-      ];
-
-      let ry = y - 72;
-      leadersList.forEach(([lname, lrole]) => {
-        ap2.page.drawText(lname, { x: rosterX, y: ry, size: 8.5, font: sans, color: INK_DARK });
-        ap2.page.drawText(lrole, { x: rosterX, y: ry - 11, size: 7.2, font: sans, color: INK_MUTED });
-        ap2.page.drawLine({
-          start: { x: rosterX, y: ry - 16 },
-          end: { x: rosterX + rosterW, y: ry - 16 },
-          thickness: 0.4,
-          color: CARD_BORDER,
-        });
-        ry -= 27;
-      });
-    }
-
-    y -= card3H + 18;
-
-    // Slide 4: Technology Partner Spotlight (LIT)
-    const card4H = 350;
-    drawSlidePresentationCard(
-      ap2.page,
-      y,
-      card4H,
-      4,
-      "Engineering Architecture",
-      "Exclusive Technology Partner: Logic Intelligence Technologies",
-      "Enterprise-grade digital infrastructure engineered specifically for CSC Circle.",
-    );
-
-    if (litLogoImg) {
-      const logoSize = 105;
-      ap2.page.drawImage(litLogoImg, {
-        x: MARGIN_X + 24,
-        y: y - 76 - logoSize,
-        width: logoSize,
-        height: logoSize,
-      });
-
-      ap2.page.drawText("LOGIC INTELLIGENCE TECHNOLOGIES", {
-        x: MARGIN_X + 16,
-        y: y - 198,
-        size: 7.2,
-        font: sans,
-        color: INK_DARK,
-      });
-      ap2.page.drawText("Sole & Exclusive Technology Partner", {
-        x: MARGIN_X + 16,
-        y: y - 210,
-        size: 7,
-        font: sans,
-        color: ACCENT_BLUE,
-      });
-
-      const techX = MARGIN_X + 16 + 145;
-      const techW = CONTENT_W - 48 - 145;
-      const pillars = [
-        ["Tamper-Evident Legal Engine", "Cryptographic SHA-256 agreement generation compliant with Section 10A & 65B."],
-        ["AI WhatsApp Concierge", "24/7 automated community query handling, event RSVPs, and member triage."],
-        ["Digital Founder Pass", "Dynamic QR check-in badges for partner discounts and verified co-working access."],
-      ];
-
-      let ty = y - 76;
-      pillars.forEach(([pTitle, pDesc]) => {
-        ap2.page.drawText(pTitle, { x: techX, y: ty, size: 8.5, font: sans, color: INK_DARK });
-        const pLines = wrapText(pDesc, sans, 7.5, techW);
-        pLines.forEach((pl, pli) => {
-          ap2.page.drawText(pl, { x: techX, y: ty - 12 - pli * 10, size: 7.5, font: sans, color: INK_BODY });
-        });
-        ty -= 44;
-      });
-    }
-  }
-
-  // --- APPENDIX PAGE 3: SLIDES 5 & 6 ---
-  {
-    const ap3 = createWebCardPage("Community Deck · Slides 5 & 6");
-    let y = ap3.cursorY;
-
-    // Slide 5: Flagship Programs
-    const card5H = 350;
-    drawSlidePresentationCard(
-      ap3.page,
-      y,
-      card5H,
-      5,
-      "Ecosystem Initiatives",
-      "Programs Designed for Tangible Founder Outcomes",
-      "High-signal gatherings and structured acceleration clinics.",
-    );
-
-    const progW = (CONTENT_W - 48) / 3;
-    const progs = [
-      [
-        "CSC CONNECT",
-        "Bi-Weekly Curated Meetups",
-        "Curated founder roundtables designed to bypass polite small talk. Founders share actual metrics, bottlenecks, and peer solutions.",
-        "Format: Stranger-to-Partner",
-      ],
-      [
-        "PITCH CLINICS",
-        "Closed-Door Deck Teardowns",
-        "Live teardowns with active angel investors, venture capital scouts, and seasoned operators before taking seed rounds to market.",
-        "Format: Closed Mastermind",
-      ],
-      [
-        "FOUNDER PASS",
-        "Verified Perks & Benefits",
-        "Exclusive community partner perks including cloud hosting credits, co-working desks across Coimbatore, and legal templates.",
-        "Format: Digital QR Badge",
-      ],
-    ];
-
-    progs.forEach(([pHeader, pSub, pBody, pFoot], idx) => {
-      const px = MARGIN_X + 16 + idx * (progW + 8);
-      const py = y - 70;
-      ap3.page.drawRectangle({
-        x: px,
-        y: py - 235,
-        width: progW,
-        height: 235,
-        color: SUB_CARD_BG,
-        borderColor: CARD_BORDER,
-        borderWidth: 0.5,
-      });
-
-      ap3.page.drawText(pHeader, { x: px + 10, y: py - 18, size: 8, font: sans, color: INK_DARK });
-      ap3.page.drawText(pSub, { x: px + 10, y: py - 30, size: 6.8, font: sans, color: INK_MUTED });
-      ap3.page.drawLine({
-        start: { x: px + 10, y: py - 36 },
-        end: { x: px + progW - 10, y: py - 36 },
-        thickness: 0.4,
-        color: CARD_BORDER,
-      });
-
-      const bLines = wrapText(pBody, sans, 7.2, progW - 20);
-      let by = py - 50;
-      bLines.forEach((bl) => {
-        ap3.page.drawText(bl, { x: px + 10, y: by, size: 7.2, font: sans, color: INK_BODY });
-        by -= 11;
-      });
-
-      ap3.page.drawText(pFoot, { x: px + 10, y: py - 220, size: 6.5, font: sans, color: ACCENT_BLUE });
-    });
-
-    y -= card5H + 18;
-
-    // Slide 6: Operating Principles & Code of Conduct
-    const card6H = 350;
-    drawSlidePresentationCard(
-      ap3.page,
-      y,
-      card6H,
-      6,
-      "Community Principles",
-      "Our Core Operating Principles & Code of Conduct",
-      "A high-trust sanctuary where Coimbatore's founders thrive.",
-    );
-
-    const values = [
-      [
-        "1. Give First, Ask Later",
-        "True networks flourish when founders offer insights, introductions, and feedback before seeking immediate transactions.",
-      ],
-      [
-        "2. Zero Tolerance for Spam",
-        "Unsolicited promotional sales pitches and indiscriminate DM blasts are strictly prohibited to preserve high signal-to-noise ratio.",
-      ],
-      [
-        "3. Radical Confidentiality (Vegas Rule)",
-        "Unreleased product teardowns, sensitive numbers, and struggles shared in closed circles remain strictly confidential.",
-      ],
-      [
-        "4. Inclusivity & Meritocracy",
-        "Whether you are a solo student hacker or a seasoned serial entrepreneur, everyone is evaluated on grit and integrity.",
-      ],
-    ];
-
-    const valW = (CONTENT_W - 44) / 2;
-    values.forEach(([vTitle, vDesc], idx) => {
-      const row = Math.floor(idx / 2);
-      const col = idx % 2;
-      const vx = MARGIN_X + 16 + col * (valW + 12);
-      const vy = y - 70 - row * 110;
-
-      ap3.page.drawRectangle({
-        x: vx,
-        y: vy - 96,
-        width: valW,
-        height: 96,
-        color: SUB_CARD_BG,
-        borderColor: CARD_BORDER,
-        borderWidth: 0.5,
-      });
-
-      ap3.page.drawText(vTitle, { x: vx + 12, y: vy - 18, size: 8.5, font: sans, color: INK_DARK });
-      const vdLines = wrapText(vDesc, sans, 7.5, valW - 24);
-      let vdy = vy - 32;
-      vdLines.forEach((vdl) => {
-        ap3.page.drawText(vdl, { x: vx + 12, y: vdy, size: 7.5, font: sans, color: INK_BODY });
-        vdy -= 11.5;
-      });
-    });
-  }
-
-  // --- APPENDIX PAGE 4: SLIDE 7 & BESPOKE FOOTER ---
-  {
-    const ap4 = createWebCardPage("Community Deck · Slide 7 & Contact");
-    let y = ap4.cursorY;
-
-    // Slide 7: Official Community Hub & Channels
-    const card7H = 680;
-    drawSlidePresentationCard(
-      ap4.page,
-      y,
-      card7H,
-      7,
-      "Let's Connect & Build Together",
-      "Join the Circle. Lead the Future.",
-      "Official community contact hub, partnerships & platform access.",
-    );
-
-    const qrCardW = 160;
-    const qrCardH = 170;
-    const qrCardX = MARGIN_X + 20;
-    const qrCardY = y - 68;
-
-    // QR Code Box (Left)
-    ap4.page.drawRectangle({
-      x: qrCardX,
-      y: qrCardY - qrCardH,
-      width: qrCardW,
-      height: qrCardH,
-      color: SUB_CARD_BG,
-      borderColor: CARD_BORDER,
-      borderWidth: 0.5,
-    });
-
-    if (qrImg) {
-      const qrSize = 118;
-      ap4.page.drawImage(qrImg, {
-        x: qrCardX + (qrCardW - qrSize) / 2,
-        y: qrCardY - qrSize - 12,
-        width: qrSize,
-        height: qrSize,
-      });
-    }
-
-    ap4.page.drawText("SCAN TO VISIT PLATFORM", {
-      x: qrCardX + 16,
-      y: qrCardY - 145,
-      size: 7.2,
-      font: sans,
-      color: INK_DARK,
-    });
-    ap4.page.drawText("csc.logicintelligencetechnologies.in", {
-      x: qrCardX + 10,
-      y: qrCardY - 158,
-      size: 6.2,
-      font: sans,
-      color: ACCENT_BLUE,
-    });
-
-    // Right Column: Official Contact Hub Header & Description
-    const rightX = qrCardX + qrCardW + 16;
-    const rightW = CONTENT_W - qrCardW - 56;
-
-    if (cscLogoImg) {
-      const logoW = 32;
-      ap4.page.drawImage(cscLogoImg, {
-        x: rightX,
-        y: qrCardY - logoW,
-        width: logoW,
-        height: logoW,
-      });
-    }
-
-    ap4.page.drawText("COIMBATORE STARTUP COMMUNITY", {
-      x: rightX + 40,
-      y: qrCardY - 14,
-      size: 10,
-      font: sans,
-      color: INK_DARK,
-    });
-    ap4.page.drawText("Official Community Contact Hub", {
-      x: rightX + 40,
-      y: qrCardY - 26,
-      size: 7.5,
-      font: sans,
-      color: INK_MUTED,
-    });
-
-    const contactBlurb =
-      "CSC Circle welcomes collaborative partnerships with forward-thinking enterprises, founders, student innovators, and academic incubators across Tamil Nadu.";
-    const cbLines = wrapText(contactBlurb, sans, 7.5, rightW);
-    let cby = qrCardY - 44;
-    cbLines.forEach((cbl) => {
-      ap4.page.drawText(cbl, { x: rightX, y: cby, size: 7.5, font: sans, color: INK_BODY });
-      cby -= 11;
-    });
-
-    // Highlighted Official Email Card
-    ap4.page.drawRectangle({
-      x: rightX,
-      y: cby - 34,
-      width: rightW,
-      height: 34,
-      color: SUB_CARD_BG,
-      borderColor: CARD_BORDER,
-      borderWidth: 0.5,
-    });
-    ap4.page.drawText("OFFICIAL COMMUNITY INQUIRIES & PARTNERSHIPS", {
-      x: rightX + 10,
-      y: cby - 13,
-      size: 6.5,
-      font: sans,
-      color: INK_MUTED,
-    });
-    ap4.page.drawText("coimbatorestartupcommunity@gmail.com", {
-      x: rightX + 10,
-      y: cby - 25,
-      size: 8.5,
-      font: sans,
-      color: ACCENT_BLUE,
-    });
-
-    // Middle Section: Stay Connected Banner Graphic
-    let bannerBottomY = qrCardY - qrCardH - 12;
-    if (stayConnectedImg) {
-      const bannerW = 380;
-      const bannerH = 177;
-      const bannerX = MARGIN_X + 20 + ((CONTENT_W - 40) - bannerW) / 2;
-      bannerBottomY = qrCardY - qrCardH - 12 - bannerH;
-      ap4.page.drawImage(stayConnectedImg, {
-        x: bannerX,
-        y: bannerBottomY,
-        width: bannerW,
-        height: bannerH,
-      });
-    }
-
-    // 2-Column Channel Links below banner
-    const channelCols = [
-      [
-        ["Official Community Email", "coimbatorestartupcommunity@gmail.com"],
-        ["WhatsApp Founder Network", "chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB"],
-        ["WhatsApp 24/7 AI Concierge", "+91 75500 67712 (wa.me/917550067712)"],
-      ],
-      [
-        ["Official LinkedIn", "linkedin.com/in/csc-coimbatore-startup-community"],
-        ["Instagram Channel", "@coimbatorestartupcommunity"],
-        ["Technology Partner (LIT)", "Logic Intelligence Technologies (LIT)"],
-      ],
-    ];
-
-    const colW = (CONTENT_W - 48) / 2;
-    let cy = bannerBottomY - 14;
-    for (let r = 0; r < 3; r++) {
-      const rowY = cy - r * 32;
-      channelCols.forEach((colData, colIdx) => {
-        const item = colData[r];
-        if (!item) return;
-        const [cTitle, cVal] = item;
-        const cx = MARGIN_X + 20 + colIdx * (colW + 8);
-
-        ap4.page.drawRectangle({
-          x: cx,
-          y: rowY - 26,
-          width: colW,
-          height: 26,
-          color: SUB_CARD_BG,
-          borderColor: CARD_BORDER,
-          borderWidth: 0.5,
-        });
-
-        ap4.page.drawText(cTitle, { x: cx + 8, y: rowY - 10, size: 7, font: sans, color: INK_DARK });
-        ap4.page.drawText(cVal, { x: cx + 8, y: rowY - 20, size: 6.5, font: sans, color: ACCENT_BLUE });
-      });
-    }
-
-    const attributionY = cy - 3 * 32 - 10;
-    // Minimal 2-line attribution at base of slide 7
-    drawCenteredText(
-      ap4.page,
-      "Coimbatore Startup Community — A Community-Led Initiative",
-      attributionY,
-      sans,
-      8.5,
-      INK_BODY,
-    );
-    drawCenteredText(
-      ap4.page,
-      "Platform Architecture & Engineering by Logic Intelligence Technologies (LIT)",
-      attributionY - 14,
-      sans,
-      7.5,
-      INK_MUTED,
-    );
-  }
-
+  drawCenteredText(
+    page,
+    "Coimbatore Startup Community — A Community-Led Initiative",
+    cursorY - 16,
+    sans,
+    8.5,
+    INK_BODY,
+  );
+  drawCenteredText(
+    page,
+    "Platform Architecture & Engineering by Logic Intelligence Technologies (LIT)",
+    cursorY - 28,
+    sans,
+    7.5,
+    INK_MUTED,
+  );
   // Global Page Numbering Footer on Every Page
   const totalPages = pages.length;
   pages.forEach((p, idx) => {

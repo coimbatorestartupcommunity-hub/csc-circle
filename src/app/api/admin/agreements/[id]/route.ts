@@ -60,8 +60,8 @@ export async function PATCH(
     return NextResponse.json({ agreement: updated as DigitalAgreementRow });
   }
 
-  if (agreement.status !== "sent") {
-    return authResponse({ error: "Only pending agreements can be resent." }, 409);
+  if (agreement.status !== "sent" && agreement.status !== "opened") {
+    return authResponse({ error: "Only pending or opened agreements can be resent." }, 409);
   }
 
   const signingUrl = `${siteConfig.url}/agreements/sign/${agreement.signing_token}`;
@@ -74,4 +74,42 @@ export async function PATCH(
   });
 
   return NextResponse.json({ ok: true, signingUrl });
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await getAdminContext();
+  if (ctx.mode !== "live" || !can(ctx, "settings.manage")) {
+    return authResponse({ error: "Unauthorized" }, 403);
+  }
+  if (!isSafeOrigin(request)) {
+    return authResponse({ error: "Request origin could not be verified." }, 403);
+  }
+  const { id } = await params;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return authResponse({ error: "Not found" }, 404);
+
+  const { data } = await agreementsTable().select("*").eq("id", id).maybeSingle();
+  const agreement = data as DigitalAgreementRow | null;
+  if (!agreement) return authResponse({ error: "Agreement not found." }, 404);
+
+  // If partner logo was stored, clean it up
+  if (agreement.partner_logo_path) {
+    try {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      await createAdminClient()
+        .storage.from("agreement-assets")
+        .remove([agreement.partner_logo_path]);
+    } catch {
+      // Best-effort cleanup
+    }
+  }
+
+  const { error } = await agreementsTable().delete().eq("id", id);
+  if (error) {
+    return authResponse({ error: "Failed to delete agreement: " + error.message }, 500);
+  }
+
+  return NextResponse.json({ ok: true, deletedId: id });
 }

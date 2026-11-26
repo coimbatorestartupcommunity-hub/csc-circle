@@ -34,8 +34,24 @@ export default async function SignAgreementPage({
   const row = data as DigitalAgreementRow | null;
   if (error || !row) notFound();
 
+  // If status is "sent", record that the recipient has opened and viewed the agreement
+  if (row.status === "sent") {
+    const nowIso = new Date().toISOString();
+    await agreementsTable()
+      .update({
+        status: "opened",
+        opened_at: nowIso,
+        updated_at: nowIso,
+      })
+      .eq("id", row.id);
+    row.status = "opened";
+    row.opened_at = nowIso;
+  }
+
   const isExpired =
-    row.status === "sent" && row.expires_at && new Date(row.expires_at).getTime() < Date.now();
+    ((row.status as string) === "sent" || row.status === "opened") &&
+    row.expires_at &&
+    new Date(row.expires_at).getTime() < Date.now();
 
   const view: PublicAgreementView = {
     id: row.id,

@@ -22,7 +22,8 @@ export interface DigitalAgreementRow {
   csc_signatory_name: string;
   csc_signatory_role: string;
   signing_token: string;
-  status: "draft" | "sent" | "signed" | "voided" | "expired";
+  status: "draft" | "sent" | "opened" | "signed" | "voided" | "expired";
+  opened_at?: string | null;
   expires_at: string | null;
   partner_logo_path: string | null;
   signed_name: string | null;
