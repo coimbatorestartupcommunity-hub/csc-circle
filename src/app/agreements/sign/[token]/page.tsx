@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Container } from "@/components/common/container";
 import { getAuthUser } from "@/lib/supabase/server";
-import { agreementsTable, type DigitalAgreementRow } from "@/lib/agreements/db";
+import { agreementsTable, downloadPartnerLogo, type DigitalAgreementRow } from "@/lib/agreements/db";
 import {
   AgreementSigningClient,
   type PublicAgreementView,
@@ -53,6 +53,13 @@ export default async function SignAgreementPage({
     row.expires_at &&
     new Date(row.expires_at).getTime() < Date.now();
 
+  const partnerLogoBuffer = row.partner_logo_path
+    ? await downloadPartnerLogo(row.partner_logo_path)
+    : null;
+  const partnerLogoUrl = partnerLogoBuffer
+    ? `data:image/png;base64,${partnerLogoBuffer.toString("base64")}`
+    : null;
+
   const view: PublicAgreementView = {
     id: row.id,
     referenceCode: row.reference_code,
@@ -70,6 +77,7 @@ export default async function SignAgreementPage({
     sections: row.sections,
     status: isExpired ? "expired" : row.status,
     hasPartnerLogo: Boolean(row.partner_logo_path),
+    partnerLogoUrl,
     signedName: row.signed_name,
     signedAt: row.signed_at,
     documentHash: row.document_hash,

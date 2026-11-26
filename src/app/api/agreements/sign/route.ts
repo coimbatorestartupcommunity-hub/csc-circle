@@ -25,9 +25,14 @@ export async function POST(request: Request) {
 
   const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const user = await getAuthUser();
-  const rateLimitKey = user?.id ? `agreement-sign:${user.id}` : `agreement-sign:${clientIp}`;
+  if (!user || !user.email) {
+    return authResponse(
+      { error: "Please log in with your verified email address before signing this agreement." },
+      401,
+    );
+  }
 
-  if (!rateLimit(rateLimitKey, 12, 60_000).allowed) {
+  if (!rateLimit(`agreement-sign:${user.id}`, 8, 60_000).allowed) {
     return authResponse({ error: "Too many attempts. Please wait a moment." }, 429);
   }
 
@@ -46,6 +51,15 @@ export async function POST(request: Request) {
   const agreement = data as DigitalAgreementRow | null;
   if (error || !agreement) {
     return authResponse({ error: "Agreement link is invalid or unavailable." }, 404);
+  }
+
+  if (agreement.recipient_email.toLowerCase().trim() !== user.email.toLowerCase().trim()) {
+    return authResponse(
+      {
+        error: `This agreement is addressed to ${agreement.recipient_email}. You are currently signed in as ${user.email}. Please sign in with ${agreement.recipient_email} to sign.`,
+      },
+      403,
+    );
   }
 
   if (agreement.status === "signed") {

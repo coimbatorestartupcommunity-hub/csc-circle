@@ -10,6 +10,8 @@ import {
   Download,
   FileCheck2,
   Loader2,
+  Lock,
+  LogIn,
   ShieldCheck,
   Upload,
 } from "lucide-react";
@@ -38,6 +40,7 @@ export interface PublicAgreementView {
   sections: AgreementSection[];
   status: "draft" | "sent" | "opened" | "signed" | "voided" | "expired";
   hasPartnerLogo: boolean;
+  partnerLogoUrl?: string | null;
   signedName: string | null;
   signedAt: string | null;
   documentHash: string | null;
@@ -57,7 +60,7 @@ export function AgreementSigningClient({
     currentUserEmail &&
       currentUserEmail.toLowerCase().trim() === agreement.recipientEmail.toLowerCase().trim(),
   );
-  const canSign = agreement.status === "sent" || agreement.status === "opened";
+  const canSign = isEmailMatched && (agreement.status === "sent" || agreement.status === "opened");
   const canUploadLogo =
     agreement.status !== "signed" &&
     agreement.status !== "voided" &&
@@ -70,6 +73,9 @@ export function AgreementSigningClient({
   const [submitting, setSubmitting] = React.useState(false);
   const [uploadingLogo, setUploadingLogo] = React.useState(false);
   const [hasPartnerLogo, setHasPartnerLogo] = React.useState(agreement.hasPartnerLogo);
+  const [partnerLogoUrl, setPartnerLogoUrl] = React.useState<string | null>(
+    agreement.partnerLogoUrl ?? null,
+  );
 
   async function handleLogoUpload(file?: File) {
     if (!file) return;
@@ -85,11 +91,34 @@ export function AgreementSigningClient({
         return;
       }
       setHasPartnerLogo(true);
-      toast.success("Organization logo attached to this agreement.");
+      if (data.previewUrl) {
+        setPartnerLogoUrl(data.previewUrl);
+      }
+      toast.success("Circular organization logo uploaded successfully!");
     } finally {
       setUploadingLogo(false);
     }
   }
+
+  async function handleLogoRemove() {
+    setUploadingLogo(true);
+    try {
+      const res = await fetch("/api/agreements/partner-logo", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      if (res.ok) {
+        setHasPartnerLogo(false);
+        setPartnerLogoUrl(null);
+        toast.success("Partner logo removed.");
+      }
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
+  const loginHref = `/login?next=${encodeURIComponent(`/agreements/sign/${token}`)}`;
 
   async function handleSign(e: React.FormEvent) {
     e.preventDefault();
@@ -122,8 +151,6 @@ export function AgreementSigningClient({
       setSubmitting(false);
     }
   }
-
-  const loginHref = `/login?next=${encodeURIComponent(`/agreements/sign/${token}`)}`;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -185,28 +212,64 @@ export function AgreementSigningClient({
         </div>
       </div>
 
-      {/* Verified Signing Session Trust Banner */}
-      <div
-        role="region"
-        aria-label="Verified Signing Session"
-        className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-950 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div className="flex items-center gap-2.5">
-          <ShieldCheck className="size-4 shrink-0 text-emerald-700" />
-          <p className="leading-relaxed">
-            <strong>Cryptographically Verified Signing Session:</strong> Addressed to{" "}
-            <span className="font-semibold underline decoration-emerald-400 underline-offset-2">
-              {agreement.recipientEmail}
-            </span>
-            . Execution is legally binding under Section 10A of the IT Act, 2000.
-          </p>
+      {/* Verified Signing Session Trust Banner / Email Login Gate */}
+      {!isEmailMatched ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50/95 p-4 sm:p-5 text-xs text-amber-950 sm:flex-row sm:items-center sm:justify-between shadow-2xs"
+        >
+          <div className="flex items-start gap-3">
+            <Lock className="mt-0.5 size-5 shrink-0 text-amber-700" />
+            <div>
+              <p className="font-bold text-amber-950 text-sm">
+                Email Login Required to Execute Agreement
+              </p>
+              <p className="mt-1 leading-relaxed text-amber-900">
+                {currentUserEmail
+                  ? `You are currently signed in as ${currentUserEmail}. To execute this agreement, you must sign in with ${agreement.recipientEmail}.`
+                  : `To execute and submit this agreement, you must sign in with your verified email: ${agreement.recipientEmail}.`}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            {currentUserEmail ? (
+              <form action="/auth/signout" method="post">
+                <Button type="submit" variant="outline" size="sm">
+                  Sign out
+                </Button>
+              </form>
+            ) : null}
+            <Button
+              render={<Link href={loginHref} />}
+              size="sm"
+              className="gap-1.5 bg-amber-700 hover:bg-amber-800 text-white"
+            >
+              <LogIn className="size-3.5" />
+              Sign in with Email
+            </Button>
+          </div>
         </div>
-        {currentUserEmail ? (
+      ) : (
+        <div
+          role="region"
+          aria-label="Verified Signing Session"
+          className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-950 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="size-4 shrink-0 text-emerald-700" />
+            <p className="leading-relaxed">
+              <strong>Cryptographically Verified Signing Session:</strong> Signed in as{" "}
+              <span className="font-semibold underline decoration-emerald-400 underline-offset-2">
+                {currentUserEmail}
+              </span>
+              . Execution is legally binding under Section 10A of the IT Act, 2000.
+            </p>
+          </div>
           <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-900">
-            Account: {currentUserEmail}
+            Verified Signer
           </span>
-        ) : null}
-      </div>
+        </div>
+      )}
 
       {/* Full 3-4 Page Legal Clauses (Compact smaller legal typography as requested) */}
       <div className="rounded-2xl border border-brand-border bg-brand-white p-5 shadow-2xs sm:p-7">
@@ -267,49 +330,110 @@ export function AgreementSigningClient({
                 Digital Execution &amp; Signature
               </h2>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-200">
-              <CheckCircle2 className="size-3 text-emerald-600" />
-              Ready for Signature
-            </span>
+            {isEmailMatched ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                <CheckCircle2 className="size-3 text-emerald-600" />
+                Verified: {currentUserEmail}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-900 ring-1 ring-amber-200">
+                <Lock className="size-3 text-amber-700" />
+                Locked: Sign-in required
+              </span>
+            )}
           </div>
 
-          {/* Optional Organization / Partner Logo Upload */}
-          <div className="rounded-xl border border-dashed border-brand-border bg-brand-cloud/40 p-4 text-xs">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-semibold text-brand-ink">
-                  Organization / Partner Logo (Optional)
-                </p>
-                <p className="mt-0.5 text-brand-muted">
-                  Optionally attach your PNG, JPG, or WebP logo to appear alongside CSC&apos;s circular logo on the final PDF.
-                </p>
+          {/* Circular Organization / Partner Logo Upload & Visual Preview */}
+          <div className="rounded-2xl border border-brand-border bg-gradient-to-r from-brand-cloud/40 via-white to-brand-cloud/30 p-4 sm:p-5 text-xs shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                {/* Circular Logo Preview Box */}
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-full border-2 border-brand-accent/60 bg-white shadow-xs flex items-center justify-center">
+                  {partnerLogoUrl ? (
+                    <Image
+                      src={partnerLogoUrl}
+                      alt="Circular Partner Organization Logo"
+                      fill
+                      className="object-cover rounded-full"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center p-1 text-[9px] text-brand-muted">
+                      <Upload className="size-4 text-brand-muted mb-0.5" />
+                      <span>Circle</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-sm text-brand-ink">
+                      Circular Organization Logo
+                    </p>
+                    {partnerLogoUrl ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                        <CheckCircle2 className="size-3 text-emerald-600" />
+                        Uploaded &amp; Attached
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-brand-muted font-normal">(Optional)</span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-xs leading-relaxed text-brand-secondary">
+                    {partnerLogoUrl
+                      ? "Your circular logo is successfully attached and will be displayed alongside CSC's circular emblem on the official signed agreement."
+                      : "Upload your company or institution logo. It will be automatically cropped into a circular shape for the official agreement."}
+                  </p>
+                </div>
               </div>
-              <label
-                className={`inline-flex items-center gap-2 rounded-xl border border-brand-border bg-white px-3.5 py-2 text-xs font-semibold transition ${
-                  canUploadLogo && !uploadingLogo
-                    ? "cursor-pointer text-brand-ink hover:bg-brand-cloud"
-                    : "cursor-not-allowed opacity-50 text-brand-muted"
-                }`}
-              >
-                {uploadingLogo ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : hasPartnerLogo ? (
-                  <FileCheck2 className="size-3.5 text-emerald-600" />
-                ) : (
-                  <Upload className="size-3.5" />
-                )}
-                <span>{hasPartnerLogo ? "Logo Attached (Replace)" : "Upload Logo"}</span>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  disabled={!canUploadLogo || uploadingLogo}
-                  className="sr-only"
-                  onChange={(e) => {
-                    void handleLogoUpload(e.target.files?.[0]);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <label
+                  className={`inline-flex items-center gap-2 rounded-xl border border-brand-border bg-white px-4 py-2.5 text-xs font-semibold shadow-2xs transition ${
+                    canUploadLogo && !uploadingLogo
+                      ? "cursor-pointer text-brand-ink hover:bg-brand-cloud hover:border-brand-accent"
+                      : "cursor-not-allowed opacity-50 text-brand-muted"
+                  }`}
+                >
+                  {uploadingLogo ? (
+                    <Loader2 className="size-3.5 animate-spin text-brand-accent" />
+                  ) : partnerLogoUrl ? (
+                    <FileCheck2 className="size-3.5 text-emerald-600" />
+                  ) : (
+                    <Upload className="size-3.5 text-brand-accent" />
+                  )}
+                  <span>
+                    {uploadingLogo
+                      ? "Cropping Circle..."
+                      : partnerLogoUrl
+                        ? "Replace Logo"
+                        : "Upload Circular Logo"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    disabled={!canUploadLogo || uploadingLogo}
+                    className="sr-only"
+                    onChange={(e) => {
+                      void handleLogoUpload(e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+
+                {partnerLogoUrl ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogoRemove}
+                    disabled={uploadingLogo}
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700 text-xs"
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -405,10 +529,20 @@ export function AgreementSigningClient({
             <p className="text-[11px] text-brand-muted">
               CSC Authorized Signatory: <strong>{agreement.cscSignatoryName}</strong>
             </p>
-            <Button type="submit" disabled={!canSign || submitting || !accepted} className="h-11 gap-2 px-6">
-              {submitting ? <Loader2 className="size-4 animate-spin" /> : <FileCheck2 className="size-4" />}
-              Submit &amp; Sign Agreement
-            </Button>
+            {isEmailMatched ? (
+              <Button type="submit" disabled={!canSign || submitting || !accepted} className="h-11 gap-2 px-6">
+                {submitting ? <Loader2 className="size-4 animate-spin" /> : <FileCheck2 className="size-4" />}
+                Submit &amp; Sign Agreement
+              </Button>
+            ) : (
+              <Button
+                render={<Link href={loginHref} />}
+                className="h-11 gap-2 px-6 bg-amber-700 hover:bg-amber-800 text-white"
+              >
+                <Lock className="size-4" />
+                Sign in to Submit &amp; Sign
+              </Button>
+            )}
           </div>
         </form>
       ) : null}
