@@ -109,8 +109,8 @@ describe("Comprehensive System Audit — Today's Deliverables", () => {
 
       expect(pdf.byteLength).toBeGreaterThan(50000); // Has high-res embedded graphics & QR
       const parsed = await PDFDocument.load(new Uint8Array(pdf));
-      // Legal terms + Signature + Audit Certificate + 4 Presentation Appendix Pages = >= 6 pages
-      expect(parsed.getPageCount()).toBeGreaterThanOrEqual(6);
+      // Web signing card layout: Legal terms + Signature + 4 Presentation Appendix Pages = >= 5 pages
+      expect(parsed.getPageCount()).toBeGreaterThanOrEqual(5);
     }
   }, 45_000);
 

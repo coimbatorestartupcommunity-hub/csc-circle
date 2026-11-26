@@ -35,17 +35,22 @@ export interface AgreementPdfInput {
 
 const A4_W = 595.28;
 const A4_H = 841.89;
-const MARGIN_X = 52;
-const CONTENT_W = A4_W - MARGIN_X * 2;
+const MARGIN_X = 40;
+const CONTENT_W = A4_W - MARGIN_X * 2; // 515.28
 
-// Editorial Color Palette (Showit Style: High contrast, Pure White & Charcoal Black)
-const WHITE = rgb(1, 1, 1);
-const INK_DARK = rgb(0.067, 0.067, 0.067); // #111111
-const INK_BODY = rgb(0.14, 0.14, 0.16); // #242429
-const INK_MUTED = rgb(0.42, 0.43, 0.47); // #6B6E78
-const RULE_LIGHT = rgb(0.86, 0.87, 0.89); // #DCDEE3
-const CARD_BG = rgb(0.98, 0.982, 0.988); // #F9FAFC
-const SIG_BLUE = rgb(0.118, 0.251, 0.686); // #1E40AF ink-blue handwritten accent
+// Colors matching CSC Circle Web Theme
+const PAGE_BG = rgb(0.965, 0.973, 0.984); // #F7F9FC subtle web background
+const WHITE = rgb(1, 1, 1); // Card background #FFFFFF
+const INK_DARK = rgb(0.06, 0.09, 0.16); // #0F172A brand-ink
+const INK_BODY = rgb(0.2, 0.25, 0.33); // #334155 brand-secondary
+const INK_MUTED = rgb(0.45, 0.52, 0.62); // #718096 brand-muted
+const CARD_BORDER = rgb(0.88, 0.91, 0.94); // #E2E8F0 brand-border
+const SUB_CARD_BG = rgb(0.94, 0.955, 0.972); // #F1F5F9 brand-cloud
+const ACCENT_BLUE = rgb(0.145, 0.388, 0.922); // #2563EB brand-accent
+const SIG_BLUE = rgb(0.118, 0.251, 0.686); // #1E40AF ink-blue signature
+const BADGE_GREEN_BG = rgb(0.925, 0.985, 0.95);
+const BADGE_GREEN_BORDER = rgb(0.65, 0.88, 0.74);
+const BADGE_GREEN_TEXT = rgb(0.04, 0.45, 0.25);
 
 async function loadFontFile(filename: string): Promise<Uint8Array> {
   const fullPath = path.join(process.cwd(), "public", "fonts", "agreements", filename);
@@ -96,105 +101,71 @@ function drawCenteredText(
   font: PDFFont,
   size: number,
   color = INK_DARK,
-  letterSpacing = 0,
 ) {
-  if (letterSpacing > 0) {
-    const chars = [...text];
-    const totalW =
-      chars.reduce((acc, ch) => acc + font.widthOfTextAtSize(ch, size), 0) +
-      Math.max(0, chars.length - 1) * letterSpacing;
-    let x = (A4_W - totalW) / 2;
-    for (const ch of chars) {
-      page.drawText(ch, { x, y, size, font, color });
-      x += font.widthOfTextAtSize(ch, size) + letterSpacing;
-    }
-    return;
-  }
   const width = font.widthOfTextAtSize(text, size);
   page.drawText(text, { x: (A4_W - width) / 2, y, size, font, color });
-}
-
-function drawTrackedLeft(
-  page: PDFPage,
-  text: string,
-  x: number,
-  y: number,
-  font: PDFFont,
-  size: number,
-  color = INK_DARK,
-  letterSpacing = 1.4,
-) {
-  let cursor = x;
-  for (const ch of [...text]) {
-    page.drawText(ch, { x: cursor, y, size, font, color });
-    cursor += font.widthOfTextAtSize(ch, size) + letterSpacing;
-  }
-}
-
-function drawTrackedRight(
-  page: PDFPage,
-  text: string,
-  rightX: number,
-  y: number,
-  font: PDFFont,
-  size: number,
-  color = INK_DARK,
-  letterSpacing = 1.4,
-) {
-  const chars = [...text];
-  const totalW =
-    chars.reduce((acc, ch) => acc + font.widthOfTextAtSize(ch, size), 0) +
-    Math.max(0, chars.length - 1) * letterSpacing;
-  drawTrackedLeft(page, text, rightX - totalW, y, font, size, color, letterSpacing);
 }
 
 export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Buffer> {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
 
-  // Load typography & brand image assets in parallel
+  // Load typography & brand images
   const [
-    serifBytes,
-    serifItalicBytes,
     sansBytes,
     scriptBytes,
+    serifBytes,
     cscLogoPng,
     litLogoPng,
     bannerPng,
     ticelPng,
     leadersPng,
+    qrPng,
+    stayConnectedPng,
   ] = await Promise.all([
-    loadFontFile("CormorantGaramond.ttf"),
-    loadFontFile("CormorantGaramond-Italic.ttf"),
     loadFontFile("PlusJakartaSans.ttf"),
     loadFontFile("Caveat.ttf"),
-    loadCachedPng("public/brand/csc-circle-seal.png", 260, 260),
-    loadCachedPng("public/brand/lit-seal.png", 260, 260),
+    loadFontFile("CormorantGaramond.ttf"),
+    loadCachedPng("public/brand/csc-circle-seal.png", 240, 240),
+    loadCachedPng("public/brand/lit-seal.png", 240, 240),
     loadCachedPng("public/images/agreements/csc-web-banner.jpg", 720, 380),
     loadCachedPng("public/images/agreements/community-ticel.webp", 640, 480),
     loadCachedPng("public/images/agreements/leaders/csc-leaders-lockup.jpg", 640, 800),
+    QRCode.toBuffer("https://csc.logicintelligencetechnologies.in", {
+      margin: 1,
+      width: 280,
+      color: { dark: "#09090b", light: "#ffffff" },
+    }),
+    loadCachedPng("public/images/agreements/social/stay-connected.png", 900, 420),
   ]);
 
-  const serif = await doc.embedFont(serifBytes);
-  const serifItalic = await doc.embedFont(serifItalicBytes);
   const sans = await doc.embedFont(sansBytes);
   const script = await doc.embedFont(scriptBytes);
+  const serif = await doc.embedFont(serifBytes);
 
   let cscLogoImg: PDFImage | null = null;
   if (cscLogoPng) {
-    cscLogoImg = await doc.embedPng(new Uint8Array(cscLogoPng));
+    try {
+      cscLogoImg = await doc.embedPng(new Uint8Array(cscLogoPng));
+    } catch {
+      cscLogoImg = null;
+    }
   }
 
   let litLogoImg: PDFImage | null = null;
   if (litLogoPng) {
-    litLogoImg = await doc.embedPng(new Uint8Array(litLogoPng));
+    try {
+      litLogoImg = await doc.embedPng(new Uint8Array(litLogoPng));
+    } catch {
+      litLogoImg = null;
+    }
   }
 
   let partnerLogoImg: PDFImage | null = null;
   if (input.partnerLogoBuffer && input.partnerLogoBuffer.length > 0) {
     try {
       const normalized = await sharp(input.partnerLogoBuffer)
-        .resize(260, 140, { fit: "inside" })
+        .resize(240, 120, { fit: "inside" })
         .png()
         .toBuffer();
       partnerLogoImg = await doc.embedPng(new Uint8Array(normalized));
@@ -230,310 +201,445 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     }
   }
 
+  let qrImg: PDFImage | null = null;
+  if (qrPng) {
+    try {
+      qrImg = await doc.embedPng(new Uint8Array(qrPng));
+    } catch {
+      qrImg = null;
+    }
+  }
+
+  let stayConnectedImg: PDFImage | null = null;
+  if (stayConnectedPng) {
+    try {
+      stayConnectedImg = await doc.embedPng(new Uint8Array(stayConnectedPng));
+    } catch {
+      stayConnectedImg = null;
+    }
+  }
+
   const pages: PDFPage[] = [];
 
-  const createEditorialPage = (isFirst: boolean): { page: PDFPage; cursorY: number } => {
+  const createWebCardPage = (topHeaderTitle: string): { page: PDFPage; cursorY: number } => {
     const page = doc.addPage([A4_W, A4_H]);
-    page.drawRectangle({ x: 0, y: 0, width: A4_W, height: A4_H, color: WHITE });
+    // Page canvas uses soft web background
+    page.drawRectangle({ x: 0, y: 0, width: A4_W, height: A4_H, color: PAGE_BG });
     pages.push(page);
 
-    // Tracked uppercase header metadata (Showit style)
-    drawTrackedLeft(page, "COIMBATORE STARTUP COMMUNITY", MARGIN_X, A4_H - 42, sans, 7.2, INK_DARK, 1.8);
-    drawTrackedRight(
-      page,
-      `REF: ${input.referenceCode}`,
-      A4_W - MARGIN_X,
-      A4_H - 42,
-      sans,
-      7.2,
-      INK_DARK,
-      1.5,
-    );
-
-    page.drawLine({
-      start: { x: MARGIN_X, y: A4_H - 52 },
-      end: { x: A4_W - MARGIN_X, y: A4_H - 52 },
-      thickness: 0.5,
-      color: RULE_LIGHT,
-    });
-
-    return { page, cursorY: A4_H - 76 };
-  };
-
-  // -------------------------------------------------------------
-  // PAGE 1: EDITORIAL COVER & FORMAL TITLE
-  // -------------------------------------------------------------
-  let { page, cursorY } = createEditorialPage(true);
-
-  // Centered circular seal / logos row
-  const activePartnerLogo = partnerLogoImg || (input.title.includes("Technology") ? litLogoImg : null);
-  if (cscLogoImg && activePartnerLogo) {
-    const cscSize = 46;
-    const pDims = activePartnerLogo.scaleToFit(90, 42);
-    const gap = 24;
-    const totalW = cscSize + gap + pDims.width;
-    const startX = (A4_W - totalW) / 2;
-    page.drawImage(cscLogoImg, {
-      x: startX,
-      y: cursorY - cscSize + 10,
-      width: cscSize,
-      height: cscSize,
-    });
-    page.drawText("×", {
-      x: startX + cscSize + 7,
-      y: cursorY - 20,
-      size: 13,
-      font: serifItalic,
+    // Web top navigation bar simulation
+    page.drawText("CSC CIRCLE · DIGITAL AGREEMENT PORTAL", {
+      x: MARGIN_X,
+      y: A4_H - 32,
+      size: 7.5,
+      font: sans,
       color: INK_MUTED,
     });
-    page.drawImage(activePartnerLogo, {
-      x: startX + cscSize + gap,
-      y: cursorY - pDims.height / 2 - 12,
-      width: pDims.width,
-      height: pDims.height,
+    page.drawText(topHeaderTitle.toUpperCase(), {
+      x: A4_W - MARGIN_X - sans.widthOfTextAtSize(topHeaderTitle.toUpperCase(), 7.5),
+      y: A4_H - 32,
+      size: 7.5,
+      font: sans,
+      color: INK_MUTED,
     });
-    cursorY -= 56;
-  } else if (cscLogoImg) {
-    const cscSize = 48;
-    page.drawImage(cscLogoImg, {
-      x: (A4_W - cscSize) / 2,
-      y: cursorY - cscSize + 10,
-      width: cscSize,
-      height: cscSize,
+
+    page.drawLine({
+      start: { x: MARGIN_X, y: A4_H - 42 },
+      end: { x: A4_W - MARGIN_X, y: A4_H - 42 },
+      thickness: 0.5,
+      color: CARD_BORDER,
     });
-    cursorY -= 56;
-  }
 
-  // Italic serif eyebrow
-  const eyebrowLines = wrapText(input.eyebrow, serifItalic, 12, CONTENT_W - 40);
-  for (const line of eyebrowLines) {
-    drawCenteredText(page, line, cursorY, serifItalic, 12, INK_BODY);
-    cursorY -= 16;
-  }
-  cursorY -= 4;
+    return { page, cursorY: A4_H - 62 };
+  };
 
-  // Prominent uppercase serif title (Showit "LAUNCH IN DAYS, NOT MONTHS" style)
-  const titleLines = wrapText(input.title.toUpperCase(), serif, 22, CONTENT_W);
-  for (const line of titleLines) {
-    drawCenteredText(page, line, cursorY, serif, 22, INK_DARK, 0.8);
-    cursorY -= 25;
-  }
-  cursorY -= 2;
+  // =========================================================================
+  // PAGE 1: WEB SIGNING PAGE HEADER CARD & METADATA
+  // =========================================================================
+  let { page, cursorY } = createWebCardPage(`Ref: ${input.referenceCode}`);
 
-  // Tracked uppercase geometric subtitle
-  const subLines = wrapText(input.subtitle.toUpperCase(), sans, 7.5, CONTENT_W - 20);
-  for (const line of subLines) {
-    drawCenteredText(page, line, cursorY, sans, 7.5, INK_MUTED, 1.5);
-    cursorY -= 12;
-  }
-  cursorY -= 10;
-
-  // Hairline separator
-  page.drawLine({
-    start: { x: MARGIN_X, y: cursorY },
-    end: { x: A4_W - MARGIN_X, y: cursorY },
-    thickness: 0.6,
-    color: RULE_LIGHT,
-  });
-  cursorY -= 16;
-
-  // Dual-Column Parties & Metadata Card
-  const metaBoxH = 68;
+  // Header Card Box (exact replica of AgreementSigningClient header card)
+  const headerCardH = 145;
   page.drawRectangle({
     x: MARGIN_X,
-    y: cursorY - metaBoxH,
+    y: cursorY - headerCardH,
     width: CONTENT_W,
-    height: metaBoxH,
-    color: CARD_BG,
-    borderColor: RULE_LIGHT,
-    borderWidth: 0.6,
+    height: headerCardH,
+    color: WHITE,
+    borderColor: CARD_BORDER,
+    borderWidth: 0.75,
   });
 
-  const col2X = MARGIN_X + CONTENT_W / 2 + 10;
-  page.drawText("FIRST PARTY", {
-    x: MARGIN_X + 12,
-    y: cursorY - 15,
-    size: 6.8,
+  // Logo & Title Block
+  if (cscLogoImg) {
+    page.drawImage(cscLogoImg, {
+      x: MARGIN_X + 16,
+      y: cursorY - 50,
+      width: 36,
+      height: 36,
+    });
+  }
+
+  const textStartX = MARGIN_X + 60;
+  page.drawText((input.eyebrow || "CSC Circle Official Agreement").toUpperCase(), {
+    x: textStartX,
+    y: cursorY - 24,
+    size: 7.2,
     font: sans,
-    color: INK_MUTED,
+    color: ACCENT_BLUE,
   });
-  page.drawText("Coimbatore Startup Community (CSC)", {
-    x: MARGIN_X + 12,
-    y: cursorY - 28,
-    size: 8.5,
+
+  const headerTitle = input.title.slice(0, 48);
+  page.drawText(headerTitle, {
+    x: textStartX,
+    y: cursorY - 40,
+    size: 13,
     font: sans,
     color: INK_DARK,
   });
-  page.drawText(`Effective: ${input.effectiveDate} · Term: ${input.durationLabel}`, {
-    x: MARGIN_X + 12,
-    y: cursorY - 42,
+
+  // Status Badge Pill on Right
+  const isSigned = input.status === "signed";
+  const badgeText = isSigned ? "Digitally Signed & Sealed" : "Awaiting Signature";
+  const badgeW = sans.widthOfTextAtSize(badgeText, 7.5) + 16;
+  const badgeX = MARGIN_X + CONTENT_W - badgeW - 16;
+  page.drawRectangle({
+    x: badgeX,
+    y: cursorY - 38,
+    width: badgeW,
+    height: 20,
+    color: isSigned ? BADGE_GREEN_BG : SUB_CARD_BG,
+    borderColor: isSigned ? BADGE_GREEN_BORDER : CARD_BORDER,
+    borderWidth: 0.5,
+  });
+  page.drawText(badgeText, {
+    x: badgeX + 8,
+    y: cursorY - 32,
     size: 7.5,
     font: sans,
-    color: INK_MUTED,
-  });
-  page.drawText(`Status: ${input.status.toUpperCase()}`, {
-    x: MARGIN_X + 12,
-    y: cursorY - 55,
-    size: 7.2,
-    font: sans,
-    color: input.status === "signed" ? SIG_BLUE : INK_MUTED,
+    color: isSigned ? BADGE_GREEN_TEXT : INK_MUTED,
   });
 
-  page.drawText("COUNTERPARTY / RECIPIENT", {
-    x: col2X,
-    y: cursorY - 15,
-    size: 6.8,
+  // Metadata Sub-Card inside Header Card
+  const subCardY = cursorY - 60;
+  const subCardH = 70;
+  page.drawRectangle({
+    x: MARGIN_X + 16,
+    y: subCardY - subCardH,
+    width: CONTENT_W - 32,
+    height: subCardH,
+    color: SUB_CARD_BG,
+    borderColor: CARD_BORDER,
+    borderWidth: 0.5,
+  });
+
+  // Left column: Reference & Effective Date
+  const col1X = MARGIN_X + 28;
+  page.drawText("Reference & Effective Date", {
+    x: col1X,
+    y: subCardY - 18,
+    size: 7.5,
+    font: sans,
+    color: INK_DARK,
+  });
+  page.drawText(input.referenceCode, {
+    x: col1X,
+    y: subCardY - 31,
+    size: 7.5,
+    font: sans,
+    color: ACCENT_BLUE,
+  });
+  page.drawText(`Effective: ${input.effectiveDate} · Term: ${input.durationLabel}`, {
+    x: col1X,
+    y: subCardY - 45,
+    size: 7.2,
     font: sans,
     color: INK_MUTED,
   });
+  page.drawText(`Platform Status: ${input.status.toUpperCase()}`, {
+    x: col1X,
+    y: subCardY - 57,
+    size: 6.8,
+    font: sans,
+    color: isSigned ? BADGE_GREEN_TEXT : INK_MUTED,
+  });
+
+  // Right column: Addressed To
+  const col2X = MARGIN_X + CONTENT_W / 2 + 10;
+  page.drawText("Addressed To (Signer / Recipient)", {
+    x: col2X,
+    y: subCardY - 18,
+    size: 7.5,
+    font: sans,
+    color: INK_DARK,
+  });
   page.drawText(
-    `${input.recipientName}${input.recipientOrg ? ` — ${input.recipientOrg}` : ""}`.slice(0, 48),
+    `${input.recipientName}${input.recipientOrg ? ` — ${input.recipientOrg}` : ""}`.slice(0, 42),
     {
       x: col2X,
-      y: cursorY - 28,
-      size: 8.5,
+      y: subCardY - 31,
+      size: 8,
       font: sans,
       color: INK_DARK,
     },
   );
-  page.drawText((input.recipientRole || "Authorized Signatory").slice(0, 48), {
+  page.drawText((input.recipientRole || "Authorized Signatory").slice(0, 42), {
     x: col2X,
-    y: cursorY - 42,
-    size: 7.5,
+    y: subCardY - 45,
+    size: 7.2,
     font: sans,
     color: INK_MUTED,
   });
-  page.drawText(input.recipientEmail.slice(0, 48), {
+  page.drawText(input.recipientEmail.slice(0, 42), {
     x: col2X,
-    y: cursorY - 55,
-    size: 7.5,
+    y: subCardY - 57,
+    size: 7.2,
     font: sans,
     color: INK_MUTED,
   });
 
-  cursorY -= metaBoxH + 22;
+  cursorY -= headerCardH + 18;
 
+  // =========================================================================
+  // AGREEMENT TERMS & COVENANTS CARD (Matching Web Page)
+  // =========================================================================
   const ensureSpace = (needed: number) => {
-    if (cursorY - needed < 72) {
-      ({ page, cursorY } = createEditorialPage(false));
+    if (cursorY - needed < 70) {
+      ({ page, cursorY } = createWebCardPage("Agreement Terms & Covenants"));
     }
   };
 
-  // -------------------------------------------------------------
-  // NUMBERED LEGAL SECTIONS & CLAUSES
-  // -------------------------------------------------------------
+  // Start Terms Card Box
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: 70,
+    width: CONTENT_W,
+    height: cursorY - 70,
+    color: WHITE,
+    borderColor: CARD_BORDER,
+    borderWidth: 0.75,
+  });
+
+  // Subtitle header bar
+  page.drawText((input.subtitle || "Agreement Terms & Covenants").toUpperCase(), {
+    x: MARGIN_X + 16,
+    y: cursorY - 20,
+    size: 7.5,
+    font: sans,
+    color: INK_MUTED,
+  });
+  page.drawText("Laws of India · Coimbatore Jurisdiction", {
+    x: MARGIN_X + CONTENT_W - 16 - sans.widthOfTextAtSize("Laws of India · Coimbatore Jurisdiction", 7.5),
+    y: cursorY - 20,
+    size: 7.5,
+    font: sans,
+    color: INK_MUTED,
+  });
+  page.drawLine({
+    start: { x: MARGIN_X + 16, y: cursorY - 28 },
+    end: { x: MARGIN_X + CONTENT_W - 16, y: cursorY - 28 },
+    thickness: 0.5,
+    color: CARD_BORDER,
+  });
+  cursorY -= 44;
+
+  const textW = CONTENT_W - 32;
+
+  // Render all numbered sections & clauses
   for (const section of input.sections) {
-    ensureSpace(44);
-    const headingLines = wrapText(section.heading.toUpperCase(), sans, 8.5, CONTENT_W);
-    for (const hl of headingLines) {
-      page.drawText(hl, { x: MARGIN_X, y: cursorY, size: 8.5, font: sans, color: INK_DARK });
-      cursorY -= 13;
+    if (cursorY < 110) {
+      ({ page, cursorY } = createWebCardPage("Agreement Terms & Covenants"));
+      // Draw card frame on continuation page
+      page.drawRectangle({
+        x: MARGIN_X,
+        y: 70,
+        width: CONTENT_W,
+        height: cursorY - 70,
+        color: WHITE,
+        borderColor: CARD_BORDER,
+        borderWidth: 0.75,
+      });
+      cursorY -= 20;
     }
-    cursorY -= 3;
+
+    // Section Heading
+    page.drawText(section.heading.toUpperCase(), {
+      x: MARGIN_X + 16,
+      y: cursorY,
+      size: 8.5,
+      font: sans,
+      color: INK_DARK,
+    });
+    cursorY -= 14;
 
     for (const clause of section.clauses) {
-      const cLines = wrapText(clause, sans, 8.4, CONTENT_W);
-      ensureSpace(cLines.length * 12.2 + 8);
+      const cLines = wrapText(clause, sans, 8, textW);
       for (const cl of cLines) {
-        if (cursorY < 66) {
-          ({ page, cursorY } = createEditorialPage(false));
+        if (cursorY < 90) {
+          ({ page, cursorY } = createWebCardPage("Agreement Terms & Covenants"));
+          page.drawRectangle({
+            x: MARGIN_X,
+            y: 70,
+            width: CONTENT_W,
+            height: cursorY - 70,
+            color: WHITE,
+            borderColor: CARD_BORDER,
+            borderWidth: 0.75,
+          });
+          cursorY -= 20;
         }
-        page.drawText(cl, { x: MARGIN_X, y: cursorY, size: 8.4, font: sans, color: INK_BODY });
-        cursorY -= 12.2;
+        page.drawText(cl, {
+          x: MARGIN_X + 16,
+          y: cursorY,
+          size: 8,
+          font: sans,
+          color: INK_BODY,
+        });
+        cursorY -= 12;
       }
-      cursorY -= 5;
+      cursorY -= 4;
     }
     cursorY -= 8;
   }
 
-  // -------------------------------------------------------------
-  // EXECUTION & SIGNATURE BLOCK
-  // -------------------------------------------------------------
-  ensureSpace(140);
-  page.drawLine({
-    start: { x: MARGIN_X, y: cursorY },
-    end: { x: A4_W - MARGIN_X, y: cursorY },
-    thickness: 0.6,
-    color: RULE_LIGHT,
+  // =========================================================================
+  // EXECUTION & DIGITAL SIGNATURES CARD (Matching Web Form)
+  // =========================================================================
+  ensureSpace(230);
+  if (cursorY < 240) {
+    ({ page, cursorY } = createWebCardPage("Execution & Digital Signatures"));
+  }
+
+  const sigCardH = 205;
+  page.drawRectangle({
+    x: MARGIN_X,
+    y: cursorY - sigCardH,
+    width: CONTENT_W,
+    height: sigCardH,
+    color: WHITE,
+    borderColor: CARD_BORDER,
+    borderWidth: 0.75,
   });
-  cursorY -= 20;
 
-  drawTrackedLeft(page, "EXECUTION & DIGITAL SIGNATURES", MARGIN_X, cursorY, sans, 8, INK_DARK, 1.4);
-  cursorY -= 24;
+  page.drawText("DIGITAL EXECUTION & SIGNATURES", {
+    x: MARGIN_X + 16,
+    y: cursorY - 20,
+    size: 8,
+    font: sans,
+    color: INK_DARK,
+  });
+  page.drawText(
+    isSigned ? `Verified Signature · ${input.signedEmail || input.recipientEmail}` : "Pending Digital Execution",
+    {
+      x: MARGIN_X + CONTENT_W - 16 - sans.widthOfTextAtSize(isSigned ? `Verified Signature · ${input.signedEmail || input.recipientEmail}` : "Pending Digital Execution", 7.2),
+      y: cursorY - 20,
+      size: 7.2,
+      font: sans,
+      color: isSigned ? BADGE_GREEN_TEXT : INK_MUTED,
+    },
+  );
+  page.drawLine({
+    start: { x: MARGIN_X + 16, y: cursorY - 28 },
+    end: { x: MARGIN_X + CONTENT_W - 16, y: cursorY - 28 },
+    thickness: 0.5,
+    color: CARD_BORDER,
+  });
 
-  const leftSigX = MARGIN_X;
-  const rightSigX = MARGIN_X + CONTENT_W / 2 + 14;
+  const sigBoxW = (CONTENT_W - 44) / 2;
+  const sigBoxH = 92;
+  const sigY = cursorY - 38;
 
-  // First Party (CSC Signatory)
+  // CSC Signatory (Left Box)
+  page.drawRectangle({
+    x: MARGIN_X + 16,
+    y: sigY - sigBoxH,
+    width: sigBoxW,
+    height: sigBoxH,
+    color: SUB_CARD_BG,
+    borderColor: CARD_BORDER,
+    borderWidth: 0.5,
+  });
   page.drawText("FOR COIMBATORE STARTUP COMMUNITY", {
-    x: leftSigX,
-    y: cursorY,
+    x: MARGIN_X + 26,
+    y: sigY - 16,
     size: 6.8,
     font: sans,
     color: INK_MUTED,
   });
   page.drawText(input.cscSignatoryName, {
-    x: leftSigX,
-    y: cursorY - 24,
-    size: 18,
+    x: MARGIN_X + 26,
+    y: sigY - 42,
+    size: 20,
     font: script,
     color: SIG_BLUE,
   });
   page.drawLine({
-    start: { x: leftSigX, y: cursorY - 32 },
-    end: { x: leftSigX + 205, y: cursorY - 32 },
-    thickness: 0.6,
-    color: RULE_LIGHT,
+    start: { x: MARGIN_X + 26, y: sigY - 50 },
+    end: { x: MARGIN_X + 26 + sigBoxW - 20, y: sigY - 50 },
+    thickness: 0.5,
+    color: CARD_BORDER,
   });
   page.drawText(input.cscSignatoryName, {
-    x: leftSigX,
-    y: cursorY - 44,
+    x: MARGIN_X + 26,
+    y: sigY - 64,
     size: 8.5,
     font: sans,
     color: INK_DARK,
   });
-  page.drawText(input.cscSignatoryRole.slice(0, 44), {
-    x: leftSigX,
-    y: cursorY - 56,
-    size: 7.4,
+  page.drawText(input.cscSignatoryRole, {
+    x: MARGIN_X + 26,
+    y: sigY - 76,
+    size: 7.2,
     font: sans,
     color: INK_MUTED,
   });
 
-  // Counterparty Signatory
+  // Counterparty Signatory (Right Box)
+  const rightBoxX = MARGIN_X + 16 + sigBoxW + 12;
+  page.drawRectangle({
+    x: rightBoxX,
+    y: sigY - sigBoxH,
+    width: sigBoxW,
+    height: sigBoxH,
+    color: SUB_CARD_BG,
+    borderColor: CARD_BORDER,
+    borderWidth: 0.5,
+  });
   page.drawText("FOR COUNTERPARTY / RECIPIENT", {
-    x: rightSigX,
-    y: cursorY,
+    x: rightBoxX + 10,
+    y: sigY - 16,
     size: 6.8,
     font: sans,
     color: INK_MUTED,
   });
-  if (input.status === "signed" && input.signedName) {
+
+  if (isSigned && input.signedName) {
     page.drawText(input.signedName.slice(0, 32), {
-      x: rightSigX,
-      y: cursorY - 24,
-      size: 18,
+      x: rightBoxX + 10,
+      y: sigY - 42,
+      size: 20,
       font: script,
       color: SIG_BLUE,
     });
   } else {
-    page.drawText("Awaiting Verified Email Signature", {
-      x: rightSigX,
-      y: cursorY - 22,
+    page.drawText("Awaiting Email Signature", {
+      x: rightBoxX + 10,
+      y: sigY - 38,
       size: 9,
-      font: serifItalic,
+      font: sans,
       color: INK_MUTED,
     });
   }
+
   page.drawLine({
-    start: { x: rightSigX, y: cursorY - 32 },
-    end: { x: rightSigX + 205, y: cursorY - 32 },
-    thickness: 0.6,
-    color: RULE_LIGHT,
+    start: { x: rightBoxX + 10, y: sigY - 50 },
+    end: { x: rightBoxX + 10 + sigBoxW - 20, y: sigY - 50 },
+    thickness: 0.5,
+    color: CARD_BORDER,
   });
   page.drawText(input.signedName || input.recipientName, {
-    x: rightSigX,
-    y: cursorY - 44,
+    x: rightBoxX + 10,
+    y: sigY - 64,
     size: 8.5,
     font: sans,
     color: INK_DARK,
@@ -541,129 +647,53 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
   page.drawText(
     `${input.signedRole || input.recipientRole || "Authorized Signatory"}${
       input.signedOrg || input.recipientOrg ? ` · ${input.signedOrg || input.recipientOrg}` : ""
-    }`.slice(0, 46),
+    }`.slice(0, 42),
     {
-      x: rightSigX,
-      y: cursorY - 56,
-      size: 7.4,
+      x: rightBoxX + 10,
+      y: sigY - 76,
+      size: 7.2,
       font: sans,
       color: INK_MUTED,
     },
   );
-  if (input.signedAt) {
-    page.drawText(`Signed: ${input.signedAt}`, {
-      x: rightSigX,
-      y: cursorY - 68,
-      size: 7,
-      font: sans,
-      color: SIG_BLUE,
-    });
-  }
 
-  // -------------------------------------------------------------
-  // SECTION 65B ELECTRONIC AUDIT CERTIFICATE
-  // -------------------------------------------------------------
-  const audit = createEditorialPage(false);
-  let ay = audit.cursorY;
-  drawCenteredText(
-    audit.page,
-    "Electronic Execution & Audit Certificate",
-    ay,
-    serifItalic,
-    13,
-    INK_BODY,
-  );
-  ay -= 24;
-  drawCenteredText(
-    audit.page,
-    "COMPLIANCE VERIFICATION RECORD",
-    ay,
-    serif,
-    19,
-    INK_DARK,
-    0.8,
-  );
-  ay -= 26;
-
-  audit.page.drawLine({
-    start: { x: MARGIN_X, y: ay },
-    end: { x: A4_W - MARGIN_X, y: ay },
-    thickness: 0.6,
-    color: RULE_LIGHT,
+  // Legal Acceptance Declaration Note (Section 10A & 65B)
+  const declY = sigY - sigBoxH - 12;
+  page.drawRectangle({
+    x: MARGIN_X + 16,
+    y: declY - 46,
+    width: CONTENT_W - 32,
+    height: 46,
+    color: WHITE,
+    borderColor: CARD_BORDER,
+    borderWidth: 0.5,
   });
-  ay -= 22;
+  page.drawText("[✓] STATUTORY ACCEPTANCE & TAMPER-EVIDENT RECORD", {
+    x: MARGIN_X + 24,
+    y: declY - 14,
+    size: 7,
+    font: sans,
+    color: INK_DARK,
+  });
+  const statutoryText =
+    "I confirm that I have read the entire agreement above, am authorized to execute it on behalf of myself / my organization, and agree to be legally bound under Section 10A of the Information Technology Act, 2000 and the Indian Contract Act, 1872.";
+  const stLines = wrapText(statutoryText, sans, 6.8, CONTENT_W - 48);
+  let sty = declY - 26;
+  stLines.forEach((stl) => {
+    page.drawText(stl, { x: MARGIN_X + 24, y: sty, size: 6.8, font: sans, color: INK_MUTED });
+    sty -= 9.5;
+  });
 
-  const auditRows: [string, string][] = [
-    ["Agreement Reference", input.referenceCode],
-    ["Agreement Title", input.title],
-    ["Document Status", input.status.toUpperCase()],
-    ["Verified Signer Email", input.signedEmail || input.recipientEmail],
-    ["Typed Legal Signature", input.signedName || "Pending Execution"],
-    ["Execution Timestamp (UTC)", input.signedAt || "Pending"],
-    ["Signer IP Address", input.signedIp || "Pending"],
-    ["Browser / User-Agent", (input.signedUserAgent || "Pending").slice(0, 74)],
-    ["SHA-256 Document Hash", input.documentHash || "Computed upon execution"],
-  ];
+  cursorY -= sigCardH + 18;
 
-  for (const [label, val] of auditRows) {
-    audit.page.drawText(label.toUpperCase(), {
-      x: MARGIN_X,
-      y: ay,
-      size: 7,
-      font: sans,
-      color: INK_MUTED,
-    });
-    audit.page.drawText(val, {
-      x: MARGIN_X + 165,
-      y: ay,
-      size: 8.2,
-      font: sans,
-      color: label === "SHA-256 Document Hash" ? SIG_BLUE : INK_DARK,
-    });
-    audit.page.drawLine({
-      start: { x: MARGIN_X, y: ay - 8 },
-      end: { x: A4_W - MARGIN_X, y: ay - 8 },
-      thickness: 0.4,
-      color: RULE_LIGHT,
-    });
-    ay -= 26;
-  }
+  // =========================================================================
+  // APPENDED 7-SLIDE COMMUNITY SHOWCASE DECK (Matching Web Showcase Deck)
+  // =========================================================================
 
-  ay -= 10;
-  const complianceNote =
-    "Legal Notice: Executed electronically pursuant to Section 10A of the Information Technology Act, 2000 and the Indian Contract Act, 1872. The signer authenticated via verified email session prior to submitting explicit acceptance. This record and its cryptographic SHA-256 digest serve as tamper-evident electronic evidence under Section 65B of the Indian Evidence Act / Bharatiya Sakshya Adhiniyam.";
-  for (const line of wrapText(complianceNote, sans, 7.8, CONTENT_W)) {
-    audit.page.drawText(line, { x: MARGIN_X, y: ay, size: 7.8, font: sans, color: INK_MUTED });
-    ay -= 12;
-  }
-
-  // -------------------------------------------------------------
-  // APPENDIX: 7-SLIDE COMMUNITY & ECOSYSTEM PRESENTATION DECK
-  // -------------------------------------------------------------
-
-  const createAppendixPage = (slideHeader: string): { page: PDFPage; cursorY: number } => {
-    const p = doc.addPage([A4_W, A4_H]);
-    p.drawRectangle({ x: 0, y: 0, width: A4_W, height: A4_H, color: WHITE });
-    pages.push(p);
-
-    drawTrackedLeft(p, "CSC CIRCLE — ECOSYSTEM BRIEFING", MARGIN_X, A4_H - 42, sans, 7.2, INK_DARK, 1.8);
-    drawTrackedRight(p, slideHeader.toUpperCase(), A4_W - MARGIN_X, A4_H - 42, sans, 7.2, INK_DARK, 1.4);
-
-    p.drawLine({
-      start: { x: MARGIN_X, y: A4_H - 52 },
-      end: { x: A4_W - MARGIN_X, y: A4_H - 52 },
-      thickness: 0.5,
-      color: RULE_LIGHT,
-    });
-
-    return { page: p, cursorY: A4_H - 74 };
-  };
-
-  // Helper to render framed presentation slide card
-  const drawSlideCard = (
+  const drawSlidePresentationCard = (
     p: PDFPage,
     topY: number,
-    height: number,
+    cardH: number,
     slideNum: number,
     eyebrow: string,
     title: string,
@@ -671,57 +701,54 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
   ) => {
     p.drawRectangle({
       x: MARGIN_X,
-      y: topY - height,
+      y: topY - cardH,
       width: CONTENT_W,
-      height,
-      color: CARD_BG,
-      borderColor: RULE_LIGHT,
-      borderWidth: 0.6,
+      height: cardH,
+      color: WHITE,
+      borderColor: CARD_BORDER,
+      borderWidth: 0.75,
     });
 
-    // Badge / Pill
-    p.drawText(`SLIDE 0${slideNum} · ${eyebrow.toUpperCase()}`, {
+    p.drawText(`SLIDE 0${slideNum} OF 07 · ${eyebrow.toUpperCase()}`, {
       x: MARGIN_X + 16,
-      y: topY - 20,
+      y: topY - 18,
       size: 7,
       font: sans,
-      color: INK_MUTED,
+      color: ACCENT_BLUE,
     });
 
-    // Title in serif
     p.drawText(title, {
       x: MARGIN_X + 16,
-      y: topY - 38,
-      size: 13,
-      font: serif,
+      y: topY - 34,
+      size: 11.5,
+      font: sans,
       color: INK_DARK,
     });
 
-    // Subtitle
     p.drawText(subtitle, {
       x: MARGIN_X + 16,
-      y: topY - 52,
-      size: 7.8,
+      y: topY - 47,
+      size: 7.5,
       font: sans,
       color: INK_MUTED,
     });
 
     p.drawLine({
-      start: { x: MARGIN_X + 16, y: topY - 60 },
-      end: { x: MARGIN_X + CONTENT_W - 16, y: topY - 60 },
+      start: { x: MARGIN_X + 16, y: topY - 54 },
+      end: { x: MARGIN_X + CONTENT_W - 16, y: topY - 54 },
       thickness: 0.5,
-      color: RULE_LIGHT,
+      color: CARD_BORDER,
     });
   };
 
   // --- APPENDIX PAGE 1: SLIDES 1 & 2 ---
   {
-    const ap1 = createAppendixPage("Slides 1 & 2 of 7");
+    const ap1 = createWebCardPage("Community Deck · Slides 1 & 2");
     let y = ap1.cursorY;
 
     // Slide 1: Ecosystem Overview
-    const card1H = 340;
-    drawSlideCard(
+    const card1H = 350;
+    drawSlidePresentationCard(
       ap1.page,
       y,
       card1H,
@@ -733,10 +760,10 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
 
     if (bannerImg) {
       const bannerW = CONTENT_W - 32;
-      const bannerH = 135;
+      const bannerH = 145;
       ap1.page.drawImage(bannerImg, {
         x: MARGIN_X + 16,
-        y: y - 72 - bannerH,
+        y: y - 64 - bannerH,
         width: bannerW,
         height: bannerH,
       });
@@ -750,20 +777,29 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
       ["GIVE-FIRST ETHOS", "Peer problem-solving, transparency, and collaborative acceleration."],
     ];
 
-    bullets.forEach(([title, desc], i) => {
+    bullets.forEach(([btitle, bdesc], i) => {
       const bx = MARGIN_X + 16 + i * (colW + 8);
-      ap1.page.drawText(title, { x: bx, y: colY, size: 7.2, font: sans, color: INK_DARK });
-      const dLines = wrapText(desc, sans, 7, colW);
+      ap1.page.drawRectangle({
+        x: bx,
+        y: colY - 95,
+        width: colW,
+        height: 95,
+        color: SUB_CARD_BG,
+        borderColor: CARD_BORDER,
+        borderWidth: 0.5,
+      });
+      ap1.page.drawText(btitle, { x: bx + 10, y: colY - 18, size: 7.2, font: sans, color: INK_DARK });
+      const dLines = wrapText(bdesc, sans, 7, colW - 20);
       dLines.forEach((dl, di) => {
-        ap1.page.drawText(dl, { x: bx, y: colY - 12 - di * 10, size: 7, font: sans, color: INK_MUTED });
+        ap1.page.drawText(dl, { x: bx + 10, y: colY - 32 - di * 10, size: 7, font: sans, color: INK_MUTED });
       });
     });
 
-    y -= card1H + 20;
+    y -= card1H + 18;
 
     // Slide 2: About CSC & Founding Movement
-    const card2H = 340;
-    drawSlideCard(
+    const card2H = 350;
+    drawSlidePresentationCard(
       ap1.page,
       y,
       card2H,
@@ -774,21 +810,21 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     );
 
     if (ticelImg) {
-      const imgW = 190;
-      const imgH = 140;
+      const imgW = 200;
+      const imgH = 150;
       ap1.page.drawImage(ticelImg, {
         x: MARGIN_X + 16,
-        y: y - 72 - imgH,
+        y: y - 66 - imgH,
         width: imgW,
         height: imgH,
       });
 
       const textX = MARGIN_X + 16 + imgW + 16;
-      const textW = CONTENT_W - 48 - imgW;
+      const storyW = CONTENT_W - 48 - imgW;
       const story =
         "Coimbatore Startup Community (CSC Circle) was established to provide aspiring founders, creators, and builders with an authentic home base.\n\nFrom closed-door founder roundtables at TICEL Bio Park to open-air masterminds and coffee house pitch teardowns, we create intentional spaces for builders to solve real problems and build enduring ventures.";
-      const sLines = wrapText(story, sans, 8, textW);
-      let sy = y - 80;
+      const sLines = wrapText(story, sans, 8, storyW);
+      let sy = y - 76;
       sLines.forEach((sl) => {
         ap1.page.drawText(sl, { x: textX, y: sy, size: 8, font: sans, color: INK_BODY });
         sy -= 12;
@@ -797,38 +833,38 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
       // Quick Stats Pills
       ap1.page.drawRectangle({
         x: textX,
-        y: sy - 34,
+        y: sy - 40,
         width: 110,
-        height: 32,
-        color: WHITE,
-        borderColor: RULE_LIGHT,
+        height: 36,
+        color: SUB_CARD_BG,
+        borderColor: CARD_BORDER,
         borderWidth: 0.5,
       });
-      ap1.page.drawText("100+ FOUNDERS", { x: textX + 10, y: sy - 18, size: 7.5, font: sans, color: INK_DARK });
-      ap1.page.drawText("Active Startups", { x: textX + 10, y: sy - 28, size: 6.8, font: sans, color: INK_MUTED });
+      ap1.page.drawText("100+ FOUNDERS", { x: textX + 10, y: sy - 20, size: 7.5, font: sans, color: INK_DARK });
+      ap1.page.drawText("Active Startups", { x: textX + 10, y: sy - 31, size: 6.8, font: sans, color: INK_MUTED });
 
       ap1.page.drawRectangle({
         x: textX + 118,
-        y: sy - 34,
+        y: sy - 40,
         width: 110,
-        height: 32,
-        color: WHITE,
-        borderColor: RULE_LIGHT,
+        height: 36,
+        color: SUB_CARD_BG,
+        borderColor: CARD_BORDER,
         borderWidth: 0.5,
       });
-      ap1.page.drawText("BI-WEEKLY", { x: textX + 128, y: sy - 18, size: 7.5, font: sans, color: INK_DARK });
-      ap1.page.drawText("Meetups & Clinics", { x: textX + 128, y: sy - 28, size: 6.8, font: sans, color: INK_MUTED });
+      ap1.page.drawText("BI-WEEKLY", { x: textX + 128, y: sy - 20, size: 7.5, font: sans, color: INK_DARK });
+      ap1.page.drawText("Meetups & Clinics", { x: textX + 128, y: sy - 31, size: 6.8, font: sans, color: INK_MUTED });
     }
   }
 
   // --- APPENDIX PAGE 2: SLIDES 3 & 4 ---
   {
-    const ap2 = createAppendixPage("Slides 3 & 4 of 7");
+    const ap2 = createWebCardPage("Community Deck · Slides 3 & 4");
     let y = ap2.cursorY;
 
     // Slide 3: The People Behind CSC Circle
-    const card3H = 340;
-    drawSlideCard(
+    const card3H = 350;
+    drawSlidePresentationCard(
       ap2.page,
       y,
       card3H,
@@ -840,10 +876,10 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
 
     if (leadersImg) {
       const lockupW = 180;
-      const lockupH = 210;
+      const lockupH = 220;
       ap2.page.drawImage(leadersImg, {
         x: MARGIN_X + 16,
-        y: y - 72 - lockupH,
+        y: y - 66 - lockupH,
         width: lockupW,
         height: lockupH,
       });
@@ -860,7 +896,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
         ["Jaibharath V", "Chief Business Officer · Partnerships & Value"],
       ];
 
-      let ry = y - 76;
+      let ry = y - 72;
       leadersList.forEach(([lname, lrole]) => {
         ap2.page.drawText(lname, { x: rosterX, y: ry, size: 8.5, font: sans, color: INK_DARK });
         ap2.page.drawText(lrole, { x: rosterX, y: ry - 11, size: 7.2, font: sans, color: INK_MUTED });
@@ -868,17 +904,17 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
           start: { x: rosterX, y: ry - 16 },
           end: { x: rosterX + rosterW, y: ry - 16 },
           thickness: 0.4,
-          color: RULE_LIGHT,
+          color: CARD_BORDER,
         });
-        ry -= 26;
+        ry -= 27;
       });
     }
 
-    y -= card3H + 20;
+    y -= card3H + 18;
 
     // Slide 4: Technology Partner Spotlight (LIT)
-    const card4H = 340;
-    drawSlideCard(
+    const card4H = 350;
+    drawSlidePresentationCard(
       ap2.page,
       y,
       card4H,
@@ -889,57 +925,57 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     );
 
     if (litLogoImg) {
-      const logoSize = 100;
+      const logoSize = 105;
       ap2.page.drawImage(litLogoImg, {
         x: MARGIN_X + 24,
-        y: y - 80 - logoSize,
+        y: y - 76 - logoSize,
         width: logoSize,
         height: logoSize,
       });
 
       ap2.page.drawText("LOGIC INTELLIGENCE TECHNOLOGIES", {
         x: MARGIN_X + 16,
-        y: y - 195,
+        y: y - 198,
         size: 7.2,
         font: sans,
         color: INK_DARK,
       });
       ap2.page.drawText("Sole & Exclusive Technology Partner", {
         x: MARGIN_X + 16,
-        y: y - 207,
+        y: y - 210,
         size: 7,
-        font: serifItalic,
-        color: SIG_BLUE,
+        font: sans,
+        color: ACCENT_BLUE,
       });
 
-      const techX = MARGIN_X + 16 + 140;
-      const techW = CONTENT_W - 48 - 140;
+      const techX = MARGIN_X + 16 + 145;
+      const techW = CONTENT_W - 48 - 145;
       const pillars = [
         ["Tamper-Evident Legal Engine", "Cryptographic SHA-256 agreement generation compliant with Section 10A & 65B."],
         ["AI WhatsApp Concierge", "24/7 automated community query handling, event RSVPs, and member triage."],
         ["Digital Founder Pass", "Dynamic QR check-in badges for partner discounts and verified co-working access."],
       ];
 
-      let ty = y - 82;
+      let ty = y - 76;
       pillars.forEach(([pTitle, pDesc]) => {
         ap2.page.drawText(pTitle, { x: techX, y: ty, size: 8.5, font: sans, color: INK_DARK });
         const pLines = wrapText(pDesc, sans, 7.5, techW);
         pLines.forEach((pl, pli) => {
           ap2.page.drawText(pl, { x: techX, y: ty - 12 - pli * 10, size: 7.5, font: sans, color: INK_BODY });
         });
-        ty -= 42;
+        ty -= 44;
       });
     }
   }
 
   // --- APPENDIX PAGE 3: SLIDES 5 & 6 ---
   {
-    const ap3 = createAppendixPage("Slides 5 & 6 of 7");
+    const ap3 = createWebCardPage("Community Deck · Slides 5 & 6");
     let y = ap3.cursorY;
 
     // Slide 5: Flagship Programs
-    const card5H = 340;
-    drawSlideCard(
+    const card5H = 350;
+    drawSlidePresentationCard(
       ap3.page,
       y,
       card5H,
@@ -973,14 +1009,14 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
 
     progs.forEach(([pHeader, pSub, pBody, pFoot], idx) => {
       const px = MARGIN_X + 16 + idx * (progW + 8);
-      const py = y - 76;
+      const py = y - 70;
       ap3.page.drawRectangle({
         x: px,
-        y: py - 220,
+        y: py - 235,
         width: progW,
-        height: 220,
-        color: WHITE,
-        borderColor: RULE_LIGHT,
+        height: 235,
+        color: SUB_CARD_BG,
+        borderColor: CARD_BORDER,
         borderWidth: 0.5,
       });
 
@@ -990,7 +1026,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
         start: { x: px + 10, y: py - 36 },
         end: { x: px + progW - 10, y: py - 36 },
         thickness: 0.4,
-        color: RULE_LIGHT,
+        color: CARD_BORDER,
       });
 
       const bLines = wrapText(pBody, sans, 7.2, progW - 20);
@@ -1000,14 +1036,14 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
         by -= 11;
       });
 
-      ap3.page.drawText(pFoot, { x: px + 10, y: py - 205, size: 6.5, font: sans, color: SIG_BLUE });
+      ap3.page.drawText(pFoot, { x: px + 10, y: py - 220, size: 6.5, font: sans, color: ACCENT_BLUE });
     });
 
-    y -= card5H + 20;
+    y -= card5H + 18;
 
     // Slide 6: Operating Principles & Code of Conduct
-    const card6H = 340;
-    drawSlideCard(
+    const card6H = 350;
+    drawSlidePresentationCard(
       ap3.page,
       y,
       card6H,
@@ -1041,15 +1077,15 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
       const row = Math.floor(idx / 2);
       const col = idx % 2;
       const vx = MARGIN_X + 16 + col * (valW + 12);
-      const vy = y - 76 - row * 105;
+      const vy = y - 70 - row * 110;
 
       ap3.page.drawRectangle({
         x: vx,
-        y: vy - 92,
+        y: vy - 96,
         width: valW,
-        height: 92,
-        color: WHITE,
-        borderColor: RULE_LIGHT,
+        height: 96,
+        color: SUB_CARD_BG,
+        borderColor: CARD_BORDER,
         borderWidth: 0.5,
       });
 
@@ -1063,14 +1099,14 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     });
   }
 
-  // --- APPENDIX PAGE 4: SLIDE 7 ---
+  // --- APPENDIX PAGE 4: SLIDE 7 & BESPOKE FOOTER ---
   {
-    const ap4 = createAppendixPage("Slide 7 of 7");
+    const ap4 = createWebCardPage("Community Deck · Slide 7 & Contact");
     let y = ap4.cursorY;
 
     // Slide 7: Official Community Hub & Channels
     const card7H = 680;
-    drawSlideCard(
+    drawSlidePresentationCard(
       ap4.page,
       y,
       card7H,
@@ -1080,24 +1116,10 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
       "Official community contact hub, partnerships & platform access.",
     );
 
-    // Generate Dynamic Platform Access QR Code
-    let qrImg: PDFImage | null = null;
-    try {
-      const qrPng = await QRCode.toBuffer("https://csc.logicintelligencetechnologies.in", {
-        margin: 1,
-        width: 320,
-        color: { dark: "#111111", light: "#FFFFFF" },
-      });
-      qrImg = await doc.embedPng(new Uint8Array(qrPng));
-    } catch {
-      qrImg = null;
-    }
-
-    const qrSize = 130;
     const qrCardW = 160;
-    const qrCardH = 195;
+    const qrCardH = 170;
     const qrCardX = MARGIN_X + 20;
-    const qrCardY = y - 76;
+    const qrCardY = y - 68;
 
     // QR Code Box (Left)
     ap4.page.drawRectangle({
@@ -1105,15 +1127,16 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
       y: qrCardY - qrCardH,
       width: qrCardW,
       height: qrCardH,
-      color: WHITE,
-      borderColor: RULE_LIGHT,
-      borderWidth: 0.6,
+      color: SUB_CARD_BG,
+      borderColor: CARD_BORDER,
+      borderWidth: 0.5,
     });
 
     if (qrImg) {
+      const qrSize = 118;
       ap4.page.drawImage(qrImg, {
         x: qrCardX + (qrCardW - qrSize) / 2,
-        y: qrCardY - qrSize - 14,
+        y: qrCardY - qrSize - 12,
         width: qrSize,
         height: qrSize,
       });
@@ -1121,17 +1144,17 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
 
     ap4.page.drawText("SCAN TO VISIT PLATFORM", {
       x: qrCardX + 16,
-      y: qrCardY - qrSize - 28,
-      size: 7,
+      y: qrCardY - 145,
+      size: 7.2,
       font: sans,
       color: INK_DARK,
     });
     ap4.page.drawText("csc.logicintelligencetechnologies.in", {
       x: qrCardX + 10,
-      y: qrCardY - qrSize - 40,
+      y: qrCardY - 158,
       size: 6.2,
       font: sans,
-      color: SIG_BLUE,
+      color: ACCENT_BLUE,
     });
 
     // Right Column: Official Contact Hub Header & Description
@@ -1139,7 +1162,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     const rightW = CONTENT_W - qrCardW - 56;
 
     if (cscLogoImg) {
-      const logoW = 34;
+      const logoW = 32;
       ap4.page.drawImage(cscLogoImg, {
         x: rightX,
         y: qrCardY - logoW,
@@ -1149,37 +1172,37 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     }
 
     ap4.page.drawText("COIMBATORE STARTUP COMMUNITY", {
-      x: rightX + 42,
+      x: rightX + 40,
       y: qrCardY - 14,
       size: 10,
-      font: serif,
+      font: sans,
       color: INK_DARK,
     });
     ap4.page.drawText("Official Community Contact Hub", {
-      x: rightX + 42,
+      x: rightX + 40,
       y: qrCardY - 26,
       size: 7.5,
-      font: serifItalic,
+      font: sans,
       color: INK_MUTED,
     });
 
     const contactBlurb =
       "CSC Circle welcomes collaborative partnerships with forward-thinking enterprises, founders, student innovators, and academic incubators across Tamil Nadu.";
     const cbLines = wrapText(contactBlurb, sans, 7.5, rightW);
-    let cby = qrCardY - 46;
+    let cby = qrCardY - 44;
     cbLines.forEach((cbl) => {
       ap4.page.drawText(cbl, { x: rightX, y: cby, size: 7.5, font: sans, color: INK_BODY });
-      cby -= 11.5;
+      cby -= 11;
     });
 
-    // Highlighted Official Email Badge
+    // Highlighted Official Email Card
     ap4.page.drawRectangle({
       x: rightX,
-      y: cby - 32,
+      y: cby - 34,
       width: rightW,
-      height: 32,
-      color: CARD_BG,
-      borderColor: RULE_LIGHT,
+      height: 34,
+      color: SUB_CARD_BG,
+      borderColor: CARD_BORDER,
       borderWidth: 0.5,
     });
     ap4.page.drawText("OFFICIAL COMMUNITY INQUIRIES & PARTNERSHIPS", {
@@ -1194,41 +1217,69 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
       y: cby - 25,
       size: 8.5,
       font: sans,
-      color: SIG_BLUE,
+      color: ACCENT_BLUE,
     });
 
-    // Full List of Channels below
-    const channels = [
-      ["Official Community Email", "coimbatorestartupcommunity@gmail.com"],
-      ["WhatsApp Founder Network", "https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB"],
-      ["WhatsApp 24/7 AI Concierge", "https://wa.me/917550067712 (+91 75500 67712)"],
-      ["Official LinkedIn Page", "https://www.linkedin.com/in/csc-coimbatore-startup-community-b27b0b44b"],
-      ["Instagram Channel", "https://www.instagram.com/coimbatorestartupcommunity/"],
-      ["Technology Partner (LIT)", "hello@logicintelligencetechnologies.in"],
+    // Middle Section: Stay Connected Banner Graphic
+    let bannerBottomY = qrCardY - qrCardH - 12;
+    if (stayConnectedImg) {
+      const bannerW = 380;
+      const bannerH = 177;
+      const bannerX = MARGIN_X + 20 + ((CONTENT_W - 40) - bannerW) / 2;
+      bannerBottomY = qrCardY - qrCardH - 12 - bannerH;
+      ap4.page.drawImage(stayConnectedImg, {
+        x: bannerX,
+        y: bannerBottomY,
+        width: bannerW,
+        height: bannerH,
+      });
+    }
+
+    // 2-Column Channel Links below banner
+    const channelCols = [
+      [
+        ["Official Community Email", "coimbatorestartupcommunity@gmail.com"],
+        ["WhatsApp Founder Network", "chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB"],
+        ["WhatsApp 24/7 AI Concierge", "+91 75500 67712 (wa.me/917550067712)"],
+      ],
+      [
+        ["Official LinkedIn", "linkedin.com/in/csc-coimbatore-startup-community"],
+        ["Instagram Channel", "@coimbatorestartupcommunity"],
+        ["Technology Partner (LIT)", "Logic Intelligence Technologies (LIT)"],
+      ],
     ];
 
-    let cy = qrCardY - qrCardH - 18;
-    channels.forEach(([cTitle, cVal]) => {
-      ap4.page.drawRectangle({
-        x: MARGIN_X + 20,
-        y: cy - 34,
-        width: CONTENT_W - 40,
-        height: 34,
-        color: WHITE,
-        borderColor: RULE_LIGHT,
-        borderWidth: 0.5,
+    const colW = (CONTENT_W - 48) / 2;
+    let cy = bannerBottomY - 14;
+    for (let r = 0; r < 3; r++) {
+      const rowY = cy - r * 32;
+      channelCols.forEach((colData, colIdx) => {
+        const item = colData[r];
+        if (!item) return;
+        const [cTitle, cVal] = item;
+        const cx = MARGIN_X + 20 + colIdx * (colW + 8);
+
+        ap4.page.drawRectangle({
+          x: cx,
+          y: rowY - 26,
+          width: colW,
+          height: 26,
+          color: SUB_CARD_BG,
+          borderColor: CARD_BORDER,
+          borderWidth: 0.5,
+        });
+
+        ap4.page.drawText(cTitle, { x: cx + 8, y: rowY - 10, size: 7, font: sans, color: INK_DARK });
+        ap4.page.drawText(cVal, { x: cx + 8, y: rowY - 20, size: 6.5, font: sans, color: ACCENT_BLUE });
       });
+    }
 
-      ap4.page.drawText(cTitle, { x: MARGIN_X + 32, y: cy - 14, size: 8, font: sans, color: INK_DARK });
-      ap4.page.drawText(cVal, { x: MARGIN_X + 32, y: cy - 25, size: 7.2, font: sans, color: SIG_BLUE });
-      cy -= 42;
-    });
-
+    const attributionY = cy - 3 * 32 - 10;
     // Minimal 2-line attribution at base of slide 7
     drawCenteredText(
       ap4.page,
       "Coimbatore Startup Community — A Community-Led Initiative",
-      cy - 20,
+      attributionY,
       sans,
       8.5,
       INK_BODY,
@@ -1236,36 +1287,31 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     drawCenteredText(
       ap4.page,
       "Platform Architecture & Engineering by Logic Intelligence Technologies (LIT)",
-      cy - 34,
+      attributionY - 14,
       sans,
       7.5,
       INK_MUTED,
     );
   }
 
-  // -------------------------------------------------------------
-  // GLOBAL FOOTER & PAGE NUMBERING ON EVERY PAGE
-  // -------------------------------------------------------------
+  // Global Page Numbering Footer on Every Page
   const totalPages = pages.length;
   pages.forEach((p, idx) => {
     drawCenteredText(
       p,
-      "csc.logicintelligencetechnologies.in",
-      30,
-      serifItalic,
-      9,
-      INK_MUTED,
-    );
-    drawTrackedRight(
-      p,
-      `PAGE ${idx + 1} OF ${totalPages}`,
-      A4_W - MARGIN_X,
-      30,
+      "csc.logicintelligencetechnologies.in · CSC Circle Official Platform",
+      24,
       sans,
-      6.8,
+      7.5,
       INK_MUTED,
-      1.2,
     );
+    p.drawText(`PAGE ${idx + 1} OF ${totalPages}`, {
+      x: A4_W - MARGIN_X - sans.widthOfTextAtSize(`PAGE ${idx + 1} OF ${totalPages}`, 6.8),
+      y: 24,
+      size: 6.8,
+      font: sans,
+      color: INK_MUTED,
+    });
   });
 
   const bytes = await doc.save();

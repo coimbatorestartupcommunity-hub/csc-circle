@@ -12,8 +12,11 @@ import { generateAgreementPdf } from "@/lib/agreements/pdf";
 
 export async function GET(request: Request) {
   const ctx = await getAdminContext();
-  const allowed = ctx.mode === "preview" || (ctx.mode === "live" && can(ctx, "settings.manage"));
-  if (!allowed) return new NextResponse(null, { status: 403 });
+  const allowed =
+    ctx.mode === "preview" ||
+    (ctx.mode === "live" &&
+      (can(ctx, "settings.manage") || can(ctx, "members.read") || can(ctx, "content.manage")));
+  if (!allowed) return new NextResponse("Unauthorized", { status: 403 });
 
   const url = new URL(request.url);
   const rawType = (url.searchParams.get("type") ?? "tech_partner") as AgreementType;
@@ -99,6 +102,8 @@ export async function GET(request: Request) {
       "Content-Disposition": `inline; filename="${referenceCode}.pdf"`,
       "Cache-Control": "private, no-store",
       "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "SAMEORIGIN",
+      "Content-Security-Policy": "frame-ancestors 'self'",
     },
   });
 }
