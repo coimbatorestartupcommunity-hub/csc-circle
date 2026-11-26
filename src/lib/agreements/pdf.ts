@@ -172,6 +172,107 @@ function drawCenteredText(
   page.drawText(text, { x: (A4_W - width) / 2, y, size, font, color });
 }
 
+// Helper to render a clause with BOLD numbered prefixes and BOLD colon titles
+function drawFormattedClause(
+  page: PDFPage,
+  x: number,
+  y: number,
+  clause: string,
+  maxWidth: number,
+  boldFont: PDFFont,
+  sansFont: PDFFont,
+  accentColor: Color,
+  darkColor: Color,
+  bodyColor: Color,
+): number {
+  drawCheckmark(page, x + 2, y - 1, 7, accentColor);
+
+  const numMatch = clause.match(/^([0-9]+\.[0-9]+(?:\.[0-9]+)?|[•✦\-])\s*([\s\S]*)/);
+  let prefix = "";
+  let colonTitle = "";
+  let bodyText = clause;
+
+  if (numMatch) {
+    prefix = numMatch[1];
+    const rest = numMatch[2];
+    const colonMatch = rest.match(/^([^:]+:)\s*([\s\S]*)/);
+    if (colonMatch && colonMatch[1].length < 80) {
+      colonTitle = colonMatch[1];
+      bodyText = colonMatch[2];
+    } else {
+      bodyText = rest;
+    }
+  } else {
+    const colonMatch = clause.match(/^([^:]+:)\s*([\s\S]*)/);
+    if (colonMatch && colonMatch[1].length < 80) {
+      colonTitle = colonMatch[1];
+      bodyText = colonMatch[2];
+    }
+  }
+
+  const boldHeader = [prefix, colonTitle].filter(Boolean).join(" ");
+  if (boldHeader) {
+    page.drawText(boldHeader, {
+      x: x + 16,
+      y,
+      size: 7.6,
+      font: boldFont,
+      color: darkColor,
+    });
+    const headerWidth = boldFont.widthOfTextAtSize(boldHeader + " ", 7.6);
+    const availableW = maxWidth - 18 - headerWidth;
+    const bodyLines = wrapText(bodyText, sansFont, 7.5, Math.max(availableW, 140));
+
+    if (bodyLines.length > 0 && availableW >= 140) {
+      page.drawText(bodyLines[0], {
+        x: x + 16 + headerWidth,
+        y,
+        size: 7.5,
+        font: sansFont,
+        color: bodyColor,
+      });
+      y -= 12.5;
+      for (let i = 1; i < Math.min(bodyLines.length, 3); i++) {
+        page.drawText(bodyLines[i], {
+          x: x + 16,
+          y,
+          size: 7.5,
+          font: sansFont,
+          color: bodyColor,
+        });
+        y -= 11.5;
+      }
+    } else {
+      y -= 12;
+      const fullBodyLines = wrapText(bodyText, sansFont, 7.5, maxWidth - 18);
+      for (let i = 0; i < Math.min(fullBodyLines.length, 3); i++) {
+        page.drawText(fullBodyLines[i], {
+          x: x + 16,
+          y,
+          size: 7.5,
+          font: sansFont,
+          color: bodyColor,
+        });
+        y -= 11.5;
+      }
+    }
+  } else {
+    const fullBodyLines = wrapText(clause, sansFont, 7.5, maxWidth - 18);
+    for (let i = 0; i < Math.min(fullBodyLines.length, 3); i++) {
+      page.drawText(fullBodyLines[i], {
+        x: x + 16,
+        y,
+        size: 7.5,
+        font: sansFont,
+        color: bodyColor,
+      });
+      y -= 11.5;
+    }
+  }
+
+  return y - 2;
+}
+
 export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Buffer> {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
@@ -239,9 +340,9 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
 
   const isSigned = input.status === "signed" || Boolean(input.signedAt);
 
-  // Extract sections & clauses
+  // Distribute all input sections across Page 1 and Page 2
   const sec1 = input.sections[0] || {
-    heading: "Purpose & Alliance Mandate",
+    heading: "1. Purpose & Alliance Mandate",
     clauses: [
       "1.1 Collaborative Ecosystem Acceleration: The parties agree to co-create high-impact initiatives supporting founders across Western Tamil Nadu.",
       "1.2 Non-Transactional Ethos: Engagement is strictly founded upon peer mentorship, transparent knowledge sharing, and give-first values.",
@@ -250,13 +351,15 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
   };
 
   const sec2 = input.sections[1] || {
-    heading: "Intellectual Property, Governance & Independence",
+    heading: "2. Intellectual Property, Governance & Independence",
     clauses: [
       "2.1 Proprietary Platform Ownership: Each party retains sole and unencumbered ownership of its pre-existing IP, brand trademarks, and software.",
       "2.2 Confidentiality & Non-Disclosure: All member data, roadmap details, and internal discussions remain strictly confidential and privileged.",
       "2.3 Term & Mutual Disengagement: Valid for a twelve-month duration, reviewable annually with a thirty-day bilateral notice window.",
     ],
   };
+
+  const remainingSections = input.sections.slice(2);
 
   // =========================================================================
   // PAGE 1: WARM LINEN TEMPLATE (Matches Left Page in User's Screenshot)
@@ -277,7 +380,6 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
   });
 
   if (partnerLogoImg && cscLogoImg) {
-    // Show both side-by-side inside arch
     p1.drawImage(cscLogoImg, {
       x: archX + 6,
       y: archY + 14,
@@ -310,7 +412,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
   let curY = archY - 76;
 
   // --- STAGE 1: PILL BADGE & CONTENT (Matches "Этап 1: Осведомленность") ---
-  const s1PillText = `Stage 1: ${sec1.heading}`;
+  const s1PillText = `Stage 1: ${sec1.heading.replace(/^[0-9.]+\s*/, "")}`;
   const s1PillW = Math.min(bold.widthOfTextAtSize(s1PillText, 8) + 24, CONTENT_W - 80);
   drawRoundedRect(p1, MARGIN_X, curY - 18, s1PillW, 20, 6, { color: P1_PILL_BG });
   p1.drawText(s1PillText, {
@@ -343,21 +445,18 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
 
   curY -= 14;
   for (const clause of sec1.clauses.slice(0, 3)) {
-    // Extract colon lead if present
-    const colonMatch = clause.match(/^([^:]+:)\s*(.*)/);
-    const titlePart = colonMatch ? colonMatch[1] : clause.slice(0, 45);
-    const bodyPart = colonMatch ? colonMatch[2] : clause.slice(45);
-
-    drawCheckmark(p1, MARGIN_X + 2, curY - 1, 7, ACCENT_ROSE);
-    p1.drawText(titlePart, { x: MARGIN_X + 16, y: curY, size: 7.6, font: bold, color: INK_DARK });
-    const leadW = bold.widthOfTextAtSize(titlePart, 7.6);
-    const bLines = wrapText(bodyPart, sans, 7.5, CONTENT_W - 20 - leadW);
-    p1.drawText(bLines[0] || "", { x: MARGIN_X + 20 + leadW, y: curY, size: 7.5, font: sans, color: INK_BODY });
-    curY -= 13;
-    if (bLines[1]) {
-      p1.drawText(bLines[1], { x: MARGIN_X + 16, y: curY, size: 7.5, font: sans, color: INK_BODY });
-      curY -= 12;
-    }
+    curY = drawFormattedClause(
+      p1,
+      MARGIN_X,
+      curY,
+      clause,
+      CONTENT_W,
+      bold,
+      sans,
+      ACCENT_ROSE,
+      INK_DARK,
+      INK_BODY,
+    );
   }
 
   // --- LIGHT PINK CALLOUT BOX WITH CIRCLE BADGE (Matches "Что важно:" box) ---
@@ -394,7 +493,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
   curY -= calloutH + 18;
 
   // --- STAGE 2: PILL BADGE & CONTENT (Matches "Этап 2: Интерес") ---
-  const s2PillText = `Stage 2: ${sec2.heading}`;
+  const s2PillText = `Stage 2: ${sec2.heading.replace(/^[0-9.]+\s*/, "")}`;
   const s2PillW = Math.min(bold.widthOfTextAtSize(s2PillText, 8) + 24, CONTENT_W);
   drawRoundedRect(p1, MARGIN_X, curY - 18, s2PillW, 20, 6, { color: P1_PILL_BG });
   p1.drawText(s2PillText, {
@@ -426,20 +525,18 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
 
   curY -= 14;
   for (const clause of sec2.clauses.slice(0, 3)) {
-    const colonMatch = clause.match(/^([^:]+:)\s*(.*)/);
-    const titlePart = colonMatch ? colonMatch[1] : clause.slice(0, 45);
-    const bodyPart = colonMatch ? colonMatch[2] : clause.slice(45);
-
-    drawCheckmark(p1, MARGIN_X + 2, curY - 1, 7, ACCENT_ROSE);
-    p1.drawText(titlePart, { x: MARGIN_X + 16, y: curY, size: 7.6, font: bold, color: INK_DARK });
-    const leadW = bold.widthOfTextAtSize(titlePart, 7.6);
-    const bLines = wrapText(bodyPart, sans, 7.5, CONTENT_W - 20 - leadW);
-    p1.drawText(bLines[0] || "", { x: MARGIN_X + 20 + leadW, y: curY, size: 7.5, font: sans, color: INK_BODY });
-    curY -= 13;
-    if (bLines[1]) {
-      p1.drawText(bLines[1], { x: MARGIN_X + 16, y: curY, size: 7.5, font: sans, color: INK_BODY });
-      curY -= 12;
-    }
+    curY = drawFormattedClause(
+      p1,
+      MARGIN_X,
+      curY,
+      clause,
+      CONTENT_W,
+      bold,
+      sans,
+      ACCENT_ROSE,
+      INK_DARK,
+      INK_BODY,
+    );
   }
 
   // Page 1 Footer: ( 26 )
@@ -497,8 +594,39 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     p2y -= 11;
   });
 
+  // If there are additional sections (e.g. Section 3 IP / Section 4 Confidentiality), render brief summary pill & clauses
+  if (remainingSections.length > 0) {
+    const extraSec = remainingSections[0];
+    p2y -= 4;
+    const extraPillW = Math.min(bold.widthOfTextAtSize(`Key Covenant: ${extraSec.heading}`, 8) + 24, CONTENT_W);
+    drawRoundedRect(p2, MARGIN_X, p2y - 16, extraPillW, 18, 5, { color: WHITE });
+    p2.drawText(`Key Covenant: ${extraSec.heading.slice(0, 48)}`, {
+      x: MARGIN_X + 8,
+      y: p2y - 12,
+      size: 7.5,
+      font: bold,
+      color: P2_INK_DARK,
+    });
+    p2y -= 24;
+
+    for (const ec of extraSec.clauses.slice(0, 2)) {
+      p2y = drawFormattedClause(
+        p2,
+        MARGIN_X,
+        p2y,
+        ec,
+        CONTENT_W,
+        bold,
+        sans,
+        ACCENT_ROSE,
+        P2_INK_DARK,
+        P2_INK_BODY,
+      );
+    }
+  }
+
   // Sub-section Pill (Matches "#1 Скидки, акции и бонусы: как использовать эффективно?")
-  p2y -= 10;
+  p2y -= 6;
   const p2PillW = 265;
   drawRoundedRect(p2, MARGIN_X, p2y - 18, p2PillW, 20, 6, { color: WHITE });
   p2.drawText("#1 CSC Circle & Counterparty Digital Execution", {
@@ -509,7 +637,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     color: P2_INK_DARK,
   });
 
-  p2y -= 28;
+  p2y -= 26;
   drawArrow(p2, MARGIN_X, p2y, 14, ACCENT_ROSE);
   p2.drawText(
     "Cryptographically verified digital sign-off and audit trail recorded on secure ledger.",
@@ -522,7 +650,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     },
   );
 
-  p2y -= 16;
+  p2y -= 14;
   p2.drawText("Execution Details & Authorized Signatories:", {
     x: MARGIN_X,
     y: p2y,
@@ -532,7 +660,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
   });
 
   // 3 Checkmark Execution Blocks (Matching Page 2 template checkmark items)
-  p2y -= 18;
+  p2y -= 16;
 
   // Block 1: CSC Signatory
   drawCheckmark(p2, MARGIN_X + 2, p2y + 16, 8, ACCENT_ROSE);
@@ -561,7 +689,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     },
   );
 
-  p2y -= 52;
+  p2y -= 48;
 
   // Block 2: Counterparty Signatory
   drawCheckmark(p2, MARGIN_X + 2, p2y + 16, 8, ACCENT_ROSE);
@@ -598,7 +726,7 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     },
   );
 
-  p2y -= 52;
+  p2y -= 48;
 
   // Block 3: Statutory Acceptance Declaration & QR Code
   drawCheckmark(p2, MARGIN_X + 2, p2y + 16, 8, ACCENT_ROSE);

@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { brandAssets } from "@/lib/content/site";
 import type { AgreementSection } from "@/lib/agreements/templates";
+import { FormattedLegalSection } from "@/components/agreements/formatted-legal-section";
 import { CommunityShowcaseDeck } from "@/components/agreements/community-showcase-deck";
 
 export interface PublicAgreementView {
@@ -234,18 +235,9 @@ export function AgreementSigningClient({
           <span className="text-[11px] text-brand-muted">Laws of India · Coimbatore Jurisdiction</span>
         </div>
 
-        <div className="flex flex-col gap-5 text-xs leading-relaxed text-brand-secondary sm:text-[13px]">
+        <div className="flex flex-col gap-6 text-xs leading-relaxed text-brand-secondary sm:text-[13px]">
           {agreement.sections.map((section) => (
-            <section key={section.heading} className="flex flex-col gap-2">
-              <h2 className="text-xs font-bold uppercase tracking-wide text-brand-ink sm:text-[13px]">
-                {section.heading}
-              </h2>
-              {section.clauses.map((clause, idx) => (
-                <p key={idx} className="leading-relaxed">
-                  {clause}
-                </p>
-              ))}
-            </section>
+            <FormattedLegalSection key={section.heading} section={section} />
           ))}
         </div>
       </div>
