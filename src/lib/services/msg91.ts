@@ -17,10 +17,14 @@ export interface Msg91Config {
 
 export function getMsg91Config(): Msg91Config {
   return {
-    authKey: process.env.MSG91_AUTH_KEY || "593367AEcZQeKeoF5c6b05eb92P1",
+    authKey:
+      process.env.MSG91_AUTH_KEY ||
+      process.env.MSG91_AUTHKEY ||
+      "593367AEcZQeKeoF5c6b05eb92P1",
     senderId: process.env.MSG91_SENDER_ID,
     otpTemplateId: process.env.MSG91_OTP_TEMPLATE_ID,
-    integratedWhatsAppNumber: process.env.MSG91_WHATSAPP_INTEGRATED_NUMBER,
+    integratedWhatsAppNumber:
+      process.env.MSG91_WHATSAPP_INTEGRATED_NUMBER || "917550067712",
   };
 }
 

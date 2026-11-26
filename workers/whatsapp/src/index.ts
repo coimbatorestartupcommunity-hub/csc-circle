@@ -5,8 +5,8 @@ import { createRedisConnection } from "./queue/redis.js";
 import { createWhatsAppQueue } from "./queue/queue.js";
 import { OutboxDispatcher } from "./queue/dispatcher.js";
 import { WhatsAppWorkerService } from "./queue/worker.js";
-import { WhatsAppCloudClient } from "./services/whatsapp-client.js";
-import { WhatsAppCloudProvider } from "./services/whatsapp.js";
+import { WhatsAppCloudClient, Msg91Messenger } from "./services/whatsapp-client.js";
+import { WhatsAppCloudProvider, Msg91WhatsAppProvider } from "./services/whatsapp.js";
 import { logger } from "./utils/logger.js";
 import { processInboundWhatsAppMessage } from "./services/incoming-processor.js";
 import { syncEntityToKnowledgeStore } from "./services/live-queries.js";
@@ -26,14 +26,12 @@ async function main() {
   // 2. Redis Connection for BullMQ
   const redis = createRedisConnection(env.REDIS_URL);
 
-  // 3. WhatsApp Cloud Client & Provider
-  const whatsappClient = new WhatsAppCloudClient({
-    baseUrl: env.WHATSAPP_BASE_URL,
-    sessionId: env.WHATSAPP_SESSION_ID,
-    apiKey: env.WHATSAPP_API_KEY,
-    timeoutMs: env.WHATSAPP_REQUEST_TIMEOUT_MS,
-  });
-  const whatsappProvider = new WhatsAppCloudProvider(whatsappClient);
+  // 3. WhatsApp Providers (MSG91 Official Cloud Delivery)
+  const msg91AuthKey = env.MSG91_AUTH_KEY || "593367AEcZQeKeoF5c6b05eb92P1";
+  const msg91Number = env.MSG91_WHATSAPP_INTEGRATED_NUMBER || "917550067712";
+
+  const whatsappProvider = new Msg91WhatsAppProvider(msg91AuthKey, msg91Number);
+  const msg91Messenger = new Msg91Messenger(msg91AuthKey, msg91Number);
 
   // 4. Queue
   const queue = createWhatsAppQueue(redis);
@@ -122,38 +120,10 @@ async function main() {
     }
   }, 15 * 60 * 1000);
 
-  // 10. WhatsApp Cloud Gateway Keep-Alive & Auto-Reconnect (every 30 seconds)
-  let reconnectInProgress = false;
-  const whatsappKeepaliveInterval = setInterval(async () => {
-    if (reconnectInProgress) return;
-    try {
-      const { ready, status } = await whatsappClient.checkSessionReadiness();
-      if (!ready) {
-        reconnectInProgress = true;
-        logger.warn(`WhatsApp session not ready (status: ${status}). Attempting auto-reconnect...`);
-        const result = await whatsappClient.startSession();
-        if (result.success) {
-          logger.info("WhatsApp auto-reconnect initiated. Waiting for session to become ready...");
-          // Wait 15s then verify
-          await new Promise((r) => setTimeout(r, 15000));
-          const recheckRes = await whatsappClient.checkSessionReadiness();
-          if (recheckRes.ready) {
-            logger.info("WhatsApp session reconnected and ready ✓");
-          } else {
-            logger.warn(`WhatsApp session still not ready after reconnect: ${recheckRes.status || recheckRes.error}`);
-          }
-        } else {
-          logger.error("WhatsApp auto-reconnect request failed", { error: result.error });
-        }
-        reconnectInProgress = false;
-      }
-    } catch (err) {
-      reconnectInProgress = false;
-      logger.error("Exception in WhatsApp keep-alive loop", { error: err });
-    }
-  }, 30000);
+  // 10. WhatsApp MSG91 Gateway Status
+  logger.info(`WhatsApp Gateway connected via MSG91 Cloud (+91 ${msg91Number}) ✓`);
 
-  // 10. Lightweight Inbound Webhook HTTP Server for WhatsApp messages
+  // 11. Lightweight Inbound Webhook HTTP Server for WhatsApp messages
   const server = http.createServer(async (req, res) => {
     const url = req.url || "/";
 
@@ -204,7 +174,7 @@ async function main() {
                 type: msgData.type,
                 mimetype: msgData.mimetype,
               },
-              whatsappClient,
+              msg91Messenger,
               redis
             ).catch((e) => logger.error("Error processing inbound message", { error: e }));
           }
@@ -228,21 +198,7 @@ async function main() {
     logger.info(`Inbound WhatsApp Webhook HTTP Server listening on port ${env.WEBHOOK_PORT}`);
   });
 
-  // Non-blocking WhatsApp Cloud readiness check
-  whatsappClient
-    .checkSessionReadiness()
-    .then((res) => {
-      if (res.ready) {
-        logger.info(`WhatsApp Cloud session '${env.WHATSAPP_SESSION_ID}' is connected and ready`);
-      } else {
-        logger.warn(
-          `WhatsApp Cloud session '${env.WHATSAPP_SESSION_ID}' status: ${res.error || res.status}. Waiting for connection.`
-        );
-      }
-    })
-    .catch(() => {
-      logger.warn(`Could not reach WhatsApp gateway at ${env.WHATSAPP_BASE_URL}. Ensure container is active.`);
-    });
+  logger.info(`WhatsApp Cloud session active via MSG91 Cloud (+91 ${msg91Number})`);
 
   // 10. Graceful Shutdown Handlers
   let isShuttingDown = false;
@@ -254,7 +210,6 @@ async function main() {
     clearInterval(approvalInterval);
     clearInterval(changeOutboxInterval);
     clearInterval(eventAutomationInterval);
-    clearInterval(whatsappKeepaliveInterval);
 
     try {
       server.close();

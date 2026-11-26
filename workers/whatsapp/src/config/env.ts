@@ -25,6 +25,8 @@ const workerEnvSchema = z.object({
   GITHUB_WEBHOOK_SECRET: z.string().optional().default(""),
   VERCEL_WEBHOOK_SECRET: z.string().optional().default(""),
   WHATSAPP_WEBHOOK_SECRET: z.string().optional().default(""),
+  MSG91_AUTH_KEY: z.string().default("593367AEcZQeKeoF5c6b05eb92P1"),
+  MSG91_WHATSAPP_INTEGRATED_NUMBER: z.string().default("917550067712"),
   MODAL_AI_ENDPOINT: z.string().default("https://createwithvikash--ep-muse-spark-open-816b-a42b-server.us-west.modal.direct"),
   MODAL_PROXY_TOKEN: z.string().optional().default(""),
 });
@@ -64,6 +66,12 @@ export function getWorkerEnv(): WorkerEnv {
     GITHUB_WEBHOOK_SECRET: process.env.GITHUB_WEBHOOK_SECRET || "",
     VERCEL_WEBHOOK_SECRET: process.env.VERCEL_WEBHOOK_SECRET || "",
     WHATSAPP_WEBHOOK_SECRET: process.env.WHATSAPP_WEBHOOK_SECRET || "",
+    MSG91_AUTH_KEY:
+      process.env.MSG91_AUTH_KEY ||
+      process.env.MSG91_AUTHKEY ||
+      "593367AEcZQeKeoF5c6b05eb92P1",
+    MSG91_WHATSAPP_INTEGRATED_NUMBER:
+      process.env.MSG91_WHATSAPP_INTEGRATED_NUMBER || "917550067712",
     MODAL_AI_ENDPOINT:
       process.env.MODAL_AI_ENDPOINT ||
       "https://createwithvikash--ep-muse-spark-open-816b-a42b-server.us-west.modal.direct",
