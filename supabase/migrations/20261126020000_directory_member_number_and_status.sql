@@ -41,7 +41,7 @@ begin
           select mc.designation::text
           from public.membership_claims mc
           where mc.user_id = p.id
-          order by mc.created_at desc
+          order by mc.submitted_at desc
           limit 1
         ),
         ''
@@ -60,7 +60,7 @@ begin
           select nullif(trim(mc.startup_affiliation), '')
           from public.membership_claims mc
           where mc.user_id = p.id
-          order by mc.created_at desc
+          order by mc.submitted_at desc
           limit 1
         )
       ),
@@ -147,7 +147,7 @@ begin
           select mc.designation::text
           from public.membership_claims mc
           where mc.user_id = p.id
-          order by mc.created_at desc
+          order by mc.submitted_at desc
           limit 1
         ),
         ''
@@ -166,7 +166,7 @@ begin
           select nullif(trim(mc.startup_affiliation), '')
           from public.membership_claims mc
           where mc.user_id = p.id
-          order by mc.created_at desc
+          order by mc.submitted_at desc
           limit 1
         )
       ),

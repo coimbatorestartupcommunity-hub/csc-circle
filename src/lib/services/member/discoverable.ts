@@ -55,8 +55,23 @@ export async function fetchDiscoverableMembers(options: {
     console.warn("[discoverable] RPC list_discoverable_members error, falling back to direct table query:", err);
   }
 
-  // 2. Fallback Strategy: Direct table query if RPC is unmigrated or fails
+  // 2. Fallback Strategy: Direct table queries if RPC is unmigrated or fails
   try {
+    const { data: activeMemberships, error: memError } = await admin
+      .from("memberships")
+      .select("user_id, member_number, status, created_at")
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+
+    if (memError || !activeMemberships || activeMemberships.length === 0) {
+      return [];
+    }
+
+    const memberMap = new Map<string, { member_number?: string | null; status?: string | null }>(
+      activeMemberships.map((m) => [m.user_id, m])
+    );
+    const userIds = activeMemberships.map((m) => m.user_id);
+
     let query = admin
       .from("profiles")
       .select(`
@@ -71,13 +86,9 @@ export async function fetchDiscoverableMembers(options: {
         portrait_path,
         avatar_url,
         consent,
-        created_at,
-        memberships!inner (
-          member_number,
-          status
-        )
+        created_at
       `)
-      .eq("memberships.status", "active");
+      .in("id", userIds);
 
     if (search) {
       query = query.or(`display_name.ilike.%${search}%,full_name.ilike.%${search}%,city.ilike.%${search}%`);
@@ -93,11 +104,11 @@ export async function fetchDiscoverableMembers(options: {
     }
 
     // Fetch claims for designation/startup fallbacks
-    const userIds = profiles.map((p) => p.id);
+    const profileIds = profiles.map((p) => p.id);
     const { data: claims } = await admin
       .from("membership_claims")
       .select("user_id, designation, startup_affiliation, submitted_at")
-      .in("user_id", userIds)
+      .in("user_id", profileIds)
       .order("submitted_at", { ascending: false });
 
     const claimsByUser = new Map<string, { designation?: string | null; startup_affiliation?: string | null }>();
@@ -110,7 +121,7 @@ export async function fetchDiscoverableMembers(options: {
     }
 
     return profiles.map((p: any) => {
-      const membership = Array.isArray(p.memberships) ? p.memberships[0] : p.memberships;
+      const membership = memberMap.get(p.id);
       const claim = claimsByUser.get(p.id);
       const shareWa = p.consent?.shareWhatsappWithMembers === true;
 

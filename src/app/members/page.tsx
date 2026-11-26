@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { CommunityMemberDirectory } from "@/components/member/community-member-directory";
 import { fetchDiscoverableMembers } from "@/lib/services/member/discoverable";
@@ -14,6 +15,7 @@ export const metadata = {
 export const instant = false;
 
 export default async function MembersPage() {
+  await connection();
   const initialMembers = await fetchDiscoverableMembers({
     search: "",
     limit: 50,

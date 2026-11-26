@@ -24,9 +24,7 @@ export async function GET(request: Request) {
       { members, hasMore: members.length >= pageSize },
       {
         headers: {
-          "Cache-Control": search
-            ? "public, max-age=30, stale-while-revalidate=120"
-            : "public, max-age=120, stale-while-revalidate=600",
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
         },
       }
     );
