@@ -54,7 +54,7 @@ export function CircularSocialIcon({
   size = 44,
   className = "",
 }: {
-  network: "whatsapp" | "instagram" | "linkedin" | "ai_agent";
+  network: "whatsapp" | "instagram" | "linkedin" | "ai_agent" | "email";
   size?: number;
   className?: string;
 }) {
@@ -82,6 +82,12 @@ export function CircularSocialIcon({
       alt: "LinkedIn official profile icon",
       bgColor: "bg-[#0A66C2]",
       fallback: <LinkedinIcon className="size-5 text-white" />,
+    },
+    email: {
+      src: "/brand/social/email-circle.png",
+      alt: "Email official community desk icon",
+      bgColor: "bg-blue-500",
+      fallback: <span className="text-white text-xs font-bold">@</span>,
     },
   }[network];
 

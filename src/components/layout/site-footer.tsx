@@ -109,9 +109,9 @@ export function SiteFooter() {
                   href={`mailto:${siteConfig.social.email}`}
                   aria-label="Email CSC Circle"
                   title="Email Community Desk"
-                  className={socialLinkClass}
+                  className="inline-block transition-transform hover:scale-105 active:scale-95"
                 >
-                  <Mail className="size-4" />
+                  <CircularSocialIcon network="email" size={42} />
                 </a>
               </li>
             </ul>

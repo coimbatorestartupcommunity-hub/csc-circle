@@ -875,8 +875,8 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
     );
 
     if (leadersImg) {
-      const lockupW = 180;
-      const lockupH = 220;
+      const lockupW = 220;
+      const lockupH = 154;
       ap2.page.drawImage(leadersImg, {
         x: MARGIN_X + 16,
         y: y - 66 - lockupH,
@@ -884,11 +884,11 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
         height: lockupH,
       });
 
-      const rosterX = MARGIN_X + 16 + lockupW + 16;
-      const rosterW = CONTENT_W - 48 - lockupW;
+      const rosterX = MARGIN_X + 16 + lockupW + 14;
+      const rosterW = CONTENT_W - 46 - lockupW;
       const leadersList = [
         ["K. N. Reyash", "Founder & President · Ecosystem Vision"],
-        ["E. R. Sharan", "Co-Founder & Vice President · Strategic Growth"],
+        ["E. R. Sharan", "Co-Founder & VP · Strategic Growth"],
         ["Mirra Mahendran", "Chief Executive Officer · Operations & Alliances"],
         ["Vikash Saravanan", "Chief Technology Officer · LIT Tech Partner"],
         ["Swathi", "Chief Community Officer · Member Experience"],

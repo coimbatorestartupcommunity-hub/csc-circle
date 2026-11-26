@@ -134,13 +134,14 @@ export function CommunityShowcaseDeck() {
       subtitle: "Seven dedicated leaders steering the community's vision and operations.",
       content: (
         <div className="flex flex-col gap-4">
-          <div className="relative overflow-hidden rounded-xl border border-brand-border/80 bg-brand-cloud shadow-xs aspect-[21/9] w-full">
+          <div className="relative overflow-hidden rounded-xl border border-brand-border/80 bg-brand-cloud/40 shadow-xs aspect-[2000/1398] w-full max-h-[320px]">
             <Image
               src="/images/agreements/leaders/csc-leaders-lockup.jpg"
-              alt="The 7 Leaders of CSC Circle"
+              alt="The People Behind CSC Circle - Seven dedicated leaders steering the community's vision"
               fill
-              className="object-cover"
+              className="object-contain"
               sizes="(max-width: 768px) 100vw, 700px"
+              priority
             />
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4 sm:gap-2.5">
