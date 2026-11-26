@@ -33,6 +33,7 @@ export async function proxy(request: NextRequest) {
     "/events/google-meet/check-in",
     "/events/check-in",
     "/events/meet-access",
+    "/agreements/sign",
   ].some((path) => pathname === path || pathname.startsWith(`${path}/`))
     || pathname === "/"
     || /^\/events\/[^/]+$/.test(pathname)
