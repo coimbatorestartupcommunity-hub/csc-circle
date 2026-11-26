@@ -12,6 +12,7 @@ import {
   Loader2,
   Lock,
   LogIn,
+  Printer,
   ShieldCheck,
   Upload,
 } from "lucide-react";
@@ -174,23 +175,35 @@ export function AgreementSigningClient({
               </h1>
             </div>
           </div>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              agreement.status === "signed"
-                ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200"
-                : agreement.status === "voided" || agreement.status === "expired"
-                  ? "bg-red-50 text-red-800 ring-1 ring-red-200"
-                  : "bg-brand-cloud text-brand-ink ring-1 ring-brand-border"
-            }`}
-          >
-            {agreement.status === "signed"
-              ? "Digitally Signed"
-              : agreement.status === "voided"
-                ? "Voided"
-                : agreement.status === "expired"
-                  ? "Expired"
-                  : "Awaiting Signature"}
-          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+              className="gap-1.5 text-xs text-brand-secondary hover:text-brand-ink print:hidden"
+            >
+              <Printer className="size-3.5" />
+              Print / Save PDF
+            </Button>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                agreement.status === "signed"
+                  ? "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200"
+                  : agreement.status === "voided" || agreement.status === "expired"
+                    ? "bg-red-50 text-red-800 ring-1 ring-red-200"
+                    : "bg-brand-cloud text-brand-ink ring-1 ring-brand-border"
+              }`}
+            >
+              {agreement.status === "signed"
+                ? "Digitally Signed"
+                : agreement.status === "voided"
+                  ? "Voided"
+                  : agreement.status === "expired"
+                    ? "Expired"
+                    : "Awaiting Signature"}
+            </span>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-3 rounded-xl bg-brand-cloud/50 p-4 text-xs text-brand-secondary sm:grid-cols-2">
@@ -216,7 +229,7 @@ export function AgreementSigningClient({
       {!isEmailMatched ? (
         <div
           role="alert"
-          className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50/95 p-4 sm:p-5 text-xs text-amber-950 sm:flex-row sm:items-center sm:justify-between shadow-2xs"
+          className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50/95 p-4 sm:p-5 text-xs text-amber-950 sm:flex-row sm:items-center sm:justify-between shadow-2xs print:hidden"
         >
           <div className="flex items-start gap-3">
             <Lock className="mt-0.5 size-5 shrink-0 text-amber-700" />
@@ -309,19 +322,30 @@ export function AgreementSigningClient({
                 ) : null}
               </div>
             </div>
-            <Button
-              render={<a href={`/api/agreements/${token}/pdf`} />}
-              className="shrink-0 gap-2 bg-emerald-700 hover:bg-emerald-800 text-white"
-            >
-              <Download className="size-4" />
-              Download Signed PDF
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => window.print()}
+                className="shrink-0 gap-2 border-emerald-300 text-emerald-800 hover:bg-emerald-100/70 print:hidden"
+              >
+                <Printer className="size-4" />
+                Print / Save PDF
+              </Button>
+              <Button
+                render={<a href={`/api/agreements/${token}/pdf`} />}
+                className="shrink-0 gap-2 bg-emerald-700 hover:bg-emerald-800 text-white print:hidden"
+              >
+                <Download className="size-4" />
+                Download Signed PDF
+              </Button>
+            </div>
           </div>
         </div>
       ) : agreement.status === "sent" || agreement.status === "opened" ? (
         <form
           onSubmit={handleSign}
-          className="flex flex-col gap-5 rounded-2xl border border-brand-border bg-brand-white p-5 shadow-2xs sm:p-7"
+          className="flex flex-col gap-5 rounded-2xl border border-brand-border bg-brand-white p-5 shadow-2xs sm:p-7 print:hidden"
         >
           <div className="flex items-center justify-between gap-3 border-b border-brand-border pb-3">
             <div className="flex items-center gap-2">

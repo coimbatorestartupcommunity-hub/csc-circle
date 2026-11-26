@@ -10,6 +10,9 @@ import {
 import { computeAgreementHash } from "@/lib/agreements/hash";
 import { generateAgreementPdf } from "@/lib/agreements/pdf";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   const ctx = await getAdminContext();
   const allowed =
@@ -100,7 +103,10 @@ export async function GET(request: Request) {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `inline; filename="${referenceCode}.pdf"`,
-      "Cache-Control": "private, no-store",
+      "Cache-Control": "private, no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+      "Pragma": "no-cache",
+      "Expires": "0",
+      "Surrogate-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "SAMEORIGIN",
       "Content-Security-Policy": "frame-ancestors 'self'",

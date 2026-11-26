@@ -4,6 +4,8 @@ import { agreementsTable, type DigitalAgreementRow } from "@/lib/agreements/db";
 import { AdminAgreementsClient } from "@/components/admin/agreements/admin-agreements-client";
 import { siteConfig } from "@/lib/content/site";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export const instant = false;
 export const metadata = { title: "Digital Agreements — Admin" };
 

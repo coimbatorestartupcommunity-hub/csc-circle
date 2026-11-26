@@ -210,47 +210,63 @@ function buildIndividualizedLeadershipCharter(
         {
           heading: "1. Presidential Office, Constitutional Mandate & Ecosystem Stewardship",
           clauses: [
-            `1.1 Formal Executive Appointment: This Executive Leadership Charter ("Charter") is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the stewardship of ${leaderName} ("Leader"), serving in the supreme office of ${leaderRole}.`,
-            `1.2 Custodian of Core Vision: The Leader serves as the primary custodian of CSC's founding philosophy, non-transactional ethos, and long-term ecosystem roadmap across Coimbatore and Tamil Nadu.${customMandate ? ` ${customMandate}` : ""}`,
-            `1.3 Presidential Veto & Final Ratification Authority: Major institutional alliances, state government partnerships, structural amendments to community bylaws, and the appointment of core leadership council members require final review and written ratification by the Founder & President.`,
+            `1.1 Formal Presidential Appointment: This Executive Leadership Charter ("Charter") is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the supreme executive stewardship of ${leaderName} ("Leader"), serving in the constitutional office of ${leaderRole}.`,
+            `1.2 Custodian of Founding Vision: The Leader stands as the principal custodian and ethical guardian of CSC's foundational ethos: fostering a peer-to-peer, non-transactional ecosystem where founders in Western Tamil Nadu can access high-caliber mentorship, capital, and technology without predatory barriers.${customMandate ? ` ${customMandate}` : ""}`,
+            `1.3 Presidential Veto & Final Ratification Authority: All institutional alliances, bilateral MoUs with governmental bodies, financial commitments exceeding discretionary limits, bylaw revisions, and appointments to the Executive Council require explicit written ratification by the Founder & President.`,
           ],
         },
         {
-          heading: "2. Fiduciary Stewardship, Founder Alignment & Ecosystem Representation",
+          heading: "2. Diplomatic Representation, StartupTN / MSME Liaison & Ecosystem Advocacy",
           clauses: [
-            `2.1 Highest Standard of Fiduciary Care: The Leader shall exercise unwavering loyalty, integrity, and good faith, placing the sustainable growth of regional entrepreneurs above personal or commercial interests.`,
-            `2.2 Institutional Representation: Serving as the principal diplomatic representative and voice of CSC before government bodies (such as StartupTN, MSME, and DPIIT), academic senates, venture funds, and angel networks.`,
-            `2.3 Advisory Council & Patron Appointments: Authority to nominate, invite, and induct prominent startup founders, venture capitalists, and industry veterans into CSC's Board of Advisors.`,
+            `2.1 Sovereign Ecosystem Voice: The Leader serves as the chief ambassador and primary diplomatic representative of CSC before federal and state innovation bodies, including StartupTN, the Ministry of MSME, DPIIT, TiE Global, and prominent venture capital networks.`,
+            `2.2 Keynote Advocacy & Thought Leadership: Leading public ecosystem advocacy on behalf of regional founders, delivering presidential addresses at flagship summits, and authoring thought leadership perspectives that articulate Coimbatore's emerging status as a national tier-2 innovation hub.`,
+            `2.3 Advisory Board & Patron Inductions: Holding the exclusive authority to nominate, evaluate, and formally induct veteran industrialists, exited entrepreneurs, and institutional patrons into the CSC Advisory Council.`,
           ],
         },
         {
-          heading: "3. Conflict of Interest, Belvoria & Startup Builder Governance",
+          heading: "3. Fiduciary Duty, Ecosystem Ethics & Good Faith Stewardship",
           clauses: [
-            `3.1 Formally Disclosed External Venture: CSC formally acknowledges that the Leader actively operates and leads independent startup ventures, specifically recorded as: ${externalVenture}.`,
-            `3.2 Strict Entity Separation: Independent software ventures, including Belvoria, remain legally, financially, and operationally independent from Coimbatore Startup Community.`,
-            `3.3 Zero Self-Dealing & Arm's-Length Standard: Any collaboration, pilot program, or resource sharing between CSC and the Leader's independent ventures must be conducted at arm's length, fully disclosed in writing, and approved by the Executive Council without self-dealing.`,
+            `3.1 Highest Standard of Fiduciary Care: The Leader shall exercise exemplary loyalty, transparency, prudence, and good faith, perpetually prioritizing the long-term collective welfare and sustainability of the Coimbatore startup collective above any individual or commercial advantage.`,
+            `3.2 Strict Prohibition against Commercial Exploitation: Absolute covenant ensuring that CSC's confidential member directories, private founder forums, WhatsApp channels, and VIP networks are never exploited for personal consulting solicitation, customer prospecting, or commercial marketing syndicates.`,
+            `3.3 Zero Tolerance for Harassment & Bias: Enforcing an uncompromising zero-tolerance code across both physical events and digital forums regarding discrimination, harassment, unethical gatekeeping, or defamatory conduct.`,
           ],
         },
         {
-          heading: "4. Community Constitutional Assets & Brand Governance",
+          heading: "4. Conflict of Interest Governance, Belvoria & Startup Builder Safeguards",
           clauses: [
-            `4.1 Community Asset Stewardship: CSC's official trade name, circular emblem, founding charters, website domains, and media archives are held in trust for the collective benefit of the startup community.`,
-            `4.2 Brand Protection & Trademark Integrity: The Leader shall actively defend the CSC brand against unauthorized commercial exploitation, trademark dilution, or predatory third-party misuse.`,
+            `4.1 Formally Disclosed External Venture: CSC formally recognizes and records that the Leader actively operates and architects independent technology and product initiatives, specifically recorded as: ${externalVenture}.`,
+            `4.2 Strict Legal & Commercial Separation: Independent software ventures, including Belvoria, remain legally, financially, and operationally independent from Coimbatore Startup Community.`,
+            `4.3 Arm's-Length Commercial Standards: Any future commercial transaction, software licensing agreement, or pilot program between CSC and the Leader's independent ventures must be documented in writing, subjected to fair market valuation, and approved unanimously by disinterested members of the Executive Council.`,
           ],
         },
         {
-          heading: "5. Data Governance, Member Privacy & DPDP Act 2023 Compliance",
+          heading: "5. Community Constitutional Property, Circular Trademark & Domain Stewardship",
           clauses: [
-            `5.1 Presidential Data Governance: Ensuring that all administrative organs, event systems, and digital portals of CSC adhere strictly to India's Digital Personal Data Protection Act, 2023 (DPDP Act).`,
-            `5.2 Protection of Founder Disclosures: Ensuring member directories, founder phone numbers, and confidential pitch decks remain protected and are never monetized, rented, or brokered.`,
+            `5.1 Trust Ownership of Community Property: The official name "Coimbatore Startup Community", the "CSC Circle" branding, circular emblems, website domains (including csc.logicintelligencetechnologies.in), editorial publications, and community archives are held in trust under presidential stewardship for the collective benefit of the community.`,
+            `5.2 Protection against Brand Dilution: The Leader is charged with defending CSC's visual trademarks and intellectual property against unauthorized commercial licensing, trademark squatting, or predatory dilution by third-party entities.`,
           ],
         },
         {
-          heading: "6. Council Consensus, Presidential Succession & Handover Protocol",
+          heading: "6. Data Governance, Founder Pitch Confidentiality & DPDP Act 2023 Compliance",
           clauses: [
-            `6.1 Executive Council Leadership: Presiding over quarterly executive review sessions and guiding functional officers in delivering high-impact community programs.`,
-            `6.2 Orderly Presidential Succession: In the event of voluntary transition, the Leader agrees to execute an orderly sixty (60) day transition handover, transferring domain ownership, social media credentials, and community assets to designated successors.`,
-            `6.3 Governing Law: Governed by the substantive laws of India, with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+            `6.1 Presidential Data Governance: Ensuring that all administrative organs, event systems, and digital portals of CSC adhere strictly to India's Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `6.2 Confidentiality of Founder Intellectual Property: Guaranteeing that private startup pitch decks, cap tables, early prototypes, and investor discussions shared within CSC pitch clinics remain privileged and protected from unauthorized external dissemination.`,
+            `6.3 Prohibition of Commercial Data Brokering: Affirming that personal member records, phone numbers, and transactional records shall never be rented, monetized, sold, or shared with commercial advertising brokers.`,
+          ],
+        },
+        {
+          heading: "7. Discretionary Authority, Financial Oversight & Audit Integrity",
+          clauses: [
+            `7.1 Presidential Discretionary Limit: Authority to approve operational budgets and emergency disbursements necessary for flagship summit production, distinguished guest hospitality, and legal compliance.`,
+            `7.2 Audit Integrity & Ledger Oversight: Ensuring that all financial receipts, bank transactions, and UPI UTR records are audited annually by independent qualified professionals and made transparent to the Executive Council.`,
+          ],
+        },
+        {
+          heading: "8. Presidential Succession, Orderly 60-Day Constitutional Handover & Jurisdiction",
+          clauses: [
+            `8.1 Active Presidential Tenure: This Charter remains active and binding for ${duration} throughout the Leader's active stewardship as Founder & President.`,
+            `8.2 Orderly 60-Day Succession Protocol: In the event of voluntary transition or retirement, the Leader shall provide sixty (60) days' advance written notice, chairing an orderly transition committee and executing complete handover of domain registrar accounts, social media admin rights, and community bank signatories.`,
+            `8.3 Governing Law & Arbitration: Governed by the substantive laws of India, with binding arbitration in Coimbatore, Tamil Nadu under the Arbitration and Conciliation Act, 1996.`,
           ],
         },
       ];
@@ -258,34 +274,34 @@ function buildIndividualizedLeadershipCharter(
     case "co_founder":
       return [
         {
-          heading: "1. Co-Founding Mandate, Vice Presidency & Industrial Expansion",
+          heading: "1. Co-Founding Mandate, Vice Presidency & Industrial Ecosystem Expansion",
           clauses: [
-            `1.1 Co-Founder & Vice President Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the office of ${leaderRole}.`,
-            `1.2 Industrial & Ecosystem Growth Mandate: Driving strategic expansion, high-level corporate partnerships, industry-academia linkages, and regional chapter growth across Coimbatore and Tamil Nadu.${customMandate ? ` ${customMandate}` : ""}`,
-            `1.3 Executive Deputation & Presidential Collaboration: Serving as co-executive lead, presiding over Executive Council sessions in the President's absence, and co-signing major institutional alliances.`,
+            `1.1 Co-Founder & Vice President Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the executive stewardship of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
+            `1.2 Corporate & Industrial Growth Mandate: Driving strategic corporate alliances, high-level industrial partnerships, industry-academia linkages, and regional chapter growth across Coimbatore and Western Tamil Nadu.${customMandate ? ` ${customMandate}` : ""}`,
+            `1.3 Executive Deputation & Presidential Partnership: Serving as co-executive lead, presiding over Executive Council sessions in the President's absence, and holding co-signing authority on major institutional MoUs and corporate sponsorships.`,
           ],
         },
         {
-          heading: "2. Fiduciary Duty, Corporate Ethics & Strategic Governance",
+          heading: "2. Corporate Governance, Industrial Linkages & Industry-Academia Synergies",
           clauses: [
-            `2.1 Corporate Fiduciary Care: Applying rigorous enterprise-grade governance, strategic planning, and operational ethics to all CSC community initiatives.`,
-            `2.2 Non-Exploitation of Community Trust: Absolute covenant not to utilize CSC internal founder networks for predatory corporate recruitment, unapproved industrial lobbying, or unsolicited commercial prospecting.`,
-            `2.3 Inclusive Regional Growth: Championing equitable growth for traditional manufacturing and engineering enterprises transitioning into modern technology ventures.`,
+            `2.1 Enterprise-Grade Governance: Infusing institutional discipline, corporate governance, and structured operational planning into CSC's non-profit ecosystem programs.`,
+            `2.2 Industry Linkage Programs: Connecting emerging technology founders with established industrial leaders in automotive, textile, foundry, precision engineering, and manufacturing across Coimbatore.`,
+            `2.3 Non-Exploitation of Community Trust: Absolute covenant not to utilize CSC internal founder networks for predatory corporate recruitment, unapproved industrial lobbying, or unsolicited commercial prospecting.`,
           ],
         },
         {
-          heading: "3. Conflict of Interest, CECIL Groups & Enterprise Disclosures",
+          heading: "3. Conflict of Interest Governance, CECIL Groups & Industrial Holdings",
           clauses: [
             `3.1 Formally Disclosed External Venture: CSC formally recognizes that the Leader operates and leads independent industrial enterprises, specifically recorded as: ${externalVenture}.`,
-            `3.2 Enterprise Separation: Strict legal, accounting, and operational boundary between CECIL corporate operations and CSC non-profit activities.`,
-            `3.3 Ethical Recusal: Voluntary recusal from any procurement, vendor selection, or sponsorship vote where CECIL Groups is an interested party.`,
+            `3.2 Strict Enterprise Separation: Complete legal, financial, and accounting separation between CECIL Groups corporate operations and CSC non-profit activities.`,
+            `3.3 Mandatory Recusal on Conflicted Matters: Voluntary recusal from any procurement, vendor selection, or sponsorship deliberations where CECIL Groups or its subsidiaries are prospective bidders or sponsors.`,
           ],
         },
         {
-          heading: "4. Industrial Alliances, Institutional MoUs & Brand Rights",
+          heading: "4. Institutional Outreach, Industry MoUs & Brand Rights",
           clauses: [
-            `4.1 Institutional Outreach Authority: Leading strategic outreach to industry bodies (such as CODISSIA, CII, TiE Coimbatore, and Indian Chamber of Commerce) and premier engineering colleges.`,
-            `4.2 Brand Representation: Authorized to represent CSC brand interests at senior corporate roundtables, industrial delegations, and state economic summits.`,
+            `4.1 High-Level Industry Representation: Leading strategic outreach and representing CSC before premier industrial chambers (CODISSIA, CII, TiE Coimbatore, and Indian Chamber of Commerce).`,
+            `4.2 Academic Alliances: Co-leading partnership MoUs with premier engineering universities and research parks to bridge academic research with commercial startup ventures.`,
           ],
         },
         {
@@ -296,11 +312,25 @@ function buildIndividualizedLeadershipCharter(
           ],
         },
         {
-          heading: "6. Active Tenure, Co-Leadership Continuity & Orderly Transition",
+          heading: "6. Institutional Budgeting, Sponsorship Facilitation & Fiscal Governance",
           clauses: [
-            `6.1 Active Tenure: Binding for ${duration} during active leadership as Co-Founder & Vice President.`,
-            `6.2 30-Day Transition Handover: Either party may conclude active operational duties with thirty (30) days' written notice, requiring full handover of ongoing corporate alliance dossiers and partner contacts.`,
-            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+            `6.1 Strategic Sponsorship Facilitation: Guiding the curation and onboarding of enterprise sponsors, ensuring high-value deliverables without compromising community independence.`,
+            `6.2 Fiscal Integrity: Ensuring all corporate contributions and grants received are accounted for with GST-compliant documentation and verified bank transaction references.`,
+          ],
+        },
+        {
+          heading: "7. General Terms, Indemnification & Limitation of Liability",
+          clauses: [
+            `7.1 Mutual Warranties & Authority: The Leader represents having full legal capacity to enter into and execute this Charter.`,
+            `7.2 Limitation of Personal Liability: The Leader bears no personal financial liability for bona fide community initiatives executed in good faith under council authorization.`,
+          ],
+        },
+        {
+          heading: "8. Active Tenure, Co-Leadership Continuity, 30-Day Transition Handover & Jurisdiction",
+          clauses: [
+            `8.1 Active Tenure: Binding for ${duration} during active leadership as Co-Founder & Vice President.`,
+            `8.2 30-Day Transition Handover: Either party may conclude active operational duties with thirty (30) days' written notice, requiring full handover of ongoing corporate alliance dossiers and partner contacts.`,
+            `8.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
@@ -308,48 +338,63 @@ function buildIndividualizedLeadershipCharter(
     case "ceo":
       return [
         {
-          heading: "1. Chief Executive Appointment & Operational Leadership Mandate",
+          heading: "1. Chief Executive Officer Appointment & Operational Delivery Mandate",
           clauses: [
-            `1.1 Executive Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
+            `1.1 Chief Executive Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the executive appointment of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
             `1.2 Operational Delivery Mandate: Spearheading the day-to-day execution, operational cadence, cross-functional team coordination, task follow-ups, and milestone delivery of CSC programs following Founder alignment.${customMandate ? ` ${customMandate}` : ""}`,
-            `1.3 Cross-Functional Executive Steering: Aligning engineering, operations, brand, community, and partnerships into a cohesive execution roadmap.`,
+            `1.3 Cross-Functional Executive Steering: Aligning engineering, operations, brand, community, and partnerships into a cohesive, synchronized execution roadmap.`,
           ],
         },
         {
-          heading: "2. Fiduciary Duty, Operational Transparency & Team Stewardship",
+          heading: "2. Cross-Functional Execution Cadence, Team Alignment & Milestone Accountability",
           clauses: [
-            `2.1 Executive Fiduciary Duty: Acting in utmost good faith, maintaining operational transparency, and fostering an inclusive, high-morale volunteer and leadership environment.`,
-            `2.2 Zero Tolerance for Community Misuse: Guaranteeing that administrative authority is exercised solely for community welfare without personal commercial prospecting.`,
-            `2.3 Accountability to Executive Council: Delivering monthly operational status reports and sprint reviews to the Founder and Executive Council.`,
+            `2.1 Program Management Cadence: Running bi-weekly operational sprint reviews, establishing accountable deadlines, and unblocking functional leads across all initiatives.`,
+            `2.2 Volunteer & Lead Mentorship: Cultivating high morale, professional discipline, and transparent communication across all operational teams.`,
+            `2.3 Monthly Executive Reviews: Preparing and delivering comprehensive operational status reports, KPI dashboards, and program recaps to the Founder and Executive Council.`,
           ],
         },
         {
-          heading: "3. Conflict of Interest & Independent Executive Ventures",
+          heading: "3. Fiduciary Duty, Operational Transparency & Team Stewardship",
           clauses: [
-            `3.1 Disclosed Independent Ventures: Formal recognition of independent executive leadership, consulting, and advisory activities, specifically recorded as: ${externalVenture}.`,
-            `3.2 Ethical Governance: Ensuring that all external advisory engagements remain completely distinct and never conflict with CSC leadership responsibilities.`,
+            `3.1 Duty of Utmost Good Faith: Exercising the highest standard of loyalty, honesty, and operational transparency across all community engagements.`,
+            `3.2 Non-Exploitation Covenant: Guaranteeing that administrative authority and executive privileges are exercised solely for community welfare without personal commercial prospecting.`,
+            `3.3 Inclusive Culture: Actively enforcing zero tolerance for workplace toxicity, harassment, or favoritism within leadership and volunteer cohorts.`,
           ],
         },
         {
-          heading: "4. Alliance Execution, Project Management & Operational Assets",
+          heading: "4. Conflict of Interest Governance & Independent Advisory Disclosures",
           clauses: [
-            `4.1 Partnership Execution: Operationalizing signed MoUs, sponsor deliverables, and university partnerships into actionable timelines and tracking metrics.`,
-            `4.2 Community Operational Assets: All SOPs (Standard Operating Procedures), project management boards, event run-sheets, and coordinator guidelines created under this mandate belong to CSC.`,
+            `4.1 Disclosed Independent Ventures: Formal recognition of independent executive leadership, consulting, and advisory activities, specifically recorded as: ${externalVenture}.`,
+            `4.2 Ethical Governance: Ensuring that all external advisory engagements remain completely distinct and never conflict with CSC leadership responsibilities.`,
           ],
         },
         {
-          heading: "5. Member Data Governance, Privacy & DPDP Act Compliance",
+          heading: "5. Operational SOPs, Program Documentation & Community Asset Governance",
           clauses: [
-            `5.1 Operational Data Stewardship: Overseeing operational data workflows to ensure end-to-end compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
-            `5.2 Strict Confidentiality of Sensitive Records: Maintaining strict non-disclosure over founder feedback surveys, internal incident reports, and executive council deliberations.`,
+            `5.1 Standard Operating Playbooks: Authoring and maintaining structured SOPs, event run-sheets, speaker onboarding guidelines, and incident response checklists.`,
+            `5.2 Community Asset Ownership: All operational playbooks, checklists, and project management workspaces developed under this mandate belong to Coimbatore Startup Community.`,
           ],
         },
         {
-          heading: "6. Active Tenure, 30-Day Transition Protocol & Jurisdiction",
+          heading: "6. Operational Data Stewardship, Volunteer Privacy & DPDP Act 2023 Compliance",
           clauses: [
-            `6.1 Active Tenure: Effective for ${duration} throughout active service as Chief Executive Officer.`,
-            `6.2 30-Day Notice & Operational Handover: Structured thirty (30) day notice period to transition operational run-sheets, team assignments, and open alliance deliverables.`,
-            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+            `6.1 Operational Data Stewardship: Overseeing operational data workflows to ensure end-to-end compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `6.2 Strict Confidentiality of Sensitive Records: Maintaining strict non-disclosure over founder feedback surveys, internal incident reports, and executive council deliberations.`,
+          ],
+        },
+        {
+          heading: "7. Discretionary Operating Budgets, Expense Audits & Procurement Approvals",
+          clauses: [
+            `7.1 Discretionary Operating Limit: Managing pre-approved operational budgets for event production, printed collateral, hospitality, and volunteer kits within council-approved thresholds.`,
+            `7.2 Expense Transparency: Ensuring all vendor bills and expense claims are supported by legitimate GST tax invoices and audited payment receipts.`,
+          ],
+        },
+        {
+          heading: "8. Active Tenure, Monthly Executive Reviews, 30-Day Transition Protocol & Jurisdiction",
+          clauses: [
+            `8.1 Active Tenure: Effective for ${duration} throughout active service as Chief Executive Officer.`,
+            `8.2 30-Day Notice & Operational Handover: Structured thirty (30) day notice period to transition operational run-sheets, team assignments, and open alliance deliverables.`,
+            `8.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
@@ -365,41 +410,58 @@ function buildIndividualizedLeadershipCharter(
           ],
         },
         {
-          heading: "2. LIT Exclusive Technology Partnership & IP Alignment",
+          heading: "2. Full-Stack Software Engineering, Database Architecture & Supabase RLS Enforcement",
           clauses: [
-            `2.1 Synergy with LIT Master Partnership: Direct alignment with the Exclusive Technology Partner Agreement designating LIT as sole platform developer.`,
-            `2.2 Preservation of LIT Background Codebase: All software source code, database architectures, API designs, and security modules developed by LIT remain 100% LIT's proprietary intellectual property, with operational license to CSC.`,
-            `2.3 CSC Community Identity Protection: Respecting and safeguarding CSC's brand identity, domain names, and member community records.`,
+            `2.1 Platform Engineering Excellence: Architecting robust, scalable software across Next.js App Router frontends, serverless API routes, and relational PostgreSQL databases on Supabase.`,
+            `2.2 Database Row-Level Security: Implementing fine-grained PostgreSQL Row-Level Security (RLS) policies ensuring zero cross-tenant data leakage and strict isolation of sensitive member records.`,
+            `2.3 Automated Monitoring & Uptime: Configuring automated synthetic monitoring, error tracking, and performance tracing targeting 99.5% operational availability for production services.`,
           ],
         },
         {
-          heading: "3. Conflict of Interest, LIT Governance & Arm's-Length Commercials",
+          heading: "3. Cryptographic Digital Membership IDs, Mobile Wallet Passes & Live Check-In Scanners",
           clauses: [
-            `3.1 Transparent Venture Disclosure: Official disclosure of Logic Intelligence Technologies — LIT (Founder & CEO) as an independent enterprise technology enterprise, specifically recorded as: ${externalVenture}.`,
-            `3.2 Dual Capacity Management: Transparent separation of CTO governance duties from LIT commercial contracts, ensuring high-value technical delivery with zero hidden overheads.`,
+            `3.1 Cryptographic Digital ID Cards: Architecting and maintaining the tamper-evident CSC Circle Digital Membership ID system featuring SHA-256 signatures, high-contrast dynamic QR codes, and real-time validity checks.`,
+            `3.2 Native Mobile Wallet Passes: Generating official Apple Wallet (.pkpass) bundles and Google Wallet passes for member identification at community gatherings.`,
+            `3.3 High-Throughput Check-In Terminals: Deploying sub-second cryptographic QR check-in software for summit registration desks, eliminating fraudulent entries.`,
           ],
         },
         {
-          heading: "4. DPDP Act 2023 Technical Data Processing, Encryption & Platform Security",
+          heading: "4. Exclusive Technology Delivery through Logic Intelligence Technologies (LIT) & IP Ownership",
           clauses: [
-            `4.1 Statutory Technical Data Processor Mandate: Serving as the principal technical data processor under India's Digital Personal Data Protection Act, 2023 (DPDP Act).`,
-            `4.2 Security Architecture: Enforcing AES-256 encryption at rest, TLS 1.3 in transit, automated health probes, database Row-Level Security (RLS), and zero-trust administrative access controls.`,
-            `4.3 Incident Response & Disaster Recovery: Maintaining automated cloud backups, emergency maintenance failover, and rapid vulnerability remediation protocols.`,
+            `4.1 Synergy with LIT Master Partnership: Direct alignment with the Exclusive Technology Partner Agreement designating LIT as sole platform developer.`,
+            `4.2 Preservation of LIT Background Codebase: All software source code, database architectures, API designs, and security modules developed by LIT remain 100% LIT's proprietary intellectual property, with operational license to CSC.`,
+            `4.3 CSC Community Identity Protection: Respecting and safeguarding CSC's brand identity, domain names, and member community records.`,
           ],
         },
         {
-          heading: "5. Digital Identity Integrity, Mobile Passes & Tamper-Evident Verification",
+          heading: "5. DPDP Act 2023 Statutory Technical Data Processor Mandate & Zero-Trust Cybersecurity",
           clauses: [
-            `5.1 Digital Membership Engine: Designing and managing dynamic QR ID passes, cryptographic SHA-256 digital seals, and mobile wallet integrations (.pkpass for Apple Wallet & Google Wallet passes).`,
-            `5.2 Verification Portal & Check-In Scanners: Deploying high-throughput check-in software for flagship summits, preventing badge forgery or unauthorized entry.`,
+            `5.1 Statutory Technical Data Processor Mandate: Serving as the principal technical data processor under India's Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `5.2 Security Architecture: Enforcing AES-256 encryption at rest, TLS 1.3 in transit, automated health probes, database Row-Level Security (RLS), and zero-trust administrative access controls.`,
+            `5.3 Incident Response & Disaster Recovery: Maintaining automated cloud backups, emergency maintenance failover, and rapid vulnerability remediation protocols.`,
           ],
         },
         {
-          heading: "6. Active Tenure, Code Custody, Handover & Jurisdiction",
+          heading: "6. Dual Capacity Governance, Arm's-Length Commercial Contracts & Cloud Pass-Through",
           clauses: [
-            `6.1 Active Tenure: Binding for ${duration} for the duration of the CTO mandate.`,
-            `6.2 30-Day Transition & Data Portability Protocol: Orderly thirty (30) day notice window providing complete data exports of CSC member records while preserving LIT's proprietary codebases.`,
-            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+            `6.1 Transparent Venture Disclosure: Official disclosure of Logic Intelligence Technologies — LIT (Founder & CEO) as an independent enterprise technology enterprise, specifically recorded as: ${externalVenture}.`,
+            `6.2 Dual Capacity Management: Transparent separation of CTO governance duties from LIT commercial contracts, ensuring high-value technical delivery with zero hidden overheads.`,
+            `6.3 Third-Party Pass-Through: Directly passing through third-party infrastructure expenses (WhatsApp/SMS APIs, domain renewals) at actual third-party vendor cost without markups.`,
+          ],
+        },
+        {
+          heading: "7. Emergency Incident Response, Uptime Service Level Objectives & Disaster Recovery",
+          clauses: [
+            `7.1 Emergency Maintenance Authority: Unilateral authority to activate emergency maintenance mode during active cybersecurity incidents, DDoS attacks, or cloud infrastructure degradation.`,
+            `7.2 Incident Root Cause Analysis: Providing transparent post-incident reports to the Executive Council within forty-eight (48) hours of critical service disruptions.`,
+          ],
+        },
+        {
+          heading: "8. Active Tenure, Code Custody, 30-Day Data Portability Handover & Jurisdiction",
+          clauses: [
+            `8.1 Active Tenure: Binding for ${duration} for the duration of the CTO mandate.`,
+            `8.2 30-Day Transition & Data Portability Protocol: Orderly thirty (30) day notice window providing complete data exports of CSC member records while preserving LIT's proprietary codebases.`,
+            `8.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
@@ -407,7 +469,7 @@ function buildIndividualizedLeadershipCharter(
     case "cco":
       return [
         {
-          heading: "1. Chief Community Officer Appointment & Community Culture Mandate",
+          heading: "1. Chief Community Officer Appointment & Community Culture Stewardship Mandate",
           clauses: [
             `1.1 Executive Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
             `1.2 Community Stewardship Mandate: Spearheading member onboarding, community engagement, founder discussion channels, welcoming new innovators, and curating an inspiring, supportive peer-to-peer ecosystem.${customMandate ? ` ${customMandate}` : ""}`,
@@ -415,40 +477,55 @@ function buildIndividualizedLeadershipCharter(
           ],
         },
         {
-          heading: "2. Fiduciary Duty, Safe Spaces & Anti-Harassment Safeguards",
+          heading: "2. Member Onboarding Architecture, Community Welcome Flows & Engagement Loops",
           clauses: [
-            `2.1 Psychological Safety & Inclusivity: Ensuring all community groups, physical mixers, and digital channels are welcoming, safe, and free from discrimination, gender bias, or predatory behavior.`,
-            `2.2 Strict Anti-Harassment Enforcement: Rapid intervention and disciplinary authority regarding complaints of harassment, abusive language, or unsolicited direct messaging.`,
-            `2.3 Community Trust Preservation: Prohibiting the use of member lists for aggressive sales prospecting or third-party marketing.`,
+            `2.1 Welcome Workflows: Directing structured welcome sequences for new founders joining CSC Circle, introducing them to community norms and relevant founder peers.`,
+            `2.2 Peer Matchmaking & Cohort Facilitation: Facilitating introductions between early-stage founders and complementary technical, commercial, or domain specialists.`,
+            `2.3 Active Discussion Moderation: Maintaining active, constructive, and inspiring dialogue across official discussion boards, AMAs, and cohort channels.`,
           ],
         },
         {
-          heading: "3. Conflict of Interest & External Community Engagements",
+          heading: "3. Psychological Safety, Inclusive Spaces & Zero-Tolerance Anti-Harassment Enforcement",
           clauses: [
-            `3.1 Transparent Venture Disclosure: Official recognition of external community facilitation and independent professional engagements, specifically recorded as: ${externalVenture}.`,
-            `3.2 Non-Conflict Commitment: Ensuring external consulting or community projects do not dilute loyalty, engagement, or active presence at CSC flagship programs.`,
+            `3.1 Safe Community Environment: Ensuring all physical gatherings and digital forums maintain absolute psychological safety, mutual respect, and gender inclusivity.`,
+            `3.2 Strict Anti-Harassment Enforcement: Immediate intervention and disciplinary action regarding any instances of intimidation, unwanted direct marketing, or discriminatory speech.`,
+            `3.3 Trust & Confidentiality: Respecting founder vulnerability and protecting sensitive personal or business struggles shared within closed community circles.`,
           ],
         },
         {
-          heading: "4. Member Onboarding, Community Retention & Volunteer Leadership",
+          heading: "4. Conflict of Interest Governance & External Ecosystem Engagements",
           clauses: [
-            `4.1 Welcoming & Onboarding Architecture: Structuring seamless onboarding workflows for newly approved CSC Circle members, ensuring active participation and value discovery.`,
-            `4.2 Volunteer Network Stewardship: Mentoring and organizing community volunteers, campus ambassadors, and student coordinators for on-ground events.`,
+            `4.1 Transparent Venture Disclosure: Official recognition of external community facilitation and independent professional engagements, specifically recorded as: ${externalVenture}.`,
+            `4.2 Non-Conflict Commitment: Ensuring external consulting or community projects do not dilute loyalty, engagement, or active presence at CSC flagship programs.`,
           ],
         },
         {
-          heading: "5. Member Privacy, Communication Consent & DPDP Act Compliance",
+          heading: "5. Volunteer Network Mobilization, Campus Ambassador Management & Mentorship",
           clauses: [
-            `5.1 Respect for Founder Privacy: Maintaining strict confidentiality regarding sensitive founder queries, personal feedback, and community grievances.`,
-            `5.2 Anti-Spam & Communication Ethics: Ensuring all WhatsApp broadcasts, Telegram channels, and community newsletters operate strictly on an opt-in basis compliant with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `5.1 Volunteer Recruitment & Training: Recruiting, onboarding, and training enthusiastic student coordinators and community volunteers for summit operations.`,
+            `5.2 Campus Ambassador Network: Coordinating with startup clubs across Coimbatore universities to discover young innovators and student founders.`,
           ],
         },
         {
-          heading: "6. Active Tenure, 30-Day Transition Handover & Jurisdiction",
+          heading: "6. Member Data Privacy, Anti-Spam Ethics & DPDP Act 2023 Communication Standards",
           clauses: [
-            `6.1 Active Tenure: Active for ${duration} throughout tenure as Chief Community Officer.`,
-            `6.2 30-Day Handover Protocol: Transitioning community administrator privileges, communication channel moderation rights, and volunteer rosters upon notice.`,
-            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+            `6.1 Respect for Founder Privacy: Maintaining strict confidentiality regarding sensitive founder queries, personal feedback, and community grievances.`,
+            `6.2 Anti-Spam & Communication Ethics: Ensuring all WhatsApp broadcasts, Telegram channels, and community newsletters operate strictly on an opt-in basis compliant with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+          ],
+        },
+        {
+          heading: "7. Community Event Budgets, Member Recognition & Swag Distribution Logistics",
+          clauses: [
+            `7.1 Community Engagement Budget: Managing authorized small budgets for member welcome kits, community awards, and mixer refreshments.`,
+            `7.2 Member Recognition Programs: Organizing annual community contributor awards and founder spotlights celebrating regional startup milestones.`,
+          ],
+        },
+        {
+          heading: "8. Active Tenure, Moderation Privilege Transfer, 30-Day Handover & Jurisdiction",
+          clauses: [
+            `8.1 Active Tenure: Active for ${duration} throughout tenure as Chief Community Officer.`,
+            `8.2 30-Day Handover Protocol: Transitioning community administrator privileges, communication channel moderation rights, and volunteer rosters upon notice.`,
+            `8.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
@@ -456,7 +533,7 @@ function buildIndividualizedLeadershipCharter(
     case "coo":
       return [
         {
-          heading: "1. Chief Operating Officer Appointment & On-Ground Operations Mandate",
+          heading: "1. Chief Operating Officer Appointment & End-to-End On-Ground Operations Mandate",
           clauses: [
             `1.1 Executive Appointment: This Charter is executed on ${effective} by Coimbatore Startup Community ("CSC"), confirming the appointment of ${leaderName} ("Leader"), serving in the high office of ${leaderRole}.`,
             `1.2 End-to-End Operational Mandate: Owning end-to-end event operations, venue logistics, vendor negotiations, stage setup, equipment coordination, on-ground check-in flow, and operational excellence.${customMandate ? ` ${customMandate}` : ""}`,
@@ -464,41 +541,55 @@ function buildIndividualizedLeadershipCharter(
           ],
         },
         {
-          heading: "2. Fiduciary Duty, Safety Standards & Vendor Ethics",
+          heading: "2. Summit Production, Venue Logistics, Stage Management & Audio/Visual Infrastructure",
           clauses: [
-            `2.1 Transparent Vendor Stewardship: Applying strict procurement ethics, competitive bidding, and arm's-length negotiation with event venues, caterers, sound/visual vendors, and fabricators.`,
-            `2.2 Venue Health & Safety Compliance: Enforcing fire safety, emergency exit protocols, crowd management, and public safety regulations at all physical gathering sites.`,
-            `2.3 Zero Tolerance for Gatekeeping: Ensuring on-ground event entry is welcoming, seamless, and free from discrimination.`,
+            `2.1 Physical Venue Oversight: Scouting, evaluating, contracting, and managing high-capacity conference halls, innovation auditoriums, and co-working spaces.`,
+            `2.2 Production & A/V Infrastructure: Coordinating audio systems, wireless mics, high-lumen projectors, LED stage backdrops, and live recording setups with technical precision.`,
+            `2.3 Crowd Flow & Registration Queuing: Designing intuitive venue layout flows, on-ground registration kiosks, and signage that minimize congestion and maximize attendee convenience.`,
           ],
         },
         {
-          heading: "3. Conflict of Interest, APARÈ Clothing & Apparel Brand Disclosures",
+          heading: "3. Vendor Procurement Ethics, Arm's-Length Contracting & Competitive Bidding Protocols",
           clauses: [
-            `3.1 Formally Disclosed External Venture: Official disclosure of independent lifestyle and apparel enterprise, specifically recorded as: ${externalVenture}.`,
-            `3.2 Commercial Independence: Complete separation of APARÈ Clothing business operations from CSC non-profit operations.`,
-            `3.3 Transparent Merchandise Collaboration: Any official community apparel, leadership merchandise, or volunteer uniforms supplied by APARÈ Clothing must be approved transparently by the Executive Council at fair market or subsidized cost without self-dealing.`,
+            `3.1 Ethical Procurement Standards: Enforcing fair market procurement, obtaining competitive quotations from multiple trusted vendors for staging, catering, printing, and security.`,
+            `3.2 Contractual Transparency: Ensuring all vendor contracts are documented in writing with unambiguous SLAs regarding delivery schedules, equipment quality, and cancellation terms.`,
           ],
         },
         {
-          heading: "4. Event Infrastructure, Equipment Care & Operational Assets",
+          heading: "4. Conflict of Interest Governance, APARÈ Clothing & Official Merchandise Governance",
           clauses: [
-            `4.1 Logistics Asset Management: Care, storage, inventory control, and transport of CSC on-ground physical assets (standees, banners, check-in kiosks, audio badges, and signage).`,
-            `4.2 Standard Operational Playbooks: Run-sheets, vendor contact directories, and venue checklists created under this mandate belong to CSC.`,
+            `4.1 Formally Disclosed External Venture: Official disclosure of independent lifestyle and apparel enterprise, specifically recorded as: ${externalVenture}.`,
+            `4.2 Commercial Independence: Complete separation of APARÈ Clothing business operations from CSC non-profit operations.`,
+            `4.3 Transparent Merchandise Collaboration: Any official community apparel, leadership merchandise, or volunteer uniforms supplied by APARÈ Clothing must be approved transparently by the Executive Council at fair market or subsidized cost without self-dealing.`,
           ],
         },
         {
-          heading: "5. On-Ground Attendee Data Handling & DPDP Act Compliance",
+          heading: "5. Venue Health, Fire Safety, Crowd Management & Emergency Response Protocols",
           clauses: [
-            `5.1 Physical Check-In Data Security: Ensuring physical sign-in sheets, QR scanning stations, and temporary on-site badge printers do not expose attendee phone numbers or emails to unauthorized third parties.`,
-            `5.2 Secure Disposal of Temporary Rosters: Immediate secure shredding or digital purging of printed attendee lists following event wrap-up in compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+            `5.1 Safety Compliance: Verifying venue fire safety clearances, marked emergency exits, first-aid preparedness, and crowd density regulations for all physical gatherings.`,
+            `5.2 Incident Escalation: Formulating on-ground emergency action protocols in coordination with local civic services, venue authorities, and medical responders.`,
           ],
         },
         {
-          heading: "6. Active Tenure, 30-Day Transition Handover & Jurisdiction",
+          heading: "6. On-Ground Physical Attendee Data Security, Badge Printer Controls & DPDP Act Compliance",
           clauses: [
-            `6.1 Active Tenure: Valid for ${duration} throughout active tenure as Chief Operating Officer.`,
-            `6.2 30-Day Operational Handover: Structured handover of vendor contracts, venue keys, physical inventory, and upcoming logistics plans upon notice.`,
-            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+            `6.1 Physical Check-In Data Security: Ensuring physical sign-in sheets, QR scanning stations, and temporary on-site badge printers do not expose attendee phone numbers or emails to unauthorized third parties.`,
+            `6.2 Secure Disposal of Temporary Rosters: Immediate secure shredding or digital purging of printed attendee lists following event wrap-up in compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act).`,
+          ],
+        },
+        {
+          heading: "7. Operational Asset Inventory, Equipment Storage & Maintenance Care",
+          clauses: [
+            `7.1 Community Physical Assets: Safe custody, transport, warehousing, and maintenance of all reusable CSC equipment (kiosks, banners, signage, electronics).`,
+            `7.2 Asset Inventory Logs: Maintaining an accurate master ledger of all physical property owned by CSC, updating depreciation and inventory logs quarterly.`,
+          ],
+        },
+        {
+          heading: "8. Active Tenure, Physical Asset Custody, 30-Day Operational Handover & Jurisdiction",
+          clauses: [
+            `8.1 Active Tenure: Valid for ${duration} throughout active tenure as Chief Operating Officer.`,
+            `8.2 30-Day Operational Handover: Structured handover of vendor contracts, venue keys, physical inventory, and upcoming logistics plans upon notice.`,
+            `8.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
           ],
         },
       ];
@@ -514,41 +605,55 @@ function buildIndividualizedLeadershipCharter(
           ],
         },
         {
-          heading: "2. Fiduciary Duty, Media Ethics & Brand Stewardship",
+          heading: "2. Visual Storytelling, Cinematic Video/Reel Cinematography & Event Media Production",
           clauses: [
-            `2.1 Brand Integrity & Accuracy: Ensuring all promotional media truthfully and accurately represents CSC initiatives, founder stories, and sponsor partnerships without misleading exaggerations.`,
-            `2.2 Respect for Attendee Privacy in Media: Adhering to professional media ethics regarding event photography, obtaining voluntary consent, and respecting attendees who prefer not to appear in close-up social reels.`,
-            `2.3 Non-Exploitation of Media Access: Prohibiting the use of raw event photography and founder interviews for unapproved third-party commercial portfolio promotion without authorization.`,
+            `2.1 Cinematic Media Production: Directing on-ground video crews, interview setups, and gimbal camera cinematography to produce high-impact founder reels, keynotes, and highlight teasers.`,
+            `2.2 Brand Aesthetics & Typography: Enforcing cohesive color palettes, typography scales, logo safe-zones, and editorial layouts across all digital and print touchpoints.`,
+            `2.3 Social Media Video Strategy: Producing rapid-turnaround short-form video content for Instagram Reels, LinkedIn posts, and YouTube shorts celebrating regional founders.`,
           ],
         },
         {
-          heading: "3. Conflict of Interest, Flickkora Agency & Creative Studio Disclosures",
+          heading: "3. Creative Quality Control, Digital Brand Campaigns & Design System Governance",
           clauses: [
-            `3.1 Formally Disclosed External Venture: Official disclosure of independent creative media and cinematography agency, specifically recorded as: ${externalVenture}.`,
-            `3.2 Operational & Accounting Separation: Complete legal, financial, and client-servicing separation between Flickkora Agency and CSC activities.`,
-            `3.3 Transparent Production Arrangements: Any specialized high-end equipment rental, studio editing, or production services provided by Flickkora Agency to CSC must be documented transparently and approved by the Executive Council at fair market or subsidized terms.`,
+            `3.1 Brand Guidelines Governance: Authoring and enforcing the master CSC brand design manual, providing templates for event posters, speaker slides, and digital certificates.`,
+            `3.2 Design Consistency: Reviewing and approving all visual materials prior to public launch, ensuring consistency and brand prestige.`,
           ],
         },
         {
-          heading: "4. Community Media IP, Raw Footage & Design System Ownership",
+          heading: "4. Conflict of Interest Governance, Flickkora Agency & Creative Studio Disclosures",
           clauses: [
-            `4.1 Media Asset Ownership: All final edited videos, social reels, photography archives, brand guidelines, typography systems, and promotional graphics produced for CSC belong exclusively to Coimbatore Startup Community.`,
-            `4.2 Raw Footage Archival: Ensuring safe cloud archival of all master event footage, keynote recordings, and high-resolution photography for historical community records.`,
+            `4.1 Formally Disclosed External Venture: Official disclosure of independent creative media and cinematography agency, specifically recorded as: ${externalVenture}.`,
+            `4.2 Operational & Accounting Separation: Complete legal, financial, and client-servicing separation between Flickkora Agency and CSC activities.`,
+            `4.3 Transparent Production Arrangements: Any specialized high-end equipment rental, studio editing, or production services provided by Flickkora Agency to CSC must be documented transparently and approved by the Executive Council at fair market or subsidized terms.`,
           ],
         },
         {
-          heading: "5. Digital Media Privacy, Copyright Protection & DPDP Act Compliance",
+          heading: "5. Community Media Asset Ownership, Master Cloud Archival & Intellectual Property",
           clauses: [
-            `5.1 Media Copyright Compliance: Ensuring all soundtrack music, stock graphics, and video elements used in CSC content are properly licensed and free from copyright infringement.`,
-            `5.2 Digital Privacy Safeguards: Strict adherence to the Digital Personal Data Protection Act, 2023 (DPDP Act), regarding tagging, identification, and publication of attendee likenesses.`,
+            `5.1 Media Asset Ownership: All final edited videos, social reels, photography archives, brand guidelines, typography systems, and promotional graphics produced for CSC belong exclusively to Coimbatore Startup Community.`,
+            `5.2 Raw Footage Archival: Ensuring safe cloud archival of all master event footage, keynote recordings, and high-resolution photography for historical community records.`,
           ],
         },
         {
-          heading: "6. Active Tenure, 30-Day Creative Handover & Jurisdiction",
+          heading: "6. Attendee Media Privacy, Photography Release Ethics & DPDP Act 2023 Compliance",
           clauses: [
-            `6.1 Active Tenure: Valid for ${duration} throughout active tenure as Chief Brand Officer.`,
-            `6.2 30-Day Handover Protocol: Transitioning social media media channels, Figma design systems, Canva team assets, high-resolution media archives, and creative accounts upon notice.`,
-            `6.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
+            `6.1 Media Copyright Compliance: Ensuring all soundtrack music, stock graphics, and video elements used in CSC content are properly licensed and free from copyright infringement.`,
+            `6.2 Digital Privacy Safeguards: Strict adherence to the Digital Personal Data Protection Act, 2023 (DPDP Act), respecting attendee privacy requests regarding close-up social video features.`,
+          ],
+        },
+        {
+          heading: "7. Creative Production Equipment, Print Fabrication Budgets & Vendor Accounting",
+          clauses: [
+            `7.1 Media Production Budget: Managing allocated budgets for camera accessories, cloud storage, print banner fabrication, and design software subscriptions.`,
+            `7.2 Vendor Accounting: Ensuring all flex printing, standee fabrication, and photography invoice payments are supported by GST receipts and audited ledgers.`,
+          ],
+        },
+        {
+          heading: "8. Active Tenure, Social Handle & Design Asset Custody, 30-Day Handover & Jurisdiction",
+          clauses: [
+            `8.1 Active Tenure: Valid for ${duration} throughout active tenure as Chief Brand Officer.`,
+            `8.2 30-Day Handover Protocol: Transitioning social media media channels, Figma design systems, Canva team assets, high-resolution media archives, and creative accounts upon notice.`,
+            `8.3 Governing Law: Governed by the laws of India with exclusive jurisdiction in Coimbatore, Tamil Nadu.`,
           ],
         },
       ];

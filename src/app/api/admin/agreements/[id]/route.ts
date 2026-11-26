@@ -6,6 +6,9 @@ import { agreementsTable, type DigitalAgreementRow } from "@/lib/agreements/db";
 import { sendAgreementInvitationEmail } from "@/lib/agreements/notify";
 import { siteConfig } from "@/lib/content/site";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const patchSchema = z.object({
   action: z.enum(["void", "resend"]),
 });
@@ -22,7 +25,16 @@ export async function GET(
   if (!/^[0-9a-f-]{36}$/i.test(id)) return authResponse({ error: "Not found" }, 404);
   const { data, error } = await agreementsTable().select("*").eq("id", id).maybeSingle();
   if (error || !data) return authResponse({ error: "Not found" }, 404);
-  return NextResponse.json({ agreement: data as DigitalAgreementRow });
+  return NextResponse.json(
+    { agreement: data as DigitalAgreementRow },
+    {
+      headers: {
+        "Cache-Control": "private, no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    },
+  );
 }
 
 export async function PATCH(

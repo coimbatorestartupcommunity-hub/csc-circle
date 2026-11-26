@@ -2,6 +2,8 @@ import { requireAdminPagePermission } from "@/lib/admin/gate";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AgreementPdfStudio } from "@/components/admin/agreements/agreement-pdf-studio";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export const instant = false;
 export const metadata = { title: "Agreement PDF Studio — Admin" };
 

@@ -14,6 +14,9 @@ import { computeAgreementHash } from "@/lib/agreements/hash";
 import { sendAgreementInvitationEmail } from "@/lib/agreements/notify";
 import { siteConfig } from "@/lib/content/site";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const sectionSchema = z.object({
   heading: z.string().trim().min(1).max(200),
   clauses: z.array(z.string().trim().min(1).max(4000)).min(1).max(20),
@@ -160,5 +163,15 @@ export async function POST(request: Request) {
     }).catch((err) => console.warn("[agreements] invitation email error:", err));
   }
 
-  return NextResponse.json({ agreement, signingUrl }, { status: 201 });
+  return NextResponse.json(
+    { agreement, signingUrl },
+    {
+      status: 201,
+      headers: {
+        "Cache-Control": "private, no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    },
+  );
 }

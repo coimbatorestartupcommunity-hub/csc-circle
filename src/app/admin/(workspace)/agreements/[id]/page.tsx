@@ -8,6 +8,8 @@ import { agreementsTable, type DigitalAgreementRow } from "@/lib/agreements/db";
 import { AdminAgreementActions } from "@/components/admin/agreements/admin-agreement-actions";
 import { siteConfig } from "@/lib/content/site";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export const instant = false;
 export const metadata = { title: "Agreement Details — Admin" };
 
