@@ -38,7 +38,7 @@ const SOCIAL_CHANNELS: SocialChannel[] = [
   },
   {
     name: "Email Support",
-    href: `mailto:${siteConfig.social.email}`,
+    href: "mailto:coimbatorestartupcommunity@gmail.com",
     icon: "/images/agreements/social/mail.png",
     description: "Direct correspondence with CSC leadership",
   },

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/lib/content/site";
+import QRCode from "qrcode";
 
 export interface DeckSlide {
   id: number;
@@ -28,6 +29,23 @@ export interface DeckSlide {
 
 export function CommunityShowcaseDeck() {
   const [activeSlide, setActiveSlide] = React.useState(0);
+  const [qrCodeUrl, setQrCodeUrl] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    QRCode.toDataURL("https://csc.logicintelligencetechnologies.in", {
+      margin: 1,
+      width: 280,
+      color: { dark: "#09090b", light: "#ffffff" },
+    })
+      .then((url) => {
+        if (mounted) setQrCodeUrl(url);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const slides: DeckSlide[] = [
     // Slide 1: Cover
@@ -288,61 +306,107 @@ export function CommunityShowcaseDeck() {
       ),
     },
 
-    // Slide 7: Let's Connect
+    // Slide 7: Let's Connect & Build Together
     {
       id: 7,
-      eyebrow: "Official Hub · Slide 7 of 7",
+      eyebrow: "Let's Connect & Build Together · Slide 7 of 7",
       title: "Join the Circle. Lead the Future.",
-      subtitle: "Connect with the leadership team and access official community channels.",
+      subtitle: "Official community contact hub, partnerships & platform access.",
       content: (
-        <div className="flex flex-col gap-4 text-center">
-          <p className="mx-auto max-w-xl text-xs text-brand-secondary sm:text-[13px] leading-relaxed">
-            CSC Circle is continuously expanding partnerships with pioneering startups, academic incubators, and industry leaders. Get in touch directly to unlock collaborative opportunities.
-          </p>
-          <div className="grid gap-2.5 sm:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 items-center">
+          {/* Visual: Dynamic QR Code to CSC Circle */}
+          <div className="flex flex-col items-center justify-center rounded-xl border border-brand-border bg-white p-5 text-center shadow-2xs">
+            <div className="relative size-36 overflow-hidden rounded-lg border border-brand-border/60 bg-white p-1">
+              {qrCodeUrl ? (
+                <Image
+                  src={qrCodeUrl}
+                  alt="QR Code linking directly to CSC Circle Platform"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              ) : (
+                <div className="flex size-full items-center justify-center bg-zinc-50 text-[10px] text-zinc-400">
+                  Generating QR...
+                </div>
+              )}
+            </div>
+            <p className="mt-3 text-xs font-bold text-brand-ink">Scan to Visit CSC Circle</p>
+            <p className="text-[11px] font-mono text-brand-muted">csc.logicintelligencetechnologies.in</p>
             <Link
-              href={siteConfig.social.whatsapp}
+              href="https://csc.logicintelligencetechnologies.in"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between rounded-xl border border-brand-border bg-white p-3 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
+              className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-brand-accent hover:underline"
             >
-              <div className="flex items-center gap-2.5">
-                <div className="relative size-6">
-                  <Image src="/images/agreements/social/whatsapp.png" alt="WhatsApp" fill className="object-contain" />
-                </div>
-                <span>WhatsApp Network</span>
-              </div>
-              <ExternalLink className="size-3.5 text-brand-muted" />
-            </Link>
-            <Link
-              href={siteConfig.social.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between rounded-xl border border-brand-border bg-white p-3 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="relative size-6">
-                  <Image src="/images/agreements/social/linkedin.png" alt="LinkedIn" fill className="object-contain" />
-                </div>
-                <span>LinkedIn Page</span>
-              </div>
-              <ExternalLink className="size-3.5 text-brand-muted" />
-            </Link>
-            <Link
-              href={`mailto:${siteConfig.social.email}`}
-              className="flex items-center justify-between rounded-xl border border-brand-border bg-white p-3 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="relative size-6">
-                  <Image src="/images/agreements/social/mail.png" alt="Email" fill className="object-contain" />
-                </div>
-                <span>Official Email</span>
-              </div>
-              <ArrowRight className="size-3.5 text-brand-muted" />
+              <span>Open Platform</span>
+              <ExternalLink className="size-3" />
             </Link>
           </div>
-          <div className="mt-2 rounded-xl border border-brand-border/60 bg-brand-cloud/40 p-3 text-xs text-brand-muted">
-            Official Platform: <strong className="text-brand-ink">csc.logicintelligencetechnologies.in</strong>
+
+          {/* Official Community Contact Hub */}
+          <div className="flex flex-col gap-2.5">
+            <div className="rounded-xl border border-brand-border bg-brand-cloud/40 p-3.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-brand-muted">
+                Official Community Email
+              </p>
+              <Link
+                href="mailto:coimbatorestartupcommunity@gmail.com"
+                className="mt-0.5 block text-xs font-bold text-brand-ink hover:text-brand-accent transition sm:text-sm break-all"
+              >
+                coimbatorestartupcommunity@gmail.com
+              </Link>
+              <p className="mt-0.5 text-[11px] text-brand-secondary">
+                For partnerships, college incubators, accelerator tie-ups &amp; press inquiries.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href={siteConfig.social.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
+              >
+                <div className="relative size-5 shrink-0">
+                  <Image src="/images/agreements/social/whatsapp.png" alt="WhatsApp" fill className="object-contain" />
+                </div>
+                <span className="truncate">WhatsApp Group</span>
+              </Link>
+              <Link
+                href={siteConfig.social.whatsappAgent}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
+              >
+                <div className="relative size-5 shrink-0">
+                  <Image src="/images/agreements/social/whatsapp-agent.png" alt="AI Agent" fill className="object-contain" />
+                </div>
+                <span className="truncate">WhatsApp AI</span>
+              </Link>
+              <Link
+                href={siteConfig.social.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
+              >
+                <div className="relative size-5 shrink-0">
+                  <Image src="/images/agreements/social/linkedin.png" alt="LinkedIn" fill className="object-contain" />
+                </div>
+                <span className="truncate">LinkedIn Page</span>
+              </Link>
+              <Link
+                href={siteConfig.social.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-lg border border-brand-border bg-white p-2.5 text-xs font-semibold text-brand-ink shadow-2xs hover:border-brand-accent transition"
+              >
+                <div className="relative size-5 shrink-0">
+                  <Image src="/images/agreements/social/instagram.png" alt="Instagram" fill className="object-contain" />
+                </div>
+                <span className="truncate">Instagram</span>
+              </Link>
+            </div>
           </div>
         </div>
       ),

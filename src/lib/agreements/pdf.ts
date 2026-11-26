@@ -4,6 +4,7 @@ import path from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import sharp from "sharp";
+import QRCode from "qrcode";
 import type { AgreementSection } from "@/lib/agreements/templates";
 
 export interface AgreementPdfInput {
@@ -1074,63 +1075,153 @@ export async function generateAgreementPdf(input: AgreementPdfInput): Promise<Bu
       y,
       card7H,
       7,
-      "Official Hub & Connect",
+      "Let's Connect & Build Together",
       "Join the Circle. Lead the Future.",
-      "Connect with the leadership team and access official community channels.",
+      "Official community contact hub, partnerships & platform access.",
     );
 
-    if (cscLogoImg) {
-      const sealSize = 80;
-      ap4.page.drawImage(cscLogoImg, {
-        x: (A4_W - sealSize) / 2,
-        y: y - 80 - sealSize,
-        width: sealSize,
-        height: sealSize,
+    // Generate Dynamic Platform Access QR Code
+    let qrImg: PDFImage | null = null;
+    try {
+      const qrPng = await QRCode.toBuffer("https://csc.logicintelligencetechnologies.in", {
+        margin: 1,
+        width: 320,
+        color: { dark: "#111111", light: "#FFFFFF" },
+      });
+      qrImg = await doc.embedPng(new Uint8Array(qrPng));
+    } catch {
+      qrImg = null;
+    }
+
+    const qrSize = 130;
+    const qrCardW = 160;
+    const qrCardH = 195;
+    const qrCardX = MARGIN_X + 20;
+    const qrCardY = y - 76;
+
+    // QR Code Box (Left)
+    ap4.page.drawRectangle({
+      x: qrCardX,
+      y: qrCardY - qrCardH,
+      width: qrCardW,
+      height: qrCardH,
+      color: WHITE,
+      borderColor: RULE_LIGHT,
+      borderWidth: 0.6,
+    });
+
+    if (qrImg) {
+      ap4.page.drawImage(qrImg, {
+        x: qrCardX + (qrCardW - qrSize) / 2,
+        y: qrCardY - qrSize - 14,
+        width: qrSize,
+        height: qrSize,
       });
     }
 
-    drawCenteredText(
-      ap4.page,
-      "COIMBATORE STARTUP COMMUNITY",
-      y - 185,
-      serif,
-      16,
-      INK_DARK,
-      0.8,
-    );
-    drawCenteredText(
-      ap4.page,
-      "Official Communication & Partnership Channels",
-      y - 202,
-      serifItalic,
-      11,
-      INK_MUTED,
-    );
+    ap4.page.drawText("SCAN TO VISIT PLATFORM", {
+      x: qrCardX + 16,
+      y: qrCardY - qrSize - 28,
+      size: 7,
+      font: sans,
+      color: INK_DARK,
+    });
+    ap4.page.drawText("csc.logicintelligencetechnologies.in", {
+      x: qrCardX + 10,
+      y: qrCardY - qrSize - 40,
+      size: 6.2,
+      font: sans,
+      color: SIG_BLUE,
+    });
 
+    // Right Column: Official Contact Hub Header & Description
+    const rightX = qrCardX + qrCardW + 16;
+    const rightW = CONTENT_W - qrCardW - 56;
+
+    if (cscLogoImg) {
+      const logoW = 34;
+      ap4.page.drawImage(cscLogoImg, {
+        x: rightX,
+        y: qrCardY - logoW,
+        width: logoW,
+        height: logoW,
+      });
+    }
+
+    ap4.page.drawText("COIMBATORE STARTUP COMMUNITY", {
+      x: rightX + 42,
+      y: qrCardY - 14,
+      size: 10,
+      font: serif,
+      color: INK_DARK,
+    });
+    ap4.page.drawText("Official Community Contact Hub", {
+      x: rightX + 42,
+      y: qrCardY - 26,
+      size: 7.5,
+      font: serifItalic,
+      color: INK_MUTED,
+    });
+
+    const contactBlurb =
+      "CSC Circle welcomes collaborative partnerships with forward-thinking enterprises, founders, student innovators, and academic incubators across Tamil Nadu.";
+    const cbLines = wrapText(contactBlurb, sans, 7.5, rightW);
+    let cby = qrCardY - 46;
+    cbLines.forEach((cbl) => {
+      ap4.page.drawText(cbl, { x: rightX, y: cby, size: 7.5, font: sans, color: INK_BODY });
+      cby -= 11.5;
+    });
+
+    // Highlighted Official Email Badge
+    ap4.page.drawRectangle({
+      x: rightX,
+      y: cby - 32,
+      width: rightW,
+      height: 32,
+      color: CARD_BG,
+      borderColor: RULE_LIGHT,
+      borderWidth: 0.5,
+    });
+    ap4.page.drawText("OFFICIAL COMMUNITY INQUIRIES & PARTNERSHIPS", {
+      x: rightX + 10,
+      y: cby - 13,
+      size: 6.5,
+      font: sans,
+      color: INK_MUTED,
+    });
+    ap4.page.drawText("coimbatorestartupcommunity@gmail.com", {
+      x: rightX + 10,
+      y: cby - 25,
+      size: 8.5,
+      font: sans,
+      color: SIG_BLUE,
+    });
+
+    // Full List of Channels below
     const channels = [
+      ["Official Community Email", "coimbatorestartupcommunity@gmail.com"],
       ["WhatsApp Founder Network", "https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB"],
       ["WhatsApp 24/7 AI Concierge", "https://wa.me/917550067712 (+91 75500 67712)"],
       ["Official LinkedIn Page", "https://www.linkedin.com/in/csc-coimbatore-startup-community-b27b0b44b"],
       ["Instagram Channel", "https://www.instagram.com/coimbatorestartupcommunity/"],
-      ["Official Community Email", "coimbatorestartup.csc@gmail.com"],
-      ["Platform Engineering (LIT)", "hello@logicintelligencetechnologies.in"],
+      ["Technology Partner (LIT)", "hello@logicintelligencetechnologies.in"],
     ];
 
-    let cy = y - 235;
+    let cy = qrCardY - qrCardH - 18;
     channels.forEach(([cTitle, cVal]) => {
       ap4.page.drawRectangle({
-        x: MARGIN_X + 24,
-        y: cy - 36,
-        width: CONTENT_W - 48,
-        height: 36,
+        x: MARGIN_X + 20,
+        y: cy - 34,
+        width: CONTENT_W - 40,
+        height: 34,
         color: WHITE,
         borderColor: RULE_LIGHT,
         borderWidth: 0.5,
       });
 
-      ap4.page.drawText(cTitle, { x: MARGIN_X + 36, y: cy - 16, size: 8, font: sans, color: INK_DARK });
-      ap4.page.drawText(cVal, { x: MARGIN_X + 36, y: cy - 27, size: 7, font: sans, color: SIG_BLUE });
-      cy -= 46;
+      ap4.page.drawText(cTitle, { x: MARGIN_X + 32, y: cy - 14, size: 8, font: sans, color: INK_DARK });
+      ap4.page.drawText(cVal, { x: MARGIN_X + 32, y: cy - 25, size: 7.2, font: sans, color: SIG_BLUE });
+      cy -= 42;
     });
 
     // Minimal 2-line attribution at base of slide 7
