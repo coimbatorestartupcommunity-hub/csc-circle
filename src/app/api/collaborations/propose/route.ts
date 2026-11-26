@@ -5,15 +5,15 @@ import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const proposalSchema = z.object({
-  organizationName: z.string().min(2).max(120),
-  representativeName: z.string().min(2).max(80),
-  designation: z.string().max(80).optional(),
-  email: z.string().email(),
-  phone: z.string().min(8).max(25),
+  organizationName: z.string().min(2, "Enter organization name.").max(180, "Organization name must be 180 characters or fewer."),
+  representativeName: z.string().min(2, "Enter representative name.").max(120, "Representative name must be 120 characters or fewer."),
+  designation: z.string().max(120).optional(),
+  email: z.string().email("Enter a valid email address."),
+  phone: z.string().min(8, "Enter a valid phone number.").max(25),
   website: z.string().url().nullable().optional(),
-  category: z.string().min(2).max(80),
-  reason: z.string().min(10).max(3000),
-  benefits: z.string().min(10).max(3000),
+  category: z.string().min(2, "Select a category.").max(120),
+  reason: z.string().min(10, "Please provide more details on the reason.").max(3000),
+  benefits: z.string().min(10, "Please provide more details on the benefits.").max(3000),
   supportRequested: z.string().max(3000).optional(),
 });
 
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const parsed = proposalSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Please verify all required proposal fields." },
+      { error: parsed.error.issues[0]?.message ?? "Please verify all required proposal fields." },
       { status: 422 }
     );
   }

@@ -47,7 +47,8 @@ export default function TermsPage() {
           <h2 className="text-xl font-bold tracking-tight text-brand-ink">2. Membership &amp; Digital Membership ID Cards</h2>
           <ul className="list-disc space-y-2 pl-5 text-sm">
             <li>
-              <strong>Automated 5-Minute Verification:</strong> Membership claims are subject to automated verification and issue within 5 minutes.
+              <strong>Automated 5-Minute Verification &amp; Directory Listing:</strong> Membership claims are subject to automated verification and issue within 5 minutes.
+              Active members are automatically listed in the public CSC Member Directory with their name, role, city, bio, skills, optional portrait photo, and published startup affiliations (WhatsApp contact remains private unless opted in).
               CSC administrators reserve the right to manually audit or revoke memberships if information provided is discovered to be fraudulent or misleading.
             </li>
             <li>

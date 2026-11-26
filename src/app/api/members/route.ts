@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
-import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
-import { authResponse } from "@/lib/auth/http";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
-  const ctx = await getMemberContext();
-  if (ctx.mode !== "live") return authResponse({ error: "Sign in with an active CSC membership to view member profiles." }, 401);
-  const limitCheck = rateLimit(`members-search:${ctx.user!.id}`, 60, 60_000);
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const limitCheck = rateLimit(`members-search:${ip}`, 60, 60_000);
   if (!limitCheck.allowed) {
     return rateLimitResponse("Search limit reached. Please wait a moment.", limitCheck, 60);
   }
@@ -16,14 +13,16 @@ export async function GET(request: Request) {
   const offset = Math.max(0, Math.min(Number(url.searchParams.get("offset") ?? 0) || 0, 10000));
   const sb = await createClient();
   const { data, error } = await sb.rpc("list_discoverable_members", { p_search: search, p_limit: 30, p_offset: offset });
-  if (error) return authResponse({ error: error.message.includes("membership") ? "An active CSC membership is required to view profiles." : "Member profiles could not be loaded." }, 403);
+  if (error) {
+    return NextResponse.json({ error: "Member profiles could not be loaded." }, { status: 503 });
+  }
   return NextResponse.json(
     { members: data ?? [] },
     {
       headers: {
         "Cache-Control": search
-          ? "private, max-age=15, stale-while-revalidate=60"
-          : "private, max-age=60, stale-while-revalidate=300",
+          ? "public, max-age=30, stale-while-revalidate=120"
+          : "public, max-age=120, stale-while-revalidate=600",
       },
     }
   );

@@ -17,7 +17,8 @@ export function emailConfiguration() {
   const password = process.env.SMTP_APP_PASSWORD ?? process.env.SMTP_PASSWORD ?? "";
   const port = Number(process.env.SMTP_PORT ?? "465");
   const secure = process.env.SMTP_SECURE !== "false";
-  const from = process.env.SMTP_FROM_EMAIL ?? user;
+  const rawFrom = (localCapture ? process.env.SMTP_FROM_EMAIL : (process.env.SMTP_FROM || process.env.SMTP_FROM_EMAIL)) || user;
+  const from = rawFrom.includes("<") ? (rawFrom.match(/<([^>]+)>/)?.[1] ?? rawFrom) : rawFrom;
   const fromName = process.env.SMTP_FROM_NAME ?? "CSC Circle";
   const support = process.env.CSC_SUPPORT_EMAIL ?? "";
   const base = new URL(process.env.APP_BASE_URL ?? "https://csc.logicintelligencetechnologies.in");

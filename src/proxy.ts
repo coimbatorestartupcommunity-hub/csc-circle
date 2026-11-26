@@ -21,6 +21,7 @@ export async function proxy(request: NextRequest) {
     "/maintenance",
     "/updates",
     "/events",
+    "/members",
     "/survey/member-onboarding",
     "/auth/callback", "/auth/confirm", "/auth/signout",
     // Invitees do not have an admin role yet. This page must load so its

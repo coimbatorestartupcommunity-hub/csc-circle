@@ -62,9 +62,9 @@ export default function PrivacyPage() {
               </thead>
               <tbody className="divide-y divide-brand-border">
                 <tr>
-                  <td className="p-3.5 font-medium text-brand-ink">Account & Profile</td>
-                  <td className="p-3.5">Full name, email address, phone, professional role, city, bio, and portrait photo.</td>
-                  <td className="p-3.5">User authentication, issuing digital membership ID cards, and community directory visibility.</td>
+                  <td className="p-3.5 font-medium text-brand-ink">Account &amp; Profile</td>
+                  <td className="p-3.5">Full name, email address, phone, professional role, city, bio, skills, and optional portrait photo (stored in Supabase Storage).</td>
+                  <td className="p-3.5">User authentication, issuing digital membership ID cards, and automatic public listing in the CSC Member Directory for active members. Your WhatsApp number remains private unless you explicitly opt in.</td>
                 </tr>
                 <tr>
                   <td className="p-3.5 font-medium text-brand-ink">Startup Submissions</td>

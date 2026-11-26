@@ -99,7 +99,7 @@ export default async function MaintenancePage({
     {
       name: "Official WhatsApp Community",
       sub: "Founder announcements & event alerts",
-      href: "https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2",
+      href: "https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
       icon: "/brand/social/whatsapp-circle.png",
       status: "Active",
     },

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { isSafeOrigin } from "@/lib/auth/http";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSubmissionClient } from "@/lib/supabase/submissions";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
@@ -15,7 +16,7 @@ const formats = {
 } as const;
 
 export async function POST(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 403 });
+  if (!isSafeOrigin(request)) return NextResponse.json({ ok: false, error: "Invalid request." }, { status: 403 });
   if (!rateLimit(`paid-registration:${clientIp(request)}`, 5, 60_000).allowed) return NextResponse.json({ ok: false, error: "Too many attempts. Please try again shortly." }, { status: 429 });
   if (Number(request.headers.get("content-length") ?? 0) > MAX_UPLOAD + 32_000) return NextResponse.json({ ok: false, error: "The upload must be under 5 MB." }, { status: 413 });
   try {

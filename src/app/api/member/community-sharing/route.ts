@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
-import { authResponse, readAuthBody } from "@/lib/auth/http";
+import { authResponse, readAuthBody, isSafeOrigin } from "@/lib/auth/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { revalidateTag } from "next/cache";
 
@@ -31,7 +31,7 @@ const schema = z.object({
 export async function POST(request: Request) {
   const ctx = await getMemberContext();
   if (ctx.mode !== "live" || !ctx.user) return authResponse({ error: "Sign in to manage profile sharing." }, 401);
-  if (request.headers.get("origin") !== new URL(request.url).origin) return authResponse({ error: "Request origin could not be verified." }, 403);
+  if (!isSafeOrigin(request)) return authResponse({ error: "Request origin could not be verified." }, 403);
   if (!rateLimit(`community-sharing:${ctx.user.id}`, 6, 60_000).allowed) return authResponse({ error: "Please wait before changing your sharing settings." }, 429);
   const body = await readAuthBody(request);
   const parsed = schema.safeParse(body);

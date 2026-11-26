@@ -4,7 +4,7 @@ import sharp, { type Metadata } from "sharp";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { authResponse } from "@/lib/auth/http";
+import { authResponse, isSafeOrigin } from "@/lib/auth/http";
 import { rateLimit } from "@/lib/rate-limit";
 
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const ctx = await getMemberContext();
   if (ctx.mode !== "live") return authResponse({ error: "Sign in to update your portrait." }, 401);
-  if (request.headers.get("origin") !== new URL(request.url).origin) return authResponse({ error: "Request origin could not be verified." }, 403);
+  if (!isSafeOrigin(request)) return authResponse({ error: "Request origin could not be verified." }, 403);
   if (!rateLimit(`portrait:${ctx.user!.id}`, 4, 60_000).allowed) return authResponse({ error: "Please wait before uploading another portrait." }, 429);
   const advertisedSize = Number(request.headers.get("content-length") ?? 0);
   if (advertisedSize > 3 * MAX_BYTES + 1024 * 1024) return authResponse({ error: "The image and its two crops must fit within the upload limit." }, 413);

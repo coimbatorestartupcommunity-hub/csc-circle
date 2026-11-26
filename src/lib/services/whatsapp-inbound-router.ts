@@ -482,7 +482,7 @@ export async function routeInboundWhatsAppMessage(
             "👥 *அதிகாரப்பூர்வ CSC தலைமை & சமூக வாட்ஸ்அப் குழு*",
             "",
             "வாட்ஸ்அப்பில் எங்கள் சரிபார்க்கப்பட்ட சமூக நெட்வொர்க்கில் இணையுங்கள்:",
-            "👉 https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+            "👉 https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
             "",
             "கோவை முழுவதும் உள்ள தொழில்முனைவோர், முதலீட்டாளர்கள் மற்றும் தலைமைக் குழுவுடன் இணையுங்கள்!",
             "",
@@ -493,7 +493,7 @@ export async function routeInboundWhatsAppMessage(
             "👥 *Official CSC Leadership & Community Group*",
             "",
             "Namma verified WhatsApp community network-la join pannunga:",
-            "👉 https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+            "👉 https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
             "",
             "Kovai founders, angel investors, and core team kooda direct-a connect aagunga!",
             "",
@@ -503,7 +503,7 @@ export async function routeInboundWhatsAppMessage(
             "👥 *Official CSC Leadership & Community Group*",
             "",
             "Join our verified community network on WhatsApp:",
-            "👉 https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+            "👉 https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
             "",
             "Connect with founders, angel investors, and the core team across Coimbatore!",
             "",
@@ -835,7 +835,7 @@ const CSC_KNOWLEDGE_BASE_SYSTEM_PROMPT = `You are the official 24/7 AI WhatsApp 
 - NEVER refer to the membership card as "pump set" or "pumpset". Always call it "Coimbatore Startup Community Membership ID Card" or "CSC Digital ID Card".
 - Membership is 100% Free with automated 5-minute approval: https://csc.logicintelligencetechnologies.in/membership
 - Digital ID Card & Event QR Pass: https://csc.logicintelligencetechnologies.in/profile/id-card
-- Verified Leadership WhatsApp Group Link: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3?s=cl&p=i&iam=2
+- Verified Leadership WhatsApp Group Link: https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB
 
 ### Core Portal Links:
 - Events & Meetups: https://csc.logicintelligencetechnologies.in/events
@@ -1011,7 +1011,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
         "",
         "🌐 *முக்கிய இணைப்புகள்:*",
         "• வலைத்தளம்: https://csc.logicintelligencetechnologies.in",
-        "• அதிகாரப்பூர்வ வாட்ஸ்அப் குழு: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+        "• அதிகாரப்பூர்வ வாட்ஸ்அப் குழு: https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
         "• வழிகாட்டுதல்கள்: https://csc.logicintelligencetechnologies.in/community-guidelines",
       ].join("\n");
     }
@@ -1032,7 +1032,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
         "",
         "🌐 *Official Links:*",
         "• Website: https://csc.logicintelligencetechnologies.in",
-        "• Join Official WhatsApp Group: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+        "• Join Official WhatsApp Group: https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
         "• Complete Guidelines: https://csc.logicintelligencetechnologies.in/community-guidelines",
       ].join("\n");
     }
@@ -1052,7 +1052,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
       "",
       "🌐 *Official Links:*",
       "• Portal: https://csc.logicintelligencetechnologies.in",
-      "• Official WhatsApp Community: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+      "• Official WhatsApp Community: https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
       "• Detailed Guidelines: https://csc.logicintelligencetechnologies.in/community-guidelines",
     ].join("\n");
   }
@@ -1145,7 +1145,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
         "• *ஆஃப்லைன் நிகழ்வுகள்:* https://csc.logicintelligencetechnologies.in/events",
         "• *ஸ்டார்ட்அப் பட்டியல்:* https://csc.logicintelligencetechnologies.in/directory",
         "• *இலவச உறுப்பினர் சேர்க்கை:* https://csc.logicintelligencetechnologies.in/membership (5 நிமிடங்களில் அனுமதி)",
-        "• *அதிகாரப்பூர்வ வாட்ஸ்அப் குழு:* https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+        "• *அதிகாரப்பூர்வ வாட்ஸ்அப் குழு:* https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
       ].join("\n");
     }
 
@@ -1162,7 +1162,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
         "• Offline Meetups: https://csc.logicintelligencetechnologies.in/events",
         "• Founder Directory: https://csc.logicintelligencetechnologies.in/directory",
         "• Free Membership: https://csc.logicintelligencetechnologies.in/membership (5 mins approval)",
-        "• Official WhatsApp Community: https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+        "• Official WhatsApp Community: https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
       ].join("\n");
     }
 
@@ -1178,7 +1178,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
       "• *Offline Events & Pitch Arenas:* https://csc.logicintelligencetechnologies.in/events",
       "• *Verified Founder Directory:* https://csc.logicintelligencetechnologies.in/directory",
       "• *Digital Membership Pass:* https://csc.logicintelligencetechnologies.in/membership (Auto-approved within 5 minutes)",
-      "• *Official WhatsApp Community:* https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+      "• *Official WhatsApp Community:* https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
     ].join("\n");
   }
 
@@ -1193,7 +1193,7 @@ async function answerWithCommunityAI(userPrompt: string): Promise<string> {
       "4️⃣ *CSC Business Network* — B2B procurement, corporate pilots, connecting legacy industrial manufacturing with startups & angel syndicates.",
       "5️⃣ *CSC Opportunities* — Non-dilutive capital radar: TANSEED (up to ₹15L), SISFS (up to ₹50L), BIRAC, and top accelerator cohorts.",
       "",
-      "👉 *Join Official Leadership & Community Hub:* https://chat.whatsapp.com/H3Nbi9oKWBcEmPQop0B5X3",
+      "👉 *Join Official Leadership & Community Hub:* https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
     ].join("\n");
   }
 

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import sharp, { type Metadata } from "sharp";
-import { authResponse } from "@/lib/auth/http";
+import { authResponse, isSafeOrigin } from "@/lib/auth/http";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -13,7 +13,7 @@ const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 export async function POST(request: Request) {
   const ctx = await getMemberContext();
   if (ctx.mode !== "live") return authResponse({ error: "Sign in to save a Founder Directory photo." }, 401);
-  if (request.headers.get("origin") !== new URL(request.url).origin) return authResponse({ error: "Request origin could not be verified." }, 403);
+  if (!isSafeOrigin(request)) return authResponse({ error: "Request origin could not be verified." }, 403);
   if (!rateLimit(`directory-photo:${ctx.user!.id}`, 5, 60_000).allowed) return authResponse({ error: "Please wait before uploading another image." }, 429);
   if (Number(request.headers.get("content-length") ?? 0) > MAX_BYTES + 256 * 1024) return authResponse({ error: "The photo is too large." }, 413);
 

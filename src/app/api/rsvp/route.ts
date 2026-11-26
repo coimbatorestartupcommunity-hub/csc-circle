@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const parsed = publicRsvpSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { ok: false, error: "Please check the form and try again." },
+      { ok: false, error: parsed.error.issues[0]?.message ?? "Please check the form and try again." },
       { status: 422 },
     );
   }

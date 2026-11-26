@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createClient } from "@/lib/supabase/server";
-import { authResponse, readAuthBody } from "@/lib/auth/http";
+import { authResponse, readAuthBody, isSafeOrigin } from "@/lib/auth/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { emptyResumeData, resumeDataSchema } from "@/lib/member/resume-schema";
 
@@ -17,7 +17,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) return authResponse({ error: "Request origin could not be verified." }, 403);
+  if (!isSafeOrigin(request)) return authResponse({ error: "Request origin could not be verified." }, 403);
   const ctx = await getMemberContext();
   if (ctx.mode !== "live" || !ctx.user) return authResponse({ error: "Sign in to save your resume." }, 401);
   if (!rateLimit(`member-resume-save:${ctx.user.id}`, 12, 60_000).allowed) return authResponse({ error: "Too many resume updates. Please wait a moment." }, 429);

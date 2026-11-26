@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isSafeOrigin } from "@/lib/auth/http";
 import { revalidateTag, revalidatePath } from "next/cache";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -58,8 +59,7 @@ export async function POST(
       return NextResponse.json({ ok: false, error: "Invalid order ID." }, { status: 404 });
     }
 
-    const origin = request.headers.get("origin");
-    if (origin && origin !== new URL(request.url).origin) {
+    if (!isSafeOrigin(request)) {
       return NextResponse.json({ ok: false, error: "Invalid request origin." }, { status: 403 });
     }
 

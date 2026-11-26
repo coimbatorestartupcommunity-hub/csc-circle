@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isSafeOrigin } from "@/lib/auth/http";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
 import { verifyGuestEmailCode } from "@/lib/payments/guest-email-verification";
@@ -11,7 +12,7 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) {
+  if (!isSafeOrigin(request)) {
     return NextResponse.json({ ok: false, error: "Invalid request origin." }, { status: 403 });
   }
   if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {

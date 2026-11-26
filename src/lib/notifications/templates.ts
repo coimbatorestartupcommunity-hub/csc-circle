@@ -216,7 +216,7 @@ export function renderNotification(key: TemplateKey, payload: Record<string, unk
       "3. In-Person Sessions: Present your QR code at the entrance desk for instant check-in."
     : "";
 
-  const text = `${effectiveHeading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${passText}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
+  const text = `${effectiveHeading}\n\n${greeting}\n\n${body}${details ? `\n\n${details}` : ""}${passText}\n\n${buttonText}: ${link}\n\nQuestions? ${c.support}\nInstagram: https://www.instagram.com/coimbatorestartupcommunity/\nWhatsApp group: https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB\nWebsite: ${c.base}\n\nCSC Circle — Coimbatore Startup Community\nCoimbatore, Tamil Nadu · Estd 2026\nConnect. Build. Grow.`;
 
   const detailsHtml = htmlDetails(rows);
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isSafeOrigin } from "@/lib/auth/http";
 import { z } from "zod";
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -27,7 +28,7 @@ const freeRegistrationSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) {
+  if (!isSafeOrigin(request)) {
     return NextResponse.json({ ok: false, error: "Invalid request origin." }, { status: 403 });
   }
 

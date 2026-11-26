@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomInt, createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
+import { isSafeOrigin } from "@/lib/auth/http";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { clientIp, distributedRateLimit } from "@/lib/rate-limit";
 import { scheduleNotificationDelivery } from "@/lib/notifications/schedule";
@@ -11,7 +12,7 @@ const verifyGuestEmailSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) {
+  if (!isSafeOrigin(request)) {
     return NextResponse.json({ ok: false, error: "Invalid request origin." }, { status: 403 });
   }
 

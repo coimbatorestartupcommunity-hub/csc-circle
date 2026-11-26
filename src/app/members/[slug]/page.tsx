@@ -6,8 +6,6 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, MapPin, MessageCircle, UserRound, Share2, ShieldCheck, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SocialShareToolbar } from "@/components/common/social-share-toolbar";
-import { getMemberContext } from "@/lib/services/member/context";
-import { MemberUnavailable } from "@/components/member/member-unavailable";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicStartups } from "@/lib/services/public-data";
 import { siteConfig } from "@/lib/content/site";
@@ -86,8 +84,6 @@ export default async function CommunityMemberPage({
   params: Promise<{ slug: string }>;
 }) {
   await connection();
-  const ctx = await getMemberContext();
-  if (ctx.mode !== "live") return <MemberUnavailable />;
   const { slug } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(slug)) notFound();
 

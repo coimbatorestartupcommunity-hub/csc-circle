@@ -8,6 +8,12 @@ const activeVpa = rawVpa && !rawVpa.includes("ptyes") ? rawVpa : "9342877474@pta
 const rawPayeeName = (process.env.CSC_PAYMENT_PAYEE_NAME || process.env.CSC_UPI_PAYEE_NAME || "").trim();
 const activePayeeName = rawPayeeName || "S VIKASH";
 
+const rawSuffix = (process.env.CSC_PAYMENT_RECEIVING_ACCOUNT_SUFFIX || "").trim();
+const activeSuffix = rawSuffix && !rawSuffix.includes("[SENSITIVE]") ? rawSuffix : "1995";
+
+const rawSender = (process.env.CSC_PAYMENT_BANK_ALERT_SENDER || "").trim();
+const activeSender = rawSender && !rawSender.includes("[SENSITIVE]") ? rawSender : "alerts@axis.bank.in";
+
 export const UPI_CONFIG = {
   // Production checkout is enabled only when these values are explicitly
   // supplied through the server environment and separately approved.
@@ -17,10 +23,10 @@ export const UPI_CONFIG = {
 
   // Receiving bank account details from genuine Axis Bank alert
   RECEIVING_BANK: "AXIS_BANK",
-  RECEIVING_ACCOUNT_SUFFIX: process.env.CSC_PAYMENT_RECEIVING_ACCOUNT_SUFFIX || "1995",
+  RECEIVING_ACCOUNT_SUFFIX: activeSuffix,
 
   // Bank alert email source
-  BANK_ALERT_SENDER: process.env.CSC_PAYMENT_BANK_ALERT_SENDER || "alerts@axis.bank.in",
+  BANK_ALERT_SENDER: activeSender,
   MAILBOX_ADDRESS: process.env.ICLOUD_IMAP_USERNAME || "vikash752008@icloud.com",
 
   // Default order expiration window (minutes)

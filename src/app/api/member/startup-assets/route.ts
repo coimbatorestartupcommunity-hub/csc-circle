@@ -2,12 +2,12 @@ import sharp from "sharp";
 import { NextResponse } from "next/server";
 import { getMemberContext } from "@/lib/services/member/context";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { authResponse } from "@/lib/auth/http";
+import { authResponse, isSafeOrigin } from "@/lib/auth/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSupportedStartupImage, isSupportedStartupImageFormat } from "@/lib/startups/image-input";
 
 export async function POST(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) return authResponse({ error: "Request origin could not be verified." }, 403);
+  if (!isSafeOrigin(request)) return authResponse({ error: "Request origin could not be verified." }, 403);
   const ctx = await getMemberContext();
   if (ctx.mode !== "live") return authResponse({ error: "Sign in to upload startup media." }, 401);
   if (!rateLimit(`startup-assets:${ctx.user!.id}`, 20, 60_000).allowed) return authResponse({ error: "Too many image uploads. Try again shortly." }, 429);

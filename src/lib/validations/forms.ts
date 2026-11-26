@@ -13,12 +13,12 @@ export const rsvpSchema = z.object({
     .string()
     .trim()
     .min(2, "Please enter your full name.")
-    .max(80, "That name is too long."),
+    .max(120, "Please keep your full name under 120 characters."),
   startup: z
     .string()
     .trim()
     .min(2, "Tell us your startup name or idea.")
-    .max(120, "Please keep this under 120 characters."),
+    .max(180, "Please keep this under 180 characters."),
   whatsapp: z
     .string()
     .trim()
@@ -57,7 +57,7 @@ export const reviewSchema = z.object({
     .string()
     .trim()
     .min(20, "Please share a little more about your experience.")
-    .max(600, "Please keep your review under 600 characters."),
+    .max(1200, "Please keep your review under 1200 characters."),
   consent: z.literal(true, {
     message: "Please accept the disclosure to continue.",
   }),

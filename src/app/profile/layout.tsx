@@ -6,6 +6,7 @@ import { MemberShell } from "@/components/member/member-shell";
 import { MemberUnavailable } from "@/components/member/member-unavailable";
 import { DemoBanner } from "@/components/member/demo-banner";
 import { PhoneVerificationModal } from "@/components/member/phone-verification-modal";
+import { MembershipClaimInterceptor } from "@/components/member/membership-claim-interceptor";
 import { membershipStatusMeta } from "@/lib/content/member-taxonomy";
 
 export const metadata: Metadata = {
@@ -39,6 +40,9 @@ export default async function MemberLayout({
   // server-side permission checks independently.
   const isAdmin = ownAdminRole !== null && !ownAdminRole.error && Boolean(ownAdminRole.data);
   const status = profile?.membership.status ?? "not_started";
+  if (ctx.mode === "live" && (status === "not_started" || status === "profile_incomplete")) {
+    return <MembershipClaimInterceptor displayName={profile?.displayName || profile?.fullName} />;
+  }
   const meta = membershipStatusMeta[status];
   const memberNumber = profile?.membership.memberNumber;
 

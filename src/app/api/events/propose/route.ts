@@ -5,17 +5,17 @@ import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const eventProposalSchema = z.object({
-  organizerName: z.string().min(2).max(80),
-  organization: z.string().max(120).optional(),
-  email: z.string().email(),
-  phone: z.string().min(8).max(25),
-  title: z.string().min(3).max(140),
-  category: z.string().min(2).max(80),
-  format: z.string().min(2).max(80),
+  organizerName: z.string().min(2, "Enter organizer name.").max(120, "Organizer name must be 120 characters or fewer."),
+  organization: z.string().max(180).optional(),
+  email: z.string().email("Enter a valid email address."),
+  phone: z.string().min(8, "Enter a valid phone number.").max(25),
+  title: z.string().min(3, "Enter event title.").max(180, "Event title must be 180 characters or fewer."),
+  category: z.string().min(2, "Select event category.").max(120),
+  format: z.string().min(2, "Select event format.").max(120),
   proposedDate: z.string().nullable().optional(),
   capacity: z.string().max(20).optional(),
-  venue: z.string().max(150).optional(),
-  description: z.string().min(10).max(4000),
+  venue: z.string().max(180).optional(),
+  description: z.string().min(10, "Please describe the event in more detail.").max(4000),
   supportRequested: z.string().max(3000).optional(),
 });
 
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   const parsed = eventProposalSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Please verify all required event proposal fields." },
+      { error: parsed.error.issues[0]?.message ?? "Please verify all required event proposal fields." },
       { status: 422 }
     );
   }

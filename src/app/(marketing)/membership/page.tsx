@@ -30,10 +30,10 @@ const audience = [
 
 const steps = [
   { icon: UserPlus, title: "Create an account", body: "Sign up with a verified Google or email account to get started." },
-  { icon: ClipboardList, title: "Complete your details", body: "Provide accurate personal and startup details to request your free community membership." },
-  { icon: Send, title: "Submit your claim", body: "Submit your membership claim. Membership is 100% free for all founders, creators, and builders." },
+  { icon: ClipboardList, title: "Complete the claim form", body: "On your first login, a full-screen membership claim form appears. Fill in your details and optionally upload a profile photo." },
+  { icon: Send, title: "Submit your claim", body: "Submit your membership claim to unlock the platform. Membership is 100% free for all founders, creators, and builders." },
   { icon: Clock, title: "Automatic 5-minute approval", body: "Your claim undergoes automated verification and is automatically approved within 5 minutes." },
-  { icon: BadgeCheck, title: "Instant digital card activation", body: "Once approved, your digital membership ID is issued immediately, with instant confirmation sent to your email and inbox." },
+  { icon: BadgeCheck, title: "Instant digital card activation", body: "Once approved, your digital membership ID is issued immediately and your profile is listed in the public Member Directory." },
   { icon: Compass, title: "Explore the community", body: "Browse the founder directory, register for events, and collaborate with founders across Coimbatore." },
 ];
 

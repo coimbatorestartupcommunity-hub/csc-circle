@@ -6,14 +6,14 @@ import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const opportunitySchema = z.object({
-  title: z.string().min(3).max(140),
-  category: z.string().min(2).max(60),
-  organization: z.string().min(2).max(120),
+  title: z.string().min(3, "Enter an opportunity title.").max(180, "Title must be 180 characters or fewer."),
+  category: z.string().min(2, "Select a category.").max(100),
+  organization: z.string().min(2, "Enter organization name.").max(180),
   participationMode: z.string().min(2).max(100),
-  contact: z.string().email(),
+  contact: z.string().email("Enter a valid contact email."),
   deadline: z.string().nullable().optional(),
-  summary: z.string().min(5).max(300),
-  description: z.string().min(20).max(4000),
+  summary: z.string().min(5, "Enter a short summary.").max(500),
+  description: z.string().min(20, "Enter an opportunity description.").max(4000),
 });
 
 export async function POST(request: Request) {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = opportunitySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Please fill in all opportunity fields accurately." }, { status: 422 });
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Please fill in all opportunity fields accurately." }, { status: 422 });
   }
 
   const { title, category, organization, participationMode, contact, deadline, summary, description } = parsed.data;

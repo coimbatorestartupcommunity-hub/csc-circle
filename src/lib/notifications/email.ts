@@ -4,8 +4,8 @@ import { emailConfiguration, validEmail } from "@/lib/notifications/config";
 
 let cachedTransport: ReturnType<typeof nodemailer.createTransport> | null = null;
 
-export function createEmailTransport() {
-  if (cachedTransport) return cachedTransport;
+export function createEmailTransport(forceNew = false) {
+  if (cachedTransport && !forceNew && process.env.NODE_ENV !== "test") return cachedTransport;
   try {
     const c = emailConfiguration();
     cachedTransport = nodemailer.createTransport({

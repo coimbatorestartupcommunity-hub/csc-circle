@@ -1,10 +1,8 @@
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { CommunityMemberDirectory } from "@/components/member/community-member-directory";
-import { getMemberContext } from "@/lib/services/member/context";
-import { MemberUnavailable } from "@/components/member/member-unavailable";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { ArrowRight, Share2, Rocket } from "lucide-react";
+import { ArrowRight, Settings2, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata = {
@@ -16,9 +14,6 @@ export const metadata = {
 export const instant = false;
 
 export default async function MembersPage() {
-  const ctx = await getMemberContext();
-  if (ctx.mode !== "live") return <MemberUnavailable />;
-
   const sb = await createClient();
   const { data: initialMembers } = await sb.rpc("list_discoverable_members", {
     p_search: "",
@@ -38,8 +33,8 @@ export default async function MembersPage() {
           render={<Link href="/profile/account#community-sharing" />}
           className="min-h-11 w-full gap-2 rounded-xl px-4 text-xs font-semibold sm:w-auto sm:px-5 sm:text-sm"
         >
-          <Share2 className="size-4 shrink-0" />
-          <span>Share Your Profile with the CSC Community</span>
+          <Settings2 className="size-4 shrink-0" />
+          <span>Manage Your Profile &amp; WhatsApp Privacy</span>
           <ArrowRight className="size-4 shrink-0" />
         </Button>
 

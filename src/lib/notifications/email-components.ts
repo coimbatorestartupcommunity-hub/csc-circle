@@ -145,7 +145,7 @@ export function renderCircularSocialIcons(base: string, support: string): string
   const circles = [
     {
       label: "WhatsApp Community",
-      href: "https://chat.whatsapp.com/EsMyFEUTzT0G3MpMLkUNhB?s=cl&p=a&iam=2",
+      href: "https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
       icon: `${base}/brand/social/whatsapp-circle.png`,
       refIcon: `${base}/email-assets/reference/social-whatsapp.png`,
     },

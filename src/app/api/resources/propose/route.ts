@@ -5,17 +5,17 @@ import { rateLimit, rateLimitHeaders } from "@/lib/rate-limit";
 import { dispatchTeamWhatsAppAlert } from "@/lib/services/team-alerts";
 
 const resourceProposalSchema = z.object({
-  title: z.string().min(3).max(180),
-  category: z.string().min(2).max(100),
+  title: z.string().min(3, "Enter a resource title.").max(180, "Title must be 180 characters or fewer."),
+  category: z.string().min(2, "Select a category.").max(120, "Category must be 120 characters or fewer."),
   resourceType: z.string().default("guide"),
-  summary: z.string().min(10).max(600),
-  details: z.string().min(20).max(8000),
+  summary: z.string().min(10, "Summary must be at least 10 characters.").max(600, "Summary must be 600 characters or fewer."),
+  details: z.string().min(20, "Details must be at least 20 characters.").max(8000, "Details must be 8,000 characters or fewer."),
   externalUrl: z.string().url().nullable().optional().or(z.literal("")),
-  contributorName: z.string().min(2).max(80),
-  designation: z.string().max(100).optional(),
-  startup: z.string().max(120).optional(),
-  email: z.string().email(),
-  phone: z.string().min(8).max(25),
+  contributorName: z.string().min(2, "Enter your name.").max(120, "Name must be 120 characters or fewer."),
+  designation: z.string().max(120).optional(),
+  startup: z.string().max(180).optional(),
+  email: z.string().email("Enter a valid email address."),
+  phone: z.string().min(8, "Enter a valid phone number.").max(25),
   website_trap_field: z.string().max(0, "Bot submission detected").optional().or(z.literal("")),
 });
 
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   const parsed = resourceProposalSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Please verify all required resource proposal fields." },
+      { error: parsed.error.issues[0]?.message ?? "Please verify all required resource proposal fields." },
       { status: 422 }
     );
   }

@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import { getMemberContext } from "@/lib/services/member/context";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request, { params }: { params: Promise<{ memberId: string }> }) {
-  const ctx = await getMemberContext();
-  if (ctx.mode !== "live") return new NextResponse(null, { status: 401 });
   const { memberId } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(memberId)) return new NextResponse(null, { status: 404 });
   const sb = await createClient();
@@ -13,11 +10,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ memb
   if (!visible?.[0]?.has_photo) return new NextResponse(null, { status: 404 });
   const admin = createAdminClient();
   const [{ data: profile }, { data: membership }] = await Promise.all([
-    admin.from("profiles").select("portrait_path,consent").eq("id", memberId).maybeSingle(),
+    admin.from("profiles").select("portrait_path").eq("id", memberId).maybeSingle(),
     admin.from("memberships").select("status").eq("user_id", memberId).maybeSingle(),
   ]);
-  const consent = profile?.consent as Record<string, unknown> | null;
-  if (!profile?.portrait_path || membership?.status !== "active" || consent?.communityProfileVisible !== true || consent?.showProfilePhotoToMembers !== true) return new NextResponse(null, { status: 404 });
+  if (!profile?.portrait_path || membership?.status !== "active") return new NextResponse(null, { status: 404 });
 
   const etag = `W/"${Buffer.from(profile.portrait_path).toString("base64url")}"`;
   if (request.headers.get("if-none-match") === etag) {
@@ -25,7 +21,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ memb
       status: 304,
       headers: {
         "ETag": etag,
-        "Cache-Control": "private, max-age=86400, stale-while-revalidate=604800",
+        "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
       },
     });
   }
@@ -35,7 +31,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ memb
   return new NextResponse(data, {
     headers: {
       "Content-Type": "image/webp",
-      "Cache-Control": "private, max-age=86400, stale-while-revalidate=604800",
+      "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
       "ETag": etag,
       "X-Content-Type-Options": "nosniff",
       "Content-Disposition": "inline; filename=member-profile.webp",
