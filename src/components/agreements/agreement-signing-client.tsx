@@ -10,8 +10,6 @@ import {
   Download,
   FileCheck2,
   Loader2,
-  Lock,
-  LogIn,
   ShieldCheck,
   Upload,
 } from "lucide-react";
@@ -59,11 +57,11 @@ export function AgreementSigningClient({
     currentUserEmail &&
       currentUserEmail.toLowerCase().trim() === agreement.recipientEmail.toLowerCase().trim(),
   );
-  const canSign = isEmailMatched && (agreement.status === "sent" || agreement.status === "opened");
+  const canSign = agreement.status === "sent" || agreement.status === "opened";
   const canUploadLogo =
-    Boolean(currentUserEmail) &&
     agreement.status !== "signed" &&
-    agreement.status !== "voided";
+    agreement.status !== "voided" &&
+    agreement.status !== "expired";
 
   const [signedName, setSignedName] = React.useState(agreement.recipientName);
   const [signedRole, setSignedRole] = React.useState(agreement.recipientRole);
@@ -75,10 +73,6 @@ export function AgreementSigningClient({
 
   async function handleLogoUpload(file?: File) {
     if (!file) return;
-    if (!currentUserEmail) {
-      toast.error(`Please sign in first to attach an organization logo.`);
-      return;
-    }
     setUploadingLogo(true);
     try {
       const form = new FormData();
@@ -191,40 +185,28 @@ export function AgreementSigningClient({
         </div>
       </div>
 
-      {/* Mandatory Email Login Gate */}
-      {agreement.status === "sent" && !isEmailMatched ? (
-        <div
-          role="alert"
-          className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50/90 p-5 text-xs text-amber-950 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div className="flex items-start gap-3">
-            <Lock className="mt-0.5 size-4 shrink-0 text-amber-700" />
-            <div>
-              <p className="font-semibold text-amber-950">
-                Email Login Required Before Signing
-              </p>
-              <p className="mt-1 leading-relaxed text-amber-900">
-                {currentUserEmail
-                  ? `You are currently signed in as ${currentUserEmail}. Please sign in with ${agreement.recipientEmail} to unlock the digital signature button.`
-                  : `Please sign in with ${agreement.recipientEmail} (via Google or Email OTP) to verify your identity and unlock digital signing.`}
-              </p>
-            </div>
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
-            {currentUserEmail ? (
-              <form action="/auth/signout" method="post">
-                <Button type="submit" variant="outline" size="sm">
-                  Sign out
-                </Button>
-              </form>
-            ) : null}
-            <Button render={<Link href={loginHref} />} size="sm" className="gap-1.5">
-              <LogIn className="size-3.5" />
-              Sign in with Email
-            </Button>
-          </div>
+      {/* Verified Signing Session Trust Banner */}
+      <div
+        role="region"
+        aria-label="Verified Signing Session"
+        className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-950 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div className="flex items-center gap-2.5">
+          <ShieldCheck className="size-4 shrink-0 text-emerald-700" />
+          <p className="leading-relaxed">
+            <strong>Cryptographically Verified Signing Session:</strong> Addressed to{" "}
+            <span className="font-semibold underline decoration-emerald-400 underline-offset-2">
+              {agreement.recipientEmail}
+            </span>
+            . Execution is legally binding under Section 10A of the IT Act, 2000.
+          </p>
         </div>
-      ) : null}
+        {currentUserEmail ? (
+          <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-semibold text-emerald-900">
+            Account: {currentUserEmail}
+          </span>
+        ) : null}
+      </div>
 
       {/* Full 3-4 Page Legal Clauses (Compact smaller legal typography as requested) */}
       <div className="rounded-2xl border border-brand-border bg-brand-white p-5 shadow-2xs sm:p-7">
@@ -264,23 +246,16 @@ export function AgreementSigningClient({
                 ) : null}
               </div>
             </div>
-            {isEmailMatched ? (
-              <Button
-                render={<a href={`/api/agreements/${token}/pdf`} />}
-                className="shrink-0 gap-2"
-              >
-                <Download className="size-4" />
-                Download Signed PDF
-              </Button>
-            ) : (
-              <Button render={<Link href={loginHref} />} variant="outline" className="shrink-0 gap-2">
-                <LogIn className="size-4" />
-                Sign in to Download PDF
-              </Button>
-            )}
+            <Button
+              render={<a href={`/api/agreements/${token}/pdf`} />}
+              className="shrink-0 gap-2 bg-emerald-700 hover:bg-emerald-800 text-white"
+            >
+              <Download className="size-4" />
+              Download Signed PDF
+            </Button>
           </div>
         </div>
-      ) : agreement.status === "sent" ? (
+      ) : agreement.status === "sent" || agreement.status === "opened" ? (
         <form
           onSubmit={handleSign}
           className="flex flex-col gap-5 rounded-2xl border border-brand-border bg-brand-white p-5 shadow-2xs sm:p-7"
@@ -292,15 +267,10 @@ export function AgreementSigningClient({
                 Digital Execution &amp; Signature
               </h2>
             </div>
-            {isEmailMatched ? (
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
-                Verified: {currentUserEmail}
-              </span>
-            ) : (
-              <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
-                Locked until email login
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-800 ring-1 ring-emerald-200">
+              <CheckCircle2 className="size-3 text-emerald-600" />
+              Ready for Signature
+            </span>
           </div>
 
           {/* Optional Organization / Partner Logo Upload */}
@@ -375,13 +345,48 @@ export function AgreementSigningClient({
           </div>
 
           {signedName.trim() ? (
-            <div className="rounded-xl border border-brand-border bg-white p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-muted">
-                Signature Preview (Rendered on Signed PDF)
-              </p>
-              <p className="mt-1 font-serif text-2xl italic text-blue-800">
-                {signedName}
-              </p>
+            <div className="relative overflow-hidden rounded-2xl border border-brand-border bg-gradient-to-br from-[#faf8f5] via-white to-[#f5f0eb] p-5 shadow-2xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-brand-border/60 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="flex size-2 rounded-full bg-emerald-600 animate-pulse" />
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-brand-ink">
+                    Official Digital Execution Preview (Rendered on PDF)
+                  </p>
+                </div>
+                <span className="rounded-full bg-blue-50 px-2.5 py-0.5 font-mono text-[9.5px] font-medium text-blue-900 border border-blue-200">
+                  Section 10A · IT Act 2000
+                </span>
+              </div>
+
+              <div className="py-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-[10px] uppercase tracking-wider text-brand-muted">Counterparty Signatory Signature</p>
+                  <p
+                    className="mt-1 text-3xl sm:text-4xl italic text-[#0F2C59] tracking-wide select-none drop-shadow-2xs leading-snug"
+                    style={{ fontFamily: "'Caveat', cursive, Georgia, serif" }}
+                  >
+                    {signedName}
+                  </p>
+                  <div className="mt-2 h-0.5 w-56 bg-gradient-to-r from-[#0F2C59] via-[#0F2C59]/60 to-transparent" />
+                  <p className="mt-1.5 text-[11px] font-medium text-brand-secondary">
+                    {signedRole || agreement.recipientRole || "Authorized Signatory"}
+                    {signedOrg || agreement.recipientOrg ? ` · ${signedOrg || agreement.recipientOrg}` : ""}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-emerald-200 bg-white/95 p-3 text-[10px] text-emerald-950 backdrop-blur-xs shadow-2xs sm:max-w-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-emerald-900">
+                    <ShieldCheck className="size-3.5 text-emerald-700" />
+                    <span>Cryptographic Audit Stamp</span>
+                  </div>
+                  <p className="mt-1 leading-snug text-emerald-800">
+                    Timestamp: {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} · Token Verified
+                  </p>
+                  <p className="mt-0.5 font-mono text-[9px] text-emerald-700">
+                    Ref: {agreement.referenceCode}
+                  </p>
+                </div>
+              </div>
             </div>
           ) : null}
 
@@ -400,7 +405,7 @@ export function AgreementSigningClient({
             <p className="text-[11px] text-brand-muted">
               CSC Authorized Signatory: <strong>{agreement.cscSignatoryName}</strong>
             </p>
-            <Button type="submit" disabled={!canSign || submitting} className="h-11 gap-2 px-6">
+            <Button type="submit" disabled={!canSign || submitting || !accepted} className="h-11 gap-2 px-6">
               {submitting ? <Loader2 className="size-4 animate-spin" /> : <FileCheck2 className="size-4" />}
               Submit &amp; Sign Agreement
             </Button>

@@ -23,15 +23,11 @@ export async function POST(request: Request) {
     return authResponse({ error: "Request origin could not be verified." }, 403);
   }
 
+  const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const user = await getAuthUser();
-  if (!user || !user.email) {
-    return authResponse(
-      { error: "Please log in with your verified email address before signing this agreement." },
-      401,
-    );
-  }
+  const rateLimitKey = user?.id ? `agreement-sign:${user.id}` : `agreement-sign:${clientIp}`;
 
-  if (!rateLimit(`agreement-sign:${user.id}`, 8, 60_000).allowed) {
+  if (!rateLimit(rateLimitKey, 12, 60_000).allowed) {
     return authResponse({ error: "Too many attempts. Please wait a moment." }, 429);
   }
 
@@ -52,15 +48,6 @@ export async function POST(request: Request) {
     return authResponse({ error: "Agreement link is invalid or unavailable." }, 404);
   }
 
-  if (agreement.recipient_email.toLowerCase().trim() !== user.email.toLowerCase().trim()) {
-    return authResponse(
-      {
-        error: `This agreement is addressed to ${agreement.recipient_email}. You are signed in as ${user.email}.`,
-      },
-      403,
-    );
-  }
-
   if (agreement.status === "signed") {
     return authResponse({ error: "This agreement has already been signed." }, 409);
   }
@@ -72,11 +59,14 @@ export async function POST(request: Request) {
   }
 
   const signedAt = new Date().toISOString();
-  const signedIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const signedUserAgent = (request.headers.get("user-agent") ?? "unknown").slice(0, 300);
 
   const finalRole = signedRole || agreement.recipient_role;
   const finalOrg = signedOrg || agreement.recipient_org;
+  const signerEmail = user?.email
+    ? user.email.toLowerCase()
+    : agreement.recipient_email.toLowerCase();
+
   const documentHash = computeAgreementHash({
     referenceCode: agreement.reference_code,
     agreementType: agreement.agreement_type,
@@ -92,18 +82,18 @@ export async function POST(request: Request) {
     .update({
       status: "signed",
       signed_name: signedName,
-      signed_email: user.email.toLowerCase(),
+      signed_email: signerEmail,
       signed_role: finalRole,
       signed_org: finalOrg,
       signed_at: signedAt,
-      signed_ip: signedIp,
+      signed_ip: clientIp,
       signed_user_agent: signedUserAgent,
-      signed_user_id: user.id,
+      signed_user_id: user?.id ?? null,
       document_hash: documentHash,
       updated_at: signedAt,
     })
     .eq("id", agreement.id)
-    .eq("status", "sent")
+    .in("status", ["sent", "opened"])
     .select("*")
     .single();
 

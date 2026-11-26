@@ -13,11 +13,10 @@ export async function POST(request: Request) {
   if (!isSafeOrigin(request)) {
     return authResponse({ error: "Request origin could not be verified." }, 403);
   }
+  const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const user = await getAuthUser();
-  if (!user || !user.email) {
-    return authResponse({ error: "Sign in with your verified email to upload a logo." }, 401);
-  }
-  if (!rateLimit(`agreement-logo:${user.id}`, 6, 60_000).allowed) {
+  const rateLimitKey = user?.id ? `agreement-logo:${user.id}` : `agreement-logo:${clientIp}`;
+  if (!rateLimit(rateLimitKey, 10, 60_000).allowed) {
     return authResponse({ error: "Too many uploads. Please wait a moment." }, 429);
   }
 
@@ -40,21 +39,6 @@ export async function POST(request: Request) {
   const agreement = data as DigitalAgreementRow | null;
   if (!agreement) return authResponse({ error: "Agreement not found." }, 404);
 
-  // Check if user is either the assigned recipient or an admin
-  const isRecipient = agreement.recipient_email.toLowerCase().trim() === user.email.toLowerCase().trim();
-  let isAdmin = false;
-  try {
-    const { getAdminContext } = await import("@/lib/admin/gate");
-    const ctx = await getAdminContext();
-    isAdmin = ctx.mode === "live";
-  } catch {
-    isAdmin = false;
-  }
-
-  if (!isRecipient && !isAdmin) {
-    return authResponse({ error: "Email does not match agreement recipient." }, 403);
-  }
-
   if (agreement.status === "signed" || agreement.status === "voided") {
     return authResponse({ error: "Logo cannot be updated on an executed or voided agreement." }, 409);
   }
@@ -72,12 +56,24 @@ export async function POST(request: Request) {
 
   const storagePath = `${agreement.id}/partner-logo.png`;
   const admin = createAdminClient();
-  const { error: uploadError } = await admin.storage
+  let { error: uploadError } = await admin.storage
     .from("agreement-assets")
     .upload(storagePath, pngBuffer, { contentType: "image/png", upsert: true });
 
+  if (uploadError && (uploadError.message?.toLowerCase().includes("not found") || uploadError.message?.toLowerCase().includes("bucket"))) {
+    try {
+      await admin.storage.createBucket("agreement-assets", { public: false });
+      const retry = await admin.storage
+        .from("agreement-assets")
+        .upload(storagePath, pngBuffer, { contentType: "image/png", upsert: true });
+      uploadError = retry.error;
+    } catch {
+      // Continue to check uploadError below
+    }
+  }
+
   if (uploadError) {
-    return authResponse({ error: "Logo upload failed." }, 503);
+    return authResponse({ error: "Logo upload failed: " + (uploadError.message || "Storage error") }, 503);
   }
 
   await agreementsTable()

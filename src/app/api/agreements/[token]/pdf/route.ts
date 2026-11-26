@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getAuthUser } from "@/lib/supabase/server";
 import { agreementsTable, downloadPartnerLogo, type DigitalAgreementRow } from "@/lib/agreements/db";
 import { generateAgreementPdf } from "@/lib/agreements/pdf";
 
@@ -7,10 +6,6 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
-  const user = await getAuthUser();
-  if (!user || !user.email) {
-    return new NextResponse(null, { status: 401 });
-  }
   const { token } = await params;
   if (!token || token.length < 32) return new NextResponse(null, { status: 404 });
 
@@ -20,10 +15,6 @@ export async function GET(
     .maybeSingle();
   const agreement = data as DigitalAgreementRow | null;
   if (error || !agreement) return new NextResponse(null, { status: 404 });
-
-  if (agreement.recipient_email.toLowerCase().trim() !== user.email.toLowerCase().trim()) {
-    return new NextResponse(null, { status: 403 });
-  }
 
   const partnerLogoBuffer = await downloadPartnerLogo(agreement.partner_logo_path);
   const pdfBuffer = await generateAgreementPdf({
