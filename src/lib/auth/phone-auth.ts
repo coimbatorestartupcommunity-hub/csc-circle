@@ -371,6 +371,7 @@ export async function verifyPhoneOtpCode(phone: string, inputCode: string): Prom
 
 /**
  * Resolves an existing member account by phone, or provisions a new one.
+ * Prioritizes real accounts (with verified non-provisional emails) and cleans up orphaned provisional accounts.
  */
 export async function resolveOrCreatePhoneUser(phone: string): Promise<{
   userId: string;
@@ -382,36 +383,137 @@ export async function resolveOrCreatePhoneUser(phone: string): Promise<{
   const admin = createAdminClient();
   const last10 = e164.slice(-10);
 
-  // 1. Check profiles table for matching phone
-  const { data: profile } = await admin
+  // 1. Check profiles table for all profiles matching this phone
+  const { data: profiles } = await admin
     .from("profiles")
-    .select("id, email, whatsapp")
-    .or(`whatsapp.eq.${e164},whatsapp.eq.+${e164},whatsapp.ilike.%${last10}%`)
-    .maybeSingle();
+    .select("id, email, whatsapp, full_name, consent, created_at, updated_at")
+    .or(`whatsapp.eq.${e164},whatsapp.eq.+${e164},whatsapp.ilike.%${last10}%`);
 
-  if (profile?.id) {
-    // Fetch auth.users record to get actual email
-    const { data: userData } = await admin.auth.admin.getUserById(profile.id);
-    const email = userData?.user?.email || profile.email || `phone_${e164}@login.csc.internal`;
-    const isProvisional = email.endsWith("@login.csc.internal");
+  if (profiles && profiles.length > 0) {
+    // 1a. Priority 1: Check for a real account (non-provisional email)
+    const realProfile = profiles.find(
+      (p) => p.email && !p.email.endsWith("@login.csc.internal")
+    );
+
+    if (realProfile) {
+      const { data: userData } = await admin.auth.admin.getUserById(realProfile.id);
+      const email = userData?.user?.email || realProfile.email || `phone_${e164}@login.csc.internal`;
+
+      // Clean up any orphaned duplicate provisional accounts with this phone so they never collide
+      const provisionalDups = profiles.filter(
+        (p) => p.id !== realProfile.id && p.email?.endsWith("@login.csc.internal")
+      );
+      for (const dup of provisionalDups) {
+        try {
+          await admin.from("profiles").delete().eq("id", dup.id);
+          await admin.auth.admin.deleteUser(dup.id);
+        } catch {}
+      }
+
+      // Ensure profile has canonical e164 and phone_verified consent
+      const existingConsent = (realProfile.consent as Record<string, unknown>) || {};
+      await admin
+        .from("profiles")
+        .update({
+          whatsapp: e164,
+          consent: { ...existingConsent, phone_verified: true, phone_verified_at: new Date().toISOString() },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", realProfile.id);
+
+      return {
+        userId: realProfile.id,
+        email,
+        isNewUser: false,
+        needsEmailPrompt: false,
+      };
+    }
+
+    // 1b. If only provisional profile(s) exist, sort by updated_at / created_at descending
+    const sortedProvisional = [...profiles].sort((a, b) => {
+      const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+      const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
+      return timeB - timeA;
+    });
+
+    const primaryProvisional = sortedProvisional[0];
+    // Clean up older provisional duplicates
+    for (let i = 1; i < sortedProvisional.length; i++) {
+      try {
+        await admin.from("profiles").delete().eq("id", sortedProvisional[i].id);
+        await admin.auth.admin.deleteUser(sortedProvisional[i].id);
+      } catch {}
+    }
+
+    const { data: userData } = await admin.auth.admin.getUserById(primaryProvisional.id);
+    const email = userData?.user?.email || primaryProvisional.email || `phone_${e164}@login.csc.internal`;
 
     return {
-      userId: profile.id,
+      userId: primaryProvisional.id,
       email,
       isNewUser: false,
-      needsEmailPrompt: isProvisional,
+      needsEmailPrompt: true,
     };
   }
 
-  // 2. Check membership_claims for matching phone
-  const { data: claim } = await admin
+  // 2. Check csc_members survey respondents table for matching phone
+  try {
+    const { data: cscMembers } = await (admin as any)
+      .from("csc_members")
+      .select("email, full_name, contact_number")
+      .or(`contact_number.ilike.%${last10}%,contact_number.eq.${e164}`);
+
+    const cscMember = cscMembers && cscMembers.length > 0 ? (cscMembers[0] as { email?: string; full_name?: string }) : null;
+
+    if (cscMember?.email) {
+      const cleanEmail = cscMember.email.trim().toLowerCase();
+      const { data: userList } = await admin.auth.admin.listUsers();
+      const existingAuth = userList?.users?.find(
+        (u) => u.email?.toLowerCase() === cleanEmail
+      );
+
+      if (existingAuth) {
+        // Automatically bind this phone to their existing account!
+        await admin.from("profiles").upsert({
+          id: existingAuth.id,
+          whatsapp: e164,
+          email: existingAuth.email,
+          full_name: cscMember.full_name || "CSC Member",
+          display_name: cscMember.full_name || "Member",
+          consent: { phone_verified: true, phone_verified_at: new Date().toISOString() },
+          updated_at: new Date().toISOString(),
+        });
+
+        await admin.auth.admin.updateUserById(existingAuth.id, {
+          user_metadata: {
+            ...existingAuth.user_metadata,
+            phone: e164,
+            whatsapp: e164,
+            phone_verified: true,
+          },
+        });
+
+        return {
+          userId: existingAuth.id,
+          email: existingAuth.email!,
+          isNewUser: false,
+          needsEmailPrompt: false,
+        };
+      }
+    }
+  } catch (cscErr) {
+    console.warn("[phone-auth] csc_members lookup note:", cscErr);
+  }
+
+  // 3. Check membership_claims for matching phone
+  const { data: claims } = await admin
     .from("membership_claims")
     .select("user_id, linked_account_email")
-    .or(`whatsapp.eq.${e164},whatsapp.eq.+${e164},whatsapp.ilike.%${last10}%`)
-    .maybeSingle();
+    .or(`whatsapp.eq.${e164},whatsapp.eq.+${e164},whatsapp.ilike.%${last10}%`);
+
+  const claim = claims && claims.length > 0 ? claims[0] : null;
 
   if (claim?.user_id && claim.linked_account_email) {
-    // Update profile whatsapp field
     await admin.from("profiles").update({ whatsapp: e164 }).eq("id", claim.user_id);
 
     return {
@@ -422,15 +524,17 @@ export async function resolveOrCreatePhoneUser(phone: string): Promise<{
     };
   }
 
-  // 3. New User: Provision user account with phone alias
+  // 4. New User: Provision user account with phone alias
   const provisionalEmail = `phone_${e164}@login.csc.internal`;
   const { data: newUser, error: createErr } = await admin.auth.admin.createUser({
     email: provisionalEmail,
     email_confirm: true,
     user_metadata: {
       phone: e164,
+      whatsapp: e164,
       full_name: "CSC Member",
       provisional: true,
+      phone_verified: true,
     },
   });
 
@@ -458,6 +562,7 @@ export async function resolveOrCreatePhoneUser(phone: string): Promise<{
     email: provisionalEmail,
     full_name: "CSC Member",
     display_name: "Member",
+    consent: { phone_verified: true, phone_verified_at: new Date().toISOString() },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   });
@@ -490,6 +595,8 @@ export async function createPhoneSessionToken(userEmail: string): Promise<string
 
 /**
  * Links a real email address and optional password to the phone-authenticated account.
+ * When an account already exists with this email, performs a clean migration/merge,
+ * purges the provisional duplicate, and returns a session token hash to switch the active session!
  */
 export async function linkUserEmailAndCredentials({
   userId,
@@ -499,41 +606,118 @@ export async function linkUserEmailAndCredentials({
   userId: string;
   email: string;
   password?: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{
+  success: boolean;
+  error?: string;
+  unifiedUserId?: string;
+  unifiedEmail?: string;
+  sessionTokenHash?: string;
+}> {
   try {
     const cleanEmail = email.trim().toLowerCase();
     const admin = createAdminClient();
 
-    // 1. Check if another account already exists with this email
+    // 1. Fetch current provisional profile data
+    const { data: currentProfile } = await admin
+      .from("profiles")
+      .select("whatsapp, full_name, display_name, city, designations, startup, consent")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const phoneE164 = currentProfile?.whatsapp || "";
+
+    // 2. Check if another real account already exists with this email
     const { data: userList } = await admin.auth.admin.listUsers();
     const existingWithEmail = userList?.users?.find(
       (u) => u.email?.toLowerCase() === cleanEmail && u.id !== userId
     );
 
     if (existingWithEmail) {
-      // Merge: Update the existing account's profile with this phone number
-      const { data: currentProfile } = await admin
+      // MERGE PATH: The user already has an existing account under this email!
+      // 2a. Update the existing account's profile with this phone number
+      const { data: existingProfile } = await admin
         .from("profiles")
-        .select("whatsapp")
-        .eq("id", userId)
+        .select("id, whatsapp, full_name, consent")
+        .eq("id", existingWithEmail.id)
         .maybeSingle();
 
-      if (currentProfile?.whatsapp) {
+      const existingConsent = (existingProfile?.consent as Record<string, unknown>) || {};
+      const mergedConsent = {
+        ...existingConsent,
+        phone_verified: true,
+        phone_verified_at: new Date().toISOString(),
+      };
+
+      await admin
+        .from("profiles")
+        .update({
+          whatsapp: phoneE164,
+          consent: mergedConsent,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingWithEmail.id);
+
+      // 2b. Update existing auth user metadata
+      await admin.auth.admin.updateUserById(existingWithEmail.id, {
+        user_metadata: {
+          ...existingWithEmail.user_metadata,
+          phone: phoneE164,
+          whatsapp: phoneE164,
+          phone_verified: true,
+          phone_verified_at: new Date().toISOString(),
+        },
+      });
+
+      // 2c. Migrate any registrations or records created under the provisional account
+      try {
         await admin
-          .from("profiles")
-          .update({ whatsapp: currentProfile.whatsapp })
-          .eq("id", existingWithEmail.id);
+          .from("event_registrations")
+          .update({ user_id: existingWithEmail.id })
+          .eq("user_id", userId);
+
+        await admin
+          .from("directory_startups")
+          .update({ user_id: existingWithEmail.id })
+          .eq("user_id", userId);
+
+        await (admin as any)
+          .from("digital_agreements")
+          .update({ user_id: existingWithEmail.id })
+          .eq("user_id", userId);
+      } catch (migErr) {
+        console.warn("[linkUserEmailAndCredentials] Record migration notice:", migErr);
       }
+
+      // 2d. Clean up the provisional user from profiles and auth.users so no ghost duplicates exist!
+      try {
+        await admin.from("profiles").delete().eq("id", userId);
+        await admin.auth.admin.deleteUser(userId);
+      } catch (delErr) {
+        console.warn("[linkUserEmailAndCredentials] Provisional account cleanup notice:", delErr);
+      }
+
+      // 2e. Generate session token hash for the existing account so the user is immediately switched!
+      const sessionTokenHash = await createPhoneSessionToken(existingWithEmail.email!);
 
       return {
         success: true,
+        unifiedUserId: existingWithEmail.id,
+        unifiedEmail: existingWithEmail.email!,
+        sessionTokenHash,
       };
     }
 
-    // 2. Update current account's email and password
-    const updatePayload: { email: string; email_confirm: boolean; password?: string } = {
+    // 3. NEW EMAIL PATH: No existing account with this email, so assign it directly to current account
+    const updatePayload: { email: string; email_confirm: boolean; password?: string; user_metadata?: Record<string, unknown> } = {
       email: cleanEmail,
       email_confirm: true,
+      user_metadata: {
+        phone: phoneE164,
+        whatsapp: phoneE164,
+        phone_verified: true,
+        email_verified: true,
+        provisional: false,
+      },
     };
     if (password && password.length >= 8) {
       updatePayload.password = password;
@@ -544,10 +728,31 @@ export async function linkUserEmailAndCredentials({
       return { success: false, error: updateErr.message };
     }
 
-    // 3. Update profile table
-    await admin.from("profiles").update({ email: cleanEmail }).eq("id", userId);
+    // 4. Update profile table
+    const existingConsent = (currentProfile?.consent as Record<string, unknown>) || {};
+    await admin
+      .from("profiles")
+      .update({
+        email: cleanEmail,
+        consent: {
+          ...existingConsent,
+          phone_verified: true,
+          email_verified: true,
+          phone_verified_at: new Date().toISOString(),
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
 
-    return { success: true };
+    // 5. Generate fresh session token
+    const sessionTokenHash = await createPhoneSessionToken(cleanEmail);
+
+    return {
+      success: true,
+      unifiedUserId: userId,
+      unifiedEmail: cleanEmail,
+      sessionTokenHash,
+    };
   } catch (err) {
     return {
       success: false,

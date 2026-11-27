@@ -32,8 +32,34 @@ export async function POST(request: Request) {
 
     const { e164 } = normalizePhoneForWhatsApp(phone);
     const admin = createAdminClient();
+    const last10 = e164.slice(-10);
 
-    // 1. Fetch existing profile consent
+    // 1. Clear this phone from any orphaned provisional profiles so they never collide
+    try {
+      const { data: dups } = await admin
+        .from("profiles")
+        .select("id, email")
+        .or(`whatsapp.eq.${e164},whatsapp.eq.+${e164},whatsapp.ilike.%${last10}%`)
+        .neq("id", ctx.user.id);
+
+      for (const dup of dups || []) {
+        if (dup.email?.endsWith("@login.csc.internal")) {
+          try {
+            await admin.from("profiles").delete().eq("id", dup.id);
+            await admin.auth.admin.deleteUser(dup.id);
+          } catch {}
+        } else {
+          // If on another profile, transfer ownership to this user who just verified OTP!
+          try {
+            await admin.from("profiles").update({ whatsapp: null }).eq("id", dup.id);
+          } catch {}
+        }
+      }
+    } catch (dupErr) {
+      console.warn("[verify-otp] Duplicate cleanup warning:", dupErr);
+    }
+
+    // 2. Fetch existing profile consent
     const { data: profile } = await admin
       .from("profiles")
       .select("consent, full_name, display_name, email")

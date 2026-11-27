@@ -2,10 +2,10 @@ import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import Link from "next/link";
 import { MemberPageHeader } from "@/components/member/member-page-header";
 import { MemberSettingsForm } from "@/components/member/member-settings-form";
-import { PhoneVerificationCard } from "@/components/member/phone-verification-card";
+import { ContactBindingCard } from "@/components/member/contact-binding-card";
 import { DpdpCompliancePanel } from "@/components/member/dpdp-compliance-panel";
 import { EmptyState } from "@/components/common/empty-state";
-import { Settings, ShieldCheck, CheckCircle2, Phone, Mail } from "lucide-react";
+import { Settings, ShieldCheck, CheckCircle2, Phone, Mail, AlertTriangle } from "lucide-react";
 import { getMemberContext } from "@/lib/services/member/context";
 import { memberServices } from "@/lib/services/member/services";
 
@@ -31,19 +31,30 @@ export default async function MemberSettingsPage() {
     ctx.user?.user_metadata?.phone_verified
   );
 
+  const isProvisionalEmail = Boolean(profile.email && profile.email.endsWith("@login.csc.internal"));
+  const isEmailVerified = Boolean(!isProvisionalEmail && profile.email);
+
   return (
     <>
       <MemberPageHeader
-        title="Settings"
-        description="Manage your account preferences and privacy."
+        title="Settings & Contact Security"
+        description="Manage your account preferences, unified login credentials, and privacy."
       />
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        {/* Unified Contact Binding & Verification Hub */}
+        <ContactBindingCard
+          initialPhone={profile.whatsapp}
+          initialEmail={profile.email}
+          isPhoneVerified={isPhoneVerified}
+          isEmailVerified={isEmailVerified}
+        />
+
         <div className="grid items-stretch gap-5 lg:grid-cols-2">
           <section className="flex h-full flex-col rounded-2xl bg-brand-white p-6 ring-1 ring-brand-border">
-            <h2 className="text-sm font-semibold text-brand-ink">Account &amp; Verified Contacts</h2>
+            <h2 className="text-sm font-semibold text-brand-ink">Account Summary</h2>
             <dl className="mt-5 flex flex-col gap-3.5 text-sm">
-              {/* Mobile Number (Prominently Placed Above Email) */}
+              {/* Mobile Number */}
               <div className="flex items-center justify-between gap-4">
                 <dt className="flex items-center gap-1.5 text-brand-muted">
                   <Phone className="size-3.5 text-brand-muted" />
@@ -73,11 +84,19 @@ export default async function MemberSettingsPage() {
                   <span>Email ID</span>
                 </dt>
                 <dd className="flex items-center gap-2 min-w-0 text-right font-medium text-brand-ink">
-                  <span className="min-w-0 truncate text-xs sm:text-sm">{profile.email || "—"}</span>
-                  <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20">
-                    <CheckCircle2 className="size-3 text-emerald-600" />
-                    Verified
+                  <span className="min-w-0 truncate text-xs sm:text-sm">
+                    {isProvisionalEmail ? "Not linked yet" : profile.email || "—"}
                   </span>
+                  {isEmailVerified ? (
+                    <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-600/20">
+                      <CheckCircle2 className="size-3 text-emerald-600" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-600/20">
+                      Unlinked
+                    </span>
+                  )}
                 </dd>
               </div>
             </dl>
@@ -109,14 +128,6 @@ export default async function MemberSettingsPage() {
 
           <MemberSettingsForm key={profile.id} profile={profile} isDemo={ctx.mode === "preview"} />
         </div>
-
-        {/* Display phone verification card only when phone is not yet verified */}
-        {!isPhoneVerified && (
-          <PhoneVerificationCard
-            initialPhone={profile.whatsapp}
-            isVerified={isPhoneVerified}
-          />
-        )}
 
         <DpdpCompliancePanel
           email={profile.email}

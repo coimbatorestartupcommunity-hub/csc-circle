@@ -51,10 +51,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // If an existing account was merged or new session token was created, switch session cookies immediately!
+    if (result.sessionTokenHash) {
+      try {
+        await sb.auth.verifyOtp({
+          token_hash: result.sessionTokenHash,
+          type: "magiclink",
+        });
+      } catch (sessionErr) {
+        console.warn("[link-email] Session switch note:", sessionErr);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
-      email,
-      message: "Email successfully linked to your account.",
+      email: result.unifiedEmail || email,
+      unifiedUserId: result.unifiedUserId || user.id,
+      message: "Account unified! Your email and mobile number are now permanently linked.",
       next: "/profile",
     });
   } catch (err) {
