@@ -15,8 +15,39 @@ export async function GET(request: Request, { params }: { params: Promise<{ memb
   if (membership?.status !== "active") return new NextResponse(null, { status: 404 });
 
   if (!profile?.portrait_path) {
-    const avatarUrl = profile?.avatar_url?.trim() ?? "";
+    let avatarUrl = profile?.avatar_url?.trim() ?? "";
+    if (!avatarUrl) {
+      try {
+        const { data: authUser } = await admin.auth.admin.getUserById(memberId);
+        const meta = authUser?.user?.user_metadata;
+        avatarUrl = ((meta?.avatar_url as string) || (meta?.picture as string) || "").trim();
+      } catch {
+        // Ignore auth user lookup failure
+      }
+    }
+
     if (/^https:\/\//i.test(avatarUrl)) {
+      try {
+        const upstream = await fetch(avatarUrl, {
+          cache: "force-cache",
+          signal: AbortSignal.timeout(5000),
+        });
+        if (upstream.ok && upstream.body) {
+          const contentType = upstream.headers.get("content-type") || "image/jpeg";
+          const buffer = await upstream.arrayBuffer();
+          return new NextResponse(buffer, {
+            headers: {
+              "Content-Type": contentType,
+              "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+              "X-Content-Type-Options": "nosniff",
+              "Content-Disposition": "inline; filename=member-avatar.jpg",
+            },
+          });
+        }
+      } catch {
+        // Fall back to 307 redirect if fetch fails
+      }
+
       return NextResponse.redirect(avatarUrl, {
         status: 307,
         headers: {

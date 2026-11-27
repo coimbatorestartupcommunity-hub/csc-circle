@@ -13,6 +13,20 @@ const nextConfig: NextConfig = {
         search: "",
       },
     ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
+    ],
   },
   outputFileTracingIncludes: {
     "/api/member/resume/pdf": ["./node_modules/dejavu-fonts-ttf/ttf/DejaVuSans*.ttf"],
@@ -29,7 +43,7 @@ const nextConfig: NextConfig = {
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         { key: "X-Frame-Options", value: "SAMEORIGIN" },
         { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
-        { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com; frame-ancestors 'self';" },
+        { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.googleusercontent.com https://lh3.googleusercontent.com; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com; frame-ancestors 'self';" },
       ] },
       { source: "/images/:path*", headers: [
         { key: "Cache-Control", value: "public, max-age=31536000, immutable" },

@@ -68,11 +68,12 @@ begin
         when coalesce((p.consent->>'shareWhatsappWithMembers')::boolean, false)
         then p.whatsapp
       end,
-      (p.portrait_path is not null or nullif(trim(coalesce(p.avatar_url, '')), '') is not null),
+      (p.portrait_path is not null or nullif(trim(coalesce(p.avatar_url, u.raw_user_meta_data->>'avatar_url', u.raw_user_meta_data->>'picture', '')), '') is not null),
       m.member_number,
       m.status::text
     from public.profiles p
     join public.memberships m on m.user_id = p.id and m.status = 'active'
+    left join auth.users u on u.id = p.id
     where private.member_directory_eligible(p.id)
       and coalesce(nullif(trim(p.display_name), ''), nullif(trim(p.full_name), '')) is not null
       and (
@@ -174,7 +175,7 @@ begin
         when coalesce((p.consent->>'shareWhatsappWithMembers')::boolean, false)
         then p.whatsapp
       end,
-      (p.portrait_path is not null or nullif(trim(coalesce(p.avatar_url, '')), '') is not null),
+      (p.portrait_path is not null or nullif(trim(coalesce(p.avatar_url, u.raw_user_meta_data->>'avatar_url', u.raw_user_meta_data->>'picture', '')), '') is not null),
       (
         select d.website
         from public.directory_startups d
@@ -186,6 +187,7 @@ begin
       m.status::text
     from public.profiles p
     join public.memberships m on m.user_id = p.id and m.status = 'active'
+    left join auth.users u on u.id = p.id
     where p.id = p_member_id
       and private.member_directory_eligible(p.id)
       and coalesce(nullif(trim(p.display_name), ''), nullif(trim(p.full_name), '')) is not null;
