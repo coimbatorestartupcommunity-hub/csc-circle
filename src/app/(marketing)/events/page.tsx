@@ -54,7 +54,7 @@ const entrySteps = [
   {
     step: "04",
     title: "Express Physical Check-in",
-    desc: "Scan at venue kiosks across CODISSIA / TIDEL corridors in < 1 second.",
+    desc: "Scan at venue kiosks across offline meetup corridors in < 1 second.",
   },
 ];
 

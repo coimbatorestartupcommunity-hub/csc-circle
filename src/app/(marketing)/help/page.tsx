@@ -180,7 +180,7 @@ const faq: FAQCategory[] = [
       },
       {
         q: "How do express physical check-in kiosks work at in-person meetups?",
-        a: "At offline venues (such as CODISSIA or TIDEL Park), present your digital pass QR code from your phone screen or Apple/Google Wallet. Kiosks verify the signature in under 1 second for express admission.",
+        a: "At offline partner venues, present your digital pass QR code from your phone screen or Apple/Google Wallet. Kiosks verify the signature in under 1 second for express admission.",
       },
     ],
   },

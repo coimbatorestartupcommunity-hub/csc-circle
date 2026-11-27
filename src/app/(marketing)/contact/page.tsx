@@ -131,11 +131,11 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-wrap justify-center gap-4">
               {leadershipDesks.map((desk) => (
                 <div
                   key={desk.role}
-                  className="flex flex-col justify-between rounded-3xl border border-brand-border bg-brand-white p-6 shadow-xs transition hover:border-brand-ink/20"
+                  className="flex w-full flex-col justify-between rounded-3xl border border-brand-border bg-brand-white p-6 shadow-xs transition hover:border-brand-ink/20 sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] max-w-sm"
                 >
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between gap-2">
@@ -198,14 +198,14 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-wrap justify-center gap-4">
               {whatsappCircles.map((circle) => (
                 <a
                   key={circle.name}
                   href={circle.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex flex-col justify-between rounded-3xl border border-brand-border bg-brand-white p-6 shadow-xs transition hover:border-brand-ink/20 hover:shadow-md"
+                  className="group flex w-full flex-col justify-between rounded-3xl border border-brand-border bg-brand-white p-6 shadow-xs transition hover:border-brand-ink/20 hover:shadow-md sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] max-w-sm"
                 >
                   <div className="flex flex-col gap-2">
                     <span className={`w-fit rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${circle.accent}`}>
@@ -311,39 +311,84 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Regional Hub & Physical Liaisons */}
+          {/* Regional Hub & Planned Liaisons */}
           <div className="flex flex-col gap-6 rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-8">
-            <div className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-2xl bg-brand-cloud text-brand-ink">
-                <MapPin className="size-5" />
-              </span>
-              <div>
-                <h3 className="text-base font-bold text-brand-ink">Regional Ecosystem Hubs &amp; Liaisons</h3>
-                <p className="text-xs text-brand-secondary">
-                  Coimbatore Startup Community maintains active liaisons across the key industrial and technology corridors of Coimbatore.
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 items-center justify-center rounded-2xl bg-brand-cloud text-brand-ink">
+                  <MapPin className="size-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-brand-ink">
+                    Regional Ecosystem Corridors &amp; Planned Liaisons
+                  </h3>
+                  <p className="text-xs text-brand-secondary">
+                    Physical presence and institutional partner desks are under active dialogue and planned for rollout soon across Coimbatore.
+                  </p>
+                </div>
               </div>
+              <span className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+                <Clock className="size-3.5" /> Upcoming Expansion · Planned Soon
+              </span>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3 pt-2 text-xs text-brand-secondary border-t border-brand-border/60">
-              <div className="rounded-2xl bg-brand-cloud/40 p-4">
-                <span className="block font-bold text-brand-ink">MSME &amp; Industrial Liaison</span>
-                <p className="mt-1 leading-relaxed">CODISSIA Trade Fair Complex Corridor, Avinashi Road, Coimbatore 641014</p>
+              <div className="flex flex-col justify-between rounded-2xl border border-dashed border-brand-border bg-brand-cloud/40 p-4">
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="block font-bold text-brand-ink">MSME &amp; Industrial Liaison</span>
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                      Planned Soon
+                    </span>
+                  </div>
+                  <p className="mt-1 leading-relaxed">
+                    CODISSIA Trade Fair Complex Corridor, Avinashi Road, Coimbatore 641014
+                  </p>
+                </div>
+                <p className="mt-3 text-[11px] text-brand-muted italic">
+                  Institutional MoU in progress. Physical desk planned for rollout soon.
+                </p>
               </div>
-              <div className="rounded-2xl bg-brand-cloud/40 p-4">
-                <span className="block font-bold text-brand-ink">IT &amp; DeepTech Hub Liaison</span>
-                <p className="mt-1 leading-relaxed">TIDEL Park Coimbatore Corridor, Civil Aerodrome Post, Coimbatore 641014</p>
+
+              <div className="flex flex-col justify-between rounded-2xl border border-dashed border-brand-border bg-brand-cloud/40 p-4">
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="block font-bold text-brand-ink">IT &amp; DeepTech Hub Liaison</span>
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                      Planned Soon
+                    </span>
+                  </div>
+                  <p className="mt-1 leading-relaxed">
+                    TIDEL Park Coimbatore Corridor, Civil Aerodrome Post, Coimbatore 641014
+                  </p>
+                </div>
+                <p className="mt-3 text-[11px] text-brand-muted italic">
+                  Tech ecosystem coordination desk in active preparation.
+                </p>
               </div>
-              <div className="rounded-2xl bg-brand-cloud/40 p-4">
-                <span className="block font-bold text-brand-ink">Academic Innovation Liaison</span>
-                <p className="mt-1 leading-relaxed">Peelamedu &amp; Saravanampatti Technology Incubation Corridors</p>
+
+              <div className="flex flex-col justify-between rounded-2xl border border-dashed border-brand-border bg-brand-cloud/40 p-4">
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="block font-bold text-brand-ink">Academic Innovation Liaison</span>
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                      Planned Soon
+                    </span>
+                  </div>
+                  <p className="mt-1 leading-relaxed">
+                    Peelamedu &amp; Saravanampatti Technology Incubation Corridors
+                  </p>
+                </div>
+                <p className="mt-3 text-[11px] text-brand-muted italic">
+                  University incubation network alignment in progress.
+                </p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3 pt-2 text-xs text-brand-secondary border-t border-brand-border/60">
               <div>
                 <span className="block font-semibold text-brand-ink">Operating Headquarters</span>
-                <p className="mt-0.5">Coimbatore, Tamil Nadu 641001, India</p>
+                <p className="mt-0.5">Coimbatore, Tamil Nadu 641001, India (Digital Secretariat)</p>
               </div>
               <div>
                 <span className="block font-semibold text-brand-ink">Platform Technology Partner</span>
