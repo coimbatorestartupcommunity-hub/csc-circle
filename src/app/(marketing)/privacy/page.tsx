@@ -94,7 +94,7 @@ export default function PrivacyPage() {
                   </tr>
                   <tr>
                     <td className="p-4 font-bold text-brand-ink">WhatsApp Concierge</td>
-                    <td className="p-4">Inbound phone number, incoming query text, and timestamp processed via our MSG91 enterprise cloud gateway.</td>
+                    <td className="p-4">Inbound phone number, incoming query text, and timestamp processed via our enterprise cloud gateway powered by Logic Intelligence Technologies (LIT).</td>
                     <td className="p-4">Automated delivery of event reminders, ticket QR lookups, verification notices, and AI concierge assistance. Never used for marketing blasts.</td>
                   </tr>
                   <tr>
@@ -134,9 +134,9 @@ export default function PrivacyPage() {
                 </p>
               </div>
               <div className="rounded-2xl border border-brand-border bg-brand-white p-4 shadow-xs">
-                <strong className="block text-brand-ink text-sm">Walkover Technologies Pvt Ltd (MSG91)</strong>
+                <strong className="block text-brand-ink text-sm">Logic Intelligence Technologies (LIT) Cloud Communications</strong>
                 <p className="mt-1 text-brand-secondary">
-                  Enterprise WhatsApp Cloud API provider for hotline (+91 75500 67712), pass delivery, and verification SMS/WhatsApp.
+                  Enterprise WhatsApp Cloud infrastructure provider for hotline (+91 75500 67712), pass delivery, and automated verification dispatch.
                 </p>
               </div>
               <div className="rounded-2xl border border-brand-border bg-brand-white p-4 shadow-xs">

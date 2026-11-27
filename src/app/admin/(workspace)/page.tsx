@@ -84,7 +84,7 @@ const modules: WorkspaceModule[] = [
   { permission: "audit.read", label: "Security Audit Logs", href: "/admin/audit-logs", Icon: ScrollText, description: "Inspect tamper-proof administrative history and access logs.", sector: "platform" },
   { permission: "settings.manage", label: "Platform Settings", href: "/admin/settings", Icon: Settings, description: "Configure system switches, maintenance mode, and parameters.", sector: "platform" },
   { permission: "roles.manage", label: "Roles & Admin Access", href: "/admin/roles", Icon: ShieldCheck, description: "Manage administrator assignments, invitations, and permissions.", sector: "platform" },
-  { permission: "settings.manage", label: "WhatsApp AI Worker", href: "/admin/whatsapp-agent", Icon: PhoneCall, description: "Monitor MSG91 webhook status, hotline logs, and knowledge base.", sector: "platform" },
+  { permission: "settings.manage", label: "WhatsApp AI Worker", href: "/admin/whatsapp-agent", Icon: PhoneCall, description: "Monitor WhatsApp bot webhook status, hotline logs, and knowledge base powered by Logic Intelligence Technologies (LIT).", sector: "platform" },
 ];
 
 export default async function AdminOverview() {
@@ -614,8 +614,8 @@ export default async function AdminOverview() {
                   <div className="flex items-center gap-2.5">
                     <PhoneCall className="size-4 text-emerald-600 ml-1" />
                     <div>
-                      <span className="block font-bold text-brand-ink">WhatsApp MSG91 Concierge</span>
-                      <span className="text-[11px] text-brand-secondary">{siteConfig.social.whatsappAgentPhone}</span>
+                      <span className="block font-bold text-brand-ink">WhatsApp AI Concierge</span>
+                      <span className="text-[11px] text-brand-secondary">{siteConfig.social.whatsappAgentPhone} (LIT)</span>
                     </div>
                   </div>
                   <span className="font-semibold text-emerald-600">Online</span>
@@ -998,7 +998,7 @@ export default async function AdminOverview() {
               </h3>
               <p className="mt-1 text-xs leading-relaxed text-brand-secondary">
                 Architects and maintains CSC Circle&apos;s digital infrastructure, high-throughput PostgreSQL databases,
-                cryptographic pass minting, and enterprise MSG91 WhatsApp routing.
+                cryptographic pass minting, and enterprise WhatsApp routing powered by Logic Intelligence Technologies (LIT).
               </p>
 
               <div className="mt-4 space-y-2 text-xs border-t border-brand-border/60 pt-3">

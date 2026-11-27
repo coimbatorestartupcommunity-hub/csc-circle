@@ -226,11 +226,11 @@ export async function GET() {
     checkedAt: now,
   });
 
-  // 5. WhatsApp Cloud Gateway (MSG91 & viaSocket)
+  // 5. WhatsApp Cloud Gateway (Logic Intelligence Technologies)
   const waConfig = await getWhatsAppLockConfig();
   results.push({
     id: "whatsapp",
-    name: "WhatsApp Cloud Gateway (MSG91)",
+    name: "WhatsApp Cloud Gateway (Logic Intelligence Technologies)",
     category: "whatsapp",
     status: waConfig.locked ? "paused" : "healthy",
     latencyMs: waConfig.locked ? null : 48,
@@ -245,18 +245,18 @@ export async function GET() {
     checkedAt: now,
   });
 
-  // 6. MSG91 Cloud Communications API
+  // 6. Logic Intelligence Technologies (LIT) Cloud Communications API
   const msg91AuthKey = process.env.MSG91_AUTHKEY || process.env.MSG91_AUTH_KEY || "593367AEcZQeKeoF5c6b05eb92P1";
   const hasMsg91 = Boolean(msg91AuthKey && msg91AuthKey.length >= 10);
   results.push({
     id: "msg91",
-    name: "MSG91 Cloud Communications API",
+    name: "Logic Intelligence Technologies (LIT) Cloud Communications API",
     category: "whatsapp",
     status: hasMsg91 ? "healthy" : "degraded",
     latencyMs: hasMsg91 ? 42 : null,
     message: hasMsg91
-      ? "MSG91 Cloud API credentials verified & ready for WhatsApp Business dispatch"
-      : "MSG91 AuthKey pending configuration",
+      ? "Logic Intelligence Technologies (LIT) Cloud API credentials verified & ready for WhatsApp Business dispatch"
+      : "Cloud Gateway AuthKey pending configuration",
     details: {
       authkey: msg91AuthKey ? `${msg91AuthKey.slice(0, 6)}...` : "Missing",
       senderNumber: process.env.MSG91_WHATSAPP_INTEGRATED_NUMBER || "+917550067712",

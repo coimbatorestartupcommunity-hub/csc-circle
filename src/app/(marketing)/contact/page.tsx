@@ -84,7 +84,7 @@ export default function ContactPage() {
       label: "24/7 WhatsApp AI Hotline",
       value: siteConfig.social.whatsappAgentPhone,
       href: siteConfig.social.whatsappAgent,
-      note: "Enterprise MSG91 cloud hotline for instant answers on events, digital IDs, and ecosystem guidance.",
+      note: "Enterprise AI hotline powered by Logic Intelligence Technologies (LIT) for instant answers on events, digital IDs, and ecosystem guidance.",
     },
     {
       network: "linkedin" as const,
@@ -224,7 +224,7 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* 24/7 MSG91 WhatsApp Concierge Banner */}
+          {/* 24/7 WhatsApp Concierge Banner */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 rounded-3xl border-2 border-emerald-500/20 bg-emerald-50/40 p-6 sm:p-8">
             <div className="flex items-start gap-4">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
@@ -232,7 +232,7 @@ export default function ContactPage() {
               </span>
               <div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-semibold text-emerald-800">
-                  Official MSG91 Cloud Hotline
+                  Powered by Logic Intelligence Technologies (LIT)
                 </span>
                 <h3 className="mt-1 text-lg font-bold text-brand-ink">
                   Instant WhatsApp Concierge: {siteConfig.social.whatsappAgentPhone}

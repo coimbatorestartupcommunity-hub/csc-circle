@@ -54,7 +54,7 @@ export default function SecurityPage() {
     {
       icon: Cpu,
       title: "Circuit Breakers & API Isolation",
-      body: "External services (MSG91 WhatsApp Cloud API, payment reconciliation, transactional mailers) are isolated behind bounded timeouts and automatic circuit breakers to prevent cascading outages.",
+      body: "External services (WhatsApp Cloud API powered by Logic Intelligence Technologies, payment reconciliation, transactional mailers) are isolated behind bounded timeouts and automatic circuit breakers to prevent cascading outages.",
     },
   ];
 

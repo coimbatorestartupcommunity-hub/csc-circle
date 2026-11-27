@@ -73,7 +73,7 @@ const SUBSYSTEMS_META: SubsystemMeta[] = [
     key: "whatsappOutbound",
     name: "Outbound AI WhatsApp Assistant & Lifecycle Router",
     category: "Conversational AI & Delivery",
-    description: "Controls dedicated outbound router, MSG91 request callbacks, recursive loop breaker, and delivery telemetry.",
+    description: "Controls dedicated outbound router, LIT request callbacks, recursive loop breaker, and delivery telemetry.",
     icon: Send,
     defaultPauseReason: "Outbound WhatsApp router temporarily paused for message delivery maintenance.",
   },

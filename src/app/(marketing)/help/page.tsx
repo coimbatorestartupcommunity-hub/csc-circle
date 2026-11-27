@@ -21,7 +21,7 @@ import { siteConfig } from "@/lib/content/site";
 export const metadata: Metadata = {
   title: "Help & FAQ — Coimbatore Startup Community",
   description:
-    "Comprehensive answers covering official WhatsApp circles, 24/7 MSG91 hotline, digital membership IDs, Apple/Google Wallet cards, event check-in, legal agreements, and platform security.",
+    "Comprehensive answers covering official WhatsApp circles, 24/7 hotline powered by Logic Intelligence Technologies (LIT), digital membership IDs, Apple/Google Wallet cards, event check-in, legal agreements, and platform security.",
   alternates: { canonical: "/help" },
 };
 
@@ -38,15 +38,15 @@ interface FAQCategory {
 
 const faq: FAQCategory[] = [
   {
-    category: "WhatsApp MSG91 Concierge & 5 Community Circles",
-    description: "24/7 AI hotline (+91 75500 67712), enterprise MSG91 routing, and the 5 official community circles.",
+    category: "WhatsApp AI Concierge (LIT) & 5 Community Circles",
+    description: "24/7 AI hotline (+91 75500 67712), enterprise cloud routing powered by Logic Intelligence Technologies (LIT), and the 5 official community circles.",
     items: [
       {
         q: "What is the official 24/7 WhatsApp Hotline (+91 75500 67712)?",
         a: (
           <>
             CSC Circle operates an enterprise AI hotline on{" "}
-            <strong>+91 75500 67712</strong> powered by MSG91 cloud infrastructure. It provides instant 24/7 support
+            <strong>+91 75500 67712</strong> powered by Logic Intelligence Technologies (LIT) cloud infrastructure. It provides instant 24/7 support
             for verifying digital membership status, retrieving active event pass QR codes, finding virtual Google Meet
             links, and answering questions in both English and Tamil. You can message anytime at{" "}
             <a
@@ -291,7 +291,7 @@ export default function HelpPage() {
       <PageHero
         eyebrow="Knowledge Base & FAQ"
         title="Help & FAQ"
-        description="Comprehensive answers covering official WhatsApp circles, 24/7 MSG91 hotline, digital membership IDs, Apple/Google Wallet cards, event check-in, legal agreements, and platform security."
+        description="Comprehensive answers covering official WhatsApp circles, 24/7 hotline powered by Logic Intelligence Technologies (LIT), digital membership IDs, Apple/Google Wallet cards, event check-in, legal agreements, and platform security."
       />
       <section className="py-14 sm:py-16">
         <Container className="mx-auto flex max-w-4xl flex-col gap-12">
@@ -306,7 +306,7 @@ export default function HelpPage() {
                   Need Immediate Help? Message Our 24/7 Hotline
                 </h3>
                 <p className="text-xs text-brand-secondary">
-                  Instant automated support on WhatsApp at {siteConfig.social.whatsappAgentPhone} powered by MSG91.
+                  Instant automated support on WhatsApp at {siteConfig.social.whatsappAgentPhone} powered by Logic Intelligence Technologies (LIT).
                 </p>
               </div>
             </div>
