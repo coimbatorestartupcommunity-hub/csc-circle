@@ -1,6 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail, Globe, LifeBuoy, ShieldCheck, CalendarDays, Sparkles, Clock, MapPin, Building2, CheckCircle2, MessageSquare } from "lucide-react";
+import {
+  Mail,
+  Globe,
+  LifeBuoy,
+  ShieldCheck,
+  CalendarDays,
+  Sparkles,
+  Clock,
+  MapPin,
+  Building2,
+  CheckCircle2,
+  MessageSquare,
+  ArrowRight,
+  PhoneCall,
+  Users,
+} from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
 import { CircularSocialIcon } from "@/components/common/brand-icons";
@@ -9,66 +24,81 @@ import { ConsultationForm } from "@/components/events/rsvp-form";
 import { ContactForm } from "@/components/contact/contact-form";
 
 export const metadata: Metadata = {
-  title: "Contact CSC Circle — Department Desks & Support",
+  title: "Contact CSC Circle — 7 Leadership Desks, WhatsApp & Support",
   description:
-    "Direct communication channels, specialized department email desks, response SLAs, and founder guidance request portal for Coimbatore Startup Community.",
+    "Direct communication channels for all 7 leadership desks, the 5 official community WhatsApp circles, response SLAs, and founder guidance request portal for Coimbatore Startup Community.",
   alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {
-  const departments = [
+  const leadershipDesks = siteConfig.leadershipDesks;
+
+  const whatsappCircles = [
     {
-      role: "General & Membership Desk",
-      email: "coimbatorestartup.csc@gmail.com",
-      desc: "Membership card approval queries, onboarding assistance, community partnerships, and general inquiries.",
-      sla: "Within 24 hours (Mon–Sat)",
-      badge: "Community Desk",
+      name: "CSC Announcement",
+      badge: "Official Broadcast",
+      desc: "Zero-noise, admin-only verified alerts for flagship summits, state partnerships (StartupTN / Startup India), and pass releases.",
+      url: siteConfig.social.whatsappCircles.announcements.url,
+      accent: "border-blue-200 bg-blue-50/50 text-blue-900",
     },
     {
-      role: "Event Registrations & Passes",
-      email: "coimbatorestartupcommunity@gmail.com",
-      desc: "QR pass re-issuance, Google Meet check-in troubleshooting, speaker nominations, and workshop inquiries.",
-      sla: "Within 12–24 hours (priority during event days)",
-      badge: "Events Desk",
+      name: "CSC Circle",
+      badge: "Main Community Hub",
+      desc: "Peer founder networking, active product showcases, UI/UX critiques, founder matchmaking, and ecosystem discussions.",
+      url: siteConfig.social.whatsappCircles.circle.url,
+      accent: "border-purple-200 bg-purple-50/50 text-purple-900",
     },
     {
-      role: "Technical & Platform Architecture",
-      email: "hello@logicintelligencetechnologies.in",
-      altEmail: "logicintelligencetechnologies@gmail.com",
-      desc: "Security disclosures, API rate limit allowances, technical bugs, and platform infrastructure matters.",
-      sla: "Within 48 hours (Security disclosures acknowledged in 48h)",
-      badge: "Engineering Desk",
+      name: "CSC Mind Sprint",
+      badge: "Innovation & Growth",
+      desc: "Daily engineering sprints (Monday Logic), product teardowns, Build-in-Public sprints, hackathons, and student fellowships.",
+      url: siteConfig.social.whatsappCircles.mindSprint.url,
+      accent: "border-emerald-200 bg-emerald-50/50 text-emerald-900",
+    },
+    {
+      name: "CSC Business Network",
+      badge: "Enterprise & Alliances",
+      desc: "Commercial B2B matchmaking, corporate pilots, connecting traditional manufacturing leaders with tech startups & angel syndicates.",
+      url: siteConfig.social.whatsappCircles.businessNetwork.url,
+      accent: "border-amber-200 bg-amber-50/50 text-amber-900",
+    },
+    {
+      name: "CSC Opportunities",
+      badge: "Grants & Capital Radar",
+      desc: "Direct intelligence on non-dilutive seed grants: TANSEED (up to ₹15L), SISFS (up to ₹50L), BIRAC, and top accelerator cohorts.",
+      url: siteConfig.social.whatsappCircles.opportunities.url,
+      accent: "border-rose-200 bg-rose-50/50 text-rose-900",
     },
   ];
 
   const socialChannels = [
     {
       network: "whatsapp" as const,
-      label: "WhatsApp Community",
-      value: "Official Community Group",
+      label: "Official Community Hub",
+      value: "CSC WhatsApp Network",
       href: siteConfig.social.whatsapp,
-      note: "Join active founders, network, and exchange startup collaboration opportunities.",
+      note: "Join active founders and builders across our primary WhatsApp community network.",
     },
     {
       network: "ai_agent" as const,
-      label: "24/7 WhatsApp Assistant",
-      value: "+91 75500 67712",
+      label: "24/7 WhatsApp AI Hotline",
+      value: siteConfig.social.whatsappAgentPhone,
       href: siteConfig.social.whatsappAgent,
-      note: "Instant answers on upcoming events, digital pass verification, and ecosystem guidance.",
+      note: "Enterprise MSG91 cloud hotline for instant answers on events, digital IDs, and ecosystem guidance.",
     },
     {
       network: "linkedin" as const,
-      label: "LinkedIn Profile",
+      label: "Official LinkedIn Profile",
       value: "Coimbatore Startup Community",
       href: siteConfig.social.linkedin,
-      note: "Connect with leadership, founder updates, and ecosystem news.",
+      note: "Connect with leadership, founder updates, grant results, and ecosystem press releases.",
     },
     {
       network: "instagram" as const,
       label: "Instagram Community",
       value: "@coimbatorestartupcommunity",
       href: siteConfig.social.instagram,
-      note: "Follow for announcements, live coverage, and photo highlights.",
+      note: "Follow for announcements, live meetup coverage, and founder video highlights.",
     },
   ];
 
@@ -77,63 +107,152 @@ export default function ContactPage() {
       <PageHero
         eyebrow="Direct Desks & Guidance"
         title="Contact CSC Circle"
-        description="Connect with our specialized team desks for rapid assistance, submit founder consultation requests, or join our community communication circles."
+        description="Connect with our 7 specialized leadership desks for rapid assistance, join the 5 official community WhatsApp circles, or request a 1:1 founder consultation."
       />
 
-      <section className="py-14">
-        <Container className="mx-auto flex max-w-4xl flex-col gap-12">
-          {/* Department Desks */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
+      <section className="py-14 sm:py-16">
+        <Container className="mx-auto flex max-w-5xl flex-col gap-14">
+          {/* 7 Leadership Desks */}
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h2 className="text-xl font-bold tracking-tight text-brand-ink">Specialized Department Desks</h2>
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-accent">
+                  Executive Leadership Governance
+                </p>
+                <h2 className="mt-1 text-2xl font-bold tracking-tight text-brand-ink">
+                  7 Core Leadership Portfolios
+                </h2>
                 <p className="mt-0.5 text-xs text-brand-secondary">
-                  Route your message directly to the appropriate team for fastest resolution.
+                  Direct communication channels mapped to each leadership desk for accountability and fast SLAs.
                 </p>
               </div>
-              <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+              <div className="flex items-center gap-1.5 self-start sm:self-auto rounded-full bg-emerald-50 px-3.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                 <Clock className="size-3.5" /> 24–48h SLA Commitment
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              {departments.map((dept) => (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {leadershipDesks.map((desk) => (
                 <div
-                  key={dept.role}
+                  key={desk.role}
                   className="flex flex-col justify-between rounded-3xl border border-brand-border bg-brand-white p-6 shadow-xs transition hover:border-brand-ink/20"
                 >
                   <div className="flex flex-col gap-2">
-                    <span className="w-fit rounded-full bg-brand-cloud px-2.5 py-0.5 text-[11px] font-semibold text-brand-accent">
-                      {dept.badge}
-                    </span>
-                    <h3 className="text-base font-bold text-brand-ink">{dept.role}</h3>
-                    <p className="text-xs leading-relaxed text-brand-secondary">{dept.desc}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="w-fit rounded-full bg-brand-cloud px-2.5 py-0.5 text-[11px] font-semibold text-brand-accent">
+                        {desk.badge}
+                      </span>
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-brand-muted">
+                        <Clock className="size-3" /> {desk.sla}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-base font-bold text-brand-ink">{desk.title}</h3>
+                      <p className="text-xs font-semibold text-brand-accent mt-0.5">
+                        {desk.leader} · <span className="font-normal text-brand-secondary">{desk.role}</span>
+                      </p>
+                      <p className="text-[11px] text-brand-muted italic">{desk.affiliation}</p>
+                    </div>
+
+                    <p className="text-xs leading-relaxed text-brand-secondary mt-1">{desk.focus}</p>
                   </div>
-                  <div className="mt-5 flex flex-col gap-2 border-t border-brand-border/60 pt-4">
+
+                  <div className="mt-5 flex flex-col gap-1.5 border-t border-brand-border/60 pt-4">
                     <a
-                      href={`mailto:${dept.email}`}
+                      href={`mailto:${desk.email}`}
                       className="text-xs font-semibold text-brand-accent hover:underline break-all"
                     >
-                      {dept.email}
+                      {desk.email}
                     </a>
-                    {dept.altEmail && (
+                    {desk.altEmail && (
                       <a
-                        href={`mailto:${dept.altEmail}`}
-                        className="text-xs font-medium text-brand-secondary hover:underline break-all"
+                        href={`mailto:${desk.altEmail}`}
+                        className="text-[11px] font-medium text-brand-secondary hover:underline break-all"
                       >
-                        {dept.altEmail}
+                        {desk.altEmail}
                       </a>
                     )}
-                    <span className="flex items-center gap-1 text-[11px] text-brand-muted">
-                      <Clock className="size-3" /> {dept.sla}
-                    </span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Quick Contact & WhatsApp Assistance */}
+          {/* 5 Official Community WhatsApp Circles */}
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-accent">
+                  Ecosystem Community Circles
+                </p>
+                <h2 className="mt-1 text-2xl font-bold tracking-tight text-brand-ink">
+                  5 Official WhatsApp Community Groups
+                </h2>
+                <p className="mt-0.5 text-xs text-brand-secondary">
+                  Curated, noise-free channels tailored for every facet of your entrepreneurial journey.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 self-start sm:self-auto rounded-full bg-brand-cloud px-3.5 py-1 text-xs font-semibold text-brand-ink">
+                <Users className="size-3.5 text-brand-accent" /> Active Founder Circles
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {whatsappCircles.map((circle) => (
+                <a
+                  key={circle.name}
+                  href={circle.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex flex-col justify-between rounded-3xl border border-brand-border bg-brand-white p-6 shadow-xs transition hover:border-brand-ink/20 hover:shadow-md"
+                >
+                  <div className="flex flex-col gap-2">
+                    <span className={`w-fit rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${circle.accent}`}>
+                      {circle.badge}
+                    </span>
+                    <h3 className="text-base font-bold text-brand-ink group-hover:text-brand-accent transition-colors">
+                      {circle.name}
+                    </h3>
+                    <p className="text-xs leading-relaxed text-brand-secondary">{circle.desc}</p>
+                  </div>
+                  <div className="mt-5 flex items-center gap-1.5 text-xs font-semibold text-brand-accent border-t border-brand-border/60 pt-3">
+                    Join via WhatsApp <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* 24/7 MSG91 WhatsApp Concierge Banner */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 rounded-3xl border-2 border-emerald-500/20 bg-emerald-50/40 p-6 sm:p-8">
+            <div className="flex items-start gap-4">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm">
+                <PhoneCall className="size-6" />
+              </span>
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-semibold text-emerald-800">
+                  Official MSG91 Cloud Hotline
+                </span>
+                <h3 className="mt-1 text-lg font-bold text-brand-ink">
+                  Instant WhatsApp Concierge: {siteConfig.social.whatsappAgentPhone}
+                </h3>
+                <p className="mt-1 text-xs sm:text-sm text-brand-secondary max-w-xl">
+                  Connect 24/7 for instant answers on upcoming meetups, digital membership verification, Apple/Google Wallet pass lookups, and ecosystem routing.
+                </p>
+              </div>
+            </div>
+            <a
+              href={siteConfig.social.whatsappAgent}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition"
+            >
+              <MessageSquare className="size-4" /> Message on WhatsApp &rarr;
+            </a>
+          </div>
+
+          {/* Quick Contact & Interactive Inquiry Form */}
           <div
             id="inquiry"
             className="flex flex-col gap-6 rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-10 shadow-xs ring-1 ring-brand-border"
@@ -170,7 +289,7 @@ export default function ContactPage() {
           {/* Social & Real-time Channels */}
           <div className="flex flex-col gap-4">
             <h2 className="text-xl font-bold tracking-tight text-brand-ink">Community Circles & Channels</h2>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {socialChannels.map((c) => (
                 <a
                   key={c.label}
@@ -192,31 +311,47 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Regional Hub & Headquarters */}
-          <div className="flex flex-col gap-4 rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-8">
+          {/* Regional Hub & Physical Liaisons */}
+          <div className="flex flex-col gap-6 rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-8">
             <div className="flex items-center gap-3">
               <span className="flex size-10 items-center justify-center rounded-2xl bg-brand-cloud text-brand-ink">
                 <MapPin className="size-5" />
               </span>
               <div>
-                <h3 className="text-base font-bold text-brand-ink">Regional Ecosystem Hub</h3>
+                <h3 className="text-base font-bold text-brand-ink">Regional Ecosystem Hubs &amp; Liaisons</h3>
                 <p className="text-xs text-brand-secondary">
-                  Coimbatore Startup Community operates across Coimbatore, Tamil Nadu, India.
+                  Coimbatore Startup Community maintains active liaisons across the key industrial and technology corridors of Coimbatore.
                 </p>
               </div>
             </div>
+
+            <div className="grid gap-4 sm:grid-cols-3 pt-2 text-xs text-brand-secondary border-t border-brand-border/60">
+              <div className="rounded-2xl bg-brand-cloud/40 p-4">
+                <span className="block font-bold text-brand-ink">MSME &amp; Industrial Liaison</span>
+                <p className="mt-1 leading-relaxed">CODISSIA Trade Fair Complex Corridor, Avinashi Road, Coimbatore 641014</p>
+              </div>
+              <div className="rounded-2xl bg-brand-cloud/40 p-4">
+                <span className="block font-bold text-brand-ink">IT &amp; DeepTech Hub Liaison</span>
+                <p className="mt-1 leading-relaxed">TIDEL Park Coimbatore Corridor, Civil Aerodrome Post, Coimbatore 641014</p>
+              </div>
+              <div className="rounded-2xl bg-brand-cloud/40 p-4">
+                <span className="block font-bold text-brand-ink">Academic Innovation Liaison</span>
+                <p className="mt-1 leading-relaxed">Peelamedu &amp; Saravanampatti Technology Incubation Corridors</p>
+              </div>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-3 pt-2 text-xs text-brand-secondary border-t border-brand-border/60">
               <div>
-                <span className="block font-semibold text-brand-ink">Headquarters Location</span>
-                <p className="mt-1">Coimbatore, Tamil Nadu 641001, India</p>
+                <span className="block font-semibold text-brand-ink">Operating Headquarters</span>
+                <p className="mt-0.5">Coimbatore, Tamil Nadu 641001, India</p>
               </div>
               <div>
                 <span className="block font-semibold text-brand-ink">Platform Technology Partner</span>
-                <p className="mt-1">Logic Intelligence Technologies</p>
+                <p className="mt-0.5">Logic Intelligence Technologies (LIT)</p>
               </div>
               <div>
                 <span className="block font-semibold text-brand-ink">Hours of Operation</span>
-                <p className="mt-1">Monday – Saturday: 9:00 AM – 6:30 PM IST</p>
+                <p className="mt-0.5">Monday – Saturday: 9:00 AM – 6:30 PM IST</p>
               </div>
             </div>
           </div>

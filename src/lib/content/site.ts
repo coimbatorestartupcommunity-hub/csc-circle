@@ -4,6 +4,18 @@
  * and factual — do not add unverified claims.
  */
 
+export interface LeadershipDesk {
+  title: string;
+  leader: string;
+  role: string;
+  affiliation: string;
+  email: string;
+  altEmail?: string;
+  focus: string;
+  sla: string;
+  badge: string;
+}
+
 export const siteConfig = {
   name: "CSC Circle",
   shortName: "CSC",
@@ -52,7 +64,123 @@ export const siteConfig = {
     email: "coimbatorestartup.csc@gmail.com",
     adminEmail: "coimbatorestartupcommunity@gmail.com",
     techEmail: "hello@logicintelligencetechnologies.in",
+    whatsappCircles: {
+      announcements: {
+        name: "CSC Announcement",
+        category: "Official Broadcast Channel",
+        description:
+          "Zero-noise, admin-only verified broadcasts. Flagship summits, StartupTN & Startup India updates, policy alerts, and pass rollouts.",
+        url: "https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
+      },
+      circle: {
+        name: "CSC Circle",
+        category: "Main Community Hub",
+        description:
+          "Peer founder discussions, product showcases, UI/UX audits, problem-solving, and builder matchmaking.",
+        url: "https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
+      },
+      mindSprint: {
+        name: "CSC Mind Sprint",
+        category: "Innovation, Challenges & Growth",
+        description:
+          "Daily engineering sprints (Monday Logic), product teardowns, Build-in-Public sprints, hackathons, and student fellowships.",
+        url: "https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
+      },
+      businessNetwork: {
+        name: "CSC Business Network",
+        category: "Enterprise, Capital & Alliances",
+        description:
+          "Commercial B2B matchmaking, corporate pilots, connecting legacy industrial manufacturing with modern tech startups & angel syndicates.",
+        url: "https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
+      },
+      opportunities: {
+        name: "CSC Opportunities",
+        category: "Grants, Funding & Calls",
+        description:
+          "Capital intelligence, non-dilutive seed grants (TANSEED up to ₹15L, SISFS up to ₹50L), BIRAC, and top accelerator cohorts.",
+        url: "https://chat.whatsapp.com/HGWEu9dm7Jc6C3sH7V1PTB",
+      },
+    },
   },
+  leadershipDesks: [
+    {
+      title: "Office of the President & Founder",
+      leader: "K. N. Reyash",
+      role: "Founder & President",
+      affiliation: "Founder, Belvoria",
+      email: "coimbatorestartup.president@gmail.com",
+      altEmail: "coimbatorestartup.csc@gmail.com",
+      focus: "Institutional MoUs, government relations, sovereign ecosystem strategy & non-transactional ethics.",
+      sla: "Within 24–48 hours",
+      badge: "Executive Office",
+    },
+    {
+      title: "Vice President & Strategic Partnerships",
+      leader: "E. R. Sharan",
+      role: "Co-Founder & Vice President",
+      affiliation: "Founder, CECIL Groups",
+      email: "coimbatorestartup.partnerships@gmail.com",
+      altEmail: "coimbatorestartupcommunity@gmail.com",
+      focus: "Corporate enablers, university incubation cells, sponsor alliances & industrial manufacturing tie-ups.",
+      sla: "Within 24–48 hours",
+      badge: "Partnerships Desk",
+    },
+    {
+      title: "Executive Office & CEO",
+      leader: "Mirra Mahendran",
+      role: "Chief Executive Officer (CEO)",
+      affiliation: "PSG Institute of Advanced Studies",
+      email: "coimbatorestartup.ceo@gmail.com",
+      altEmail: undefined,
+      focus: "Ecosystem operations, cross-chapter expansions, program administration & mentor councils.",
+      sla: "Within 24 hours (Mon–Sat)",
+      badge: "Operations & Admin",
+    },
+    {
+      title: "Technology & Platform Architecture Desk",
+      leader: "Vikash Saravanan",
+      role: "Chief Technology Officer (CTO)",
+      affiliation: "Founder & CEO, Logic Intelligence Technologies (LIT)",
+      email: "coimbatorestartup.tech@gmail.com",
+      altEmail: "hello@logicintelligencetechnologies.in",
+      focus: "Platform uptime, cryptographic verification APIs, mobile wallets, security disclosures & system architecture.",
+      sla: "Within 24–48 hours (Security disclosures < 24h)",
+      badge: "Engineering Desk",
+    },
+    {
+      title: "Community Engagement & Member Welfare Desk",
+      leader: "Swathi",
+      role: "Chief Community Officer (CCO)",
+      affiliation: "Community Welfare & Healthcare Support",
+      email: "coimbatorestartup.community@gmail.com",
+      altEmail: undefined,
+      focus: "Onboarding, WhatsApp group moderation, diversity, founder wellness, grievances & inclusivity.",
+      sla: "Within 24 hours",
+      badge: "Community Desk",
+    },
+    {
+      title: "Operations & Event Logistics Desk",
+      leader: "Kishore C",
+      role: "Chief Operating Officer (COO)",
+      affiliation: "Founder, APARÈ Clothing",
+      email: "coimbatorestartup.operations@gmail.com",
+      altEmail: undefined,
+      focus: "Venue bookings, physical check-in kiosks, AV and volunteer coordination & demo day logistics.",
+      sla: "Within 12–24 hours (Priority on event days)",
+      badge: "Events & Logistics",
+    },
+    {
+      title: "Brand Strategy, Media & Press Desk",
+      leader: "Jaibharath V",
+      role: "Chief Brand Officer (CBO)",
+      affiliation: "Founder, Flickkora Agency",
+      email: "coimbatorestartup.brand@gmail.com",
+      altEmail: undefined,
+      focus: "Press releases, media kits, demo day broadcasts, brand asset licenses & visual storytelling.",
+      sla: "Within 24–48 hours",
+      badge: "Brand & Media",
+    },
+  ] satisfies readonly LeadershipDesk[],
 } as const;
 
 export const brandAssets = {

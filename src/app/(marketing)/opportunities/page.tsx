@@ -15,6 +15,8 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
+  Briefcase,
+  Layers,
 } from "lucide-react";
 import { PageHero } from "@/components/common/page-hero";
 import { Container } from "@/components/common/container";
@@ -53,13 +55,28 @@ export const metadata: Metadata = {
   },
 };
 
-const fmtDate = (value: string | null) => {
-  if (!value) return null;
-  const d = new Date(`${value}T00:00:00+05:30`);
-  return Number.isNaN(d.getTime())
-    ? null
-    : new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(d);
-};
+const ecosystemTracks = [
+  {
+    icon: Rocket,
+    title: "Co-Founder Searches & Equity",
+    desc: "Domain experts connecting with software, AI, and hardware engineers under standard 4-year vesting models.",
+  },
+  {
+    icon: Trophy,
+    title: "Seed Grants & Fellowships",
+    desc: "Capital radar for TANSEED (₹15L equity-free), Startup India SISFS (₹50L), MeitY TIDE 2.0, and BIRAC BIG.",
+  },
+  {
+    icon: Briefcase,
+    title: "High-Impact Roles & Gigs",
+    desc: "Early-stage engineering, growth, and product openings directly with Coimbatore startups, free from recruiter spam.",
+  },
+  {
+    icon: Layers,
+    title: "Accelerator Fast-Tracks",
+    desc: "Direct partner nominations into top incubator cohorts including StartupTN, Forge KCT, and PSG-STEP.",
+  },
+];
 
 async function OpportunitiesContent() {
   const dynamicOpportunities = await listPublishedOpportunities();
@@ -102,11 +119,33 @@ async function OpportunitiesContent() {
 
       <section className="py-14 sm:py-16">
         <Container className="mx-auto flex max-w-5xl flex-col gap-12">
+          {/* 4 Ecosystem Tracks Cards */}
+          <div className="rounded-3xl border border-brand-border bg-brand-white p-6 sm:p-8 shadow-xs">
+            <div className="mb-6">
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-accent">
+                Curated Matchmaking Pathways
+              </span>
+              <h3 className="text-lg font-bold text-brand-ink mt-0.5">The 4 Core Ecosystem Tracks</h3>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {ecosystemTracks.map((t) => (
+                <div key={t.title} className="rounded-2xl bg-brand-cloud/40 p-4 border border-brand-border/60">
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-brand-white text-brand-ink ring-1 ring-brand-border">
+                    <t.icon className="size-4" />
+                  </span>
+                  <h4 className="mt-2 text-sm font-bold text-brand-ink">{t.title}</h4>
+                  <p className="mt-1 text-xs leading-relaxed text-brand-secondary">{t.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Interactive Tag-Filtered Listings Board */}
           <div className="flex flex-col gap-5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-brand-accent">
-                Co-Founder &amp; Builder Matchmaking
+                Active Matchmaking Board
               </p>
               <h2 className="mt-1 text-2xl font-bold tracking-tight text-brand-ink">
                 Active Listings &amp; Innovation Tracks
@@ -116,9 +155,7 @@ async function OpportunitiesContent() {
               </p>
             </div>
 
-            <OpportunityTagsFilter
-              opportunities={allItems}
-            />
+            <OpportunityTagsFilter opportunities={allItems} />
           </div>
 
           {/* Interactive Opportunity Proposal Form */}
